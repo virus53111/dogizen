@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<title>DOGIZEN BTC 3D</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02040a;color:#eef5ff;font-family:system-ui,-apple-system,Segoe UI,sans-serif}
+button{font:inherit;color:inherit}
+body{background:radial-gradient(circle at 70% 20%,#173d7330,transparent 32%),radial-gradient(circle at 20% 80%,#6a2c7825,transparent 30%),#02040a}
+#chart{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+.ui{position:fixed;inset:0;pointer-events:none}
+.panel,.btn{pointer-events:auto;background:#07101ddd;border:1px solid #30415d;border-radius:13px;box-shadow:0 10px 35px #0008;backdrop-filter:blur(10px)}
+.top{position:absolute;top:12px;left:14px;right:14px;display:flex;justify-content:space-between}
+.brand{display:flex;gap:9px;align-items:center}.btc{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;background:#f7931a;font-size:24px;font-weight:900;box-shadow:0 0 24px #f7931a55}
+.small{font-size:10px;color:#8ea0bd}.pair{font-weight:900}.price{font-size:24px;font-weight:900;margin-top:3px}
+.stats{text-align:right;font-size:9px;color:#8293ad;line-height:1.7}.stats b{color:#eaf1ff}
+#tf{position:absolute;top:82px;left:14px;right:14px;padding:5px;display:flex;gap:5px;overflow:auto}
+#tf button,#modes button{border:1px solid #293b57;background:#0b1628;border-radius:9px;padding:8px 11px;font-size:10px;white-space:nowrap}
+.active{background:#2365b6!important;border-color:#55a1ff!important;color:#fff}
+#modes{position:absolute;top:128px;left:14px;padding:5px;display:flex;gap:5px}
+#signal{position:absolute;left:14px;bottom:112px;padding:11px;min-width:185px}
+#signal b{display:block;font-size:11px}.sig{font-size:15px;font-weight:900;margin-top:3px}.buy{color:#43e69a}.sell{color:#ff667c}.neutral{color:#ffd166}
+.tools{position:absolute;right:14px;bottom:112px;display:flex;gap:6px}
+.btn{padding:10px 12px;font-size:10px}
+.bottom{position:absolute;left:14px;right:14px;bottom:12px;display:flex;justify-content:center;gap:6px}
+.bottom button{padding:9px 11px}
+.status{position:absolute;top:178px;left:50%;transform:translateX(-50%);font-size:9px;color:#72839d;white-space:nowrap}
+#loading{position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:#9aabc4;background:#02040a99;pointer-events:none}
+#loading.hide{display:none}
+</style>
+</head>
+<body>
+<canvas id="chart"></canvas>
+<div id="loading">Загрузка BTC…</div>
+<div class="ui">
+  <div class="top">
+    <div>
+      <div class="brand"><div class="btc">₿</div><div><div class="pair">BTC / USDT</div><div class="small">DOGIZEN 3D MARKET</div></div></div>
+      <div id="price" class="price">—</div>
+    </div>
+    <div class="stats">24H HIGH <b id="hi">—</b><br>24H LOW <b id="lo">—</b><br>24H VOL <b id="vol">—</b></div>
+  </div>
+  <div id="tf" class="panel">
+    <button data-tf="1m">1m</button><button data-tf="5m">5m</button><button data-tf="15m">15m</button><button data-tf="1h" class="active">1H</button><button data-tf="4h">4H</button><button data-tf="1d">1D</button><button data-tf="1w">1W</button>
+  </div>
+  <div id="modes" class="panel"><button data-mode="candle" class="active">CANDLE</button><button data-mode="line">LINE</button><button data-mode="volume">VOLUME</button></div>
+  <div class="status" id="status">LOCAL CHART · CONNECTING TO BINANCE…</div>
+  <div id="signal" class="panel"><b>⚡ TECH SIGNAL</b><div id="sig" class="sig neutral">NEUTRAL</div><div class="small">EMA 9/21 · RSI · momentum</div></div>
+  <div class="tools"><button id="theme" class="btn">☀ DAY</button><button id="grid" class="btn">▦ GRID</button><button id="reset" class="btn">⌾ RESET</button><button id="full" class="btn">⛶</button></div>
+  <div class="bottom"><button class="btn active">₿ BTC</button><button class="btn" id="sound">🔊 SOUND</button><button class="btn" id="demo">▶ DEMO</button></div>
+</div>
+<script>
+(function(){
+'use strict';
+const c=document.getElementById('chart'),x=c.getContext('2d');
+let W=innerWidth,H=innerHeight,D=devicePixelRatio||1, data=[],tf='1h',mode='candle',dark=true,showGrid=true,rot=0,zoom=1,drag=false,lastX=0,lastY=0,soundOn=false,demo=false;
+const $=id=>document.getElementById(id);
+function resize(){W=innerWidth;H=innerHeight;D=Math.min(devicePixelRatio||1,2);c.width=W*D;c.height=H*D;c.style.width=W+'px';c.style.height=H+'px';x.setTransform(D,0,0,D,0,0);draw()} addEventListener('resize',resize);
+function seed(){let p=105000;data=[];for(let i=0;i<90;i++){let o=p+(Math.random()-.5)*900,cl=o+(Math.random()-.45)*1500,h=Math.max(o,cl)+Math.random()*500,l=Math.min(o,cl)-Math.random()*500;data.push({o,h,l,c:cl,v:300+Math.random()*900});p=cl}}
+function color(a){return dark?a:'#08111d'}
+function draw(){
+ x.clearRect(0,0,W,H);
+ let g=x.createRadialGradient(W*.65,H*.45,10,W*.65,H*.45,Math.max(W,H)*.7);g.addColorStop(0,dark?'#122b4a':'#dcecff');g.addColorStop(1,dark?'#02040a':'#eef4fa');x.fillStyle=g;x.fillRect(0,0,W,H);
+ for(let i=0;i<80;i++){x.fillStyle=dark?'#8fb8ff33':'#4c6b8a33';let sx=(i*97+(rot*40))%W,sy=(i*53)%H;x.fillRect(sx,sy,1.5,1.5)}
+ let L=42,R=W-25,T=205,B=H-115; if(B<T+80)return;
+ let max=Math.max(...data.map(d=>d.h)),min=Math.min(...data.map(d=>d.l)),range=max-min||1;
+ let step=(R-L)/Math.max(1,data.length-1), sx=(i)=>L+i*step;
+ const py=v=>T+(max-v)/range*(B-T);
+ if(showGrid){x.strokeStyle=dark?'#31507355':'#71869a55';x.lineWidth=1;for(let i=0;i<7;i++){let yy=T+i*(B-T)/6;x.beginPath();x.moveTo(L,yy);x.lineTo(R,yy);x.stroke()}for(let i=0;i<8;i++){let xx=L+i*(R-L)/7;x.beginPath();x.moveTo(xx,T);x.lineTo(xx,B);x.stroke()}}
+ x.save();x.translate(W/2,B/2);x.rotate(rot*.002);x.scale(zoom,zoom);x.translate(-W/2,-B/2);
+ if(mode==='line'){x.beginPath();data.forEach((d,i)=>{let xx=sx(i),yy=py(d.c);i?x.lineTo(xx,yy):x.moveTo(xx,yy)});x.strokeStyle='#55a1ff';x.lineWidth=2.5;x.shadowBlur=14;x.shadowColor='#3182ff';x.stroke();x.shadowBlur=0}
+ else data.forEach((d,i)=>{let xx=sx(i),up=d.c>=d.o,col=up?'#25e6a0':'#ff5870';x.strokeStyle=col;x.lineWidth=2;x.beginPath();x.moveTo(xx,py(d.h));x.lineTo(xx,py(d.l));x.stroke();if(mode==='volume'){let vh=d.v/Math.max(...data.map(q=>q.v))*(B-T)*.22;x.fillStyle=col+'88';x.fillRect(xx-3,B-vh,6,vh)}if(mode==='candle'){x.fillStyle=col;x.fillRect(xx-4,Math.min(py(d.o),py(d.c)),8,Math.max(2,Math.abs(py(d.o)-py(d.c))))}});
+ let last=data[data.length-1]; if(last){let yy=py(last.c);x.strokeStyle='#ffffff55';x.setLineDash([4,5]);x.beginPath();x.moveTo(L,yy);x.lineTo(R,yy);x.stroke();x.setLineDash([]);x.fillStyle=dark?'#dce9ff':'#18304c';x.font='10px system-ui';x.fillText(last.c.toLocaleString(),R-72,yy-7)}
+ x.restore();
+ // signal markers
+ if(data.length>30){let s=signal();let d=data[data.length-1],xx=sx(data.length-1),yy=py(s==='BUY'?d.l:d.h);x.beginPath();x.arc(xx,yy,6,0,Math.PI*2);x.fillStyle=s==='BUY'?'#43e69a':'#ff667c';x.shadowBlur=16;x.shadowColor=x.fillStyle;x.fill();x.shadowBlur=0}
+}
+function ema(arr,n){let k=2/(n+1),e=arr[0];for(let i=1;i<arr.length;i++)e=arr[i]*k+e*(1-k);return e}
+function signal(){let a=data.map(d=>d.c),e9=ema(a.slice(-40),9),e21=ema(a.slice(-40),21),g=0,l=0;for(let i=Math.max(1,a.length-14);i<a.length;i++){let q=a[i]-a[i-1];q>0?g+=q:l-=q}let r=100-100/(1+g/(l||.0001));return e9>e21&&r>52?'BUY':e9<e21&&r<48?'SELL':'NEUTRAL'}
+function updateUI(){let d=data.at(-1);if(!d)return;$('price').textContent=d.c.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});$('hi').textContent=Math.max(...data.map(q=>q.h)).toLocaleString();$('lo').textContent=Math.min(...data.map(q=>q.l)).toLocaleString();$('vol').textContent=Math.round(data.reduce((a,q)=>a+q.v,0))+' BTC';let s=signal(),el=$('sig');el.textContent=s;el.className='sig '+(s==='BUY'?'buy':s==='SELL'?'sell':'neutral')}
+function localData(){seed();$('loading').classList.add('hide');$('status').textContent='LOCAL DEMO · REAL DATA WILL LOAD WHEN AVAILABLE';updateUI();draw()}
+async function load(){
+ $('status').textContent='CONNECTING TO BINANCE…';
+ try{
+  let r=await fetch('https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval='+tf+'&limit=90',{cache:'no-store'}); if(!r.ok)throw Error();
+  let a=await r.json();if(!Array.isArray(a)||!a.length)throw Error();
+  data=a.map(q=>({o:+q[1],h:+q[2],l:+q[3],c:+q[4],v:+q[5]}));
+  let t=await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT',{cache:'no-store'}).then(r=>r.json());
+  $('hi').textContent=Number(t.highPrice).toLocaleString();$('lo').textContent=Number(t.lowPrice).toLocaleString();$('vol').textContent=Number(t.volume).toFixed(1)+' BTC';
+  $('status').textContent='● LIVE · BINANCE';$('loading').classList.add('hide');updateUI();draw();
+ }catch(e){if(!data.length)localData();$('status').textContent='● DEMO MODE · DATA CONNECTION UNAVAILABLE'}
+}
+function beep(f=440){if(!soundOn)return;let A=window.AudioContext||window.webkitAudioContext;if(!A)return;let ac=new A(),o=ac.createOscillator(),v=ac.createGain();o.frequency.value=f;o.type='sine';v.gain.value=.035;o.connect(v);v.connect(ac.destination);o.start();v.gain.exponentialRampToValueAtTime(.001,ac.currentTime+.12);o.stop(ac.currentTime+.13)}
+document.querySelectorAll('[data-tf]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tf]').forEach(q=>q.classList.remove('active'));b.classList.add('active');tf=b.dataset.tf;load()});
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-mode]').forEach(q=>q.classList.remove('active'));b.classList.add('active');mode=b.dataset.mode;draw()});
+$('grid').onclick=()=>{showGrid=!showGrid;draw()};$('reset').onclick=()=>{rot=0;zoom=1;draw()};$('full').onclick=()=>document.documentElement.requestFullscreen?.();$('theme').onclick=()=>{dark=!dark;$('theme').textContent=dark?'☀ DAY':'◐ NIGHT';draw()};$('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'🔊 SOUND ON':'🔇 SOUND OFF';beep(660)};$('demo').onclick=()=>{demo=!demo;$('demo').textContent=demo?'■ DEMO':'▶ DEMO'};
+c.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY});addEventListener('pointerup',()=>drag=false);addEventListener('pointermove',e=>{if(!drag)return;rot+=(e.clientX-lastX);zoom=Math.max(.65,Math.min(1.8,zoom+(e.clientY-lastY)*-.003));lastX=e.clientX;lastY=e.clientY;draw()});c.addEventListener('wheel',e=>{zoom=Math.max(.65,Math.min(1.8,zoom-e.deltaY*.001));draw()});
+let lastTap=0;c.addEventListener('pointerup',e=>{let n=Date.now();if(n-lastTap<300){rot=0;zoom=1;draw()}lastTap=n});
+resize();localData();load();setInterval(()=>{if(demo){let d=data.at(-1),o=d.c,cl=o+(Math.random()-.46)*700;data.push({o,h:Math.max(o,cl)+Math.random()*300,l:Math.min(o,cl)-Math.random()*300,c:cl,v:400+Math.random()*800});data.shift();beep(cl>=o?620:260);updateUI();draw()}else load()},15000);
+})();
+</script>
+</body>
+</html>
