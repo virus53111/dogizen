@@ -2,269 +2,143 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#08111f">
-<title>DOGIZEN BTC 3D</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#030814">
+<title>DOGIZEN — BTC 3D</title>
 <style>
-:root{
-  --bg:#07111f;--panel:rgba(7,18,31,.72);--line:rgba(255,255,255,.14);
-  --text:#f5f8ff;--muted:#9caec7;--accent:#25a7ff;--gold:#ffbd35;
-  --green:#27e69a;--red:#ff4f58;--cyan:#39d8ff;--shadow:0 18px 50px rgba(0,0,0,.35)
-}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;width:100%;height:100%;overflow:hidden;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#020713;color:var(--text)}
-body.day{--bg:#8aa8c9;--panel:rgba(255,255,255,.40);--line:rgba(20,45,70,.18);--text:#102038;--muted:#52677f;--accent:#1688e9;--gold:#f3a600}
-#app{position:fixed;inset:0;overflow:hidden;background:radial-gradient(circle at 50% 30%,#17365d 0,#071326 45%,#02050d 100%)}
-body.day #app{background:linear-gradient(#b8d4ea 0,#79a9cf 48%,#304e6e 100%)}
-canvas#scene{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
-#stars{position:absolute;inset:0;pointer-events:none;background-image:
- radial-gradient(1px 1px at 10% 18%,#fff 60%,transparent 61%),
- radial-gradient(1px 1px at 22% 9%,#fff 60%,transparent 61%),
- radial-gradient(1px 1px at 31% 28%,#fff 60%,transparent 61%),
- radial-gradient(1px 1px at 46% 12%,#fff 60%,transparent 61%),
- radial-gradient(1px 1px at 58% 24%,#fff 60%,transparent 61%),
- radial-gradient(1px 1px at 72% 10%,#fff 60%,transparent 61%),
- radial-gradient(1px 1px at 86% 26%,#fff 60%,transparent 61%),
- radial-gradient(1px 1px at 94% 12%,#fff 60%,transparent 61%),
- radial-gradient(1px 1px at 17% 42%,#fff 60%,transparent 61%),
- radial-gradient(1px 1px at 79% 39%,#fff 60%,transparent 61%);opacity:.75}
-body.day #stars{opacity:.15}
-.top{position:absolute;z-index:5;top:14px;left:16px;right:16px;display:flex;align-items:center;gap:12px}
-.brand{font-weight:900;letter-spacing:.5px;font-size:18px;text-shadow:0 2px 14px rgba(0,0,0,.3)}
-.brand b{color:var(--gold)}
-.sub{font-size:12px;color:var(--muted);font-weight:600}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02050b;color:#eef6ff;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+body{touch-action:none}
+#app{position:fixed;inset:0;overflow:hidden;background:#02050b}
+canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}
+#fx{pointer-events:none}
+.ui{position:absolute;inset:0;pointer-events:none}
+button{font:inherit;color:inherit}
+.panel{pointer-events:auto;background:linear-gradient(135deg,rgba(10,22,40,.78),rgba(4,10,21,.56));border:1px solid rgba(125,190,255,.17);box-shadow:0 16px 60px rgba(0,0,0,.38),inset 0 1px rgba(255,255,255,.05);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+body.day .panel{background:linear-gradient(135deg,rgba(240,249,255,.72),rgba(190,216,233,.48));border-color:rgba(30,75,110,.18)}
+.top{position:absolute;top:max(12px,env(safe-area-inset-top));left:14px;right:14px;display:flex;gap:9px;align-items:center}
+.brand{font-size:18px;font-weight:950;letter-spacing:.5px;text-shadow:0 3px 22px #000}.brand b{color:#ffc53d}.tiny{font-size:9px;color:#91a8c2;font-weight:800;letter-spacing:1.4px}
 .spacer{flex:1}
-.iconBtn,.toggle,.modeBtn,.tf,.navBtn{border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(16px);color:var(--text);box-shadow:var(--shadow);cursor:pointer}
-.iconBtn{width:44px;height:44px;border-radius:14px;font-size:20px}
-.toggle{display:flex;padding:3px;border-radius:15px}
-.toggle button{border:0;background:transparent;color:var(--muted);padding:9px 13px;border-radius:12px;font-weight:800;cursor:pointer}
-.toggle button.active{background:linear-gradient(135deg,#ffd45c,#f6a900);color:#15202e;box-shadow:0 0 20px rgba(255,190,45,.4)}
-body:not(.day) .toggle button.active{background:linear-gradient(135deg,#168fff,#42d7ff);color:#fff}
-.card{position:absolute;z-index:5;left:16px;right:16px;top:72px;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(18px);border-radius:22px;box-shadow:var(--shadow);padding:14px 16px}
-.quote{display:flex;align-items:center;gap:12px}
-.btc{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:linear-gradient(145deg,#ffcf52,#ff8d12);color:white;font-size:29px;font-weight:900;box-shadow:0 0 28px rgba(255,165,0,.45)}
-.pair{font-size:16px;font-weight:900}.pair small{display:block;color:var(--muted);font-weight:600;font-size:11px;margin-top:3px}
-.price{margin-left:auto;text-align:right;font-size:22px;font-weight:900}.change{font-size:12px;color:var(--green);margin-top:2px}
-.stats{display:flex;gap:18px;margin-left:auto}.stat{font-size:9px;color:var(--muted);text-align:right}.stat b{display:block;color:var(--text);font-size:11px;margin-top:3px}
-.controls{position:absolute;z-index:6;left:16px;right:16px;top:164px}
-.row{display:flex;gap:8px;overflow:auto;padding-bottom:2px;scrollbar-width:none}.row::-webkit-scrollbar{display:none}
-.tf,.modeBtn{flex:0 0 auto;border-radius:14px;padding:11px 14px;font-weight:800;color:var(--muted)}
-.tf.active,.modeBtn.active{background:linear-gradient(135deg,#187bd8,#3a9fff);color:#fff;border-color:#4db2ff;box-shadow:0 0 18px rgba(45,155,255,.35)}
-.modes{margin-top:9px}.modeBtn{padding:10px 14px}
-.indicators{display:flex;gap:6px;margin-left:auto}
-.hint{margin-top:9px;text-align:center;color:var(--muted);font-size:10px;font-weight:700}
-.signal{position:absolute;z-index:6;left:16px;bottom:91px;width:min(420px,calc(100% - 32px));border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(18px);border-radius:20px;padding:12px 15px;box-shadow:var(--shadow)}
-.signalTop{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:10px;font-weight:800}.signalMain{display:flex;align-items:end;gap:12px;margin-top:4px}.signalWord{font-size:27px;font-weight:950}.signalPct{margin-left:auto;font-size:26px;font-weight:950;color:var(--green)}.signalMeta{font-size:10px;color:var(--muted)}
-.live{position:absolute;z-index:6;right:18px;bottom:112px;font-size:10px;color:var(--muted);text-align:right}.dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#36e9a0;box-shadow:0 0 12px #36e9a0;margin-right:6px}
-.bottom{position:absolute;z-index:6;left:16px;right:16px;bottom:12px;display:flex;align-items:center;gap:6px;padding:6px;border:1px solid var(--line);background:var(--panel);backdrop-filter:blur(18px);border-radius:20px;box-shadow:var(--shadow)}
-.navBtn{flex:1;border:0;box-shadow:none;background:transparent;border-radius:15px;padding:9px 4px;font-size:10px;font-weight:800;color:var(--muted)}
-.navBtn.active{background:rgba(20,130,240,.16);color:var(--accent)}
-.navBtn span{display:block;font-size:19px;margin-bottom:2px}
-.loader{position:absolute;z-index:7;inset:0;display:grid;place-items:center;pointer-events:none}.loaderBox{margin-top:230px;text-align:center;color:var(--muted);font-weight:800}.spin{width:30px;height:30px;border:3px solid rgba(255,255,255,.18);border-top-color:var(--accent);border-radius:50%;animation:r 1s linear infinite;margin:auto auto 10px}@keyframes r{to{transform:rotate(360deg)}}
-.toast{position:absolute;z-index:20;left:50%;bottom:140px;transform:translateX(-50%) translateY(15px);opacity:0;padding:10px 14px;border-radius:12px;background:#101d31;color:#fff;font-size:12px;font-weight:800;transition:.25s;pointer-events:none;white-space:nowrap}.toast.show{opacity:1;transform:translateX(-50%)}
-@media(max-width:620px){.top{top:10px}.brand{font-size:16px}.card{top:64px}.controls{top:158px}.stats{display:none}.price{font-size:20px}.signal{bottom:91px}.live{bottom:111px}.bottom{bottom:8px}}
+.btn{border:1px solid rgba(140,205,255,.18);background:rgba(8,20,36,.66);border-radius:14px;padding:9px 11px;font-weight:900;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+body.day .btn{background:rgba(245,252,255,.56);color:#12263b}
+.theme{display:flex;padding:3px;border-radius:14px}.theme button{border:0;background:transparent;padding:8px 10px;border-radius:11px;font-size:11px;font-weight:950;color:#8299b2}.theme button.on{background:linear-gradient(135deg,#167fe8,#45c9ff);color:#fff;box-shadow:0 0 25px rgba(41,167,255,.35)}
+body.day .theme button.on{background:linear-gradient(135deg,#ffca43,#ff8f19);color:#182538}
+.quote{position:absolute;top:61px;left:14px;right:14px;border-radius:20px;padding:11px 13px;display:flex;align-items:center;gap:10px}
+.coin{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-size:27px;font-weight:950;color:#fff;background:radial-gradient(circle at 35% 25%,#ffe28a,#ff9b19 58%,#e26a00);box-shadow:0 0 30px rgba(255,157,24,.4),inset 0 2px 4px rgba(255,255,255,.5)}
+.pair{font-weight:950;font-size:15px}.pair small{display:block;font-size:9px;color:#8ca3bc;margin-top:3px;letter-spacing:.7px}
+.price{margin-left:auto;text-align:right;font-size:21px;font-weight:950}.chg{font-size:10px;color:#30e9a4;margin-top:2px}
+.controls{position:absolute;top:137px;left:14px;right:14px;display:flex;gap:7px;overflow:auto;scrollbar-width:none}.controls::-webkit-scrollbar{display:none}
+.pill{pointer-events:auto;flex:0 0 auto;border:1px solid rgba(120,190,255,.15);background:rgba(5,16,30,.58);border-radius:12px;padding:9px 12px;font-size:11px;font-weight:950;color:#8ea5bd;cursor:pointer}
+body.day .pill{background:rgba(240,249,255,.52);color:#536b83}.pill.on{background:linear-gradient(135deg,#167ddd,#35b6ff);color:#fff;border-color:#58c2ff;box-shadow:0 0 20px rgba(38,159,255,.3)}
+.signal{position:absolute;left:14px;bottom:75px;width:225px;border-radius:17px;padding:10px 12px}.sigline{display:flex;align-items:center;gap:7px;font-size:9px;color:#89a3bd;font-weight:950;letter-spacing:1px}.sig{font-size:24px;font-weight:1000;margin-top:2px}.confidence{position:absolute;right:12px;top:27px;font-size:23px;font-weight:1000;color:#31e9a4}.reason{font-size:8px;color:#7891aa;margin-top:1px}
+.live{position:absolute;right:15px;bottom:82px;text-align:right;font-size:8px;color:#8099b2;font-weight:850;letter-spacing:.5px}.dot{display:inline-block;width:7px;height:7px;background:#32e8a3;border-radius:50%;box-shadow:0 0 13px #32e8a3;margin-right:5px}
+.bottom{position:absolute;left:14px;right:14px;bottom:max(8px,env(safe-area-inset-bottom));height:53px;border-radius:18px;display:flex;align-items:center;padding:4px;gap:3px}
+.nav{pointer-events:auto;flex:1;border:0;background:transparent;border-radius:14px;height:44px;color:#7892ad;font-size:8px;font-weight:900;cursor:pointer}.nav span{display:block;font-size:17px;line-height:19px}.nav.on{background:rgba(40,150,240,.13);color:#42baff}
+body.day .nav.on{color:#1272bb;background:rgba(255,170,25,.12)}
+#toast{position:absolute;left:50%;bottom:140px;transform:translate(-50%,15px);opacity:0;transition:.22s;padding:9px 13px;border-radius:12px;background:#101d31;color:#fff;font-size:10px;font-weight:900;pointer-events:none;white-space:nowrap}.show{opacity:1!important;transform:translate(-50%,0)!important}
+#load{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:10px;color:#8da7c0;font-weight:900;letter-spacing:1px;pointer-events:none;text-align:center}.loader{width:32px;height:32px;border:2px solid rgba(255,255,255,.12);border-top-color:#39c4ff;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 10px}@keyframes spin{to{transform:rotate(360deg)}}
+@media(max-width:600px){.brand{font-size:16px}.top{gap:6px}.quote{top:57px}.controls{top:132px}.signal{bottom:72px}.live{bottom:80px}.btn{padding:8px 9px}.theme button{padding:7px 8px}}
 </style>
 </head>
 <body>
 <div id="app">
-  <canvas id="scene"></canvas><div id="stars"></div>
-
+<canvas id="scene"></canvas><canvas id="fx"></canvas>
+<div class="ui">
   <div class="top">
-    <div>
-      <div class="brand">👑 <b>DOGIZEN</b></div><div class="sub">BTC 3D</div>
-    </div>
-    <div class="spacer"></div>
-    <div class="toggle"><button id="dayBtn">Day</button><button id="nightBtn">Night</button></div>
-    <button class="iconBtn" id="soundBtn">🔊</button>
-    <button class="iconBtn" id="fullBtn">⛶</button>
+    <div><div class="brand">👑 <b>DOGIZEN</b></div><div class="tiny">BTC 3D TERMINAL</div></div><div class="spacer"></div>
+    <div class="theme panel"><button id="day">☀ DAY</button><button id="night" class="on">☾ NIGHT</button></div>
+    <button class="btn panel" id="sound">🔊</button><button class="btn panel" id="full">⛶</button>
   </div>
-
-  <div class="card">
-    <div class="quote">
-      <div class="btc">₿</div>
-      <div class="pair">BTC/USDT<small>Bitcoin / Tether</small></div>
-      <div class="price" id="price">—<div class="change" id="change">—</div></div>
-      <div class="stats">
-        <div class="stat">24H HIGH<b id="high">—</b></div>
-        <div class="stat">24H LOW<b id="low">—</b></div>
-        <div class="stat">24H VOL<b id="vol">—</b></div>
-      </div>
-    </div>
+  <div class="quote panel">
+    <div class="coin">₿</div><div class="pair">BTC / USDT<small>BITCOIN • LIVE MARKET</small></div>
+    <div class="price"><span id="price">—</span><div class="chg" id="chg">—</div></div>
   </div>
-
-  <div class="controls">
-    <div class="row" id="tfs">
-      <button class="tf" data-tf="1m">1m</button><button class="tf" data-tf="5m">5m</button><button class="tf" data-tf="15m">15m</button><button class="tf active" data-tf="1h">1h</button><button class="tf" data-tf="4h">4h</button><button class="tf" data-tf="1d">1D</button><button class="tf" data-tf="1w">1W</button>
-    </div>
-    <div class="row modes">
-      <button class="modeBtn active" data-mode="candle">CANDLE</button><button class="modeBtn" data-mode="line">LINE</button><button class="modeBtn" data-mode="volume">VOLUME</button>
-      <div class="indicators"><button class="modeBtn active" id="emaBtn">EMA</button><button class="modeBtn" id="rsiBtn">RSI</button><button class="modeBtn" id="bbBtn">BB</button></div>
-    </div>
-    <div class="hint">DRAG — вращать 3D · PINCH — zoom · DOUBLE TAP — reset</div>
+  <div class="controls" id="controls">
+    <button class="pill" data-tf="1m">1M</button><button class="pill" data-tf="5m">5M</button><button class="pill" data-tf="15m">15M</button><button class="pill on" data-tf="1h">1H</button><button class="pill" data-tf="4h">4H</button><button class="pill" data-tf="1d">1D</button><button class="pill" data-tf="1w">1W</button>
+    <button class="pill on" id="candle">CANDLE</button><button class="pill" id="line">LINE</button><button class="pill" id="volume">VOLUME</button>
+    <button class="pill on" id="ema">EMA</button><button class="pill" id="rsi">RSI</button><button class="pill" id="bb">BB</button>
   </div>
-
-  <div class="loader" id="loader"><div class="loaderBox"><div class="spin"></div><div id="loadText">Загрузка BTC/USDT…</div></div></div>
-
-  <div class="signal">
-    <div class="signalTop">⚡ TECH SIGNAL <span id="signalReason"></span></div>
-    <div class="signalMain"><div><div class="signalWord" id="signalWord">WAIT</div><div class="signalMeta">EMA + RSI + Momentum</div></div><div class="signalPct" id="signalPct">—</div></div>
+  <div class="signal panel"><div class="sigline">⚡ TECH SIGNAL <span id="reason"></span></div><div class="sig" id="sig">WAIT</div><div class="reason">EMA + RSI + MOMENTUM</div><div class="confidence" id="conf">—</div></div>
+  <div class="live"><span class="dot"></span> REAL-TIME<br><span id="status">CONNECTING</span></div>
+  <div class="bottom panel">
+    <button class="nav on" id="nChart"><span>◈</span>CHART</button><button class="nav" id="nInd"><span>ƒx</span>INDICATORS</button><button class="nav" id="nSpace"><span>✦</span>SPACE</button><button class="nav" id="nReset"><span>⟳</span>RESET</button><button class="nav" id="nMore"><span>•••</span>MORE</button>
   </div>
-  <div class="live"><span class="dot"></span>REAL-TIME<br><span id="dataStatus">Binance public feed</span></div>
-
-  <div class="bottom">
-    <button class="navBtn active"><span>📈</span>График</button>
-    <button class="navBtn" id="indNav"><span>ƒx</span>Индикаторы</button>
-    <button class="navBtn"><span>₿</span>Монеты</button>
-    <button class="navBtn" id="spaceNav"><span>🪐</span>Космос</button>
-    <button class="navBtn"><span>⚙</span>Настройки</button>
-  </div>
-  <div class="toast" id="toast"></div>
+  <div id="toast"></div>
+  <div id="load"><div class="loader"></div>CONNECTING TO BTC MARKET</div>
 </div>
-
+</div>
 <script>
-(() => {
-"use strict";
-const canvas=document.getElementById('scene'),ctx=canvas.getContext('2d');
-let W=innerWidth,H=innerHeight,D=devicePixelRatio||1;
-let candles=[],tf='1h',mode='candle',theme=localStorage.getItem('dogizen-theme')||'night';
-let rotX=.18,rotY=-.18,zoom=1,lastTap=0,drag=false,lastX=0,lastY=0,pinch=0;
-let showEMA=true,showRSI=false,showBB=false,loading=true, pollTimer=null;
+(()=>{"use strict";
+const c=document.getElementById('scene'),x=c.getContext('2d'),fx=document.getElementById('fx'),f=fx.getContext('2d');
+let W=innerWidth,H=innerHeight,d=devicePixelRatio||1,tf='1h',theme='night',mode='candle',showEMA=true,showRSI=false,showBB=false;
+let data=[],price=0,lastPrice=0,rot=0,tilt=.12,zoom=1,drag=false,lx=0,ly=0,pinch=0,lastTap=0,anim=0,soundOn=true,audio=null;
 const $=id=>document.getElementById(id);
-function resize(){W=innerWidth;H=innerHeight;canvas.width=W*D;canvas.height=H*D;canvas.style.width=W+'px';canvas.style.height=H+'px';ctx.setTransform(D,0,0,D,0,0);draw()}
+function resize(){W=innerWidth;H=innerHeight;c.width=fx.width=W*d;c.height=fx.height=H*d;c.style.width=fx.style.width=W+'px';c.style.height=fx.style.height=H+'px';x.setTransform(d,0,0,d,0,0);f.setTransform(d,0,0,d,0,0);draw();particles()}
 addEventListener('resize',resize);
-function setTheme(t){theme=t;document.body.classList.toggle('day',t==='day');$('dayBtn').classList.toggle('active',t==='day');$('nightBtn').classList.toggle('active',t==='night');localStorage.setItem('dogizen-theme',t);draw()}
-setTheme(theme);
-
-function toast(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').classList.remove('show'),1800)}
+function toast(s){$('toast').textContent=s;$('toast').classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>$('toast').classList.remove('show'),1600)}
+function snd(freq=520,dur=.08){if(!soundOn)return;try{audio??=new (window.AudioContext||window.webkitAudioContext)();let o=audio.createOscillator(),g=audio.createGain();o.type='sine';o.frequency.value=freq;g.gain.setValueAtTime(.0001,audio.currentTime);g.gain.exponentialRampToValueAtTime(.045,audio.currentTime+.01);g.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+dur);o.connect(g).connect(audio.destination);o.start();o.stop(audio.currentTime+dur+.02)}catch{}}
+function setTheme(t){theme=t;document.body.classList.toggle('day',t==='day');$('day').classList.toggle('on',t==='day');$('night').classList.toggle('on',t==='night');draw();particles()}
+$('day').onclick=()=>{setTheme('day');snd(650)};$('night').onclick=()=>{setTheme('night');snd(420)};
+$('sound').onclick=()=>{soundOn=!soundOn;$('sound').textContent=soundOn?'🔊':'🔇';if(soundOn)snd(620)};
+$('full').onclick=async()=>{try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen()}catch{toast('Fullscreen недоступен')}}
 function fmt(n){return Number(n).toLocaleString('en-US',{maximumFractionDigits:2})}
-function endpoint(path){return 'https://api.binance.com'+path}
-async function fetchJSON(url){
- const c=new AbortController();const t=setTimeout(()=>c.abort(),9000);
- try{const r=await fetch(url,{cache:'no-store',signal:c.signal});if(!r.ok)throw Error(r.status);return await r.json()}finally{clearTimeout(t)}
-}
+async function api(u){let a=new AbortController(),t=setTimeout(()=>a.abort(),8000);try{let r=await fetch('https://api.binance.com'+u,{cache:'no-store',signal:a.signal});if(!r.ok)throw Error(r.status);return r.json()}finally{clearTimeout(t)}}
 async function load(){
- loading=true;$('loader').style.display='grid';$('loadText').textContent='Загрузка BTC/USDT…';
  try{
-  const [ks,tick]=await Promise.all([
-   fetchJSON(endpoint('/api/v3/klines?symbol=BTCUSDT&interval='+tf+'&limit=100')),
-   fetchJSON(endpoint('/api/v3/ticker/24hr?symbol=BTCUSDT'))
-  ]);
-  candles=ks.map(x=>({t:x[0],o:+x[1],h:+x[2],l:+x[3],c:+x[4],v:+x[5]}));
-  $('price').firstChild.textContent=fmt(tick.lastPrice);
-  $('change').textContent=(+tick.priceChange>=0?'+':'')+fmt(tick.priceChange)+' ('+fmt(tick.priceChangePercent)+'%)';
-  $('high').textContent=fmt(tick.highPrice);$('low').textContent=fmt(tick.lowPrice);$('vol').textContent=fmt(+tick.volume)+' BTC';
-  $('dataStatus').textContent='Binance public feed · '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
-  calcSignal();loading=false;$('loader').style.display='none';draw();
- }catch(e){
-  loading=false;$('loader').style.display='grid';$('loadText').textContent='Нет связи с Binance — повторяю…';
-  $('dataStatus').textContent='Ожидание Binance';
-  toast('Binance сейчас недоступен');
- }
+  let [k,t]=await Promise.all([api('/api/v3/klines?symbol=BTCUSDT&interval='+tf+'&limit=90'),api('/api/v3/ticker/24hr?symbol=BTCUSDT')]);
+  let old=data.length?data[data.length-1].c:0;
+  data=k.map(a=>({t:a[0],o:+a[1],h:+a[2],l:+a[3],c:+a[4],v:+a[5]}));price=+t.lastPrice;
+  $('price').textContent=fmt(price);$('chg').textContent=(+t.priceChangePercent>=0?'+':'')+fmt(t.priceChangePercent)+'%  24H';
+  $('status').textContent='BINANCE • '+new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'});
+  signal();$('load').style.display='none';if(old&&Math.abs(price-old)/old>.0003)snd(price>old?760:260,.12);draw();
+ }catch(e){$('status').textContent='RETRYING…';$('load').style.display='block';$('load').innerHTML='<div class="loader"></div>WAITING FOR MARKET';}
 }
-function ema(arr,n){let k=2/(n+1),e=arr[0];return arr.map((v,i)=>i?e=v*k+e*(1-k):e)}
-function rsi(arr,n=14){let g=0,l=0;for(let i=1;i<=n;i++){let d=arr[i]-arr[i-1];g+=Math.max(0,d);l+=Math.max(0,-d)}g/=n;l/=n;let rs=l?g/l:100;let out=new Array(n).fill(50);out.push(100-100/(1+rs));for(let i=n+1;i<arr.length;i++){let d=arr[i]-arr[i-1];g=(g*(n-1)+Math.max(0,d))/n;l=(l*(n-1)+Math.max(0,-d))/n;rs=l?g/l:100;out.push(100-100/(1+rs))}return out}
-function calcSignal(){
- if(candles.length<25)return;
- const closes=candles.map(x=>x.c),e9=ema(closes,9),e21=ema(closes,21),rv=rsi(closes),last=closes.length-1;
- let score=50;
- if(e9[last]>e21[last])score+=18;else score-=18;
- if(rv[last]>55)score+=12;else if(rv[last]<45)score-=12;
- if(closes[last]>closes[last-3])score+=8;else score-=8;
- score=Math.max(8,Math.min(92,score));
- const word=score>=62?'BUY':score<=38?'SELL':'NEUTRAL';
- $('signalWord').textContent=word;$('signalPct').textContent=score+'%';
- $('signalWord').style.color=word==='BUY'?'var(--green)':word==='SELL'?'var(--red)':'var(--text)';
- $('signalPct').style.color=word==='BUY'?'var(--green)':word==='SELL'?'var(--red)':'var(--text)';
- $('signalReason').textContent='· '+(rv[last].toFixed(1))+' RSI';
+function ema(a,n){let k=2/(n+1),e=a[0],o=[e];for(let i=1;i<a.length;i++){e=a[i]*k+e*(1-k);o.push(e)}return o}
+function rsi(a,n=14){let g=0,l=0;for(let i=1;i<=n;i++){let q=a[i]-a[i-1];g+=Math.max(0,q);l+=Math.max(0,-q)}g/=n;l/=n;let out=Array(n).fill(50),rs=l?g/l:99;out.push(100-100/(1+rs));for(let i=n+1;i<a.length;i++){let q=a[i]-a[i-1];g=(g*(n-1)+Math.max(0,q))/n;l=(l*(n-1)+Math.max(0,-q))/n;rs=l?g/l:99;out.push(100-100/(1+rs))}return out}
+function signal(){if(data.length<25)return;let a=data.map(q=>q.c),e=ema(a,9),e2=ema(a,21),r=rsi(a),i=a.length-1,s=50;s+=e[i]>e2[i]?18:-18;s+=r[i]>55?12:r[i]<45?-12:0;s+=a[i]>a[i-3]?8:-8;s=Math.max(7,Math.min(93,Math.round(s)));let q=s>=62?'BUY':s<=38?'SELL':'NEUTRAL';$('sig').textContent=q;$('sig').style.color=q==='BUY'?'#32e9a4':q==='SELL'?'#ff5062':'#eef6ff';$('conf').textContent=s+'%';$('conf').style.color=q==='BUY'?'#32e9a4':q==='SELL'?'#ff5062':'#eef6ff';$('reason').textContent='· RSI '+r[i].toFixed(0)}
+function P(px,py,pz=0){let cy=Math.cos(rot),sy=Math.sin(rot),ct=Math.cos(tilt),st=Math.sin(tilt),X=px*cy-pz*sy,Z=px*sy+pz*cy,Y=py*ct-Z*st;Z=py*st+Z*ct;let q=650*zoom/(650+Z);return[W/2+X*q,H*.58-Y*q,q]}
+function bg(){
+ let day=theme==='day',g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,day?'#bcd9ed':'#06172f');g.addColorStop(.5,day?'#77a7c8':'#061022');g.addColorStop(1,day?'#29475f':'#01040a');x.fillStyle=g;x.fillRect(0,0,W,H);
+ let rg=x.createRadialGradient(W*.5,H*.55,20,W*.5,H*.55,Math.max(W,H)*.62);rg.addColorStop(0,day?'rgba(255,210,105,.2)':'rgba(30,130,255,.18)');rg.addColorStop(1,'transparent');x.fillStyle=rg;x.fillRect(0,0,W,H);
+ // stars
+ for(let i=0;i<75;i++){let xx=(i*97.31%W),yy=(i*53.17%H*.62),r=(i%3)*.35+.35;x.fillStyle=day?'rgba(255,255,255,.25)':'rgba(190,225,255,'+(i%5/12+.16)+')';x.beginPath();x.arc(xx,yy,r,0,Math.PI*2);x.fill()}
+ // planet
+ x.save();x.beginPath();x.ellipse(W*.5,H*.78,W*.74,H*.28,0,0,Math.PI*2);let pg=x.createRadialGradient(W*.5,H*.63,10,W*.5,H*.78,W*.7);pg.addColorStop(0,day?'rgba(225,243,255,.85)':'rgba(16,48,91,.9)');pg.addColorStop(1,day?'rgba(52,79,100,.8)':'rgba(2,8,18,.95)');x.fillStyle=pg;x.shadowBlur=day?25:50;x.shadowColor=day?'#fff':'#167cff';x.fill();x.restore();
+ x.beginPath();x.ellipse(W*.5,H*.70,W*.75,H*.29,0,Math.PI,Math.PI*2);x.strokeStyle=day?'rgba(255,255,255,.6)':'rgba(54,177,255,.75)';x.lineWidth=3;x.shadowBlur=25;x.shadowColor=x.strokeStyle;x.stroke();x.shadowBlur=0;
 }
-function project(x,y,z){
- let cy=Math.cos(rotY),sy=Math.sin(rotY),cx=Math.cos(rotX),sx=Math.sin(rotX);
- let X=x*cy-z*sy,Z=x*sy+z*cy,Y=y*cx-Z*sx;Z=y*sx+Z*cx;
- let f=620*zoom/(620+Z);return [W/2+X*f,H*.57-Y*f,f,Z]
-}
+function grid(){
+ let day=theme==='day';x.save();for(let i=0;i<7;i++){let xx=-330+i*110,a=P(xx,155,-80),b=P(xx,-155,-80);x.strokeStyle=day?'rgba(22,70,100,.16)':'rgba(77,168,255,.13)';x.lineWidth=1;x.beginPath();x.moveTo(a[0],a[1]);x.lineTo(b[0],b[1]);x.stroke()}for(let j=0;j<6;j++){let yy=145-j*58,a=P(-380,yy,-80),b=P(380,yy,-80);x.beginPath();x.moveTo(a[0],a[1]);x.lineTo(b[0],b[1]);x.stroke()}x.restore()}
 function draw(){
- ctx.clearRect(0,0,W,H);
- const day=theme==='day';
- // space/planet backdrop
- const g=ctx.createLinearGradient(0,0,0,H);g.addColorStop(0,day?'#bcd9ee':'#081a37');g.addColorStop(.52,day?'#6e9fc7':'#061022');g.addColorStop(1,day?'#29445e':'#02050d');ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
- // glow
- let rg=ctx.createRadialGradient(W*.5,H*.52,10,W*.5,H*.52,Math.max(W,H)*.6);rg.addColorStop(0,day?'rgba(255,210,100,.16)':'rgba(35,125,255,.13)');rg.addColorStop(1,'transparent');ctx.fillStyle=rg;ctx.fillRect(0,0,W,H);
- // planet horizon
- ctx.save();ctx.beginPath();ctx.ellipse(W*.5,H*.71,W*.67,H*.27,0,0,Math.PI*2);ctx.fillStyle=day?'rgba(190,226,255,.62)':'rgba(10,34,70,.88)';ctx.shadowBlur=day?30:55;ctx.shadowColor=day?'#fff':'#167cff';ctx.fill();ctx.restore();
- // planet rim
- ctx.save();ctx.beginPath();ctx.ellipse(W*.5,H*.70,W*.69,H*.275,0,Math.PI,Math.PI*2);ctx.strokeStyle=day?'rgba(255,255,255,.6)':'rgba(53,168,255,.8)';ctx.lineWidth=3;ctx.shadowBlur=22;ctx.shadowColor=ctx.strokeStyle;ctx.stroke();ctx.restore();
- drawPlatform(day);
- drawChart(day);
+ x.clearRect(0,0,W,H);bg();grid();if(!data.length){return}
+ let arr=data.slice(-65),vals=arr.flatMap(q=>[q.h,q.l]),mn=Math.min(...vals),mx=Math.max(...vals),rg=mx-mn||1,cx=-(arr.length-1)*10.5/2;
+ if(mode==='line'){let e=arr.map(q=>q.c);x.beginPath();e.forEach((v,i)=>{let p=P(cx+i*10.5,145-(v-mn)/rg*250,0);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])});x.strokeStyle='#3ed8ff';x.lineWidth=3;x.shadowBlur=16;x.shadowColor='#3ed8ff';x.stroke();x.shadowBlur=0}
+ else arr.forEach((q,i)=>{let xx=cx+i*10.5,o=145-(q.o-mn)/rg*250,cc=145-(q.c-mn)/rg*250,hh=145-(q.h-mn)/rg*250,ll=145-(q.l-mn)/rg*250,pH=P(xx,hh),pL=P(xx,ll),pO=P(xx,o),pC=P(xx,cc),up=q.c>=q.o,col=up?'#24e5bd':'#ff4e82';x.strokeStyle=col;x.lineWidth=2;x.shadowBlur=9;x.shadowColor=col;x.beginPath();x.moveTo(pH[0],pH[1]);x.lineTo(pL[0],pL[1]);x.stroke();x.shadowBlur=0;let w=7,top=Math.min(pO[1],pC[1]),bh=Math.max(3,Math.abs(pC[1]-pO[1]));x.fillStyle=col;x.fillRect(pC[0]-w/2,top,w,bh);x.strokeStyle='rgba(255,255,255,.35)';x.strokeRect(pC[0]-w/2,top,w,bh);if(mode==='volume'){let vh=q.v/(Math.max(...arr.map(z=>z.v))||1)*50;x.globalAlpha=.3;x.fillRect(pC[0]-w/2,145-vh,w,vh);x.globalAlpha=1}});
+ if(showEMA){let e=ema(arr.map(q=>q.c),9);x.beginPath();e.forEach((v,i)=>{let p=P(cx+i*10.5,145-(v-mn)/rg*250,1);i?x.lineTo(p[0],p[1]):x.moveTo(p[0],p[1])});x.strokeStyle='#ffd34e';x.lineWidth=2;x.stroke()}
+ if(showBB){let a=arr.map(q=>q.c),n=20;x.strokeStyle='rgba(111,201,255,.7)';x.lineWidth=1;for(let sign of [-1,1]){x.beginPath();for(let i=n;i<a.length;i++){let s=a.slice(i-n,i),m=s.reduce((u,v)=>u+v,0)/n,sd=Math.sqrt(s.reduce((u,v)=>u+(v-m)**2,0)/n),v=m+sign*2*sd,p=P(cx+i*10.5,145-(v-mn)/rg*250,0);i===n?x.moveTo(p[0],p[1]):x.lineTo(p[0],p[1])}x.stroke()}}
+ if(showRSI){let r=rsi(arr.map(q=>q.c)),y=H*.78;x.fillStyle='rgba(2,8,18,.62)';x.fillRect(25,y,W-50,43);x.strokeStyle='#d76cff';x.beginPath();r.forEach((v,i)=>{let xx=25+i*(W-50)/(r.length-1),yy=y+43-v*.43;i?x.lineTo(xx,yy):x.moveTo(xx,yy)});x.stroke();x.fillStyle='#fff';x.font='800 9px system-ui';x.fillText('RSI 14  '+r[r.length-1].toFixed(1),33,y+13)}
+ // floating BUY/SELL crosses
+ if(arr.length>20){let a=arr.map(q=>q.c),e=ema(a,9),e2=ema(a,21);for(let i=1;i<arr.length;i++){let up=e[i]>e2[i]&&e[i-1]<=e2[i-1],dn=e[i]<e2[i]&&e[i-1]>=e2[i-1];if(up||dn){let yy=145-(arr[i].c-mn)/rg*250,p=P(cx+i*10.5,yy,2),col=up?'#32e9a4':'#ff5062';x.fillStyle=col;x.shadowBlur=15;x.shadowColor=col;x.beginPath();x.arc(p[0],p[1]+(up?17:-17),5,0,Math.PI*2);x.fill();x.shadowBlur=0;x.fillStyle='#fff';x.font='900 8px system-ui';x.fillText(up?'BUY':'SELL',p[0]-11,p[1]+(up?31:-27))}}}
 }
-function drawPlatform(day){
- const baseY=H*.77;
- ctx.save();ctx.translate(W/2,baseY);
- ctx.fillStyle=day?'rgba(35,48,58,.45)':'rgba(2,9,19,.8)';ctx.strokeStyle=day?'rgba(255,255,255,.35)':'rgba(49,170,255,.35)';ctx.lineWidth=2;
- ctx.beginPath();ctx.ellipse(0,0,W*.46,35,0,0,Math.PI*2);ctx.fill();ctx.stroke();
- ctx.beginPath();ctx.ellipse(0,-10,W*.36,20,0,0,Math.PI*2);ctx.stroke();
- for(let i=-5;i<=5;i++){ctx.beginPath();ctx.moveTo(i*55,-8);ctx.lineTo(i*85,28);ctx.stroke()}
- ctx.restore();
- // sci-fi towers
- for(const s of [-1,1]){
-  let x=W/2+s*W*.38,y=H*.56;ctx.save();ctx.translate(x,y);ctx.fillStyle=day?'rgba(75,88,99,.7)':'rgba(10,23,42,.9)';ctx.strokeStyle=day?'rgba(255,193,73,.7)':'rgba(52,163,255,.8)';
-  ctx.beginPath();ctx.moveTo(-22,85);ctx.lineTo(-10,-15);ctx.lineTo(10,-45);ctx.lineTo(22,85);ctx.closePath();ctx.fill();ctx.stroke();
-  for(let j=0;j<6;j++){ctx.fillStyle=day?'#ffd45d':'#31b9ff';ctx.fillRect(-3,-5+j*14,6,4)}
-  ctx.restore();
- }
-}
-function drawChart(day){
- if(!candles.length)return;
- const data=candles.slice(-70), vals=data.flatMap(x=>[x.h,x.l]);let min=Math.min(...vals),max=Math.max(...vals),range=max-min||1;
- const centerX=-((data.length-1)*11)/2;
- const scaleX=10.5;
- const baseY=150, z=0;
- const points=data.map((d,i)=>{let yy=(d.c-min)/range;return project(centerX+i*scaleX,baseY-yy*260,z)});
- // grid
- ctx.save();for(let gy=0;gy<5;gy++){let y=baseY-gy*65;let a=project(centerX-20,y,z);let b=project(centerX+data.length*scaleX+20,y,z);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.strokeStyle=day?'rgba(30,65,90,.22)':'rgba(90,160,255,.14)';ctx.lineWidth=1;ctx.stroke()}
- for(let i=0;i<8;i++){let x=centerX+i*(data.length*scaleX/7);let a=project(x,baseY+8,-35),b=project(x,baseY-270,-35);ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.strokeStyle=day?'rgba(30,65,90,.18)':'rgba(90,160,255,.11)';ctx.stroke()}ctx.restore();
- if(mode==='line'){ctx.beginPath();points.forEach((p,i)=>i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]));ctx.strokeStyle=day?'#0b72c7':'#48d7ff';ctx.lineWidth=3;ctx.shadowBlur=15;ctx.shadowColor=ctx.strokeStyle;ctx.stroke();drawSignals(data,points);return}
- data.forEach((d,i)=>{
-   let x=centerX+i*scaleX;
-   let yo=baseY-(d.o-min)/range*260, yc=baseY-(d.c-min)/range*260, yh=baseY-(d.h-min)/range*260, yl=baseY-(d.l-min)/range*260;
-   let pH=project(x,yh,z),pL=project(x,yl,z),pO=project(x,yo,z),pC=project(x,yc,z);
-   let up=d.c>=d.o,col=up?(day?'#11a36b':'#32e7c0'):(day?'#e34b20':'#ff4e9b');
-   ctx.strokeStyle=col;ctx.lineWidth=2;ctx.shadowBlur=10;ctx.shadowColor=col;ctx.beginPath();ctx.moveTo(pH[0],pH[1]);ctx.lineTo(pL[0],pL[1]);ctx.stroke();ctx.shadowBlur=0;
-   let w=Math.max(5,scaleX*.65),top=Math.min(pO[1],pC[1]),bh=Math.max(4,Math.abs(pC[1]-pO[1]));ctx.fillStyle=col;ctx.fillRect(pC[0]-w/2,top,w,bh);ctx.strokeStyle='rgba(255,255,255,.35)';ctx.strokeRect(pC[0]-w/2,top,w,bh);
-   if(mode==='volume'){let vh=(d.v/(Math.max(...data.map(q=>q.v))||1))*65;ctx.globalAlpha=.35;ctx.fillRect(pC[0]-w/2,baseY-vh,w,vh);ctx.globalAlpha=1}
- });
- if(showEMA){const closes=data.map(x=>x.c),es=ema(closes,9);ctx.beginPath();es.forEach((v,i)=>{let y=baseY-(v-min)/range*260,p=project(centerX+i*scaleX,y,z);i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1])});ctx.strokeStyle=day?'#f1a800':'#ffd34e';ctx.lineWidth=2;ctx.stroke()}
- if(showBB){const closes=data.map(x=>x.c),n=20;ctx.strokeStyle='rgba(120,190,255,.8)';ctx.lineWidth=1.2;for(const mult of [-1,1]){ctx.beginPath();for(let i=n;i<closes.length;i++){let a=closes.slice(i-n,i),m=a.reduce((x,y)=>x+y,0)/n,s=Math.sqrt(a.reduce((x,y)=>x+(y-m)**2,0)/n),v=m+mult*2*s,y=baseY-(v-min)/range*260,p=project(centerX+i*scaleX,y,z);i===n?ctx.moveTo(p[0],p[1]):ctx.lineTo(p[0],p[1])}ctx.stroke()}}
- drawSignals(data,points);
- if(showRSI)drawRSI(data);
- // current price line/label
- const last=data[data.length-1], lp=points[points.length-1];ctx.strokeStyle=day?'rgba(20,110,210,.45)':'rgba(65,190,255,.4)';ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(50,lp[1]);ctx.lineTo(W-35,lp[1]);ctx.stroke();ctx.setLineDash([]);
- ctx.fillStyle=day?'#fff':'#dff6ff';ctx.font='800 11px system-ui';ctx.fillText(fmt(last.c),Math.min(W-75,lp[0]+12),lp[1]-6);
-}
-function drawSignals(data,points){
- if(data.length<20)return;let closes=data.map(x=>x.c),e9=ema(closes,9),e21=ema(closes,21);
- for(let i=1;i<data.length;i++){let crossUp=e9[i]>e21[i]&&e9[i-1]<=e21[i-1],crossDn=e9[i]<e21[i]&&e9[i-1]>=e21[i-1];if(crossUp||crossDn){let p=points[i],buy=crossUp;ctx.fillStyle=buy?'#18e69a':'#ff4f58';ctx.shadowBlur=14;ctx.shadowColor=ctx.fillStyle;ctx.beginPath();ctx.arc(p[0],p[1]+(buy?18:-18),5,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;ctx.fillStyle='#fff';ctx.font='900 9px system-ui';ctx.fillText(buy?'BUY':'SELL',p[0]-12,p[1]+(buy?34:-30))}}
-}
-function drawRSI(data){let closes=data.map(x=>x.c),rv=rsi(closes),x0=30,y0=H*.78,w=W-60,h=45;ctx.save();ctx.fillStyle='rgba(5,12,25,.55)';ctx.fillRect(x0,y0,w,h);ctx.strokeStyle='rgba(150,180,220,.22)';ctx.strokeRect(x0,y0,w,h);ctx.strokeStyle='#d96bff';ctx.lineWidth=2;ctx.beginPath();rv.forEach((v,i)=>{let x=x0+i*w/(rv.length-1),y=y0+h-(v/100)*h;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();ctx.fillStyle='#fff';ctx.font='800 9px system-ui';ctx.fillText('RSI 14  '+rv[rv.length-1].toFixed(1),x0+8,y0+14);ctx.restore()}
-function reset(){rotX=.18;rotY=-.18;zoom=1;draw();toast('3D вид сброшен')}
-canvas.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY;canvas.setPointerCapture(e.pointerId);});
-canvas.addEventListener('pointermove',e=>{if(!drag)return;rotY+=(e.clientX-lastX)*.006;rotX+=(e.clientY-lastY)*.004;rotX=Math.max(-1.1,Math.min(1.1,rotX));lastX=e.clientX;lastY=e.clientY;draw()});
-canvas.addEventListener('pointerup',e=>{drag=false;let now=Date.now();if(now-lastTap<320)reset();lastTap=now});
-canvas.addEventListener('wheel',e=>{e.preventDefault();zoom*=e.deltaY>0?.92:1.08;zoom=Math.max(.65,Math.min(1.8,zoom));draw()},{passive:false});
-let touches=new Map();
-canvas.addEventListener('touchstart',e=>{for(const t of e.changedTouches)touches.set(t.identifier,{x:t.clientX,y:t.clientY});if(touches.size===2){const a=[...touches.values()];pinch=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}},{passive:false});
-canvas.addEventListener('touchmove',e=>{if(touches.size!==2)return;for(const t of e.changedTouches)touches.set(t.identifier,{x:t.clientX,y:t.clientY});const a=[...touches.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);zoom*=d/pinch;zoom=Math.max(.65,Math.min(1.8,zoom));pinch=d;draw();e.preventDefault()},{passive:false});
-canvas.addEventListener('touchend',e=>{for(const t of e.changedTouches)touches.delete(t.identifier)});
-$('dayBtn').onclick=()=>setTheme('day');$('nightBtn').onclick=()=>setTheme('night');
-$('fullBtn').onclick=async()=>{try{if(!document.fullscreenElement)await document.documentElement.requestFullscreen();else await document.exitFullscreen()}catch{toast('Полный экран недоступен')}}
-$('soundBtn').onclick=()=>toast('Звук интерфейса включён');
-document.querySelectorAll('.tf').forEach(b=>b.onclick=()=>{document.querySelectorAll('.tf').forEach(x=>x.classList.remove('active'));b.classList.add('active');tf=b.dataset.tf;load()});
-document.querySelectorAll('.modeBtn[data-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('.modeBtn[data-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');mode=b.dataset.mode;draw()});
-$('emaBtn').onclick=()=>{showEMA=!showEMA;$('emaBtn').classList.toggle('active',showEMA);draw()};
-$('rsiBtn').onclick=()=>{showRSI=!showRSI;$('rsiBtn').classList.toggle('active',showRSI);draw()};
-$('bbBtn').onclick=()=>{showBB=!showBB;$('bbBtn').classList.toggle('active',showBB);draw()};
-$('indNav').onclick=()=>{$('emaBtn').scrollIntoView({behavior:'smooth',inline:'center'});toast('Индикаторы готовы')};
-$('spaceNav').onclick=()=>{reset();toast('Космический вид сброшен')};
-resize();load();pollTimer=setInterval(load,15000);
+let pts=[];function particles(){pts=Array.from({length:45},(_,i)=>({x:Math.random()*W,y:Math.random()*H*.65,s:.3+Math.random()*1.5,v:.15+Math.random()*.45,a:.15+Math.random()*.55}));}
+function animate(){anim+=.016;f.clearRect(0,0,W,H);for(const p of pts){p.y-=p.v;if(p.y<0)p.y=H*.65;p.x+=Math.sin(anim+p.y*.01)*.08;f.globalAlpha=p.a;f.fillStyle=theme==='day'?'rgba(255,255,255,.65)':'rgba(72,183,255,.8)';f.beginPath();f.arc(p.x,p.y,p.s,0,Math.PI*2);f.fill()}f.globalAlpha=1;requestAnimationFrame(animate)}
+c.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;c.setPointerCapture(e.pointerId)});
+c.addEventListener('pointermove',e=>{if(!drag)return;rot+=(e.clientX-lx)*.006;tilt=Math.max(-.65,Math.min(.65,tilt+(e.clientY-ly)*.003));lx=e.clientX;ly=e.clientY;draw()});
+c.addEventListener('pointerup',e=>{drag=false;let n=Date.now();if(n-lastTap<300){rot=0;tilt=.12;zoom=1;draw();toast('3D VIEW RESET');snd(600)}lastTap=n});
+c.addEventListener('wheel',e=>{zoom*=e.deltaY>0?.92:1.08;zoom=Math.max(.65,Math.min(1.7,zoom));draw()},{passive:true});
+let touch={};c.addEventListener('touchstart',e=>{for(let t of e.changedTouches)touch[t.identifier]={x:t.clientX,y:t.clientY};if(Object.keys(touch).length===2){let a=Object.values(touch);pinch=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y)}},{passive:false});
+c.addEventListener('touchmove',e=>{for(let t of e.changedTouches)if(touch[t.identifier])touch[t.identifier]={x:t.clientX,y:t.clientY};let a=Object.values(touch);if(a.length===2){let q=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);zoom*=q/pinch;zoom=Math.max(.65,Math.min(1.7,zoom));pinch=q;draw();e.preventDefault()}},{passive:false});
+c.addEventListener('touchend',e=>{for(let t of e.changedTouches)delete touch[t.identifier]});
+document.querySelectorAll('[data-tf]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-tf]').forEach(z=>z.classList.remove('on'));b.classList.add('on');tf=b.dataset.tf;snd(500);load()});
+$('candle').onclick=()=>{mode='candle';setMode('candle')};$('line').onclick=()=>{mode='line';setMode('line')};$('volume').onclick=()=>{mode='volume';setMode('volume')};
+function setMode(m){document.querySelectorAll('[id=candle],[id=line],[id=volume]').forEach(b=>b.classList.remove('on'));$(m).classList.add('on');draw();snd(580)}
+$('ema').onclick=()=>{showEMA=!showEMA;$('ema').classList.toggle('on',showEMA);draw();snd(600)};
+$('rsi').onclick=()=>{showRSI=!showRSI;$('rsi').classList.toggle('on',showRSI);draw();snd(640)};
+$('bb').onclick=()=>{showBB=!showBB;$('bb').classList.toggle('on',showBB);draw();snd(680)};
+$('nReset').onclick=()=>{rot=0;tilt=.12;zoom=1;draw();toast('3D VIEW RESET');snd(600)};
+$('nSpace').onclick=()=>{rot+=.7;draw();toast('SPACE CAMERA');snd(720)};
+$('nInd').onclick=()=>{$('ema').scrollIntoView({behavior:'smooth',inline:'center'});toast('INDICATORS');snd(560)};
+$('nMore').onclick=()=>toast('DAY/NIGHT • SOUND • FULLSCREEN');
+setTheme('night');resize();animate();load();setInterval(load,15000);
 })();
 </script>
 </body>
