@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Dogizen</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main class="app">
+  <header class="top">
+    <div><h1>🐶 Dogizen</h1><p>Собирай • объединяй • лови кости</p></div>
+    <div class="stats">
+      <span>🪙 <b id="coins">500</b></span>
+      <span>🦴 <b id="bones">20</b></span>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="kennel">🏠 Питомник</button>
+    <button class="tab" data-tab="fish">🎣 Рыбалка</button>
+    <button class="tab" data-tab="quests">🎯 Задания</button>
+    <button class="tab" data-tab="shop">🛒 Магазин</button>
+  </nav>
+
+  <section id="kennel" class="page active">
+    <div class="bar">
+      <div><b>Уровень <span id="level">1</span></b><small> Доход: <span id="income">2</span>/мин</small></div>
+      <button id="auto" class="secondary">⚡ Auto Merge: OFF</button>
+    </div>
+    <div id="board" class="board" aria-label="Поле питомника"></div>
+    <div class="controls">
+      <button id="spawn" class="primary">🐕 Новый щенок · 50</button>
+      <button id="merge" class="secondary">🧬 Объединить</button>
+      <button id="claim" class="secondary">🎁 Забрать дроп</button>
+    </div>
+    <div id="event" class="event">Выбери двух одинаковых собак или перетащи одну на другую.</div>
+    <div class="drop-info">Новые щенки периодически падают сверху. Заполняй поле, объединяй пары и открывай редкие породы.</div>
+  </section>
+
+  <section id="fish" class="page">
+    <div class="panel">
+      <h2>🎣 Ловля костей</h2>
+      <p>Останови бегунок в зелёной зоне. Хороший улов даёт больше 🦴.</p>
+      <div class="meter"><div id="needle"></div><div class="sweet"></div></div>
+      <button id="cast" class="primary">Забросить · 3 🦴</button>
+      <p id="fishResult" class="event">Рыбалка использует кости как премиальную валюту.</p>
+    </div>
+  </section>
+
+  <section id="quests" class="page">
+    <div class="panel">
+      <h2>🎯 Ежедневные задания</h2>
+      <div id="questsList"></div>
+      <button id="daily" class="secondary">🎁 Ежедневный бонус</button>
+    </div>
+  </section>
+
+  <section id="shop" class="page">
+    <div class="panel">
+      <h2>🛒 Магазин</h2>
+      <div class="shopgrid">
+        <button data-buy="boost" class="shopitem">🚀 Ускоритель<br><small>+500% дохода на 60 сек · 25 🦴</small></button>
+        <button data-buy="pack" class="shopitem">📦 Набор щенков<br><small>+4 щенка · 30 🦴</small></button>
+        <button data-buy="space" class="shopitem">🏡 Новое место<br><small>+4 клетки · 2000 🪙</small></button>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>🏆 Таблица лидеров</h2>
+      <div id="leaders">Загрузка…</div>
+    </div>
+  </section>
+</main>
+<script src="./app.js"></script>
+</body>
+</html>
