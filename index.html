@@ -1,76 +1,33 @@
-<!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Dogizen</title>
-  <link rel="stylesheet" href="./style.css">
-</head>
-<body>
-<main class="app">
-  <header class="top">
-    <div><h1>🐶 Dogizen</h1><p>Собирай • объединяй • лови кости</p></div>
-    <div class="stats">
-      <span>🪙 <b id="coins">500</b></span>
-      <span>🦴 <b id="bones">20</b></span>
-    </div>
-  </header>
-
-  <nav class="tabs">
-    <button class="tab active" data-tab="kennel">🏠 Питомник</button>
-    <button class="tab" data-tab="fish">🎣 Рыбалка</button>
-    <button class="tab" data-tab="quests">🎯 Задания</button>
-    <button class="tab" data-tab="shop">🛒 Магазин</button>
-  </nav>
-
-  <section id="kennel" class="page active">
-    <div class="bar">
-      <div><b>Уровень <span id="level">1</span></b><small> Доход: <span id="income">2</span>/мин</small></div>
-      <button id="auto" class="secondary">⚡ Auto Merge: OFF</button>
-    </div>
-    <div id="board" class="board" aria-label="Поле питомника"></div>
-    <div class="controls">
-      <button id="spawn" class="primary">🐕 Новый щенок · 50</button>
-      <button id="merge" class="secondary">🧬 Объединить</button>
-      <button id="claim" class="secondary">🎁 Забрать дроп</button>
-    </div>
-    <div id="event" class="event">Выбери двух одинаковых собак или перетащи одну на другую.</div>
-    <div class="drop-info">Новые щенки периодически падают сверху. Заполняй поле, объединяй пары и открывай редкие породы!</div>
-  </section>
-
-  <section id="fish" class="page">
-    <div class="panel">
-      <h2>🎣 Ловля костей</h2>
-      <p>Останови бегунок в зелёной зоне. Хороший улов даёт больше 🦴.</p>
-      <div class="meter"><div id="needle"></div><div class="sweet"></div></div>
-      <button id="cast" class="primary">Забросить · 3 🦴</button>
-      <p id="fishResult" class="event">Рыбалка использует кости как премиальную валюту.</p>
-    </div>
-  </section>
-
-  <section id="quests" class="page">
-    <div class="panel">
-      <h2>🎯 Ежедневные задания</h2>
-      <div id="questsList"></div>
-      <button id="daily" class="secondary">🎁 Ежедневный бонус</button>
-    </div>
-  </section>
-
-  <section id="shop" class="page">
-    <div class="panel">
-      <h2>🛒 Магазин</h2>
-      <div class="shopgrid">
-        <button data-buy="boost" class="shopitem">🚀 Ускоритель<br><small>+500% дохода на 60 сек · 25 🦴</small></button>
-        <button data-buy="pack" class="shopitem">📦 Набор щенков<br><small>+4 щенка · 30 🦴</small></button>
-        <button data-buy="space" class="shopitem">🏡 Новое место<br><small>+4 клетки · 2000 🪙</small></button>
-      </div>
-    </div>
-    <div class="panel">
-      <h2>🏆 Таблица лидеров</h2>
-      <div id="leaders">Загрузка…</div>
-    </div>
-  </section>
-</main>
-<script src="./app.js"></script>
-</body>
-</html>
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#030712"><title>BTC 3D — Space Signals</title>
+<script src="https://cdn.jsdelivr.net/npm/three@0.161.0/build/three.min.js"></script>
+<style>
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#02040b;color:#eef5ff;font-family:Inter,system-ui,-apple-system,Segoe UI,sans-serif}button{font:inherit;color:inherit;border:0}.app{position:fixed;inset:0;background:radial-gradient(circle at 60% 35%,#12204455,transparent 45%),#02040b}.space{position:absolute;inset:0;background:radial-gradient(circle at 70% 20%,#2b4c9140,transparent 25%),radial-gradient(circle at 20% 80%,#5c2d7b25,transparent 30%)}canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none}.hud{position:absolute;inset:0;pointer-events:none}.top{position:absolute;top:max(12px,env(safe-area-inset-top));left:14px;right:14px;display:flex;justify-content:space-between;align-items:flex-start}.pair{display:flex;gap:9px;align-items:center}.btc{width:39px;height:39px;border-radius:50%;display:grid;place-items:center;background:#f7931a;color:white;font-size:23px;font-weight:900;box-shadow:0 0 25px #f7931a66}.pair b{display:block;font-size:16px}.pair small{color:#8ea0bd;font-size:10px}.price{font-size:25px;font-weight:900;margin-top:4px}.up{color:#43e69a}.stats{text-align:right;color:#8ea0bd;font-size:9px;line-height:1.8}.stats b{color:#e9f0fb;font-size:10px}.panel{pointer-events:auto;background:#07101ddd;border:1px solid #31415f99;backdrop-filter:blur(12px);box-shadow:0 12px 40px #0008;border-radius:15px}.timebar{position:absolute;top:92px;left:14px;right:14px;display:flex;gap:5px;padding:6px;overflow:auto}.timebar button,.modebar button{background:#0d1729;color:#9eacc2;border:1px solid #25344d;border-radius:9px;padding:8px 11px;font-size:10px;white-space:nowrap}.timebar button.active,.modebar button.active{background:#2766b8;color:white;border-color:#4c9dff}.modebar{position:absolute;top:137px;left:14px;display:flex;gap:5px;padding:5px}.right{position:absolute;right:14px;top:205px;display:grid;gap:7px}.tool{pointer-events:auto;width:42px;height:42px;border-radius:12px;background:#081222cc;border:1px solid #30405a;color:#aebdd2;font-size:17px}.signal{pointer-events:auto;position:absolute;left:14px;bottom:150px;padding:10px 12px;min-width:150px}.signal b{display:block;font-size:12px}.signal small{display:block;color:#8ea0bd;margin-top:3px;font-size:9px}.buy{color:#43e69a}.sell{color:#ff667c}.controls{position:absolute;left:14px;right:14px;bottom:78px;display:flex;justify-content:space-between;align-items:end}.hint{color:#71829e;font-size:9px}.fs{pointer-events:auto;background:#0c1729dd;border:1px solid #30405a;border-radius:11px;padding:10px 12px;font-size:10px}.bottom{position:absolute;left:14px;right:14px;bottom:max(12px,env(safe-area-inset-bottom));display:flex;gap:6px;justify-content:center}.bottom button{pointer-events:auto;background:#07101ddd;border:1px solid #273751;border-radius:10px;padding:9px 12px;font-size:9px;color:#8191a9}.bottom button.active{color:#fff;border-color:#4c9dff}.legend{position:absolute;right:14px;bottom:150px;color:#8ea0bd;font-size:8px;line-height:1.7;text-align:right}.live{display:inline-block;width:6px;height:6px;border-radius:50%;background:#43e69a;box-shadow:0 0 8px #43e69a;margin-right:4px}.loading{position:absolute;inset:0;display:grid;place-items:center;color:#93a6c3;font-size:12px;pointer-events:none}.loading.hide{display:none}.tip{position:absolute;top:185px;left:50%;transform:translateX(-50%);font-size:8px;color:#60728f;white-space:nowrap}
+</style></head><body><div class="app"><div class="space"></div><div class="loading" id="loading">Загрузка BTC/USDT…</div><canvas id="c"></canvas><div class="hud">
+<div class="top"><div><div class="pair"><div class="btc">₿</div><div><b>BTC/USDT</b><small>Bitcoin / Tether</small></div></div><div class="price" id="price">—</div></div><div class="stats">24H HIGH <b id="hi">—</b><br>24H LOW <b id="lo">—</b><br>24H VOL <b id="vol">—</b></div></div>
+<div class="panel timebar" id="times"><button data-i="1m">1m</button><button data-i="5m">5m</button><button data-i="15m">15m</button><button data-i="1h" class="active">1h</button><button data-i="4h">4h</button><button data-i="1d">1D</button><button data-i="1w">1W</button></div>
+<div class="panel modebar"><button class="active" data-mode="candle">CANDLE</button><button data-mode="line">LINE</button><button data-mode="volume">VOLUME</button></div>
+<div class="tip">DRAG — вращать 3D · PINCH — zoom · DOUBLE TAP — reset</div>
+<div class="right"><button class="tool" id="sig">⚡</button><button class="tool" id="grid">▦</button><button class="tool" id="reset">⌾</button></div>
+<div class="panel signal" id="signal"><b>⚡ TECH SIGNAL</b><small>Расчёт по EMA + RSI + momentum</small><strong id="sigText">Ожидание данных…</strong></div>
+<div class="legend"><span class="live"></span>REAL-TIME<br><span id="count">0</span> свечей · Binance public feed</div>
+<div class="controls"><span class="hint">3D SPACE MARKET</span><button class="fs" id="full">⛶ FULLSCREEN</button></div>
+<div class="bottom"><button class="active">₿ BTC</button><button>ETH</button><button>SOL</button><button>Indicators</button><button>Space</button></div>
+</div></div>
+<script>
+const TA={m1:'1m',m5:'5m',m15:'15m',h1:'1h',h4:'4h',d1:'1d',w1:'1w'};let tf='1h',candles=[],scene,camera,renderer,group,grid,drag=false,lastX=0,lastY=0,rx=.72,ry=-.25,dist=22,mode='candle',showSignals=true;
+const $=x=>document.getElementById(x), C=THREE.Color;
+function init(){scene=new THREE.Scene();scene.fog=new THREE.FogExp2(0x02040b,.012);camera=new THREE.PerspectiveCamera(52,innerWidth/innerHeight,.1,1000);camera.position.set(0,7,dist);renderer=new THREE.WebGLRenderer({canvas:$('c'),antialias:true,alpha:true});renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.outputColorSpace=THREE.SRGBColorSpace;
+scene.add(new THREE.AmbientLight(0x7898c4,1.2));let sun=new THREE.PointLight(0xffa34d,9,50);sun.position.set(-8,9,9);scene.add(sun);let blue=new THREE.PointLight(0x3b82f6,7,40);blue.position.set(10,-2,-8);scene.add(blue);
+grid=new THREE.GridHelper(42,42,0x27436b,0x14233b);grid.rotation.x=0;grid.position.y=-2.2;scene.add(grid);group=new THREE.Group();scene.add(group);stars();animate();bind();}
+function stars(){let g=new THREE.BufferGeometry(),a=[];for(let i=0;i<1600;i++)a.push((Math.random()-.5)*100,(Math.random()-.5)*65,(Math.random()-.5)*100);g.setAttribute('position',new THREE.Float32BufferAttribute(a,3));let m=new THREE.PointsMaterial({color:0x8fb8ff,size:.055,transparent:true,opacity:.8});scene.add(new THREE.Points(g,m))}
+function bind(){addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});$('c').addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY});addEventListener('pointerup',()=>drag=false);addEventListener('pointermove',e=>{if(!drag)return;rx+=(e.clientY-lastY)*.006;ry+=(e.clientX-lastX)*.006;lastX=e.clientX;lastY=e.clientY});$('c').addEventListener('wheel',e=>{dist=Math.max(10,Math.min(42,dist+e.deltaY*.02))});$('reset').onclick=()=>{rx=.72;ry=-.25;dist=22};$('grid').onclick=()=>grid.visible=!grid.visible;$('sig').onclick=()=>showSignals=!showSignals;$('full').onclick=()=>document.documentElement.requestFullscreen?.();
+document.querySelectorAll('#times button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#times button').forEach(x=>x.classList.remove('active'));b.classList.add('active');tf=b.dataset.i;load()});document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-mode]').forEach(x=>x.classList.remove('active'));b.classList.add('active');mode=b.dataset.mode;draw()});}
+function makeCandle(x,o,h,l,cl,i){let up=cl>=o,mat=new THREE.MeshStandardMaterial({color:up?0x19e6a0:0xff526d,emissive:up?0x083c2d:0x42101d,emissiveIntensity:.7,metalness:.65,roughness:.28});let y=(o+cl)/2,body=Math.max(.12,Math.abs(cl-o)),wick=new THREE.MeshStandardMaterial({color:up?0x52ffd0:0xff8395,emissive:up?0x0a7d5d:0x7d142b,emissiveIntensity:.5});let bm=new THREE.BoxGeometry(.34,body,.34),wm=new THREE.BoxGeometry(.07,Math.max(.18,h-l),.07);let b=new THREE.Mesh(bm,mat),w=new THREE.Mesh(wm,wick);b.position.set(x,y,0);w.position.set(x,(h+l)/2,0);group.add(b,w);if(showSignals&&i>10){let sig=signalAt(i);if(sig){let s=new THREE.Mesh(new THREE.SphereGeometry(.11,12,12),new THREE.MeshBasicMaterial({color:sig==='BUY'?0x43e69a:0xff667c}));s.position.set(x,sig==='BUY'?l-.35:h+.35,.05);group.add(s)}}}
+function draw(){while(group.children.length)group.remove(group.children[0]);if(!candles.length)return;let vals=candles.map(x=>x[2]),min=Math.min(...vals),max=Math.max(...vals),scale=16/(max-min||1);candles.forEach((d,i)=>{let [t,o,h,l,cl,v]=d;let f=v=> (v-min)*scale-8;makeCandle((i-(candles.length-1)/2)*.42,f(o),f(h),f(l),f(cl),i)});group.position.y=0;group.rotation.x=rx;group.rotation.y=ry; $('count').textContent=candles.length;updateSignal();$('loading').classList.add('hide')}
+function signalAt(i){let closes=candles.slice(0,i+1).map(x=>x[4]);if(closes.length<30)return null;let ema=(n)=>{let k=2/(n+1),e=closes[0];for(let j=1;j<closes.length;j++)e=closes[j]*k+e*(1-k);return e};let e9=ema(9),e21=ema(21),rs=0,g=0;for(let j=Math.max(1,closes.length-14);j<closes.length;j++){let d=closes[j]-closes[j-1];if(d>0)g+=d;else rs-=d}let rsi=100-(100/(1+(g/(rs||.0001))));if(e9>e21&&rsi>52&&rsi<70)return 'BUY';if(e9<e21&&rsi<48&&rsi>30)return 'SELL';return null}
+function updateSignal(){let s=signalAt(candles.length-1);$('sigText').textContent=s?s==='BUY'?'BUY — бычий импульс':'SELL — медвежий импульс':'NEUTRAL — явного сигнала нет';$('sigText').className=s==='BUY'?'buy':s==='SELL'?'sell':'';let last=candles.at(-1);if(last){let p=last[4];$('price').textContent=p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});$('price').className=last[4]>=last[1]?'price up':'price sell'}}
+async function load(){ $('loading').classList.remove('hide');try{let u=`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${tf}&limit=100`;let a=await fetch(u).then(r=>r.json());candles=a.map(x=>[x[0],+x[1],+x[2],+x[3],+x[4],+x[5]]);let t=await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=BTCUSDT').then(r=>r.json());$('hi').textContent=Number(t.highPrice).toLocaleString();$('lo').textContent=Number(t.lowPrice).toLocaleString();$('vol').textContent=(+t.volume).toFixed(1)+' BTC';draw();stream()}catch(e){$('loading').textContent='Не удалось получить данные Binance'}} 
+let ws;function stream(){if(ws)ws.close();ws=new WebSocket(`wss://stream.binance.com:9443/ws/btcusdt@kline_${tf}`);ws.onmessage=e=>{let k=JSON.parse(e.data).k,d=[k.t,+k.o,+k.h,+k.l,+k.c,+k.v];if(candles.at(-1)?.[0]===d[0])candles[candles.length-1]=d;else candles.push(d);if(candles.length>100)candles.shift();draw()};ws.onerror=()=>{}}
+function animate(){requestAnimationFrame(animate);camera.position.x=Math.sin(ry)*dist;camera.position.z=Math.cos(ry)*dist;camera.position.y=6+Math.sin(rx)*8;camera.lookAt(0,0,0);renderer.render(scene,camera)}
+init();load();
+</script></body></html>
