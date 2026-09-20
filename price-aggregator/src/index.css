@@ -511,6 +511,14 @@ footer p {
   font-size: 11px;
   font-weight: 800;
 }
+.chip-button {
+  cursor: pointer;
+}
+.chip-button.active {
+  border-color: #cfcfff;
+  background: #f3f3ff;
+  color: #565bd8;
+}
 .product-actions {
   display: flex;
   flex-wrap: wrap;
@@ -667,6 +675,30 @@ footer p {
   font-size: 11px;
   font-weight: 800;
 }
+.quick-view-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -14px 0 22px;
+  padding: 11px 13px;
+  border: 1px solid #dfe0ff;
+  background: #f7f7ff;
+  color: #4c51bf;
+  border-radius: 11px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.quick-view-banner button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: #565bd8;
+  font-size: 10px;
+  font-weight: 800;
+}
 .detail-overlay {
   position: fixed;
   inset: 0;
@@ -739,6 +771,19 @@ footer p {
 .detail-price strong {
   color: #111827;
   font-size: 23px;
+}
+.share-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 11px;
+  padding: 8px 10px;
+  border: 1px solid #e2e5ea;
+  background: white;
+  color: #475467;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 800;
 }
 .detail-grid {
   display: grid;
