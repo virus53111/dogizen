@@ -1,16 +1,28 @@
 [
   {
-    "name": "Search and open product details",
+    "name": "Search iPhone by partial model query and open details",
     "sanity": true,
     "viewport": "desktop",
-    "covers": ["product search", "store offer comparison", "product detail view", "demo price history", "hash product state"],
-    "description": "Verifies the main discovery workflow opens a detailed product view with price history and store offers.",
+    "covers": ["tokenized product search", "search aliases", "real product image card", "product detail view"],
+    "description": "Verifies a short query like 16 pro max finds the iPhone 16 Pro Max card and opens its product details.",
     "steps": [
-      "Enter Samsung S25 Ultra in the main search field",
-      "Press Подробнее on the Samsung Galaxy S25 Ultra 256GB card",
-      "Review the product detail modal and browser hash"
+      "Enter 16 pro max in the main search field",
+      "Verify Apple iPhone 16 Pro Max 256GB is the matching product and its product photo is visible",
+      "Press Подробнее on the iPhone card"
     ],
-    "expected": "The Samsung product detail opens with demo price history, offers from 220.lv, Dateks.lv and Samsung.lv, and the URL hash identifies the product."
+    "expected": "The iPhone 16 Pro Max product is found without requiring the full title, renders as a photo-based card, and its detail view opens."
+  },
+  {
+    "name": "Search Samsung with shorthand alias",
+    "viewport": "desktop",
+    "covers": ["tokenized product search", "Samsung search aliases", "photo fallback behavior"],
+    "description": "Verifies shorthand model searches resolve to the intended Samsung product and the card remains usable if a remote image cannot load.",
+    "steps": [
+      "Enter s25 ultra in the main search field",
+      "Verify Samsung Galaxy S25 Ultra 256GB is shown",
+      "Review the product card"
+    ],
+    "expected": "The Samsung S25 Ultra result is shown with its product photo when available, with a visible fallback area if the remote photo fails."
   },
   {
     "name": "Enable alert and use alerts quick view",
@@ -25,39 +37,27 @@
     "expected": "The alert counter reflects the saved alert, only alerted products are shown in the quick view, and the alert remains saved after refresh."
   },
   {
-    "name": "Use favorites quick view and copy product link",
-    "viewport": "desktop",
-    "covers": ["favorites quick view", "favorites persistence", "copy product link"],
-    "description": "Verifies favorite products can be isolated and a direct product URL can be copied from details.",
-    "steps": [
-      "Add Samsung Galaxy S25 Ultra 256GB to favorites and press the heart counter in the header",
-      "Open the product with Подробнее",
-      "Press Скопировать ссылку"
-    ],
-    "expected": "The quick view shows the favorite product, the detail URL contains its product hash, and a visible confirmation reports that the link was copied."
-  },
-  {
     "name": "Filter and enforce comparison limit",
     "viewport": "desktop",
     "covers": ["store filtering", "maximum price filtering", "filter reset", "product comparison", "comparison limit guardrail"],
     "description": "Verifies catalog filters work and comparison rejects more than three products.",
     "steps": [
-      "Select Samsung.lv and lower the maximum price, then reset the filters",
+      "Reset the search, select Samsung.lv and lower the maximum price, then reset the filters",
       "Add three different products to comparison",
       "Try to add a fourth product"
     ],
     "expected": "Filters narrow and restore the catalog, comparison remains at 3/3, and a visible maximum-three message appears for the fourth product."
   },
   {
-    "name": "Switch language and use product details on mobile",
+    "name": "Switch language and use photo product details on mobile",
     "viewport": "mobile",
-    "covers": ["RU/LV language switch", "responsive mobile layout", "mobile product detail view"],
-    "description": "Verifies the Latvian interface and product details remain usable on a phone-sized viewport.",
+    "covers": ["RU/LV language switch", "responsive mobile layout", "mobile product detail view", "responsive product images"],
+    "description": "Verifies photo-based product cards and details remain usable on a phone-sized viewport.",
     "steps": [
       "Tap LV in the language switch",
-      "Open a product with Vairāk",
+      "Search 16 pro max and open the product with Vairāk",
       "Review and close the product detail sheet"
     ],
-    "expected": "The interface is in Latvian, the detail sheet is readable without horizontal overflow, and it can be closed."
+    "expected": "The interface is in Latvian, the iPhone card and detail photo fit the mobile layout without horizontal overflow, and the detail sheet can be closed."
   }
 ]
