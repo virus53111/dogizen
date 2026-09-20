@@ -1,0 +1,63 @@
+[
+  {
+    "name": "Search and open product details",
+    "sanity": true,
+    "viewport": "desktop",
+    "covers": ["product search", "store offer comparison", "product detail view", "demo price history", "hash product state"],
+    "description": "Verifies the main discovery workflow opens a detailed product view with price history and store offers.",
+    "steps": [
+      "Enter Samsung S25 Ultra in the main search field",
+      "Press Подробнее on the Samsung Galaxy S25 Ultra 256GB card",
+      "Review the product detail modal and browser hash"
+    ],
+    "expected": "The Samsung product detail opens with demo price history, offers from 220.lv, Dateks.lv and Samsung.lv, and the URL hash identifies the product."
+  },
+  {
+    "name": "Enable and persist a price alert",
+    "viewport": "desktop",
+    "covers": ["price alert toggle", "price alert local persistence"],
+    "description": "Verifies a user can enable a demo price-drop alert and the choice survives reload.",
+    "steps": [
+      "Open details for Samsung Galaxy S25 Ultra 256GB",
+      "Press Сообщить о снижении цены",
+      "Refresh the page"
+    ],
+    "expected": "The product detail remains addressable by its hash and the alert button shows that the notification is enabled after refresh."
+  },
+  {
+    "name": "Filter by store and maximum price",
+    "viewport": "desktop",
+    "covers": ["store filtering", "maximum price filtering", "filter reset"],
+    "description": "Verifies the catalog can be narrowed by merchant and maximum price and restored with reset.",
+    "steps": [
+      "Select Samsung.lv in the store filter",
+      "Lower the maximum price below 1500 euros",
+      "Press Сбросить"
+    ],
+    "expected": "Products outside the selected store or price ceiling disappear, and reset restores the full catalog."
+  },
+  {
+    "name": "Limit comparison to three products",
+    "viewport": "desktop",
+    "covers": ["product comparison", "comparison limit guardrail", "comparison persistence"],
+    "description": "Verifies comparison accepts three products, rejects a fourth, and preserves the selected comparison set.",
+    "steps": [
+      "Add three different products to comparison",
+      "Try to add a fourth product",
+      "Refresh the page"
+    ],
+    "expected": "The comparison counter remains 3/3, a visible message says the maximum is three products, and the same three comparison items remain after refresh."
+  },
+  {
+    "name": "Switch language and use product details on mobile",
+    "viewport": "mobile",
+    "covers": ["RU/LV language switch", "responsive mobile layout", "mobile product detail view"],
+    "description": "Verifies the Latvian interface and product details remain usable on a phone-sized viewport.",
+    "steps": [
+      "Tap LV in the language switch",
+      "Open a product with Vairāk",
+      "Review and close the product detail sheet"
+    ],
+    "expected": "The interface is in Latvian, the detail sheet is readable without horizontal overflow, and it can be closed."
+  }
+]
