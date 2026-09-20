@@ -1,0 +1,118 @@
+.mini-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 9px;
+  border: 1px solid #e5e7eb;
+  background: white;
+  border-radius: 9px;
+  color: #475467;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.product-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 13px;
+}
+
+.utility-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 9px;
+  border: 1px solid #e2e5ea;
+  background: white;
+  color: #667085;
+  border-radius: 9px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.utility-button.active {
+  border-color: #d8d8ff;
+  background: #f5f5ff;
+  color: #565bd8;
+}
+
+.compare-tray {
+  width: min(1180px, calc(100% - 32px));
+  margin: 22px auto 0;
+  padding: 16px;
+  border: 1px solid #dedfff;
+  background: #f8f8ff;
+  border-radius: 18px;
+}
+
+.compare-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.compare-head > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475467;
+  font-size: 12px;
+}
+
+.compare-head strong { color: #5b5ff0; }
+
+.compare-head button {
+  border: 0;
+  background: transparent;
+  color: #667085;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.compare-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.compare-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px 34px 12px 12px;
+  background: white;
+  border: 1px solid #e5e7ef;
+  border-radius: 13px;
+}
+
+.compare-emoji { font-size: 25px; }
+.compare-item div { min-width: 0; display: grid; gap: 3px; }
+.compare-item strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; }
+.compare-item small { color: #98a2b3; font-size: 9px; }
+.compare-item b { font-size: 12px; white-space: nowrap; }
+
+.compare-item > button {
+  position: absolute;
+  right: 9px;
+  top: 8px;
+  border: 0;
+  background: transparent;
+  color: #98a2b3;
+  font-size: 18px;
+}
+
+@media (max-width: 900px) {
+  .compare-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 680px) {
+  .top-actions { gap: 6px; }
+  .mini-chip { padding: 6px 7px; }
+  .compare-tray { width: calc(100% - 20px); }
+}
