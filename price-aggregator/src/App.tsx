@@ -9,6 +9,7 @@ import {
   Search,
   ShieldCheck,
   ShoppingBag,
+  Share2,
   SlidersHorizontal,
   Sparkles,
   Store,
@@ -244,6 +245,7 @@ function App() {
   const [alertIds, setAlertIds] = useState<number[]>(() => readStoredIds('cenaradar:alerts'));
   const [storeFilter, setStoreFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState(2000);
+  const [viewMode, setViewMode] = useState<'all' | 'favorites' | 'alerts'>('all');
   const [selectedId, setSelectedId] = useState<number | null>(() => readProductFromHash());
   const t = text[lang];
 
@@ -273,16 +275,20 @@ function App() {
       const matchesStore =
         storeFilter === 'all' || product.offers.some(offer => offer.store === storeFilter);
       const minPrice = Math.min(...product.offers.map(offer => offer.price));
+      const matchesView =
+        viewMode === 'all' ||
+        (viewMode === 'favorites' && favorites.includes(product.id)) ||
+        (viewMode === 'alerts' && alertIds.includes(product.id));
       const haystack =
         `${product.title} ${product.model} ${product.meta} ${product.offers.map(offer => offer.store).join(' ')}`.toLowerCase();
-      return matchesCategory && matchesStore && minPrice <= maxPrice && (!normalized || haystack.includes(normalized));
+      return matchesCategory && matchesStore && matchesView && minPrice <= maxPrice && (!normalized || haystack.includes(normalized));
     });
     return [...filtered].sort((a, b) => {
       const aMin = Math.min(...a.offers.map(offer => offer.price));
       const bMin = Math.min(...b.offers.map(offer => offer.price));
       return sortAsc ? aMin - bMin : bMin - aMin;
     });
-  }, [category, maxPrice, query, sortAsc, storeFilter]);
+  }, [alertIds, category, favorites, maxPrice, query, sortAsc, storeFilter, viewMode]);
   const showToast = (message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(''), 3200);
@@ -331,6 +337,15 @@ function App() {
     );
   };
 
+  const copyProductLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      showToast(lang === 'ru' ? 'Ссылка на товар скопирована.' : 'Preces saite nokopēta.');
+    } catch {
+      showToast(window.location.href);
+    }
+  };
+
   return (
     <div className="site-shell">
       <header className="topbar">
@@ -343,9 +358,20 @@ function App() {
           </span>
         </a>
         <div className="top-actions">
-          <span className="mini-chip" aria-label="Favorites count">
+          <button
+            className={viewMode === 'favorites' ? 'mini-chip chip-button active' : 'mini-chip chip-button'}
+            aria-label="Favorites count"
+            onClick={() => setViewMode(current => current === 'favorites' ? 'all' : 'favorites')}
+          >
             <Heart size={14} /> {favorites.length}
-          </span>
+          </button>
+          <button
+            className={viewMode === 'alerts' ? 'mini-chip chip-button active' : 'mini-chip chip-button'}
+            aria-label="Price alerts count"
+            onClick={() => setViewMode(current => current === 'alerts' ? 'all' : 'alerts')}
+          >
+            <Bell size={14} /> {alertIds.length}
+          </button>
           <span className="mini-chip" aria-label="Comparison count">
             <GitCompare size={14} /> {compareIds.length}/3
           </span>
@@ -461,6 +487,18 @@ function App() {
               {lang === 'ru' ? 'Сбросить' : 'Notīrīt'}
             </button>
           </div>
+          {viewMode !== 'all' && (
+            <div className="quick-view-banner">
+              <span>
+                {viewMode === 'favorites'
+                  ? (lang === 'ru' ? 'Показываем только избранное' : 'Rādām tikai izlasi')
+                  : (lang === 'ru' ? 'Показываем товары с уведомлениями' : 'Rādām preces ar paziņojumiem')}
+              </span>
+              <button onClick={() => setViewMode('all')}>
+                <X size={14} /> {lang === 'ru' ? 'Показать всё' : 'Rādīt visu'}
+              </button>
+            </div>
+          )}
           <div className="results-head">
             <div>
               <span className="results-kicker">CenaRadar</span>
@@ -588,6 +626,9 @@ function App() {
                   {lang === 'ru' ? 'Лучшая цена сейчас' : 'Labākā cena tagad'}
                   <strong>{Math.min(...selectedProduct.offers.map(offer => offer.price)).toFixed(2)} €</strong>
                 </div>
+                <button className="share-button" onClick={copyProductLink}>
+                  <Share2 size={15} /> {lang === 'ru' ? 'Скопировать ссылку' : 'Kopēt saiti'}
+                </button>
               </div>
             </div>
             <div className="detail-grid">
