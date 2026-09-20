@@ -13,40 +13,40 @@
     "expected": "The Samsung product detail opens with demo price history, offers from 220.lv, Dateks.lv and Samsung.lv, and the URL hash identifies the product."
   },
   {
-    "name": "Enable and persist a price alert",
+    "name": "Enable alert and use alerts quick view",
     "viewport": "desktop",
-    "covers": ["price alert toggle", "price alert local persistence"],
-    "description": "Verifies a user can enable a demo price-drop alert and the choice survives reload.",
+    "covers": ["price alert toggle", "price alert local persistence", "alerts quick view", "alert counter"],
+    "description": "Verifies a user can enable a price alert, see its counter, and filter the catalog to alerted products.",
     "steps": [
-      "Open details for Samsung Galaxy S25 Ultra 256GB",
-      "Press Сообщить о снижении цены",
+      "Open details for Samsung Galaxy S25 Ultra 256GB and enable the price alert",
+      "Close the detail view and press the bell counter in the header",
       "Refresh the page"
     ],
-    "expected": "The product detail remains addressable by its hash and the alert button shows that the notification is enabled after refresh."
+    "expected": "The alert counter reflects the saved alert, only alerted products are shown in the quick view, and the alert remains saved after refresh."
   },
   {
-    "name": "Filter by store and maximum price",
+    "name": "Use favorites quick view and copy product link",
     "viewport": "desktop",
-    "covers": ["store filtering", "maximum price filtering", "filter reset"],
-    "description": "Verifies the catalog can be narrowed by merchant and maximum price and restored with reset.",
+    "covers": ["favorites quick view", "favorites persistence", "copy product link"],
+    "description": "Verifies favorite products can be isolated and a direct product URL can be copied from details.",
     "steps": [
-      "Select Samsung.lv in the store filter",
-      "Lower the maximum price below 1500 euros",
-      "Press Сбросить"
+      "Add Samsung Galaxy S25 Ultra 256GB to favorites and press the heart counter in the header",
+      "Open the product with Подробнее",
+      "Press Скопировать ссылку"
     ],
-    "expected": "Products outside the selected store or price ceiling disappear, and reset restores the full catalog."
+    "expected": "The quick view shows the favorite product, the detail URL contains its product hash, and a visible confirmation reports that the link was copied."
   },
   {
-    "name": "Limit comparison to three products",
+    "name": "Filter and enforce comparison limit",
     "viewport": "desktop",
-    "covers": ["product comparison", "comparison limit guardrail", "comparison persistence"],
-    "description": "Verifies comparison accepts three products, rejects a fourth, and preserves the selected comparison set.",
+    "covers": ["store filtering", "maximum price filtering", "filter reset", "product comparison", "comparison limit guardrail"],
+    "description": "Verifies catalog filters work and comparison rejects more than three products.",
     "steps": [
+      "Select Samsung.lv and lower the maximum price, then reset the filters",
       "Add three different products to comparison",
-      "Try to add a fourth product",
-      "Refresh the page"
+      "Try to add a fourth product"
     ],
-    "expected": "The comparison counter remains 3/3, a visible message says the maximum is three products, and the same three comparison items remain after refresh."
+    "expected": "Filters narrow and restore the catalog, comparison remains at 3/3, and a visible maximum-three message appears for the fourth product."
   },
   {
     "name": "Switch language and use product details on mobile",
