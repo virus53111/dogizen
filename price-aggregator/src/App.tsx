@@ -29,6 +29,9 @@ type Product = {
   id: number;
   title: string;
   model: string;
+  brand?: string;
+  aliases?: string[];
+  imageUrl?: string;
   category: Exclude<Category, 'all'>;
   emoji: string;
   meta: string;
@@ -40,6 +43,9 @@ const products: Product[] = [
     id: 1,
     title: 'Samsung Galaxy S25 Ultra 256GB',
     model: 'SM-S938B',
+    brand: 'Samsung',
+    aliases: ['s25 ultra', 'galaxy s25 ultra', 'самсунг s25 ultra', 'samsung s 25 ultra'],
+    imageUrl: 'https://files.tecnoblog.net/wp-content/uploads/2025/01/galaxy-s25-ultra-titanio-prata-700x700.png',
     category: 'phones',
     emoji: '📱',
     meta: '256 GB · Titanium Black · 5G',
@@ -68,6 +74,9 @@ const products: Product[] = [
     id: 2,
     title: 'Apple MacBook Air 13 M4 16/256GB',
     model: 'MW0W3',
+    brand: 'Apple',
+    aliases: ['macbook air m4', 'macbook m4', 'макбук air m4'],
+    imageUrl: 'https://www.mobileciti.com.au/media/catalog/product/a/p/apple-macbook-air-13-inch-with-m4-chip-512gb-16gb-sky-blue-3.jpg?image-type=image&store=mobileciti',
     category: 'computers',
     emoji: '💻',
     meta: '13.6″ · 16 GB · 256 GB SSD',
@@ -90,6 +99,9 @@ const products: Product[] = [
     id: 3,
     title: 'Sony WH-1000XM6',
     model: 'WH1000XM6B',
+    brand: 'Sony',
+    aliases: ['xm6', 'sony xm6', 'wh1000xm6'],
+    imageUrl: 'https://pulsepad.com.ua/files/resized/products/sony-wh-1000xm6-midnight-blue.1800x1800w.jpg',
     category: 'audio',
     emoji: '🎧',
     meta: 'ANC · Bluetooth · Black',
@@ -112,6 +124,9 @@ const products: Product[] = [
     id: 4,
     title: 'Samsung OLED 55″ S95F',
     model: 'QE55S95F',
+    brand: 'Samsung',
+    aliases: ['s95f', 'samsung oled s95f', 'oled 55'],
+    imageUrl: 'https://img-prd-pim.poorvika.com/product/Samsung-oled-4k-ultra-hd-smart-tv-s95f-55-inch-Front-Right-View.webp',
     category: 'home',
     emoji: '📺',
     meta: '55″ · OLED · 4K · Smart TV',
@@ -134,6 +149,9 @@ const products: Product[] = [
     id: 5,
     title: 'Lenovo Legion 5 16IRX9',
     model: '83DG00A5PB',
+    brand: 'Lenovo',
+    aliases: ['legion 5', 'lenovo legion', '16irx9'],
+    imageUrl: 'https://goldentech.com.sa/media/catalog/product/cache/3b63c6023d7836f7abeed5960b50eab1/l/a/laptop_lenovo_legion_5_16irx9_gaming_intel_core_i9-14900hx_rtx_4060_83dg00fhad_1.jpg',
     category: 'computers',
     emoji: '🖥️',
     meta: '16″ · i7 · RTX 4060 · 16/1000 GB',
@@ -149,6 +167,31 @@ const products: Product[] = [
         price: 1339,
         delivery: '0–3 €',
         affiliateNetwork: 'Tradedoubler',
+      },
+    ],
+  },
+  {
+    id: 6,
+    title: 'Apple iPhone 16 Pro Max 256GB',
+    model: 'MYWV3HX/A',
+    brand: 'Apple',
+    aliases: ['16 pro max', 'iphone16promax', 'iphone 16 pro max', 'айфон 16 про макс', 'apple 16 pro max'],
+    imageUrl: 'https://cdn.movertix.com/media/catalog/product/i/p/iphone-16-pro-max-white-titanium-1tb_1.jpg',
+    category: 'phones',
+    emoji: '📱',
+    meta: '256 GB · 6.9″ OLED · A18 Pro · Titanium',
+    offers: [
+      {
+        store: '220.lv',
+        price: 1339.95,
+        delivery: 'Demo',
+        affiliateNetwork: 'Tradedoubler',
+      },
+      {
+        store: 'Dateks.lv',
+        price: 1376.27,
+        delivery: 'Demo',
+        affiliateNetwork: 'Direct',
       },
     ],
   },
@@ -234,6 +277,22 @@ const buildPriceHistory = (product: Product) => {
   }));
 };
 
+const normalizeSearch = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/[“”″]/g, ' ')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
+
+const productMatchesQuery = (product: Product, query: string) => {
+  const normalizedQuery = normalizeSearch(query);
+  if (!normalizedQuery) return true;
+  const haystack = normalizeSearch(
+    `${product.brand ?? ''} ${product.title} ${product.model} ${product.meta} ${(product.aliases ?? []).join(' ')} ${product.offers.map(offer => offer.store).join(' ')}`
+  );
+  return normalizedQuery.split(' ').filter(Boolean).every(token => haystack.includes(token));
+};
+
 function App() {
   const [lang, setLang] = useState<Lang>('ru');
   const [query, setQuery] = useState('');
@@ -268,7 +327,6 @@ function App() {
   }, []);
 
   const visibleProducts = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
     const filtered = products.filter(product => {
       const matchesCategory =
         category === 'all' || product.category === category;
@@ -279,9 +337,8 @@ function App() {
         viewMode === 'all' ||
         (viewMode === 'favorites' && favorites.includes(product.id)) ||
         (viewMode === 'alerts' && alertIds.includes(product.id));
-      const haystack =
-        `${product.title} ${product.model} ${product.meta} ${product.offers.map(offer => offer.store).join(' ')}`.toLowerCase();
-      return matchesCategory && matchesStore && matchesView && minPrice <= maxPrice && (!normalized || haystack.includes(normalized));
+      const matchesQuery = productMatchesQuery(product, query);
+      return matchesCategory && matchesStore && matchesView && minPrice <= maxPrice && matchesQuery;
     });
     return [...filtered].sort((a, b) => {
       const aMin = Math.min(...a.offers.map(offer => offer.price));
@@ -517,9 +574,21 @@ function App() {
               return (
                 <article className="product-card" key={product.id}>
                   <div className="product-summary">
-                    <div className="product-visual">{product.emoji}</div>
+                    <div className="product-visual">
+                      <span className="image-fallback">{product.emoji}</span>
+                      {product.imageUrl && (
+                        <img
+                          src={product.imageUrl}
+                          alt={product.title}
+                          loading="lazy"
+                          onError={event => {
+                            event.currentTarget.style.display = 'none';
+                          }}
+                        />
+                      )}
+                    </div>
                     <div className="product-info">
-                      <span className="model">{product.model}</span>
+                      <span className="model">{product.brand ? `${product.brand} · ` : ''}{product.model}</span>
                       <h3>{product.title}</h3>
                       <p>{product.meta}</p>
                       <div className="product-stats">
@@ -617,9 +686,20 @@ function App() {
               <X size={20} />
             </button>
             <div className="detail-hero">
-              <div className="detail-visual">{selectedProduct.emoji}</div>
+              <div className="detail-visual">
+                <span className="image-fallback">{selectedProduct.emoji}</span>
+                {selectedProduct.imageUrl && (
+                  <img
+                    src={selectedProduct.imageUrl}
+                    alt={selectedProduct.title}
+                    onError={event => {
+                      event.currentTarget.style.display = 'none';
+                    }}
+                  />
+                )}
+              </div>
               <div>
-                <span className="model">{selectedProduct.model}</span>
+                <span className="model">{selectedProduct.brand ? `${selectedProduct.brand} · ` : ''}{selectedProduct.model}</span>
                 <h2>{selectedProduct.title}</h2>
                 <p>{selectedProduct.meta}</p>
                 <div className="detail-price">
