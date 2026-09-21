@@ -25,7 +25,7 @@ type FeedResponse = {
   };
 };
 
-const API_URL = 'https://cenaradar-feed-api.onrender.com/api/ottocast';
+const API_URL = import.meta.env.VITE_FEED_API_URL || 'https://cenaradar-feed-api.onrender.com/api/ottocast';
 
 const getLang = (): Lang => {
   const saved = localStorage.getItem('cenaradar:lang');
