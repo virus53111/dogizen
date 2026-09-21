@@ -72,16 +72,20 @@ export default function OttocastFeed() {
   const c = lang === 'ru'
     ? {
         eyebrow: 'ПАРТНЁРСКИЙ PRODUCT FEED · AWIN',
-        title: 'Ottocast — реальные товары из партнёрского фида',
-        text: 'Товары, изображения, цены и партнёрские ссылки загружаются из разрешённого product feed Ottocast в Awin. Цены показаны в валюте рекламодателя; итоговую цену и доставку проверяйте на сайте магазина.',
-        live: 'LIVE FEED', snapshot: 'РЕЗЕРВНАЯ КОПИЯ', updated: 'Обновлено', delivery: 'Доставка зависит от региона', button: 'В Ottocast',
+        title: 'Ottocast — товары из партнёрского фида',
+        text: 'Карточки загружаются из разрешённого product feed Ottocast в Awin. Важно: Ottocast сейчас передаёт в этом фиде базовую цену, а на сайте магазина могут действовать более низкие акции и региональные цены. Поэтому окончательную цену всегда показываем как цену магазина после перехода.',
+        live: 'LIVE FEED', snapshot: 'РЕЗЕРВНАЯ КОПИЯ', updated: 'Фид получен', delivery: 'Доставка зависит от региона', button: 'Проверить цену',
+        feedPrice: 'Цена по фиду Awin',
+        priceHint: 'На сайте Ottocast цена может быть ниже из-за акции или региона',
         disclosure: 'Партнёрская ссылка · CenaRadar может получить комиссию с покупки',
       }
     : {
         eyebrow: 'PARTNERU PRODUCT FEED · AWIN',
-        title: 'Ottocast — reālas preces no partnera datu plūsmas',
-        text: 'Preces, attēli, cenas un partneru saites tiek ielādētas no atļautas Ottocast produktu plūsmas Awin. Cenas tiek rādītas reklāmdevēja valūtā; gala cenu un piegādi pārbaudiet veikala vietnē.',
-        live: 'LIVE FEED', snapshot: 'REZERVES KOPIJA', updated: 'Atjaunināts', delivery: 'Piegāde atkarīga no reģiona', button: 'Uz Ottocast',
+        title: 'Ottocast — preces no partnera datu plūsmas',
+        text: 'Kartītes tiek ielādētas no atļautas Ottocast produktu plūsmas Awin. Svarīgi: Ottocast šajā plūsmā pašlaik nodod bāzes cenu, bet veikala vietnē var būt zemākas akcijas un reģionālās cenas. Tāpēc galīgā cena vienmēr jāpārbauda veikala vietnē.',
+        live: 'LIVE FEED', snapshot: 'REZERVES KOPIJA', updated: 'Plūsma saņemta', delivery: 'Piegāde atkarīga no reģiona', button: 'Pārbaudīt cenu',
+        feedPrice: 'Cena Awin plūsmā',
+        priceHint: 'Ottocast vietnē cena var būt zemāka akcijas vai reģiona dēļ',
         disclosure: 'Partnera saite · CenaRadar var saņemt komisiju par pirkumu',
       };
 
@@ -109,7 +113,12 @@ export default function OttocastFeed() {
             <div className="cr-ottocast-image"><img src={product.image} alt={product.name} loading="lazy" onError={event => { event.currentTarget.style.display = 'none'; }} /><span>OTTOCAST</span></div>
             <div className="cr-ottocast-body">
               <small className="cr-ottocast-sku">SKU {product.sku}</small><h4>{product.name}</h4><p>{product.description}</p>
-              <div className="cr-ottocast-meta"><strong>{new Intl.NumberFormat(lang === 'ru' ? 'ru-RU' : 'lv-LV', { style: 'currency', currency: product.currency || 'USD', currencyDisplay: 'code' }).format(product.price)}</strong><span><PackageCheck size={14} /> {product.delivery || c.delivery}</span></div>
+              <div className="cr-ottocast-meta">
+                <small>{c.feedPrice}</small>
+                <strong>{new Intl.NumberFormat(lang === 'ru' ? 'ru-RU' : 'lv-LV', { style: 'currency', currency: product.currency || 'USD', currencyDisplay: 'code' }).format(product.price)}</strong>
+                <span><PackageCheck size={14} /> {product.delivery || c.delivery}</span>
+                <em>{c.priceHint}</em>
+              </div>
               <a href={product.url} target="_blank" rel="sponsored noopener noreferrer">{c.button} <ExternalLink size={15} /></a>
               <small className="cr-ottocast-disclosure">{c.disclosure}</small>
             </div>
