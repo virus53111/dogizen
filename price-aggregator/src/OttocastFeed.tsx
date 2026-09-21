@@ -34,9 +34,11 @@ export default function OttocastFeed() {
 
   useEffect(() => {
     let cancelled = false;
-    const refresh = async () => {
+    let retryTimer: number | undefined;
+
+    const refresh = async (retry = true) => {
       const controller = new AbortController();
-      const timer = window.setTimeout(() => controller.abort(), 15000);
+      const timer = window.setTimeout(() => controller.abort(), 30000);
       try {
         const response = await fetch(API_URL, { signal: controller.signal, headers: { Accept: 'application/json' } });
         if (!response.ok) throw new Error(String(response.status));
@@ -47,14 +49,22 @@ export default function OttocastFeed() {
           setUpdatedAt(payload.meta?.feedLastImported || payload.meta?.fetchedAt || null);
         }
       } catch {
-        if (!cancelled) setLive(false);
+        if (!cancelled) {
+          setLive(false);
+          if (retry) retryTimer = window.setTimeout(() => { void refresh(false); }, 12000);
+        }
       } finally {
         window.clearTimeout(timer);
       }
     };
+
     void refresh();
-    const interval = window.setInterval(refresh, 30 * 60 * 1000);
-    return () => { cancelled = true; window.clearInterval(interval); };
+    const interval = window.setInterval(() => { void refresh(false); }, 30 * 60 * 1000);
+    return () => {
+      cancelled = true;
+      window.clearInterval(interval);
+      if (retryTimer) window.clearTimeout(retryTimer);
+    };
   }, []);
 
   if (!target) return null;
@@ -75,7 +85,14 @@ export default function OttocastFeed() {
         disclosure: 'Partnera saite · CenaRadar var saņemt komisiju par pirkumu',
       };
 
-  const formattedUpdate = updatedAt ? new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'lv-LV', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(updatedAt.includes('T') ? updatedAt : `${updatedAt.replace(' ', 'T')}Z`)) : null;
+  const formatUpdate = (value: string | null) => {
+    if (!value) return null;
+    const candidate = value.includes('T') ? value : `${value.replace(' ', 'T')}Z`;
+    const parsed = new Date(candidate);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'lv-LV', { dateStyle: 'medium', timeStyle: 'short' }).format(parsed);
+  };
+  const formattedUpdate = formatUpdate(updatedAt);
 
   return createPortal(
     <section className="cr-ottocast-feed" aria-label="Ottocast product feed">
