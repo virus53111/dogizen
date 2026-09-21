@@ -99,15 +99,8 @@
   backdrop-filter: blur(8px);
 }
 
-.cr-ottocast-body {
-  padding: 16px;
-}
-
-.cr-ottocast-sku {
-  color: #9a9fa8;
-  font-size: 9px;
-  font-weight: 750;
-}
+.cr-ottocast-body { padding: 16px; }
+.cr-ottocast-sku { color: #9a9fa8; font-size: 9px; font-weight: 750; }
 
 .cr-ottocast-body h4 {
   margin: 5px 0 7px;
@@ -139,10 +132,9 @@
   letter-spacing: .05em;
 }
 
-.cr-ottocast-meta strong {
-  color: #17191f;
-  font-size: 18px;
-}
+.cr-ottocast-price-row { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.cr-ottocast-price-row strong { color: #17191f; font-size: 20px; }
+.cr-ottocast-price-row del { color: #9a9fa8; font-size: 12px; }
 
 .cr-ottocast-meta span {
   display: inline-flex;
@@ -150,17 +142,6 @@
   gap: 6px;
   color: #8c929c;
   font-size: 9px;
-}
-
-.cr-ottocast-meta em {
-  padding: 8px 9px;
-  border-radius: 9px;
-  background: #fff7ed;
-  color: #9a4d14;
-  font-size: 8px;
-  font-style: normal;
-  font-weight: 700;
-  line-height: 1.4;
 }
 
 .cr-ottocast-body > a {
@@ -187,14 +168,8 @@
   text-align: center;
 }
 
-@media (max-width: 1050px) {
-  .cr-ottocast-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
-@media (max-width: 820px) {
-  .cr-ottocast-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
+@media (max-width: 1050px) { .cr-ottocast-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 820px) { .cr-ottocast-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 620px) {
   .cr-ottocast-feed { margin-top: 36px; padding: 18px; border-radius: 20px; }
   .cr-ottocast-head { display: grid; gap: 14px; }
