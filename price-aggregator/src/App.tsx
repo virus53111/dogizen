@@ -19,6 +19,7 @@ import {
 
 type Lang = 'ru' | 'lv';
 type Category = 'all' | 'phones' | 'computers' | 'audio' | 'home';
+type InfoPage = 'about' | 'how' | 'partners' | 'privacy' | 'disclosure';
 type Offer = {
   store: string;
   price: number;
@@ -202,7 +203,7 @@ const text = {
     tagline: 'Сравнение цен в Латвии',
     heroTitle: 'Найди товар. Сравни цены. Купи дешевле.',
     heroText:
-      'Первая версия агрегатора для 220.lv, Dateks, Samsung и других магазинов. Сейчас используются демонстрационные цены.',
+      'CenaRadar LV помогает находить товары и сравнивать предложения магазинов в одном месте. Сервис находится на этапе подключения партнёрских товарных фидов.',
     search: 'Например: Samsung S25 Ultra 256GB',
     searchButton: 'Найти',
     all: 'Все',
@@ -218,16 +219,16 @@ const text = {
     delivery: 'Доставка',
     go: 'В магазин',
     affiliate: 'Партнёрка',
-    demo: 'Демо-версия — реальные фиды и партнёрские ссылки будут подключены после регистрации.',
+    demo: 'Launch-каталог: предложения и цены сейчас являются примерными до подключения live product feeds.',
     empty: 'По такому запросу товаров пока нет.',
-    footer: 'CenaRadar LV · прототип агрегатора цен для Латвии',
+    footer: 'CenaRadar LV · сервис сравнения цен для покупателей в Латвии',
     clickNotice: 'Здесь будет твоя партнёрская ссылка. Пока переход отключён.',
   },
   lv: {
     tagline: 'Cenu salīdzināšana Latvijā',
     heroTitle: 'Atrodi preci. Salīdzini cenas. Pērc izdevīgāk.',
     heroText:
-      'Pirmais agregatora prototips 220.lv, Dateks, Samsung un citiem veikaliem. Pašlaik tiek izmantotas demonstrācijas cenas.',
+      'CenaRadar LV palīdz atrast preces un salīdzināt veikalu piedāvājumus vienuviet. Pašlaik tiek pieslēgtas partneru produktu datu plūsmas.',
     search: 'Piemēram: Samsung S25 Ultra 256GB',
     searchButton: 'Meklēt',
     all: 'Visi',
@@ -243,13 +244,100 @@ const text = {
     delivery: 'Piegāde',
     go: 'Uz veikalu',
     affiliate: 'Partneris',
-    demo: 'Demo versija — reālie produktu fīdi un partneru saites tiks pieslēgtas pēc reģistrācijas.',
+    demo: 'Palaišanas katalogs: piedāvājumi un cenas pašlaik ir parauga dati līdz live produktu plūsmu pieslēgšanai.',
     empty: 'Šim meklējumam preču pagaidām nav.',
-    footer: 'CenaRadar LV · cenu salīdzināšanas prototips Latvijai',
+    footer: 'CenaRadar LV · cenu salīdzināšanas serviss pircējiem Latvijā',
     clickNotice: 'Šeit būs tava partnera saite. Pagaidām pāreja ir atslēgta.',
   },
 };
 const categories: Category[] = ['all', 'phones', 'computers', 'audio', 'home'];
+
+const infoPages = {
+  ru: {
+    about: {
+      title: 'О CenaRadar LV',
+      paragraphs: [
+        'CenaRadar LV — независимый сервис сравнения товарных предложений для покупателей в Латвии. Цель сервиса — собрать предложения разных магазинов в одном интерфейсе и помочь пользователю сравнить цену, доставку и основные характеристики.',
+        'Сейчас проект находится на этапе запуска: интерфейс и поиск уже работают, а партнёрские product feeds и tracking-ссылки подключаются по мере одобрения магазинами и affiliate-сетями.',
+      ],
+      bullets: ['Фокус на латвийском рынке', 'Поиск по бренду, модели и характеристикам', 'Сравнение предложений без скрытого предпочтения по размеру комиссии'],
+    },
+    how: {
+      title: 'Как работает сравнение',
+      paragraphs: [
+        'Пользователь вводит название или модель товара. CenaRadar сопоставляет запрос с карточкой товара и показывает предложения подключённых магазинов.',
+        'После запуска live feeds цены, наличие, доставка и время обновления будут поступать из разрешённых товарных фидов, XML/CSV/API или других согласованных источников магазинов.',
+      ],
+      bullets: ['Поиск → карточка товара → предложения магазинов', 'Сортировка по цене и фильтры', 'Переход в магазин по отслеживаемой ссылке, если магазин подключён к партнёрской программе'],
+    },
+    partners: {
+      title: 'Для магазинов и партнёров',
+      paragraphs: [
+        'CenaRadar LV открыт к сотрудничеству с интернет-магазинами, affiliate-сетями и поставщиками товарных фидов в Латвии.',
+        'Названия магазинов в launch-каталоге используются для демонстрации будущего формата сравнения и не означают, что коммерческая интеграция уже активна. После одобрения партнёрства мы подключаем разрешённый feed и tracking-ссылки.',
+      ],
+      bullets: ['Product feed / XML / CSV / API', 'Affiliate deep links и click tracking', 'Прозрачная маркировка рекламных и спонсорских размещений'],
+    },
+    privacy: {
+      title: 'Privacy',
+      paragraphs: [
+        'На текущем этапе CenaRadar LV не требует регистрации пользователя. Избранное, сравнение и ценовые уведомления сохраняются локально в браузере пользователя.',
+        'Мы не продаём персональные данные. Если в дальнейшем будут подключены аналитика, cookies или уведомления, необходимые уведомления и согласия будут добавлены в соответствии с применимыми требованиями.',
+      ],
+      bullets: ['Нет обязательного аккаунта', 'Локальное хранение пользовательских настроек', 'Минимизация собираемых данных'],
+    },
+    disclosure: {
+      title: 'Affiliate disclosure',
+      paragraphs: [
+        'Некоторые исходящие ссылки CenaRadar LV могут быть партнёрскими. Если пользователь перейдёт в магазин и совершит покупку, CenaRadar может получить комиссию без увеличения цены для покупателя.',
+        'Размер партнёрской комиссии не должен определять обычную сортировку по цене. Платные или спонсорские размещения, если они появятся, будут обозначаться отдельно.',
+      ],
+      bullets: ['Комиссия возможна после покупки у партнёра', 'Цена для пользователя не повышается из-за affiliate-ссылки', 'Спонсорские позиции должны быть явно отмечены'],
+    },
+  },
+  lv: {
+    about: {
+      title: 'Par CenaRadar LV',
+      paragraphs: [
+        'CenaRadar LV ir neatkarīgs preču piedāvājumu salīdzināšanas serviss pircējiem Latvijā. Mērķis ir apvienot dažādu veikalu piedāvājumus vienā saskarnē un palīdzēt salīdzināt cenu, piegādi un galvenos parametrus.',
+        'Projekts pašlaik ir palaišanas posmā: meklēšana un saskarne jau darbojas, bet partneru produktu plūsmas un tracking saites tiek pieslēgtas pēc veikalu un affiliate tīklu apstiprinājuma.',
+      ],
+      bullets: ['Fokuss uz Latvijas tirgu', 'Meklēšana pēc zīmola, modeļa un parametriem', 'Salīdzināšana bez slēptas priekšrocības pēc komisijas lieluma'],
+    },
+    how: {
+      title: 'Kā darbojas salīdzināšana',
+      paragraphs: [
+        'Lietotājs ievada preces nosaukumu vai modeli. CenaRadar sasaista vaicājumu ar preces kartīti un parāda pieslēgto veikalu piedāvājumus.',
+        'Pēc live plūsmu pieslēgšanas cenas, pieejamība, piegāde un atjaunošanas laiks tiks saņemti no atļautām produktu plūsmām, XML/CSV/API vai citiem saskaņotiem avotiem.',
+      ],
+      bullets: ['Meklēšana → preces kartīte → veikalu piedāvājumi', 'Kārtošana pēc cenas un filtri', 'Pāreja uz veikalu ar tracking saiti, ja veikals ir partnerprogrammā'],
+    },
+    partners: {
+      title: 'Veikaliem un partneriem',
+      paragraphs: [
+        'CenaRadar LV ir atvērts sadarbībai ar interneta veikaliem, affiliate tīkliem un produktu datu plūsmu nodrošinātājiem Latvijā.',
+        'Veikalu nosaukumi palaišanas katalogā demonstrē paredzēto salīdzināšanas formātu un nenozīmē, ka komerciālā integrācija jau ir aktīva. Pēc apstiprinājuma tiek pieslēgta atļauta datu plūsma un tracking saites.',
+      ],
+      bullets: ['Product feed / XML / CSV / API', 'Affiliate deep links un klikšķu uzskaite', 'Skaidrs sponsorēta satura marķējums'],
+    },
+    privacy: {
+      title: 'Privātums',
+      paragraphs: [
+        'Pašlaik CenaRadar LV neprasa lietotāja reģistrāciju. Izlase, salīdzinājumi un cenu paziņojumi tiek saglabāti lokāli lietotāja pārlūkprogrammā.',
+        'Mēs nepārdodam personas datus. Ja vēlāk tiks pieslēgta analītika, sīkdatnes vai paziņojumi, tiks pievienoti nepieciešamie paziņojumi un piekrišanas atbilstoši piemērojamām prasībām.',
+      ],
+      bullets: ['Nav obligāta konta', 'Lietotāja iestatījumi glabājas lokāli', 'Datu minimizācija'],
+    },
+    disclosure: {
+      title: 'Affiliate disclosure',
+      paragraphs: [
+        'Dažas CenaRadar LV izejošās saites var būt affiliate saites. Ja lietotājs pāriet uz veikalu un veic pirkumu, CenaRadar var saņemt komisiju, nepalielinot cenu pircējam.',
+        'Affiliate komisijas lielums nedrīkst noteikt parasto cenu kārtošanu. Sponsorēti izvietojumi, ja tādi būs, tiks skaidri atzīmēti.',
+      ],
+      bullets: ['Komisija iespējama pēc pirkuma pie partnera', 'Affiliate saite nepalielina pircēja cenu', 'Sponsorētas pozīcijas tiek skaidri marķētas'],
+    },
+  },
+} satisfies Record<Lang, Record<InfoPage, { title: string; paragraphs: string[]; bullets: string[] }>>;
 
 const readStoredIds = (key: string) => {
   try {
@@ -305,8 +393,10 @@ function App() {
   const [storeFilter, setStoreFilter] = useState('all');
   const [maxPrice, setMaxPrice] = useState(2000);
   const [viewMode, setViewMode] = useState<'all' | 'favorites' | 'alerts'>('all');
+  const [infoPage, setInfoPage] = useState<InfoPage | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(() => readProductFromHash());
   const t = text[lang];
+  const activeInfo = infoPage ? infoPages[lang][infoPage] : null;
 
   useEffect(() => {
     window.localStorage.setItem('cenaradar:favorites', JSON.stringify(favorites));
@@ -414,6 +504,11 @@ function App() {
             CenaRadar <strong>LV</strong>
           </span>
         </a>
+        <nav className="top-nav" aria-label="Primary navigation">
+          <button onClick={() => setInfoPage('about')}>{lang === 'ru' ? 'О проекте' : 'Par projektu'}</button>
+          <button onClick={() => setInfoPage('how')}>{lang === 'ru' ? 'Как работает' : 'Kā tas darbojas'}</button>
+          <button onClick={() => setInfoPage('partners')}>{lang === 'ru' ? 'Для партнёров' : 'Partneriem'}</button>
+        </nav>
         <div className="top-actions">
           <button
             className={viewMode === 'favorites' ? 'mini-chip chip-button active' : 'mini-chip chip-button'}
@@ -433,7 +528,7 @@ function App() {
             <GitCompare size={14} /> {compareIds.length}/3
           </span>
           <span className="status-chip">
-            <CheckCircle2 size={15} /> MVP
+            <CheckCircle2 size={15} /> BETA
           </span>
           <div className="lang-switch">
             <button
@@ -473,13 +568,13 @@ function App() {
             </div>
             <div className="trust-row">
               <span>
-                <ShieldCheck size={16} /> Independent comparison
+                <ShieldCheck size={16} /> {lang === 'ru' ? 'Независимое сравнение' : 'Neatkarīga salīdzināšana'}
               </span>
               <span>
-                <Store size={16} /> 220.lv · Dateks · Samsung
+                <Store size={16} /> {lang === 'ru' ? 'Фокус на магазинах Латвии' : 'Fokuss uz Latvijas veikaliem'}
               </span>
               <span>
-                <ShoppingBag size={16} /> Affiliate-ready
+                <ShoppingBag size={16} /> {lang === 'ru' ? 'Готов к product feeds' : 'Gatavs produktu plūsmām'}
               </span>
             </div>
           </div>
@@ -563,7 +658,7 @@ function App() {
                 {t.found}: {visibleProducts.length}
               </h2>
             </div>
-            <div className="results-note">MVP · demo data</div>
+            <div className="results-note">Beta · launch catalogue · sample prices</div>
           </div>
           <div className="product-list">
             {visibleProducts.map(product => {
@@ -771,6 +866,28 @@ function App() {
           </section>
         </div>
       )}
+      {activeInfo && (
+        <div className="detail-overlay" role="presentation" onClick={() => setInfoPage(null)}>
+          <section className="info-modal" role="dialog" aria-modal="true" onClick={event => event.stopPropagation()}>
+            <button className="detail-close" onClick={() => setInfoPage(null)} aria-label="Close information">
+              <X size={20} />
+            </button>
+            <span className="info-kicker">CenaRadar LV</span>
+            <h2>{activeInfo.title}</h2>
+            <div className="info-copy">
+              {activeInfo.paragraphs.map(paragraph => <p key={paragraph}>{paragraph}</p>)}
+            </div>
+            <ul className="info-bullets">
+              {activeInfo.bullets.map(item => <li key={item}>{item}</li>)}
+            </ul>
+            <div className="info-note">
+              {lang === 'ru'
+                ? 'Статус: beta. Live merchant feeds подключаются только после одобрения и в соответствии с условиями партнёров.'
+                : 'Statuss: beta. Live veikalu plūsmas tiek pieslēgtas tikai pēc apstiprinājuma un saskaņā ar partneru noteikumiem.'}
+            </div>
+          </section>
+        </div>
+      )}
       {compareProducts.length > 0 && (
         <section className="compare-tray" aria-label="Product comparison">
           <div className="compare-head">
@@ -806,7 +923,16 @@ function App() {
         <div className="footer-brand">
           CenaRadar <strong>LV</strong>
         </div>
-        <p>{t.footer}</p>
+        <div className="footer-center">
+          <p>{t.footer}</p>
+          <div className="footer-links">
+            <button onClick={() => setInfoPage('about')}>{lang === 'ru' ? 'О проекте' : 'Par projektu'}</button>
+            <button onClick={() => setInfoPage('how')}>{lang === 'ru' ? 'Как работает' : 'Kā tas darbojas'}</button>
+            <button onClick={() => setInfoPage('partners')}>{lang === 'ru' ? 'Партнёрам' : 'Partneriem'}</button>
+            <button onClick={() => setInfoPage('privacy')}>Privacy</button>
+            <button onClick={() => setInfoPage('disclosure')}>Affiliate disclosure</button>
+          </div>
+        </div>
         <span>© 2026</span>
       </footer>
       {toast && <div className="toast">{toast}</div>}
