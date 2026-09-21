@@ -109,6 +109,7 @@ async function getProducts() {
       cache = { cachedAt: Date.now(), payload };
       return payload;
     } catch (error) {
+      console.error(`Awin feed refresh failed: ${error instanceof Error ? error.message : 'unknown error'}`);
       if (cache) {
         return {
           ...cache.payload,
@@ -180,11 +181,7 @@ const server = http.createServer(async (req, res) => {
   }
 
   if (req.method === 'GET' && (url.pathname === '/api/ottocast' || url.pathname === '/api/products')) {
-    try {
-      return sendJson(res, 200, await getProducts());
-    } catch (error) {
-      return sendJson(res, 500, { error: 'Unable to load product feed' });
-    }
+    return sendJson(res, 200, await getProducts());
   }
 
   return sendJson(res, 404, { error: 'Not found' });
@@ -192,4 +189,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`CenaRadar feed API listening on ${PORT}`);
+  void getProducts().then(payload => {
+    console.log(`Awin feed warmup: ${payload.products.length} products, live=${Boolean(payload.meta?.live)}`);
+  });
 });
