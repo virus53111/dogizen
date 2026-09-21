@@ -4,11 +4,62 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="theme-color" content="#111827" />
-  <meta name="description" content="CenaRadar LV — cenu salīdzināšanas prototips Latvijas veikaliem." />
-  <title>CenaRadar LV</title>
+  <meta name="application-name" content="CenaRadar" />
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+  <meta name="googlebot" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
+  <meta name="description" content="CenaRadar — cenu salīdzināšanas serviss Latvijā. Meklē preces pēc zīmola vai modeļa un salīdzini interneta veikalu piedāvājumus vienuviet." />
+  <meta name="geo.region" content="LV" />
+  <meta name="geo.placename" content="Latvija" />
+
+  <link rel="canonical" href="https://cenaradar.online/" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="CenaRadar" />
+  <meta property="og:title" content="CenaRadar — cenu salīdzināšana Latvijā" />
+  <meta property="og:description" content="Atrodi preci un salīdzini interneta veikalu piedāvājumus Latvijā vienuviet." />
+  <meta property="og:url" content="https://cenaradar.online/" />
+  <meta property="og:locale" content="lv_LV" />
+  <meta property="og:locale:alternate" content="ru_RU" />
+
+  <meta name="twitter:card" content="summary" />
+  <meta name="twitter:title" content="CenaRadar — cenu salīdzināšana Latvijā" />
+  <meta name="twitter:description" content="Atrodi preci un salīdzini interneta veikalu piedāvājumus Latvijā vienuviet." />
+
+  <title>CenaRadar — cenu salīdzināšana Latvijā</title>
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://cenaradar.online/#organization",
+        "name": "CenaRadar",
+        "url": "https://cenaradar.online/",
+        "description": "Neatkarīgs cenu salīdzināšanas un preču meklēšanas serviss pircējiem Latvijā.",
+        "areaServed": {
+          "@type": "Country",
+          "name": "Latvia"
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://cenaradar.online/#website",
+        "url": "https://cenaradar.online/",
+        "name": "CenaRadar",
+        "description": "Cenu salīdzināšana un preču meklēšana Latvijas interneta veikalos.",
+        "publisher": {
+          "@id": "https://cenaradar.online/#organization"
+        },
+        "inLanguage": ["lv", "ru"]
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
   <div id="root"></div>
+  <noscript>CenaRadar ir cenu salīdzināšanas serviss pircējiem Latvijā. Lai izmantotu meklēšanu un salīdzināšanu, ieslēdziet JavaScript.</noscript>
   <script type="module" src="./src/main.tsx"></script>
 </body>
 </html>
