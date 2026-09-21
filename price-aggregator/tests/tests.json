@@ -1,63 +1,43 @@
 [
   {
-    "name": "Search iPhone by partial model query and open details",
+    "name": "Find iPhone 16 Pro Max and open details",
     "sanity": true,
     "viewport": "desktop",
-    "covers": ["tokenized product search", "search aliases", "real product image card", "product detail view"],
-    "description": "Verifies a short query like 16 pro max finds the iPhone 16 Pro Max card and opens its product details.",
-    "steps": [
-      "Enter 16 pro max in the main search field",
-      "Verify Apple iPhone 16 Pro Max 256GB is the matching product and its product photo is visible",
-      "Press Подробнее on the iPhone card"
-    ],
-    "expected": "The iPhone 16 Pro Max product is found without requiring the full title, renders as a photo-based card, and its detail view opens."
+    "covers": ["tokenized product search", "product photo card", "store offer comparison", "product detail view"],
+    "description": "Verifies the primary product-discovery workflow finds a model from a short query and opens a full product card.",
+    "steps": ["Enter 16 pro max in the search field", "Open Apple iPhone 16 Pro Max 256GB with Подробнее", "Review the product photo, specifications and offers"],
+    "expected": "The iPhone 16 Pro Max result is shown with a product image and its detail view displays specifications and merchant offers."
   },
   {
-    "name": "Search Samsung with shorthand alias",
+    "name": "Review project and how-it-works information",
     "viewport": "desktop",
-    "covers": ["tokenized product search", "Samsung search aliases", "photo fallback behavior"],
-    "description": "Verifies shorthand model searches resolve to the intended Samsung product and the card remains usable if a remote image cannot load.",
-    "steps": [
-      "Enter s25 ultra in the main search field",
-      "Verify Samsung Galaxy S25 Ultra 256GB is shown",
-      "Review the product card"
-    ],
-    "expected": "The Samsung S25 Ultra result is shown with its product photo when available, with a visible fallback area if the remote photo fails."
+    "covers": ["about page", "how-it-works page", "beta launch disclosure"],
+    "description": "Verifies a reviewer can understand what CenaRadar is and how merchant data will be integrated.",
+    "steps": ["Open О проекте from the top navigation", "Close it and open Как работает", "Review the beta status note"],
+    "expected": "Both information dialogs clearly describe CenaRadar as a Latvian comparison service in beta and explain that live product feeds are connected only after partner approval."
   },
   {
-    "name": "Enable alert and use alerts quick view",
-    "viewport": "desktop",
-    "covers": ["price alert toggle", "price alert local persistence", "alerts quick view", "alert counter"],
-    "description": "Verifies a user can enable a price alert, see its counter, and filter the catalog to alerted products.",
-    "steps": [
-      "Open details for Samsung Galaxy S25 Ultra 256GB and enable the price alert",
-      "Close the detail view and press the bell counter in the header",
-      "Refresh the page"
-    ],
-    "expected": "The alert counter reflects the saved alert, only alerted products are shown in the quick view, and the alert remains saved after refresh."
-  },
-  {
-    "name": "Filter and enforce comparison limit",
-    "viewport": "desktop",
-    "covers": ["store filtering", "maximum price filtering", "filter reset", "product comparison", "comparison limit guardrail"],
-    "description": "Verifies catalog filters work and comparison rejects more than three products.",
-    "steps": [
-      "Reset the search, select Samsung.lv and lower the maximum price, then reset the filters",
-      "Add three different products to comparison",
-      "Try to add a fourth product"
-    ],
-    "expected": "Filters narrow and restore the catalog, comparison remains at 3/3, and a visible maximum-three message appears for the fourth product."
-  },
-  {
-    "name": "Switch language and use photo product details on mobile",
+    "name": "Review partner, privacy and affiliate disclosures on mobile",
     "viewport": "mobile",
-    "covers": ["RU/LV language switch", "responsive mobile layout", "mobile product detail view", "responsive product images"],
-    "description": "Verifies photo-based product cards and details remain usable on a phone-sized viewport.",
-    "steps": [
-      "Tap LV in the language switch",
-      "Search 16 pro max and open the product with Vairāk",
-      "Review and close the product detail sheet"
-    ],
-    "expected": "The interface is in Latvian, the iPhone card and detail photo fit the mobile layout without horizontal overflow, and the detail sheet can be closed."
+    "covers": ["partner information", "privacy disclosure", "affiliate disclosure", "mobile footer navigation"],
+    "description": "Verifies compliance and partnership information is reachable on a phone-sized viewport.",
+    "steps": ["Scroll to the footer", "Open Partneriem or Партнёрам and close it", "Open Privacy, then Affiliate disclosure"],
+    "expected": "Each information dialog is readable on mobile and states the launch-stage partner status, local browser storage behavior, and affiliate commission disclosure."
+  },
+  {
+    "name": "Persist favorites and price alerts",
+    "viewport": "desktop",
+    "covers": ["favorites persistence", "price alert persistence", "quick views"],
+    "description": "Verifies saved user preferences remain available after reload.",
+    "steps": ["Add a product to favorites", "Open its details and enable a price alert", "Refresh the page and use the heart and bell quick views"],
+    "expected": "The favorite and price alert remain saved and their quick views can still filter the catalogue."
+  },
+  {
+    "name": "Filter catalogue and enforce comparison limit",
+    "viewport": "desktop",
+    "covers": ["store filtering", "maximum price filtering", "filter reset", "comparison limit guardrail"],
+    "description": "Verifies catalogue controls remain usable after the review-site polish.",
+    "steps": ["Choose a store and lower the maximum price", "Reset the filters", "Add three products to comparison and try to add a fourth"],
+    "expected": "Filters narrow and restore the catalogue, comparison stays limited to three products, and a visible maximum-three message appears for the fourth item."
   }
 ]
