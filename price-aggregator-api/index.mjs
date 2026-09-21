@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { decodeMaybeGzip, firstValue, mapProductRow, parseCsv } from './feed-utils.mjs';
+import { verifyMerchantPrices } from './storefront-price.mjs';
 
 const PORT = Number(process.env.PORT || 10000);
 const API_KEY = process.env.AWIN_DATAFEED_API_KEY || '';
@@ -52,8 +53,8 @@ function buildAwinDeepLink(destinationUrl) {
 
 async function fetchText(url) {
   const response = await fetch(url, {
-    headers: { 'User-Agent': 'CenaRadar/1.0 (+https://cenaradar.online)' },
-    signal: AbortSignal.timeout(15000),
+    headers: { 'User-Agent': 'Mozilla/5.0 (compatible; CenaRadar/1.0; +https://cenaradar.online)' },
+    signal: AbortSignal.timeout(12000),
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return response.text();
@@ -113,7 +114,7 @@ function mapShopifyProduct(product) {
     delivery: 'Check at checkout',
     brand: product.vendor || 'Ottocast',
     inStock: availableVariants.length > 0 ? '1' : '0',
-    priceSource: 'merchant_storefront',
+    priceSource: 'merchant_storefront_list',
     lastUpdated: product.updated_at || null,
   };
 }
@@ -121,19 +122,26 @@ function mapShopifyProduct(product) {
 async function loadOttocastStorefront() {
   const payload = await fetchJson(`${OTTOCAST_ORIGIN}/products.json?limit=250`);
   const sourceProducts = Array.isArray(payload?.products) ? payload.products : [];
-  const products = sourceProducts.map(mapShopifyProduct).filter(Boolean);
-  if (!products.length) throw new Error('Ottocast storefront returned no usable products');
+  const baseProducts = sourceProducts.map(mapShopifyProduct).filter(Boolean);
+  if (!baseProducts.length) throw new Error('Ottocast storefront returned no usable products');
+
+  const verification = await verifyMerchantPrices(baseProducts, fetchText, { concurrency: 8 });
+  const products = verification.products;
+  const mirror = products.find(product => /mirror touch/i.test(product.name || ''));
+  console.log(`Ottocast page-price verification: verified=${verification.verified}, corrected=${verification.corrected}${mirror ? `, mirrorTouch=${mirror.price}` : ''}`);
 
   return {
     products,
     meta: {
-      source: 'Ottocast storefront + Awin deep links',
+      source: 'Ottocast product pages + Awin deep links',
       advertiser: 'Ottocast',
       advertiserId: ADVERTISER_ID,
       fetchedAt: new Date().toISOString(),
       live: true,
-      priceSource: 'merchant_storefront',
+      priceSource: 'merchant_product_page',
       productCount: products.length,
+      verifiedPrices: verification.verified,
+      correctedPrices: verification.corrected,
     },
   };
 }
@@ -260,6 +268,8 @@ const server = http.createServer(async (req, res) => {
       cachedProducts: cache?.payload?.products?.length || 0,
       source: cache?.payload?.meta?.source || null,
       priceSource: cache?.payload?.meta?.priceSource || null,
+      verifiedPrices: cache?.payload?.meta?.verifiedPrices || 0,
+      correctedPrices: cache?.payload?.meta?.correctedPrices || 0,
     });
   }
   if (req.method === 'GET' && (url.pathname === '/api/ottocast' || url.pathname === '/api/products')) {
