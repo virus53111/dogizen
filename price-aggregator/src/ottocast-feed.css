@@ -45,6 +45,9 @@
   white-space: nowrap;
 }
 
+.cr-ottocast-feed-badge span { display: grid; gap: 2px; }
+.cr-ottocast-feed-badge small { font-size: 8px; font-weight: 700; opacity: .75; }
+
 .cr-ottocast-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -128,6 +131,14 @@
   margin: 15px 0 13px;
 }
 
+.cr-ottocast-meta > small {
+  color: #8c929c;
+  font-size: 8px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
 .cr-ottocast-meta strong {
   color: #17191f;
   font-size: 18px;
@@ -139,6 +150,17 @@
   gap: 6px;
   color: #8c929c;
   font-size: 9px;
+}
+
+.cr-ottocast-meta em {
+  padding: 8px 9px;
+  border-radius: 9px;
+  background: #fff7ed;
+  color: #9a4d14;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .cr-ottocast-body > a {
