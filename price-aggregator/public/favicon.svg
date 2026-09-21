@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="CenaRadar">
+  <rect width="64" height="64" rx="14" fill="#ffffff"/>
+  <path d="M32 8a24 24 0 1 0 0 48" fill="none" stroke="#111827" stroke-width="9" stroke-linecap="round"/>
+  <path d="M32 18a14 14 0 1 0 0 28" fill="none" stroke="#fdba74" stroke-width="3" stroke-linecap="round"/>
+  <path d="M32 23a9 9 0 1 0 0 18" fill="none" stroke="#fed7aa" stroke-width="3" stroke-linecap="round"/>
+  <path d="M32 32 40 8l12 7-20 17Z" fill="#f97316"/>
+  <circle cx="32" cy="32" r="4" fill="#f97316"/>
+  <path d="m36 36 15 3 7 10-11 9-11-11Z" fill="#f59e0b"/>
+  <circle cx="42" cy="42" r="2.4" fill="#fff"/>
+</svg>
