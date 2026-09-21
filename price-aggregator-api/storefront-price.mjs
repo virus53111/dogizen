@@ -27,7 +27,21 @@ function metaPrice(html) {
   return null;
 }
 
-function jsonLdPrice(html) {
+function metaCurrency(html) {
+  const patterns = [
+    /<meta[^>]+property=["']product:price:currency["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']product:price:currency["'][^>]*>/i,
+    /<meta[^>]+property=["']og:price:currency["'][^>]+content=["']([^"']+)["'][^>]*>/i,
+    /<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:price:currency["'][^>]*>/i,
+  ];
+  for (const pattern of patterns) {
+    const match = html.match(pattern);
+    if (match?.[1]) return String(match[1]).trim().toUpperCase();
+  }
+  return '';
+}
+
+function jsonLdOffer(html) {
   const scripts = [...html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)];
   for (const match of scripts) {
     const raw = decodeHtml(match[1]).trim();
@@ -43,11 +57,13 @@ function jsonLdPrice(html) {
         const isProduct = type === 'Product' || (Array.isArray(type) && type.includes('Product'));
         if (isProduct && node.offers) {
           const offers = Array.isArray(node.offers) ? node.offers : [node.offers];
-          const values = offers
-            .flatMap(offer => [offer?.price, offer?.lowPrice])
-            .map(positiveNumber)
-            .filter(Boolean);
-          if (values.length) return Math.min(...values);
+          const candidates = offers
+            .map(offer => ({
+              price: positiveNumber(offer?.price) || positiveNumber(offer?.lowPrice),
+              currency: String(offer?.priceCurrency || '').trim().toUpperCase(),
+            }))
+            .filter(offer => offer.price);
+          if (candidates.length) return candidates.sort((a, b) => a.price - b.price)[0];
         }
         for (const value of Object.values(node)) {
           if (value && typeof value === 'object') {
@@ -63,8 +79,10 @@ function jsonLdPrice(html) {
   return null;
 }
 
-export function extractPrimaryPrice(html) {
-  return metaPrice(html) || jsonLdPrice(html);
+export function extractPrimaryOffer(html) {
+  const meta = metaPrice(html);
+  if (meta) return { price: meta, currency: metaCurrency(html) || 'USD' };
+  return jsonLdOffer(html);
 }
 
 async function mapPool(items, limit, worker) {
@@ -80,6 +98,13 @@ async function mapPool(items, limit, worker) {
   return output;
 }
 
+function usdStorefrontUrl(value) {
+  const url = new URL(value);
+  url.searchParams.set('country', 'US');
+  url.searchParams.set('currency', 'USD');
+  return url.toString();
+}
+
 export async function verifyMerchantPrices(products, fetchHtml, { concurrency = 8 } = {}) {
   let corrected = 0;
   let verified = 0;
@@ -87,14 +112,15 @@ export async function verifyMerchantPrices(products, fetchHtml, { concurrency = 
   const next = await mapPool(products, concurrency, async product => {
     if (!product?.merchantUrl) return product;
     try {
-      const html = await fetchHtml(product.merchantUrl);
-      const pagePrice = extractPrimaryPrice(html);
-      if (!pagePrice) return product;
+      const html = await fetchHtml(usdStorefrontUrl(product.merchantUrl));
+      const offer = extractPrimaryOffer(html);
+      if (!offer?.price) return product;
       verified += 1;
-      if (Math.abs(pagePrice - Number(product.price || 0)) >= 0.005) corrected += 1;
+      if (Math.abs(offer.price - Number(product.price || 0)) >= 0.005) corrected += 1;
       return {
         ...product,
-        price: pagePrice,
+        price: offer.price,
+        currency: offer.currency || 'USD',
         priceSource: 'merchant_product_page',
         storefrontListPrice: product.price,
       };
