@@ -7,9 +7,11 @@ import { decodeMaybeGzip, firstValue, mapProductRow, parseCsv } from './feed-uti
 const PORT = Number(process.env.PORT || 10000);
 const API_KEY = process.env.AWIN_DATAFEED_API_KEY || '';
 const ADVERTISER_ID = String(process.env.AWIN_ADVERTISER_ID || '96499');
+const PUBLISHER_ID = String(process.env.AWIN_PUBLISHER_ID || '3101606');
 const FEED_ID = String(process.env.AWIN_FEED_ID || '107946');
-const CACHE_MS = Number(process.env.FEED_CACHE_MS || 30 * 60 * 1000);
+const CACHE_MS = Number(process.env.FEED_CACHE_MS || 10 * 60 * 1000);
 const FEED_LIST_URL = API_KEY ? `https://productdata.awin.com/datafeed/list/apikey/${encodeURIComponent(API_KEY)}` : '';
+const OTTOCAST_ORIGIN = 'https://www.ottocast.com';
 const ALLOWED_ORIGINS = new Set([
   'https://cenaradar.online',
   'https://www.cenaradar.online',
@@ -31,6 +33,23 @@ function normalizeFeedUrl(url) {
   return url.replace('/adultcontent/1/', '/adultcontent/0/');
 }
 
+function stripHtml(value = '') {
+  return String(value)
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function buildAwinDeepLink(destinationUrl) {
+  return `https://www.awin1.com/cread.php?awinmid=${encodeURIComponent(ADVERTISER_ID)}&awinaffid=${encodeURIComponent(PUBLISHER_ID)}&ued=${encodeURIComponent(destinationUrl)}`;
+}
+
 async function fetchText(url) {
   const response = await fetch(url, {
     headers: { 'User-Agent': 'CenaRadar/1.0 (+https://cenaradar.online)' },
@@ -40,6 +59,18 @@ async function fetchText(url) {
   return response.text();
 }
 
+async function fetchJson(url) {
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (compatible; CenaRadar/1.0; +https://cenaradar.online)',
+      Accept: 'application/json,text/plain,*/*',
+    },
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response.json();
+}
+
 async function fetchBuffer(url) {
   const response = await fetch(url, {
     headers: { 'User-Agent': 'CenaRadar/1.0 (+https://cenaradar.online)' },
@@ -47,6 +78,64 @@ async function fetchBuffer(url) {
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return Buffer.from(await response.arrayBuffer());
+}
+
+function mapShopifyProduct(product) {
+  const allVariants = Array.isArray(product.variants) ? product.variants : [];
+  const availableVariants = allVariants.filter(variant => variant.available !== false);
+  const variants = availableVariants.length ? availableVariants : allVariants;
+  const priced = variants
+    .map(variant => ({ ...variant, numericPrice: Number.parseFloat(String(variant.price || '0')) }))
+    .filter(variant => Number.isFinite(variant.numericPrice) && variant.numericPrice > 0)
+    .sort((a, b) => a.numericPrice - b.numericPrice);
+  const chosen = priced[0];
+  if (!chosen) return null;
+
+  const destinationUrl = `${OTTOCAST_ORIGIN}/products/${encodeURIComponent(product.handle)}`;
+  const compareCandidates = variants
+    .map(variant => Number.parseFloat(String(variant.compare_at_price || '0')))
+    .filter(value => Number.isFinite(value) && value > chosen.numericPrice);
+  const compareAtPrice = compareCandidates.length ? Math.min(...compareCandidates) : null;
+  const image = product.image?.src || product.images?.[0]?.src || '';
+  const description = stripHtml(product.body_html || product.description || product.product_type || '').slice(0, 360);
+
+  return {
+    id: String(product.id || product.handle),
+    name: product.title || product.handle,
+    sku: chosen.sku || String(chosen.id || ''),
+    description,
+    price: chosen.numericPrice,
+    compareAtPrice,
+    currency: 'USD',
+    image,
+    url: buildAwinDeepLink(destinationUrl),
+    merchantUrl: destinationUrl,
+    delivery: 'Check at checkout',
+    brand: product.vendor || 'Ottocast',
+    inStock: availableVariants.length > 0 ? '1' : '0',
+    priceSource: 'merchant_storefront',
+    lastUpdated: product.updated_at || null,
+  };
+}
+
+async function loadOttocastStorefront() {
+  const payload = await fetchJson(`${OTTOCAST_ORIGIN}/products.json?limit=250`);
+  const sourceProducts = Array.isArray(payload?.products) ? payload.products : [];
+  const products = sourceProducts.map(mapShopifyProduct).filter(Boolean);
+  if (!products.length) throw new Error('Ottocast storefront returned no usable products');
+
+  return {
+    products,
+    meta: {
+      source: 'Ottocast storefront + Awin deep links',
+      advertiser: 'Ottocast',
+      advertiserId: ADVERTISER_ID,
+      fetchedAt: new Date().toISOString(),
+      live: true,
+      priceSource: 'merchant_storefront',
+      productCount: products.length,
+    },
+  };
 }
 
 async function resolveAwinFeed() {
@@ -61,7 +150,6 @@ async function resolveAwinFeed() {
   });
 
   if (!match) throw new Error(`Awin feed ${FEED_ID} for advertiser ${ADVERTISER_ID} was not found`);
-
   const url = normalizeFeedUrl(field(match, ['URL', 'Url', 'url', 'Download URL', 'download_url']));
   if (!url) throw new Error('Awin feed download URL is missing');
 
@@ -72,7 +160,7 @@ async function resolveAwinFeed() {
   };
 }
 
-async function loadRemoteProducts() {
+async function loadAwinFeed() {
   const feed = await resolveAwinFeed();
   const compressed = await fetchBuffer(feed.url);
   const csvText = decodeMaybeGzip(compressed);
@@ -80,13 +168,12 @@ async function loadRemoteProducts() {
   const products = rows
     .map(mapProductRow)
     .filter(product => product.id && product.name && product.url && product.price > 0);
-
   if (!products.length) throw new Error('Awin feed returned no usable products');
 
   return {
     products,
     meta: {
-      source: 'Awin product feed',
+      source: 'Awin product feed fallback',
       advertiser: 'Ottocast',
       advertiserId: ADVERTISER_ID,
       feedId: FEED_ID,
@@ -94,8 +181,19 @@ async function loadRemoteProducts() {
       feedLastImported: feed.lastImported || null,
       fetchedAt: new Date().toISOString(),
       live: true,
+      priceSource: 'awin_feed',
+      productCount: products.length,
     },
   };
+}
+
+async function loadRemoteProducts() {
+  try {
+    return await loadOttocastStorefront();
+  } catch (storefrontError) {
+    console.error(`Ottocast storefront refresh failed: ${storefrontError instanceof Error ? storefrontError.message : 'unknown error'}`);
+    return loadAwinFeed();
+  }
 }
 
 async function getProducts() {
@@ -109,31 +207,19 @@ async function getProducts() {
       cache = { cachedAt: Date.now(), payload };
       return payload;
     } catch (error) {
-      console.error(`Awin feed refresh failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+      console.error(`Product refresh failed: ${error instanceof Error ? error.message : 'unknown error'}`);
       if (cache) {
         return {
           ...cache.payload,
-          meta: {
-            ...cache.payload.meta,
-            live: false,
-            stale: true,
-            warning: 'Live refresh temporarily failed; showing the most recent cached feed.',
-          },
+          meta: { ...cache.payload.meta, live: false, stale: true, warning: 'Live refresh temporarily failed; showing cached data.' },
         };
       }
       return {
         products: fallbackProducts,
         meta: {
-          source: 'Awin product feed snapshot',
-          advertiser: 'Ottocast',
-          advertiserId: ADVERTISER_ID,
-          feedId: FEED_ID,
-          feedName: 'OTTOCAST Default Product Feeds',
-          feedLastImported: null,
-          fetchedAt: null,
-          live: false,
-          stale: true,
-          warning: 'Live feed is temporarily unavailable; showing the last verified snapshot.',
+          source: 'Verified snapshot', advertiser: 'Ottocast', advertiserId: ADVERTISER_ID,
+          feedId: FEED_ID, fetchedAt: null, live: false, stale: true, priceSource: 'snapshot',
+          warning: 'Live sources are temporarily unavailable; showing the last verified snapshot.',
         },
       };
     } finally {
@@ -163,33 +249,28 @@ function sendJson(res, status, payload) {
 
 const server = http.createServer(async (req, res) => {
   setCors(req, res);
-
-  if (req.method === 'OPTIONS') {
-    res.statusCode = 204;
-    return res.end();
-  }
+  if (req.method === 'OPTIONS') { res.statusCode = 204; return res.end(); }
 
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
-
   if (req.method === 'GET' && url.pathname === '/health') {
     return sendJson(res, 200, {
       ok: true,
       service: 'cenaradar-feed-api',
       feedConfigured: Boolean(API_KEY),
       cachedProducts: cache?.payload?.products?.length || 0,
+      source: cache?.payload?.meta?.source || null,
+      priceSource: cache?.payload?.meta?.priceSource || null,
     });
   }
-
   if (req.method === 'GET' && (url.pathname === '/api/ottocast' || url.pathname === '/api/products')) {
     return sendJson(res, 200, await getProducts());
   }
-
   return sendJson(res, 404, { error: 'Not found' });
 });
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`CenaRadar feed API listening on ${PORT}`);
   void getProducts().then(payload => {
-    console.log(`Awin feed warmup: ${payload.products.length} products, live=${Boolean(payload.meta?.live)}`);
+    console.log(`Product warmup: ${payload.products.length} products, source=${payload.meta?.source}, live=${Boolean(payload.meta?.live)}`);
   });
 });
