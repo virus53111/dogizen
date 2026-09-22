@@ -39,6 +39,7 @@ type LiveProduct = {
   image?: string;
   url?: string;
   merchantUrl?: string;
+  merchant?: string;
   delivery?: string;
   brand?: string;
   inStock?: string;
@@ -55,10 +56,12 @@ type FeedResponse = {
     fetchedAt?: string | null;
     source?: string;
     productCount?: number;
+    sources?: Array<{ name: string; ok: boolean; count: number }>;
   };
 };
 
-const API_URL = import.meta.env.VITE_FEED_API_URL || 'https://cenaradar-feed-api.onrender.com/api/products';
+const CATALOG_API_URL = import.meta.env.VITE_FEED_API_URL || 'https://cenaradar-feed-api.onrender.com/api/products';
+const SEARCH_API_URL = CATALOG_API_URL.replace(/\/api\/(?:products|ottocast)(?:\?.*)?$/, '/api/search');
 
 const popularQueries = [
   'iPhone 16 Pro Max', 'Samsung S25 Ultra', 'MacBook Air M4', 'AirPods', 'PlayStation 5',
@@ -69,9 +72,9 @@ const popularQueries = [
 
 const storeDirectory = [
   { name: 'Ottocast', active: true },
-  { name: '220.lv', active: false },
+  { name: '220.lv', active: true },
+  { name: 'Dateks.lv', active: true },
   { name: '1a.lv', active: false },
-  { name: 'Dateks.lv', active: false },
   { name: 'RD Electronics', active: false },
   { name: 'Euronics.lv', active: false },
   { name: 'Ksenukai.lv', active: false },
@@ -94,14 +97,14 @@ const copy = {
     navCatalog: 'Каталог', navStores: 'Магазины', navForStores: 'Магазинам', navAbout: 'О проекте',
     heroEyebrow: 'СРАВНЕНИЕ ЦЕН В ЛАТВИИ',
     heroTitle: 'Найди товар и сравни цены',
-    heroText: 'Ищи по названию, бренду или модели. CenaRadar собирает товары из подключённых магазинов и ведёт прямо на страницу продавца.',
+    heroText: 'Ищи по названию, бренду или модели. CenaRadar проверяет подключённые магазины и ведёт прямо на страницу продавца.',
     searchPlaceholder: 'Например: iPhone 16 Pro Max, S25 Ultra, CarPlay...',
     searchButton: 'Найти',
     popular: 'Популярные запросы',
     categories: 'Категории',
     phones: 'Смартфоны', computers: 'Компьютеры', audio: 'Аудио', tv: 'Телевизоры', home: 'Для дома', gaming: 'Игры', photo: 'Фото и видео', auto: 'Автоэлектроника',
     liveCatalog: 'Товары и цены',
-    liveCatalogSub: 'Данные из подключённых источников. Цена проверяется на странице магазина перед показом.',
+    liveCatalogSub: 'Поиск идёт по подключённым источникам. Для Ottocast цена дополнительно проверяется на странице товара.',
     updated: 'Обновлено', live: 'данные обновляются',
     results: 'Найдено', products: 'товаров',
     sort: 'Сортировка', relevance: 'По релевантности', priceAsc: 'Сначала дешевле', priceDesc: 'Сначала дороже', name: 'По названию',
@@ -109,28 +112,28 @@ const copy = {
     merchant: 'Магазин', currentPrice: 'Цена сейчас', toStore: 'В магазин', delivery: 'Доставка',
     noResults: 'По этому запросу ничего не найдено', noResultsText: 'Попробуй другое название, модель или бренд.',
     showMore: 'Показать ещё',
-    sourceNote: 'Сейчас автоматически обновляется каталог Ottocast. Новые магазины добавляются через XML, CSV или API — без переделки сайта.',
-    storesTitle: 'Магазины', storesSub: 'Подключённые и подготовленные источники каталога.', activeStore: 'Каталог подключён', waitingStore: 'Готов к подключению',
+    sourceNote: 'Сейчас подключены Ottocast, Dateks.lv и 220.lv. При поиске CenaRadar запрашивает актуальные публичные страницы магазинов и показывает прямые ссылки на товары.',
+    storesTitle: 'Магазины', storesSub: 'Подключённые и подготовленные источники каталога.', activeStore: 'Источник подключён', waitingStore: 'Готов к подключению',
     forStoresEyebrow: 'ДЛЯ ИНТЕРНЕТ-МАГАЗИНОВ', forStoresTitle: 'Добавьте товары в CenaRadar',
     forStoresText: 'Подключаем каталоги через XML, CSV или API. Нужны название товара, ссылка, цена, изображение, категория и наличие. Данные магазина остаются первичным источником цены.',
     feed1: 'XML / CSV / API', feed2: 'Автоматическое обновление', feed3: 'Прямая ссылка на магазин',
     aboutTitle: 'Что такое CenaRadar', aboutText: 'CenaRadar — поисковик и сервис сравнения товарных предложений для покупателей в Латвии. Мы не продаём товары: пользователь выбирает предложение и переходит в интернет-магазин.',
     trust1: 'Цены из источника магазина', trust2: 'Без обязательной регистрации', trust3: 'Латвия в центре поиска',
     footer: 'Поиск товаров и сравнение цен в интернет-магазинах.',
-    menu: 'Меню', close: 'Закрыть',
+    menu: 'Меню', close: 'Закрыть', searching: 'Проверяем магазины...',
   },
   lv: {
     navCatalog: 'Katalogs', navStores: 'Veikali', navForStores: 'Veikaliem', navAbout: 'Par projektu',
     heroEyebrow: 'CENU SALĪDZINĀŠANA LATVIJĀ',
     heroTitle: 'Atrodi preci un salīdzini cenas',
-    heroText: 'Meklē pēc nosaukuma, zīmola vai modeļa. CenaRadar apkopo preces no pieslēgtajiem veikaliem un aizved tieši uz pārdevēja lapu.',
+    heroText: 'Meklē pēc nosaukuma, zīmola vai modeļa. CenaRadar pārbauda pieslēgtos veikalus un aizved tieši uz pārdevēja lapu.',
     searchPlaceholder: 'Piemēram: iPhone 16 Pro Max, S25 Ultra, CarPlay...',
     searchButton: 'Meklēt',
     popular: 'Populāri meklējumi',
     categories: 'Kategorijas',
     phones: 'Viedtālruņi', computers: 'Datori', audio: 'Audio', tv: 'Televizori', home: 'Mājai', gaming: 'Spēles', photo: 'Foto un video', auto: 'Auto elektronika',
     liveCatalog: 'Preces un cenas',
-    liveCatalogSub: 'Dati no pieslēgtajiem avotiem. Cena tiek pārbaudīta veikala preces lapā pirms attēlošanas.',
+    liveCatalogSub: 'Meklēšana notiek pieslēgtajos avotos. Ottocast cenai papildus tiek veikta pārbaude preces lapā.',
     updated: 'Atjaunināts', live: 'dati tiek atjaunināti',
     results: 'Atrasts', products: 'preces',
     sort: 'Kārtošana', relevance: 'Pēc atbilstības', priceAsc: 'Lētākie vispirms', priceDesc: 'Dārgākie vispirms', name: 'Pēc nosaukuma',
@@ -138,15 +141,15 @@ const copy = {
     merchant: 'Veikals', currentPrice: 'Cena tagad', toStore: 'Uz veikalu', delivery: 'Piegāde',
     noResults: 'Nekas netika atrasts', noResultsText: 'Pamēģini citu nosaukumu, modeli vai zīmolu.',
     showMore: 'Rādīt vēl',
-    sourceNote: 'Pašlaik automātiski tiek atjaunināts Ottocast katalogs. Jauni veikali tiek pievienoti ar XML, CSV vai API — bez vietnes pārbūves.',
-    storesTitle: 'Veikali', storesSub: 'Pieslēgtie un integrācijai sagatavotie kataloga avoti.', activeStore: 'Katalogs pieslēgts', waitingStore: 'Gatavs pieslēgšanai',
+    sourceNote: 'Pašlaik pieslēgti Ottocast, Dateks.lv un 220.lv. Meklēšanas laikā CenaRadar pieprasa aktuālās publiskās veikalu lapas un rāda tiešās preču saites.',
+    storesTitle: 'Veikali', storesSub: 'Pieslēgtie un integrācijai sagatavotie kataloga avoti.', activeStore: 'Avots pieslēgts', waitingStore: 'Gatavs pieslēgšanai',
     forStoresEyebrow: 'INTERNETA VEIKALIEM', forStoresTitle: 'Pievienojiet preces CenaRadar',
     forStoresText: 'Pieslēdzam katalogus ar XML, CSV vai API. Nepieciešams preces nosaukums, saite, cena, attēls, kategorija un pieejamība. Veikala dati paliek primārais cenas avots.',
     feed1: 'XML / CSV / API', feed2: 'Automātiska atjaunošana', feed3: 'Tieša saite uz veikalu',
     aboutTitle: 'Kas ir CenaRadar', aboutText: 'CenaRadar ir preču meklētājs un piedāvājumu salīdzināšanas serviss pircējiem Latvijā. Mēs nepārdodam preces: lietotājs izvēlas piedāvājumu un pāriet uz interneta veikalu.',
     trust1: 'Cenas no veikala avota', trust2: 'Bez obligātas reģistrācijas', trust3: 'Latvija meklēšanas centrā',
     footer: 'Preču meklēšana un cenu salīdzināšana interneta veikalos.',
-    menu: 'Izvēlne', close: 'Aizvērt',
+    menu: 'Izvēlne', close: 'Aizvērt', searching: 'Pārbaudām veikalus...',
   },
 } satisfies Record<Lang, Record<string, string>>;
 
@@ -171,7 +174,7 @@ function directMerchantUrl(product: LiveProduct) {
   }
 }
 
-function money(value: number, currency = 'USD', lang: Lang) {
+function money(value: number, currency = 'EUR', lang: Lang) {
   try {
     return new Intl.NumberFormat(lang === 'ru' ? 'ru-RU' : 'lv-LV', {
       style: 'currency', currency, currencyDisplay: 'code', maximumFractionDigits: 2,
@@ -206,12 +209,17 @@ function PremiumApp() {
   useEffect(() => {
     let cancelled = false;
     let retryTimer: number | undefined;
+    let interval: number | undefined;
 
     const load = async (retry = true) => {
       const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 35000);
+      const timeout = window.setTimeout(() => controller.abort(), submittedQuery ? 25000 : 35000);
+      setLoading(true);
       try {
-        const response = await fetch(API_URL, { signal: controller.signal, headers: { Accept: 'application/json' } });
+        const endpoint = submittedQuery
+          ? `${SEARCH_API_URL}?q=${encodeURIComponent(submittedQuery)}`
+          : CATALOG_API_URL;
+        const response = await fetch(endpoint, { signal: controller.signal, headers: { Accept: 'application/json' } });
         if (!response.ok) throw new Error(String(response.status));
         const payload = (await response.json()) as FeedResponse;
         if (!cancelled) {
@@ -224,7 +232,7 @@ function PremiumApp() {
         if (!cancelled) {
           setLoading(false);
           setLive(false);
-          if (retry) retryTimer = window.setTimeout(() => void load(false), 10000);
+          if (retry) retryTimer = window.setTimeout(() => void load(false), 7000);
         }
       } finally {
         window.clearTimeout(timeout);
@@ -232,21 +240,21 @@ function PremiumApp() {
     };
 
     void load();
-    const interval = window.setInterval(() => void load(false), 10 * 60 * 1000);
+    if (!submittedQuery) interval = window.setInterval(() => void load(false), 10 * 60 * 1000);
     return () => {
       cancelled = true;
-      window.clearInterval(interval);
+      if (interval) window.clearInterval(interval);
       if (retryTimer) window.clearTimeout(retryTimer);
     };
-  }, []);
+  }, [submittedQuery]);
 
   const visibleProducts = useMemo(() => {
-    const q = normalise(submittedQuery || query);
+    const localQuery = submittedQuery ? '' : normalise(query);
     let next = products.filter(product => {
       if (onlyStock && product.inStock === '0') return false;
-      if (!q) return true;
-      const haystack = normalise(`${product.name} ${product.brand || ''} ${product.sku || ''} ${product.description || ''} ${product.category || ''}`);
-      return q.split(' ').filter(Boolean).every(token => haystack.includes(token));
+      if (!localQuery) return true;
+      const haystack = normalise(`${product.name} ${product.brand || ''} ${product.sku || ''} ${product.description || ''} ${product.category || ''} ${product.merchant || ''}`);
+      return localQuery.split(' ').filter(Boolean).every(token => haystack.includes(token));
     });
 
     if (sort === 'priceAsc') next = [...next].sort((a, b) => a.price - b.price);
@@ -256,10 +264,19 @@ function PremiumApp() {
   }, [onlyStock, products, query, sort, submittedQuery]);
 
   const submitSearch = (value = query) => {
+    const next = value.trim();
     setQuery(value);
-    setSubmittedQuery(value.trim());
+    setSubmittedQuery(next);
     setLimit(30);
     window.setTimeout(() => document.getElementById('catalog')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 20);
+  };
+
+  const resetSearch = () => {
+    setQuery('');
+    setSubmittedQuery('');
+    setOnlyStock(false);
+    setSort('relevance');
+    setLimit(30);
   };
 
   const formattedUpdate = useMemo(() => {
@@ -348,7 +365,7 @@ function PremiumApp() {
               <p>{t.liveCatalogSub}</p>
             </div>
             <div className={live ? 'cr-live-status active' : 'cr-live-status'}>
-              <span></span>{t.live}{formattedUpdate && <small>{t.updated}: {formattedUpdate}</small>}
+              <span></span>{loading && submittedQuery ? t.searching : t.live}{formattedUpdate && <small>{t.updated}: {formattedUpdate}</small>}
             </div>
           </div>
 
@@ -359,41 +376,42 @@ function PremiumApp() {
             <div className="cr-filter-row">
               <label className="cr-stock-filter"><input type="checkbox" checked={onlyStock} onChange={event => setOnlyStock(event.target.checked)} />{t.inStock}</label>
               <label className="cr-sort-select"><SlidersHorizontal size={15} /><select value={sort} onChange={event => setSort(event.target.value as SortMode)}><option value="relevance">{t.relevance}</option><option value="priceAsc">{t.priceAsc}</option><option value="priceDesc">{t.priceDesc}</option><option value="name">{t.name}</option></select><ArrowDownUp size={14} /></label>
-              {(query || submittedQuery || onlyStock || sort !== 'relevance') && <button className="cr-reset" onClick={() => { setQuery(''); setSubmittedQuery(''); setOnlyStock(false); setSort('relevance'); setLimit(30); }}>{t.reset}</button>}
+              {(query || submittedQuery || onlyStock || sort !== 'relevance') && <button className="cr-reset" onClick={resetSearch}>{t.reset}</button>}
             </div>
           </div>
 
           {loading ? (
             <div className="cr-loading"><span></span><span></span><span></span></div>
           ) : visibleProducts.length === 0 ? (
-            <div className="cr-empty"><Search size={34} /><h3>{t.noResults}</h3><p>{t.noResultsText}</p><button onClick={() => { setQuery(''); setSubmittedQuery(''); }}>{t.reset}</button></div>
+            <div className="cr-empty"><Search size={34} /><h3>{t.noResults}</h3><p>{t.noResultsText}</p><button onClick={resetSearch}>{t.reset}</button></div>
           ) : (
             <>
               <div className="cr-product-list">
                 {visibleProducts.slice(0, limit).map(product => {
                   const directUrl = directMerchantUrl(product);
+                  const merchant = product.merchant || 'Ottocast';
                   return (
-                    <article className="cr-product-row" key={product.id}>
+                    <article className="cr-product-row" key={`${merchant}-${product.id}`}>
                       <div className="cr-product-thumb">
                         {product.image ? <img src={product.image} alt={product.name} loading="lazy" onError={event => { event.currentTarget.style.display = 'none'; }} /> : <ShoppingBag size={28} />}
                       </div>
                       <div className="cr-product-copy">
-                        <div className="cr-product-meta"><span>Ottocast</span>{product.sku && <small>SKU {product.sku}</small>}</div>
+                        <div className="cr-product-meta"><span>{merchant}</span>{product.sku && <small>SKU {product.sku}</small>}</div>
                         <h3>{product.name}</h3>
                         {product.description && <p>{product.description}</p>}
                         <div className="cr-mobile-price">
-                          <span>{t.currentPrice}</span><strong>{money(product.price, product.currency || 'USD', lang)}</strong>
-                          {product.compareAtPrice && product.compareAtPrice > product.price ? <del>{money(product.compareAtPrice, product.currency || 'USD', lang)}</del> : null}
+                          <span>{t.currentPrice}</span><strong>{money(product.price, product.currency || 'EUR', lang)}</strong>
+                          {product.compareAtPrice && product.compareAtPrice > product.price ? <del>{money(product.compareAtPrice, product.currency || 'EUR', lang)}</del> : null}
                         </div>
                       </div>
                       <div className="cr-product-store">
-                        <span>{t.merchant}</span><strong>Ottocast</strong>
+                        <span>{t.merchant}</span><strong>{merchant}</strong>
                         <small><Clock3 size={13} />{product.delivery || t.delivery}</small>
                       </div>
                       <div className="cr-product-price">
                         <span>{t.currentPrice}</span>
-                        <strong>{money(product.price, product.currency || 'USD', lang)}</strong>
-                        {product.compareAtPrice && product.compareAtPrice > product.price ? <del>{money(product.compareAtPrice, product.currency || 'USD', lang)}</del> : null}
+                        <strong>{money(product.price, product.currency || 'EUR', lang)}</strong>
+                        {product.compareAtPrice && product.compareAtPrice > product.price ? <del>{money(product.compareAtPrice, product.currency || 'EUR', lang)}</del> : null}
                       </div>
                       {directUrl ? <a className="cr-shop-button" href={directUrl} target="_blank" rel="noopener noreferrer">{t.toStore}<ExternalLink size={15} /></a> : <span className="cr-shop-button disabled">{t.toStore}</span>}
                     </article>
