@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { decodeMaybeGzip, firstValue, mapProductRow, parseCsv } from './feed-utils.mjs';
 import { verifyMerchantPrices } from './storefront-price.mjs';
+import { searchPublicMerchants } from './merchant-search.mjs';
 
 const PORT = Number(process.env.PORT || 10000);
 const API_KEY = process.env.AWIN_DATAFEED_API_KEY || '';
@@ -79,6 +80,17 @@ async function fetchBuffer(url) {
   });
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   return Buffer.from(await response.arrayBuffer());
+}
+
+function normalizeSearch(value = '') {
+  return String(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+}
+
+function productMatches(product, query) {
+  const q = normalizeSearch(query);
+  if (!q) return true;
+  const haystack = normalizeSearch(`${product.name || ''} ${product.brand || ''} ${product.sku || ''} ${product.description || ''}`);
+  return q.split(' ').filter(Boolean).every(token => haystack.includes(token));
 }
 
 function mapShopifyProduct(product) {
@@ -243,6 +255,39 @@ async function getProducts() {
   return refreshPromise;
 }
 
+async function searchAllMerchants(query) {
+  const q = String(query || '').trim().slice(0, 120);
+  if (q.length < 2) return { products: [], meta: { live: true, query: q, sources: [] } };
+
+  const [catalog, publicSearch] = await Promise.all([
+    getProducts(),
+    searchPublicMerchants(q),
+  ]);
+  const ottocast = (catalog.products || []).filter(product => productMatches(product, q)).slice(0, 24);
+  const products = [...publicSearch.products, ...ottocast];
+  const seen = new Set();
+  const deduped = products.filter(product => {
+    const key = `${product.merchant || ''}|${product.url || product.id}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return {
+    products: deduped,
+    meta: {
+      live: true,
+      query: q,
+      fetchedAt: new Date().toISOString(),
+      sources: [
+        ...publicSearch.sources,
+        { name: 'Ottocast', ok: true, count: ottocast.length },
+      ],
+      productCount: deduped.length,
+    },
+  };
+}
+
 function setCors(req, res) {
   const origin = req.headers.origin;
   if (origin && ALLOWED_ORIGINS.has(origin)) {
@@ -253,10 +298,10 @@ function setCors(req, res) {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 }
 
-function sendJson(res, status, payload) {
+function sendJson(res, status, payload, cacheControl = 'public, max-age=120, stale-while-revalidate=600') {
   res.statusCode = status;
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
-  res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
+  res.setHeader('Cache-Control', cacheControl);
   res.end(JSON.stringify(payload));
 }
 
@@ -274,12 +319,21 @@ const server = http.createServer(async (req, res) => {
       priceSource: cache?.payload?.meta?.priceSource || null,
       verifiedPrices: cache?.payload?.meta?.verifiedPrices || 0,
       correctedPrices: cache?.payload?.meta?.correctedPrices || 0,
+      searchMerchants: ['Dateks.lv', '220.lv', 'Ottocast'],
     });
+  }
+  if (req.method === 'GET' && url.pathname === '/api/search') {
+    try {
+      const query = url.searchParams.get('q') || '';
+      return sendJson(res, 200, await searchAllMerchants(query), 'public, max-age=60, stale-while-revalidate=300');
+    } catch (error) {
+      return sendJson(res, 502, { error: error instanceof Error ? error.message : 'Search failed' }, 'no-store');
+    }
   }
   if (req.method === 'GET' && (url.pathname === '/api/ottocast' || url.pathname === '/api/products')) {
     return sendJson(res, 200, await getProducts());
   }
-  return sendJson(res, 404, { error: 'Not found' });
+  return sendJson(res, 404, { error: 'Not found' }, 'no-store');
 });
 
 server.listen(PORT, '0.0.0.0', () => {
