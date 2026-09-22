@@ -1,0 +1,28 @@
+name: RigasRiepas snapshot
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 */6 * * *'
+permissions:
+  contents: write
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: price-aggregator-mvp
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: cd price-aggregator-api && npm install
+      - run: node price-aggregator-api/import-rigasriepas.mjs
+      - name: Commit snapshot only when valid
+        run: |
+          git config user.name "CenaRadar Feed Bot"
+          git config user.email "actions@users.noreply.github.com"
+          git add price-aggregator-api/snapshots/rigasriepas.json
+          git diff --cached --quiet && exit 0
+          git commit -m "Refresh RigasRiepas product snapshot"
+          git push origin HEAD:price-aggregator-mvp
