@@ -32,6 +32,9 @@ type LiveProduct = {
   id: string;
   name: string;
   sku?: string;
+  model?: string;
+  mpn?: string;
+  ean?: string;
   description?: string;
   price: number;
   compareAtPrice?: number | null;
@@ -48,6 +51,12 @@ type LiveProduct = {
   category?: string;
 };
 
+type ConnectedStore = {
+  name: string;
+  count: number;
+  mode?: string;
+};
+
 type FeedResponse = {
   products?: LiveProduct[];
   meta?: {
@@ -56,6 +65,8 @@ type FeedResponse = {
     fetchedAt?: string | null;
     source?: string;
     productCount?: number;
+    storeCount?: number;
+    stores?: ConnectedStore[];
     sources?: Array<{ name: string; ok: boolean; count: number }>;
   };
 };
@@ -70,15 +81,14 @@ const popularQueries = [
   'JBL', 'Garmin', 'GoPro', 'Coffee machine', 'Powerbank', 'Monitor 27', 'Tablet', 'Smart home',
 ];
 
-const storeDirectory = [
-  { name: 'Ottocast', active: true },
-  { name: '220.lv', active: false },
-  { name: 'Dateks.lv', active: false },
-  { name: '1a.lv', active: false },
-  { name: 'RD Electronics', active: false },
-  { name: 'Euronics.lv', active: false },
-  { name: 'Ksenukai.lv', active: false },
-  { name: 'Samsung', active: false },
+const preparedStores = [
+  '220.lv',
+  'Dateks.lv',
+  '1a.lv',
+  'RD Electronics',
+  'Euronics.lv',
+  'Ksenukai.lv',
+  'Samsung',
 ];
 
 const categoryCards = [
@@ -98,13 +108,13 @@ const copy = {
     heroEyebrow: 'СРАВНЕНИЕ ЦЕН В ЛАТВИИ',
     heroTitle: 'Найди товар и сравни цены',
     heroText: 'Ищи по названию, бренду или модели. CenaRadar собирает данные подключённых магазинов и ведёт прямо на страницу продавца.',
-    searchPlaceholder: 'Например: iPhone 16 Pro Max, S25 Ultra, CarPlay...',
+    searchPlaceholder: 'Например: iPhone 16 Pro Max, Bosch, CarPlay...',
     searchButton: 'Найти',
     popular: 'Популярные запросы',
     categories: 'Категории',
     phones: 'Смартфоны', computers: 'Компьютеры', audio: 'Аудио', tv: 'Телевизоры', home: 'Для дома', gaming: 'Игры', photo: 'Фото и видео', auto: 'Автоэлектроника',
     liveCatalog: 'Товары и цены',
-    liveCatalogSub: 'Показываем только данные из источников, которые удалось проверить. Новые магазины подключаются через их официальные товарные фиды.',
+    liveCatalogSub: 'Реальные позиции из подключённых товарных XML и витрин магазинов. Каталог обновляется автоматически.',
     updated: 'Обновлено', live: 'данные обновляются',
     results: 'Найдено', products: 'товаров',
     sort: 'Сортировка', relevance: 'По релевантности', priceAsc: 'Сначала дешевле', priceDesc: 'Сначала дороже', name: 'По названию',
@@ -112,8 +122,8 @@ const copy = {
     merchant: 'Магазин', currentPrice: 'Цена сейчас', toStore: 'В магазин', delivery: 'Доставка',
     noResults: 'По этому запросу ничего не найдено', noResultsText: 'Попробуй другое название, модель или бренд.',
     showMore: 'Показать ещё',
-    sourceNote: 'Ottocast уже подключён. Для 220.lv, Dateks.lv и других магазинов подготовлены коннекторы; полные каталоги включим после получения разрешённого XML/CSV/API feed.',
-    storesTitle: 'Магазины', storesSub: 'Подключённые и подготовленные источники каталога.', activeStore: 'Источник подключён', waitingStore: 'Готов к подключению feed',
+    sourceNote: 'Каталог формируется напрямую из подключённых источников магазинов. Партнёрская программа для показа товаров не требуется.',
+    storesTitle: 'Магазины', storesSub: 'Подключённые каталоги и магазины, которые готовим к добавлению.', activeStore: 'Каталог подключён', waitingStore: 'Источник ещё не подключён',
     forStoresEyebrow: 'ДЛЯ ИНТЕРНЕТ-МАГАЗИНОВ', forStoresTitle: 'Добавьте товары в CenaRadar',
     forStoresText: 'Подключаем каталоги через XML, CSV или API. Нужны название товара, ссылка, цена, изображение, категория и наличие. Данные магазина остаются первичным источником цены.',
     feed1: 'XML / CSV / API', feed2: 'Автоматическое обновление', feed3: 'Прямая ссылка на магазин',
@@ -127,13 +137,13 @@ const copy = {
     heroEyebrow: 'CENU SALĪDZINĀŠANA LATVIJĀ',
     heroTitle: 'Atrodi preci un salīdzini cenas',
     heroText: 'Meklē pēc nosaukuma, zīmola vai modeļa. CenaRadar apkopo pieslēgto veikalu datus un aizved tieši uz pārdevēja lapu.',
-    searchPlaceholder: 'Piemēram: iPhone 16 Pro Max, S25 Ultra, CarPlay...',
+    searchPlaceholder: 'Piemēram: iPhone 16 Pro Max, Bosch, CarPlay...',
     searchButton: 'Meklēt',
     popular: 'Populāri meklējumi',
     categories: 'Kategorijas',
     phones: 'Viedtālruņi', computers: 'Datori', audio: 'Audio', tv: 'Televizori', home: 'Mājai', gaming: 'Spēles', photo: 'Foto un video', auto: 'Auto elektronika',
     liveCatalog: 'Preces un cenas',
-    liveCatalogSub: 'Rādām tikai datus no pārbaudītiem avotiem. Jauni veikali tiek pieslēgti ar to oficiālajām produktu plūsmām.',
+    liveCatalogSub: 'Reālas preces no pieslēgtajiem veikalu XML avotiem un vitrīnām. Katalogs tiek atjaunināts automātiski.',
     updated: 'Atjaunināts', live: 'dati tiek atjaunināti',
     results: 'Atrasts', products: 'preces',
     sort: 'Kārtošana', relevance: 'Pēc atbilstības', priceAsc: 'Lētākie vispirms', priceDesc: 'Dārgākie vispirms', name: 'Pēc nosaukuma',
@@ -141,8 +151,8 @@ const copy = {
     merchant: 'Veikals', currentPrice: 'Cena tagad', toStore: 'Uz veikalu', delivery: 'Piegāde',
     noResults: 'Nekas netika atrasts', noResultsText: 'Pamēģini citu nosaukumu, modeli vai zīmolu.',
     showMore: 'Rādīt vēl',
-    sourceNote: 'Ottocast jau ir pieslēgts. 220.lv, Dateks.lv un citiem veikaliem savienotāji ir sagatavoti; pilnus katalogus ieslēgsim pēc atļauta XML/CSV/API feed saņemšanas.',
-    storesTitle: 'Veikali', storesSub: 'Pieslēgtie un integrācijai sagatavotie kataloga avoti.', activeStore: 'Avots pieslēgts', waitingStore: 'Gatavs feed pieslēgšanai',
+    sourceNote: 'Katalogs tiek veidots tieši no pieslēgtajiem veikalu datu avotiem. Partnerprogramma preču attēlošanai nav nepieciešama.',
+    storesTitle: 'Veikali', storesSub: 'Pieslēgtie katalogi un veikali, kurus gatavojam pievienošanai.', activeStore: 'Katalogs pieslēgts', waitingStore: 'Avots vēl nav pieslēgts',
     forStoresEyebrow: 'INTERNETA VEIKALIEM', forStoresTitle: 'Pievienojiet preces CenaRadar',
     forStoresText: 'Pieslēdzam katalogus ar XML, CSV vai API. Nepieciešams preces nosaukums, saite, cena, attēls, kategorija un pieejamība. Veikala dati paliek primārais cenas avots.',
     feed1: 'XML / CSV / API', feed2: 'Automātiska atjaunošana', feed3: 'Tieša saite uz veikalu',
@@ -196,6 +206,7 @@ function PremiumApp() {
   const [onlyStock, setOnlyStock] = useState(false);
   const [limit, setLimit] = useState(30);
   const [products, setProducts] = useState<LiveProduct[]>([]);
+  const [connectedStores, setConnectedStores] = useState<ConnectedStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [live, setLive] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<string | null>(null);
@@ -224,6 +235,7 @@ function PremiumApp() {
         const payload = (await response.json()) as FeedResponse;
         if (!cancelled) {
           setProducts(payload.products || []);
+          setConnectedStores(payload.meta?.stores || []);
           setLive(Boolean(payload.meta?.live && !payload.meta?.stale));
           setUpdatedAt(payload.meta?.fetchedAt || null);
           setLoading(false);
@@ -248,12 +260,21 @@ function PremiumApp() {
     };
   }, [submittedQuery]);
 
+  const storeDirectory = useMemo(() => {
+    const active = connectedStores.map(store => ({ ...store, active: true }));
+    const activeNames = new Set(active.map(store => store.name.toLowerCase()));
+    const pending = preparedStores
+      .filter(name => !activeNames.has(name.toLowerCase()))
+      .map(name => ({ name, count: 0, active: false }));
+    return [...active, ...pending];
+  }, [connectedStores]);
+
   const visibleProducts = useMemo(() => {
     const localQuery = submittedQuery ? '' : normalise(query);
     let next = products.filter(product => {
       if (onlyStock && product.inStock === '0') return false;
       if (!localQuery) return true;
-      const haystack = normalise(`${product.name} ${product.brand || ''} ${product.sku || ''} ${product.description || ''} ${product.category || ''} ${product.merchant || ''}`);
+      const haystack = normalise(`${product.name} ${product.brand || ''} ${product.model || ''} ${product.sku || ''} ${product.mpn || ''} ${product.ean || ''} ${product.description || ''} ${product.category || ''} ${product.merchant || ''}`);
       return localQuery.split(' ').filter(Boolean).every(token => haystack.includes(token));
     });
 
@@ -285,6 +306,12 @@ function PremiumApp() {
     if (Number.isNaN(parsed.getTime())) return null;
     return new Intl.DateTimeFormat(lang === 'ru' ? 'ru-RU' : 'lv-LV', { dateStyle: 'short', timeStyle: 'short' }).format(parsed);
   }, [lang, updatedAt]);
+
+  const connectedSummary = connectedStores.length
+    ? (lang === 'ru'
+      ? `Подключено магазинов: ${connectedStores.length} · ${connectedStores.map(store => store.name).join(', ')}`
+      : `Pieslēgti veikali: ${connectedStores.length} · ${connectedStores.map(store => store.name).join(', ')}`)
+    : t.sourceNote;
 
   return (
     <div className="cr-shell">
@@ -369,7 +396,7 @@ function PremiumApp() {
             </div>
           </div>
 
-          <div className="cr-source-note"><Database size={18} /><span>{t.sourceNote}</span></div>
+          <div className="cr-source-note"><Database size={18} /><span>{connectedSummary}</span></div>
 
           <div className="cr-catalog-tools">
             <div className="cr-result-count"><strong>{t.results}: {visibleProducts.length}</strong><span>{t.products}</span></div>
@@ -389,7 +416,7 @@ function PremiumApp() {
               <div className="cr-product-list">
                 {visibleProducts.slice(0, limit).map(product => {
                   const directUrl = directMerchantUrl(product);
-                  const merchant = product.merchant || 'Ottocast';
+                  const merchant = product.merchant || 'Store';
                   return (
                     <article className="cr-product-row" key={`${merchant}-${product.id}`}>
                       <div className="cr-product-thumb">
@@ -426,7 +453,16 @@ function PremiumApp() {
         <section className="cr-section" id="stores">
           <div className="cr-section-title split"><div><span className="cr-eyebrow">LATVIA</span><h2>{t.storesTitle}</h2><p>{t.storesSub}</p></div></div>
           <div className="cr-store-grid">
-            {storeDirectory.map(store => <article className={store.active ? 'cr-store-card active' : 'cr-store-card'} key={store.name}><span className="cr-store-logo">{store.name.slice(0, 2).toUpperCase()}</span><div><strong>{store.name}</strong><small>{store.active ? t.activeStore : t.waitingStore}</small></div>{store.active ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}</article>)}
+            {storeDirectory.map(store => (
+              <article className={store.active ? 'cr-store-card active' : 'cr-store-card'} key={store.name}>
+                <span className="cr-store-logo">{store.name.slice(0, 2).toUpperCase()}</span>
+                <div>
+                  <strong>{store.name}</strong>
+                  <small>{store.active ? `${t.activeStore}${store.count ? ` · ${store.count} ${t.products}` : ''}` : t.waitingStore}</small>
+                </div>
+                {store.active ? <CheckCircle2 size={18} /> : <Clock3 size={18} />}
+              </article>
+            ))}
           </div>
         </section>
 
@@ -449,7 +485,7 @@ function PremiumApp() {
 
         <section className="cr-section cr-about" id="about">
           <div><span className="cr-eyebrow">CENARADAR</span><h2>{t.aboutTitle}</h2><p>{t.aboutText}</p></div>
-          <div className="cr-about-stats"><span><strong>{products.length}</strong><small>{t.products}</small></span><span><strong>{storeDirectory.filter(store => store.active).length}</strong><small>{t.activeStore}</small></span><span><strong>LV / RU</strong><small>Interface</small></span></div>
+          <div className="cr-about-stats"><span><strong>{products.length}</strong><small>{t.products}</small></span><span><strong>{connectedStores.length}</strong><small>{t.activeStore}</small></span><span><strong>LV / RU</strong><small>Interface</small></span></div>
         </section>
       </main>
 
