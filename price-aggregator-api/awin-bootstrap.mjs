@@ -6,6 +6,15 @@ const FEED_LIST_URL = API_KEY
   : '';
 const UA = 'Mozilla/5.0 (compatible; CenaRadar/1.0; +https://cenaradar.online)';
 
+const AUTHORIZED_SOURCES = [
+  {
+    name: 'RigasRiepas.lv',
+    url: 'https://rigasriepas.lv/export/salidzini.xml',
+    format: 'xml',
+    currency: 'EUR',
+  },
+];
+
 function clean(value = '') {
   return String(value ?? '').replace(/\u00a0/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -40,6 +49,18 @@ function existingSources() {
     console.error(`Awin bootstrap: existing MERCHANT_FEEDS_JSON is invalid: ${error instanceof Error ? error.message : 'unknown error'}`);
   }
   return [];
+}
+
+function mergeSources(existing, additions) {
+  const seen = new Set();
+  const merged = [];
+  for (const source of [...existing, ...additions]) {
+    const key = `${clean(source?.name).toLowerCase()}|${clean(source?.url)}`;
+    if (!clean(source?.name) || !clean(source?.url) || seen.has(key)) continue;
+    seen.add(key);
+    merged.push(source);
+  }
+  return merged;
 }
 
 async function loadAwinSources() {
@@ -107,17 +128,19 @@ async function loadAwinSources() {
   return sources;
 }
 
-if (API_KEY) {
-  try {
-    const existing = existingSources();
-    const awinSources = await loadAwinSources();
-    const existingKeys = new Set(existing.map(source => `${clean(source?.name).toLowerCase()}|${clean(source?.url)}`));
-    const additions = awinSources.filter(source => !existingKeys.has(`${source.name.toLowerCase()}|${source.url}`));
-    if (additions.length) {
-      process.env.MERCHANT_FEEDS_JSON = JSON.stringify([...existing, ...additions]);
-    }
-    console.log(`Awin bootstrap: joined feeds discovered=${awinSources.length}, added=${additions.length}`);
-  } catch (error) {
-    console.error(`Awin bootstrap failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+try {
+  const existing = existingSources();
+  let additions = [...AUTHORIZED_SOURCES];
+  let awinSources = [];
+  if (API_KEY) {
+    awinSources = await loadAwinSources();
+    additions.push(...awinSources);
   }
+  const merged = mergeSources(existing, additions);
+  if (merged.length !== existing.length || additions.length) {
+    process.env.MERCHANT_FEEDS_JSON = JSON.stringify(merged);
+  }
+  console.log(`Feed bootstrap: authorized=${AUTHORIZED_SOURCES.length}, Awin discovered=${awinSources.length}, total=${merged.length}`);
+} catch (error) {
+  console.error(`Feed bootstrap failed: ${error instanceof Error ? error.message : 'unknown error'}`);
 }
