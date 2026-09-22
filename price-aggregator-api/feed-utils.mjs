@@ -71,6 +71,7 @@ export function firstValue(row, keys) {
 
 export function mapProductRow(row) {
   const price = Number.parseFloat(firstValue(row, ['search_price', 'store_price', 'price'])) || 0;
+  const merchantUrl = firstValue(row, ['merchant_deep_link', 'merchant_url', 'product_url']);
   return {
     id: String(firstValue(row, ['aw_product_id', 'product_id', 'merchant_product_id'])),
     name: firstValue(row, ['product_name', 'name']),
@@ -79,10 +80,12 @@ export function mapProductRow(row) {
     price,
     currency: firstValue(row, ['currency']) || 'USD',
     image: firstValue(row, ['merchant_image_url', 'large_image', 'aw_image_url']),
-    url: firstValue(row, ['aw_deep_link', 'merchant_deep_link']),
+    url: merchantUrl,
+    merchantUrl,
     delivery: firstValue(row, ['delivery_cost', 'delivery_time']) || 'Check with retailer',
     brand: firstValue(row, ['brand_name']) || firstValue(row, ['merchant_name']) || 'Ottocast',
     inStock: firstValue(row, ['in_stock', 'stock_status', 'is_for_sale']),
     lastUpdated: firstValue(row, ['last_updated', 'Last Imported']),
+    category: firstValue(row, ['merchant_category', 'category_name']),
   };
 }
