@@ -31,7 +31,16 @@ function normalize(value = '') {
 function matches(product, query) {
   const q = normalize(query);
   if (!q) return true;
-  const haystack = normalize(`${product.name} ${product.brand || ''} ${product.sku || ''} ${product.category || ''} ${product.description || ''}`);
+  const haystack = normalize([
+    product.name,
+    product.brand,
+    product.model,
+    product.sku,
+    product.mpn,
+    product.ean,
+    product.category,
+    product.description,
+  ].filter(Boolean).join(' '));
   return q.split(' ').filter(Boolean).every(token => haystack.includes(token));
 }
 
@@ -73,17 +82,38 @@ function field(row, names) {
   return clean(firstValue(row, names));
 }
 
+function stockValue(value) {
+  const raw = clean(value);
+  if (!raw) return '1';
+  if (/out.?of.?stock|unavailable|nav pieej|izpārdots|^false$|^no$/i.test(raw)) return '0';
+  const numeric = Number.parseFloat(raw.replace(',', '.'));
+  if (Number.isFinite(numeric)) return numeric > 0 ? '1' : '0';
+  return '1';
+}
+
 function mapCsvRow(row, source, index) {
   const name = field(row, ['name', 'Name', 'product_name', 'Product Name', 'title', 'Title']);
   const price = numberValue(field(row, ['price', 'Price', 'search_price', 'store_price', 'sale_price', 'current_price']));
   const url = field(row, ['merchant_deep_link', 'sourceProductUrl', 'productURL', 'product_url', 'url', 'URL', 'link', 'Link']);
   if (!name || !price || !url) return null;
-  const stockRaw = field(row, ['in_stock', 'stock_status', 'availability', 'available', 'stock']);
-  const out = /out.?of.?stock|unavailable|nav pieej|izpārdots|0$/i.test(stockRaw);
+
+  const model = field(row, ['model', 'Model', 'model_number']);
+  const mpn = field(row, ['mpn', 'MPN', 'manufacturer_part_number']);
+  const ean = field(row, ['ean', 'EAN', 'gtin', 'GTIN', 'upc', 'UPC', 'isbn', 'ISBN']);
+  const sku = field(row, ['sku', 'SKU', 'merchant_product_id', 'product_id']) || mpn || ean || model;
+  const deliveryCost = field(row, ['delivery_latvija', 'delivery_cost', 'shippingCost', 'shipping']);
+  const deliveryDays = field(row, ['delivery_days_latvija', 'delivery_time']);
+  const delivery = deliveryDays
+    ? `${deliveryDays} d.${deliveryCost ? ` · ${deliveryCost} €` : ''}`
+    : deliveryCost || field(row, ['delivery']);
+
   return {
-    id: `${source.name}:${field(row, ['id', 'product_id', 'productId', 'sku', 'SKU', 'ean', 'EAN']) || index}`,
+    id: `${source.name}:${field(row, ['id', 'product_id', 'productId']) || ean || mpn || sku || index}`,
     name,
-    sku: field(row, ['sku', 'SKU', 'merchant_product_id', 'model_number', 'mpn', 'ean', 'EAN']),
+    sku,
+    model,
+    mpn,
+    ean,
     description: field(row, ['description', 'Description', 'product_short_description', 'short_description']).slice(0, 360),
     price,
     compareAtPrice: numberValue(field(row, ['old_price', 'product_price_old', 'rrp_price', 'compare_at_price'])),
@@ -92,12 +122,12 @@ function mapCsvRow(row, source, index) {
     url,
     merchantUrl: url,
     merchant: source.name,
-    delivery: field(row, ['delivery_time', 'delivery', 'shipping', 'shippingCost', 'delivery_cost']),
-    brand: field(row, ['brand', 'brand_name', 'Brand']),
-    inStock: out ? '0' : '1',
+    delivery,
+    brand: field(row, ['brand', 'brand_name', 'Brand', 'manufacturer', 'Manufacturer']),
+    inStock: stockValue(field(row, ['in_stock', 'stock_status', 'availability', 'available', 'stock'])),
     priceSource: 'merchant_feed',
     lastUpdated: field(row, ['last_updated', 'updated_at', 'modifiedDate']) || null,
-    category: field(row, ['category', 'category_name', 'merchant_category', 'product_type']),
+    category: field(row, ['category_full', 'category', 'category_name', 'merchant_category', 'product_type']),
   };
 }
 
@@ -124,17 +154,31 @@ function parseXmlFeed(text, source) {
   if (!nodes.length) nodes = $('item');
   if (!nodes.length) nodes = $('offer');
   const products = [];
+
   nodes.each((index, el) => {
     const node = $(el);
     const name = nodeText(node, ['name', 'title', 'product_name']);
     const price = numberValue(nodeText(node, ['price', 'search_price', 'store_price', 'sale_price']));
     const url = nodeText(node, ['merchant_deep_link', 'sourceProductUrl', 'productURL', 'product_url', 'url', 'link']);
     if (!name || !price || !url) return;
-    const stockRaw = nodeText(node, ['in_stock', 'stock_status', 'availability', 'available', 'stock']);
+
+    const model = nodeText(node, ['model', 'model_number']);
+    const mpn = nodeText(node, ['mpn', 'manufacturer_part_number']);
+    const ean = nodeText(node, ['ean', 'gtin', 'upc', 'isbn']);
+    const sku = nodeText(node, ['sku', 'merchant_product_id', 'product_id']) || mpn || ean || model;
+    const deliveryCost = nodeText(node, ['delivery_latvija', 'delivery_cost', 'shippingCost', 'shipping']);
+    const deliveryDays = nodeText(node, ['delivery_days_latvija', 'delivery_time']);
+    const delivery = deliveryDays
+      ? `${deliveryDays} d.${deliveryCost ? ` · ${deliveryCost} €` : ''}`
+      : deliveryCost || nodeText(node, ['delivery']);
+
     products.push({
-      id: `${source.name}:${nodeText(node, ['id', 'product_id', 'sku', 'ean']) || index}`,
+      id: `${source.name}:${nodeText(node, ['id', 'product_id']) || ean || mpn || sku || index}`,
       name,
-      sku: nodeText(node, ['sku', 'merchant_product_id', 'model_number', 'mpn', 'ean']),
+      sku,
+      model,
+      mpn,
+      ean,
       description: nodeText(node, ['description', 'product_short_description', 'short_description']).slice(0, 360),
       price,
       compareAtPrice: numberValue(nodeText(node, ['old_price', 'product_price_old', 'rrp_price', 'compare_at_price'])),
@@ -143,14 +187,15 @@ function parseXmlFeed(text, source) {
       url,
       merchantUrl: url,
       merchant: source.name,
-      delivery: nodeText(node, ['delivery_time', 'delivery', 'shipping', 'delivery_cost']),
-      brand: nodeText(node, ['brand', 'brand_name']),
-      inStock: /out.?of.?stock|unavailable|nav pieej|izpārdots|^0$/i.test(stockRaw) ? '0' : '1',
+      delivery,
+      brand: nodeText(node, ['brand', 'brand_name', 'manufacturer']),
+      inStock: stockValue(nodeText(node, ['in_stock', 'stock_status', 'availability', 'available', 'stock'])),
       priceSource: 'merchant_feed',
       lastUpdated: nodeText(node, ['last_updated', 'updated_at', 'modifiedDate']) || null,
-      category: nodeText(node, ['category', 'category_name', 'merchant_category', 'product_type']),
+      category: nodeText(node, ['category_full', 'category', 'category_name', 'merchant_category', 'product_type']),
     });
   });
+
   return products;
 }
 
@@ -200,15 +245,24 @@ export async function searchConfiguredMerchantFeeds(query, limitPerSource = 30) 
   const settled = await Promise.allSettled(sources.map(source => loadSource(source)));
   const products = [];
   const statuses = [];
+
   settled.forEach((result, index) => {
     const source = sources[index];
     if (result.status === 'fulfilled') {
       const matchesFound = result.value.filter(product => matches(product, query)).slice(0, limitPerSource);
       products.push(...matchesFound);
-      statuses.push({ name: source.name, ok: true, count: matchesFound.length, mode: 'feed' });
+      statuses.push({ name: source.name, ok: true, count: matchesFound.length, total: result.value.length, mode: 'feed' });
     } else {
-      statuses.push({ name: source.name, ok: false, count: 0, mode: 'feed', error: result.reason instanceof Error ? result.reason.message : 'Feed failed' });
+      statuses.push({
+        name: source.name,
+        ok: false,
+        count: 0,
+        total: 0,
+        mode: 'feed',
+        error: result.reason instanceof Error ? result.reason.message : 'Feed failed',
+      });
     }
   });
+
   return { products, sources: statuses };
 }
