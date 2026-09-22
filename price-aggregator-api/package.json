@@ -5,5 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.mjs"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2"
   }
 }
