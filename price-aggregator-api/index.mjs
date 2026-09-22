@@ -8,7 +8,6 @@ import { verifyMerchantPrices } from './storefront-price.mjs';
 const PORT = Number(process.env.PORT || 10000);
 const API_KEY = process.env.AWIN_DATAFEED_API_KEY || '';
 const ADVERTISER_ID = String(process.env.AWIN_ADVERTISER_ID || '96499');
-const PUBLISHER_ID = String(process.env.AWIN_PUBLISHER_ID || '3101606');
 const FEED_ID = String(process.env.AWIN_FEED_ID || '107946');
 const CACHE_MS = Number(process.env.FEED_CACHE_MS || 10 * 60 * 1000);
 const FEED_LIST_URL = API_KEY ? `https://productdata.awin.com/datafeed/list/apikey/${encodeURIComponent(API_KEY)}` : '';
@@ -20,7 +19,12 @@ const ALLOWED_ORIGINS = new Set([
 ]);
 
 const here = dirname(fileURLToPath(import.meta.url));
-const fallbackProducts = JSON.parse(readFileSync(join(here, 'fallback-products.json'), 'utf8'));
+const fallbackProducts = JSON.parse(readFileSync(join(here, 'fallback-products.json'), 'utf8')).map(product => ({
+  ...product,
+  url: '',
+  merchantUrl: '',
+  merchant: 'Ottocast',
+}));
 
 let cache = null;
 let refreshPromise = null;
@@ -45,10 +49,6 @@ function stripHtml(value = '') {
     .replace(/&#39;/gi, "'")
     .replace(/\s+/g, ' ')
     .trim();
-}
-
-function buildAwinDeepLink(destinationUrl) {
-  return `https://www.awin1.com/cread.php?awinmid=${encodeURIComponent(ADVERTISER_ID)}&awinaffid=${encodeURIComponent(PUBLISHER_ID)}&ued=${encodeURIComponent(destinationUrl)}`;
 }
 
 async function fetchText(url) {
@@ -109,13 +109,15 @@ function mapShopifyProduct(product) {
     compareAtPrice,
     currency: 'USD',
     image,
-    url: buildAwinDeepLink(destinationUrl),
+    url: destinationUrl,
     merchantUrl: destinationUrl,
+    merchant: 'Ottocast',
     delivery: 'Check at checkout',
     brand: product.vendor || 'Ottocast',
     inStock: availableVariants.length > 0 ? '1' : '0',
     priceSource: 'merchant_storefront_list',
     lastUpdated: product.updated_at || null,
+    category: product.product_type || 'Automotive electronics',
   };
 }
 
@@ -133,9 +135,8 @@ async function loadOttocastStorefront() {
   return {
     products,
     meta: {
-      source: 'Ottocast product pages + Awin deep links',
-      advertiser: 'Ottocast',
-      advertiserId: ADVERTISER_ID,
+      source: 'Ottocast product pages',
+      merchant: 'Ottocast',
       fetchedAt: new Date().toISOString(),
       live: true,
       priceSource: 'merchant_product_page',
@@ -146,8 +147,8 @@ async function loadOttocastStorefront() {
   };
 }
 
-async function resolveAwinFeed() {
-  if (!FEED_LIST_URL) throw new Error('AWIN_DATAFEED_API_KEY is not configured');
+async function resolveBackupFeed() {
+  if (!FEED_LIST_URL) throw new Error('Backup feed is not configured');
   const listText = await fetchText(FEED_LIST_URL);
   const feeds = parseCsv(listText);
 
@@ -157,9 +158,9 @@ async function resolveAwinFeed() {
     return advertiser === ADVERTISER_ID && feed === FEED_ID;
   });
 
-  if (!match) throw new Error(`Awin feed ${FEED_ID} for advertiser ${ADVERTISER_ID} was not found`);
+  if (!match) throw new Error(`Backup feed ${FEED_ID} was not found`);
   const url = normalizeFeedUrl(field(match, ['URL', 'Url', 'url', 'Download URL', 'download_url']));
-  if (!url) throw new Error('Awin feed download URL is missing');
+  if (!url) throw new Error('Backup feed download URL is missing');
 
   return {
     url,
@@ -168,28 +169,28 @@ async function resolveAwinFeed() {
   };
 }
 
-async function loadAwinFeed() {
-  const feed = await resolveAwinFeed();
+async function loadBackupFeed() {
+  const feed = await resolveBackupFeed();
   const compressed = await fetchBuffer(feed.url);
   const csvText = decodeMaybeGzip(compressed);
   const rows = parseCsv(csvText);
   const products = rows
     .map(mapProductRow)
-    .filter(product => product.id && product.name && product.url && product.price > 0);
-  if (!products.length) throw new Error('Awin feed returned no usable products');
+    .map(product => ({ ...product, merchant: 'Ottocast' }))
+    .filter(product => product.id && product.name && product.price > 0);
+  if (!products.length) throw new Error('Backup feed returned no usable products');
 
   return {
     products,
     meta: {
-      source: 'Awin product feed fallback',
-      advertiser: 'Ottocast',
-      advertiserId: ADVERTISER_ID,
+      source: 'Backup product feed',
+      merchant: 'Ottocast',
       feedId: FEED_ID,
       feedName: feed.name,
       feedLastImported: feed.lastImported || null,
       fetchedAt: new Date().toISOString(),
       live: true,
-      priceSource: 'awin_feed',
+      priceSource: 'backup_feed',
       productCount: products.length,
     },
   };
@@ -200,7 +201,7 @@ async function loadRemoteProducts() {
     return await loadOttocastStorefront();
   } catch (storefrontError) {
     console.error(`Ottocast storefront refresh failed: ${storefrontError instanceof Error ? storefrontError.message : 'unknown error'}`);
-    return loadAwinFeed();
+    return loadBackupFeed();
   }
 }
 
@@ -225,9 +226,13 @@ async function getProducts() {
       return {
         products: fallbackProducts,
         meta: {
-          source: 'Verified snapshot', advertiser: 'Ottocast', advertiserId: ADVERTISER_ID,
-          feedId: FEED_ID, fetchedAt: null, live: false, stale: true, priceSource: 'snapshot',
-          warning: 'Live sources are temporarily unavailable; showing the last verified snapshot.',
+          source: 'Local product snapshot',
+          merchant: 'Ottocast',
+          fetchedAt: null,
+          live: false,
+          stale: true,
+          priceSource: 'snapshot',
+          warning: 'Live sources are temporarily unavailable; showing the last local snapshot.',
         },
       };
     } finally {
@@ -264,7 +269,6 @@ const server = http.createServer(async (req, res) => {
     return sendJson(res, 200, {
       ok: true,
       service: 'cenaradar-feed-api',
-      feedConfigured: Boolean(API_KEY),
       cachedProducts: cache?.payload?.products?.length || 0,
       source: cache?.payload?.meta?.source || null,
       priceSource: cache?.payload?.meta?.priceSource || null,
