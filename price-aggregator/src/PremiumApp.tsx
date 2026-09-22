@@ -7,20 +7,16 @@ import {
   CheckCircle2,
   Clock3,
   ExternalLink,
-  Fish,
   Gamepad2,
   Headphones,
   Home,
   Languages,
   Laptop,
   Menu,
-  PawPrint,
-  Pill,
   Search,
   ShoppingBag,
   SlidersHorizontal,
   Smartphone,
-  Sofa,
   Store,
   Tv,
   X,
@@ -78,38 +74,6 @@ type MerchantDirectoryItem = {
 
 const CATALOG_API_URL = import.meta.env.VITE_FEED_API_URL || 'https://cenaradar-feed-api.onrender.com/api/products';
 const SEARCH_API_URL = CATALOG_API_URL.replace(/\/api\/(?:products|ottocast)(?:\?.*)?$/, '/api/search');
-const CATALOG_CACHE_KEY = 'cenaradar:catalog-preview:v1';
-const FALLBACK_CONNECTED_STORES: ConnectedStore[] = [
-  { name: 'EG Tools', count: 2875, mode: 'last-known' },
-  { name: 'Vilders.lv', count: 2036, mode: 'last-known' },
-  { name: 'Valenas.lv', count: 732, mode: 'last-known' },
-  { name: 'Ottocast', count: 96, mode: 'last-known' },
-];
-
-function readCatalogCache(): FeedResponse | null {
-  try {
-    const raw = localStorage.getItem(CATALOG_CACHE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as FeedResponse;
-    return parsed && Array.isArray(parsed.products) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeCatalogCache(payload: FeedResponse) {
-  try {
-    localStorage.setItem(CATALOG_CACHE_KEY, JSON.stringify({
-      products: (payload.products || []).slice(0, 160),
-      meta: {
-        ...payload.meta,
-        stores: payload.meta?.stores || [],
-      },
-    }));
-  } catch {
-    // Storage can be disabled or full; live loading still works normally.
-  }
-}
 
 const merchants: MerchantDirectoryItem[] = [
   { name: '220.lv', home: 'https://220.lv/', search: q => `https://220.lv/lv/search?q=${encodeURIComponent(q)}` },
@@ -122,14 +86,6 @@ const merchants: MerchantDirectoryItem[] = [
   { name: 'M79.lv', home: 'https://m79.lv/' },
   { name: 'AiO.lv', home: 'https://aio.lv/' },
   { name: 'iStore.lv', home: 'https://istore.lv/' },
-  { name: 'BENU.lv', home: 'https://www.benu.lv/' },
-  { name: 'Euroaptieka.lv', home: 'https://www.euroaptieka.lv/' },
-  { name: 'Apotheka.lv', home: 'https://www.apotheka.lv/' },
-  { name: 'Salmo.lv', home: 'https://www.salmo.lv/' },
-  { name: 'IKEA', home: 'https://www.ikea.com/lv/lv/' },
-  { name: 'JYSK', home: 'https://www.jysk.lv/' },
-  { name: 'Mebeles1.lv', home: 'https://www.mebeles1.lv/' },
-  { name: 'PetCity.lv', home: 'https://www.petcity.lv/' },
   { name: 'Valenas.lv', home: 'https://valenas.lv/' },
   { name: 'Vilders.lv', home: 'https://vilders.lv/' },
   { name: 'EG Tools', home: 'https://egtools.lv/' },
@@ -140,7 +96,6 @@ const popularQueries = [
   'iPhone', 'Samsung Galaxy', 'MacBook', 'AirPods', 'PlayStation 5', 'RTX 5070',
   'Sony WH-1000XM6', 'Robot vacuum', 'Apple Watch', 'Nintendo Switch', 'CarPlay',
   'Smart TV', 'Gaming laptop', 'Dyson', 'Xiaomi', 'SSD 1TB', 'JBL', 'Garmin',
-  'vitamīni', 'makšķere', 'dīvāns', 'suņu barība',
 ];
 
 const categoryCards = [
@@ -152,10 +107,6 @@ const categoryCards = [
   { key: 'gaming', icon: Gamepad2, query: 'PlayStation' },
   { key: 'photo', icon: Camera, query: 'camera' },
   { key: 'auto', icon: Car, query: 'CarPlay' },
-  { key: 'pharmacy', icon: Pill, query: 'vitamīni' },
-  { key: 'fishing', icon: Fish, query: 'makšķere' },
-  { key: 'furniture', icon: Sofa, query: 'dīvāns' },
-  { key: 'pets', icon: PawPrint, query: 'suņu barība' },
 ] as const;
 
 const copy = {
@@ -163,10 +114,9 @@ const copy = {
     navCatalog: 'Каталог', navStores: 'Магазины',
     heroEyebrow: 'СРАВНЕНИЕ ЦЕН В ЛАТВИИ', heroTitle: 'Ищи товар. Сравнивай цены.',
     heroText: 'Один поиск по подключённым каталогам магазинов. Где прямого каталога ещё нет — можно сразу открыть этот магазин и продолжить поиск там.',
-    searchPlaceholder: 'Например: iPhone 17 Pro, витамины, диван, удочка...', searchButton: 'Найти',
+    searchPlaceholder: 'Например: iPhone 17 Pro, RTX 5070, Bosch...', searchButton: 'Найти',
     popular: 'Популярное', categories: 'Категории',
     phones: 'Смартфоны', computers: 'Компьютеры', audio: 'Аудио', tv: 'Телевизоры', home: 'Для дома', gaming: 'Игры', photo: 'Фото и видео', auto: 'Автоэлектроника',
-    pharmacy: 'Аптеки и здоровье', fishing: 'Рыбалка', furniture: 'Мебель', pets: 'Зоотовары',
     catalogTitle: 'Товары и цены', catalogSub: 'Реальные позиции из подключённых источников магазинов.',
     results: 'Найдено', products: 'товаров', updated: 'Обновлено', live: 'Каталог обновляется',
     inStock: 'В наличии', relevance: 'По релевантности', priceAsc: 'Сначала дешевле', priceDesc: 'Сначала дороже', name: 'По названию', reset: 'Сбросить',
@@ -181,10 +131,9 @@ const copy = {
     navCatalog: 'Katalogs', navStores: 'Veikali',
     heroEyebrow: 'CENU SALĪDZINĀŠANA LATVIJĀ', heroTitle: 'Meklē preci. Salīdzini cenas.',
     heroText: 'Viena meklēšana pieslēgto veikalu katalogos. Ja tiešais katalogs vēl nav pieejams, vari uzreiz atvērt veikalu un turpināt meklēšanu tur.',
-    searchPlaceholder: 'Piemēram: iPhone 17 Pro, vitamīni, dīvāns, makšķere...', searchButton: 'Meklēt',
+    searchPlaceholder: 'Piemēram: iPhone 17 Pro, RTX 5070, Bosch...', searchButton: 'Meklēt',
     popular: 'Populāri', categories: 'Kategorijas',
     phones: 'Viedtālruņi', computers: 'Datori', audio: 'Audio', tv: 'Televizori', home: 'Mājai', gaming: 'Spēles', photo: 'Foto un video', auto: 'Auto elektronika',
-    pharmacy: 'Aptiekas un veselība', fishing: 'Makšķerēšana', furniture: 'Mēbeles', pets: 'Mājdzīvniekiem',
     catalogTitle: 'Preces un cenas', catalogSub: 'Reālas preces no pieslēgtajiem veikalu datu avotiem.',
     results: 'Atrasts', products: 'preces', updated: 'Atjaunināts', live: 'Katalogs tiek atjaunināts',
     inStock: 'Pieejams', relevance: 'Pēc atbilstības', priceAsc: 'Lētākie vispirms', priceDesc: 'Dārgākie vispirms', name: 'Pēc nosaukuma', reset: 'Notīrīt',
@@ -228,19 +177,16 @@ export default function PremiumApp() {
     if (saved === 'ru' || saved === 'lv') return saved;
     return navigator.language.toLowerCase().startsWith('ru') ? 'ru' : 'lv';
   });
-  const [cachedCatalog] = useState<FeedResponse | null>(() => readCatalogCache());
   const [query, setQuery] = useState('');
   const [submittedQuery, setSubmittedQuery] = useState('');
   const [sort, setSort] = useState<SortMode>('relevance');
   const [onlyStock, setOnlyStock] = useState(false);
   const [limit, setLimit] = useState(40);
-  const [products, setProducts] = useState<LiveProduct[]>(() => cachedCatalog?.products || []);
-  const [connectedStores, setConnectedStores] = useState<ConnectedStore[]>(() => (
-    cachedCatalog?.meta?.stores?.length ? cachedCatalog.meta.stores : FALLBACK_CONNECTED_STORES
-  ));
-  const [loading, setLoading] = useState(() => !(cachedCatalog?.products?.length));
+  const [products, setProducts] = useState<LiveProduct[]>([]);
+  const [connectedStores, setConnectedStores] = useState<ConnectedStore[]>([]);
+  const [loading, setLoading] = useState(true);
   const [live, setLive] = useState(false);
-  const [updatedAt, setUpdatedAt] = useState<string | null>(() => cachedCatalog?.meta?.fetchedAt || null);
+  const [updatedAt, setUpdatedAt] = useState<string | null>(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const t = copy[lang];
 
@@ -262,11 +208,10 @@ export default function PremiumApp() {
         const payload = (await response.json()) as FeedResponse;
         if (!cancelled) {
           setProducts(payload.products || []);
-          setConnectedStores(payload.meta?.stores?.length ? payload.meta.stores : FALLBACK_CONNECTED_STORES);
+          setConnectedStores(payload.meta?.stores || []);
           setLive(Boolean(payload.meta?.live && !payload.meta?.stale));
           setUpdatedAt(payload.meta?.fetchedAt || null);
           setLoading(false);
-          if (!submittedQuery) writeCatalogCache(payload);
         }
       } catch {
         if (!cancelled) {
@@ -396,7 +341,7 @@ export default function PremiumApp() {
             </div>
           </div>
 
-          {loading && visibleProducts.length === 0 ? <div className="cr-loading"><span></span><span></span><span></span></div> : visibleProducts.length === 0 ? (
+          {loading ? <div className="cr-loading"><span></span><span></span><span></span></div> : visibleProducts.length === 0 ? (
             <div className="cr-empty"><Search size={32} /><h3>{t.noResults}</h3><p>{t.noResultsText}</p></div>
           ) : (
             <>
