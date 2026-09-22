@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { decodeMaybeGzip, firstValue, mapProductRow, parseCsv } from './feed-utils.mjs';
 import { verifyMerchantPrices } from './storefront-price.mjs';
-import { searchPublicMerchants } from './merchant-search.mjs';
+import { searchConfiguredMerchantFeeds } from './merchant-feeds.mjs';
 
 const PORT = Number(process.env.PORT || 10000);
 const API_KEY = process.env.AWIN_DATAFEED_API_KEY || '';
@@ -27,7 +27,7 @@ const fallbackProducts = JSON.parse(readFileSync(join(here, 'fallback-products.j
   merchant: 'Ottocast',
 }));
 
-let cache = null;
+let catalogCache = null;
 let refreshPromise = null;
 
 function field(row, names) {
@@ -83,14 +83,42 @@ async function fetchBuffer(url) {
 }
 
 function normalizeSearch(value = '') {
-  return String(value).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+  return String(value)
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^\p{L}\p{N}]+/gu, ' ')
+    .trim();
 }
 
 function productMatches(product, query) {
   const q = normalizeSearch(query);
   if (!q) return true;
-  const haystack = normalizeSearch(`${product.name || ''} ${product.brand || ''} ${product.sku || ''} ${product.description || ''}`);
+  const haystack = normalizeSearch([
+    product.name,
+    product.brand,
+    product.sku,
+    product.model,
+    product.mpn,
+    product.ean,
+    product.category,
+    product.description,
+    product.merchant,
+  ].filter(Boolean).join(' '));
   return q.split(' ').filter(Boolean).every(token => haystack.includes(token));
+}
+
+function dedupeProducts(products) {
+  const seen = new Set();
+  const output = [];
+  for (const product of products) {
+    if (!product || !product.name || !Number.isFinite(Number(product.price)) || Number(product.price) <= 0) continue;
+    const key = `${product.merchant || ''}|${product.url || product.merchantUrl || product.id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    output.push(product);
+  }
+  return output;
 }
 
 function mapShopifyProduct(product) {
@@ -127,7 +155,7 @@ function mapShopifyProduct(product) {
     delivery: 'Check at checkout',
     brand: product.vendor || 'Ottocast',
     inStock: availableVariants.length > 0 ? '1' : '0',
-    priceSource: 'merchant_storefront_list',
+    priceSource: 'merchant_product_page',
     lastUpdated: product.updated_at || null,
     category: product.product_type || 'Automotive electronics',
   };
@@ -140,22 +168,14 @@ async function loadOttocastStorefront() {
   if (!baseProducts.length) throw new Error('Ottocast storefront returned no usable products');
 
   const verification = await verifyMerchantPrices(baseProducts, fetchText, { concurrency: 8 });
-  const products = verification.products;
-  const mirror = products.find(product => /mirror touch/i.test(product.name || ''));
+  const mirror = verification.products.find(product => /mirror touch/i.test(product.name || ''));
   console.log(`Ottocast page-price verification: verified=${verification.verified}, corrected=${verification.corrected}${mirror ? `, mirrorTouch=${mirror.price}` : ''}`);
 
   return {
-    products,
-    meta: {
-      source: 'Ottocast product pages',
-      merchant: 'Ottocast',
-      fetchedAt: new Date().toISOString(),
-      live: true,
-      priceSource: 'merchant_product_page',
-      productCount: products.length,
-      verifiedPrices: verification.verified,
-      correctedPrices: verification.corrected,
-    },
+    products: verification.products,
+    source: { name: 'Ottocast', ok: true, count: verification.products.length, mode: 'storefront' },
+    verifiedPrices: verification.verified,
+    correctedPrices: verification.corrected,
   };
 }
 
@@ -163,87 +183,118 @@ async function resolveBackupFeed() {
   if (!FEED_LIST_URL) throw new Error('Backup feed is not configured');
   const listText = await fetchText(FEED_LIST_URL);
   const feeds = parseCsv(listText);
-
   const match = feeds.find(row => {
     const advertiser = String(field(row, ['Advertiser ID', 'advertiser_id', 'Merchant ID', 'merchant_id']));
     const feed = String(field(row, ['Feed ID', 'feed_id', 'Datafeed ID', 'data_feed_id']));
     return advertiser === ADVERTISER_ID && feed === FEED_ID;
   });
-
   if (!match) throw new Error(`Backup feed ${FEED_ID} was not found`);
   const url = normalizeFeedUrl(field(match, ['URL', 'Url', 'url', 'Download URL', 'download_url']));
   if (!url) throw new Error('Backup feed download URL is missing');
+  return { url };
+}
 
+async function loadOttocastBackup() {
+  const feed = await resolveBackupFeed();
+  const compressed = await fetchBuffer(feed.url);
+  const rows = parseCsv(decodeMaybeGzip(compressed));
+  const products = rows
+    .map(mapProductRow)
+    .map(product => ({ ...product, merchant: 'Ottocast', url: product.merchantUrl || product.url }))
+    .filter(product => product.id && product.name && product.price > 0);
+  if (!products.length) throw new Error('Backup feed returned no usable products');
   return {
-    url,
-    lastImported: field(match, ['Last Imported', 'last_imported', 'Last Update', 'last_updated']),
-    name: field(match, ['Feed Name', 'feed_name', 'Datafeed Name', 'datafeed_name']) || 'Ottocast',
+    products,
+    source: { name: 'Ottocast', ok: true, count: products.length, mode: 'backup_feed' },
+    verifiedPrices: 0,
+    correctedPrices: 0,
   };
 }
 
-async function loadBackupFeed() {
-  const feed = await resolveBackupFeed();
-  const compressed = await fetchBuffer(feed.url);
-  const csvText = decodeMaybeGzip(compressed);
-  const rows = parseCsv(csvText);
-  const products = rows
-    .map(mapProductRow)
-    .map(product => ({ ...product, merchant: 'Ottocast' }))
-    .filter(product => product.id && product.name && product.price > 0);
-  if (!products.length) throw new Error('Backup feed returned no usable products');
+async function loadOttocast() {
+  try {
+    return await loadOttocastStorefront();
+  } catch (error) {
+    console.error(`Ottocast storefront refresh failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+    try {
+      return await loadOttocastBackup();
+    } catch (backupError) {
+      console.error(`Ottocast backup refresh failed: ${backupError instanceof Error ? backupError.message : 'unknown error'}`);
+      return {
+        products: fallbackProducts,
+        source: { name: 'Ottocast', ok: false, count: fallbackProducts.length, mode: 'snapshot' },
+        verifiedPrices: 0,
+        correctedPrices: 0,
+      };
+    }
+  }
+}
+
+async function loadUnifiedCatalog() {
+  const [merchantFeeds, ottocast] = await Promise.all([
+    searchConfiguredMerchantFeeds('', 100000),
+    loadOttocast(),
+  ]);
+
+  const products = dedupeProducts([
+    ...merchantFeeds.products,
+    ...ottocast.products,
+  ]);
+  const sources = [
+    ...merchantFeeds.sources,
+    ottocast.source,
+  ];
+  const connected = sources.filter(source => source.ok && source.count > 0);
+
+  console.log(`Unified catalog: ${products.length} products, ${connected.length} active stores (${connected.map(source => `${source.name}=${source.count}`).join(', ')})`);
 
   return {
     products,
     meta: {
-      source: 'Backup product feed',
-      merchant: 'Ottocast',
-      feedId: FEED_ID,
-      feedName: feed.name,
-      feedLastImported: feed.lastImported || null,
+      source: 'Direct merchant catalog feeds',
       fetchedAt: new Date().toISOString(),
-      live: true,
-      priceSource: 'backup_feed',
+      live: connected.length > 0,
+      priceSource: 'merchant_direct',
       productCount: products.length,
+      storeCount: connected.length,
+      stores: connected.map(source => ({ name: source.name, count: source.count, mode: source.mode })),
+      sources,
+      verifiedPrices: ottocast.verifiedPrices,
+      correctedPrices: ottocast.correctedPrices,
     },
   };
 }
 
-async function loadRemoteProducts() {
-  try {
-    return await loadOttocastStorefront();
-  } catch (storefrontError) {
-    console.error(`Ottocast storefront refresh failed: ${storefrontError instanceof Error ? storefrontError.message : 'unknown error'}`);
-    return loadBackupFeed();
-  }
-}
-
 async function getProducts() {
   const now = Date.now();
-  if (cache && now - cache.cachedAt < CACHE_MS) return cache.payload;
+  if (catalogCache && now - catalogCache.cachedAt < CACHE_MS) return catalogCache.payload;
   if (refreshPromise) return refreshPromise;
 
   refreshPromise = (async () => {
     try {
-      const payload = await loadRemoteProducts();
-      cache = { cachedAt: Date.now(), payload };
+      const payload = await loadUnifiedCatalog();
+      catalogCache = { cachedAt: Date.now(), payload };
       return payload;
     } catch (error) {
-      console.error(`Product refresh failed: ${error instanceof Error ? error.message : 'unknown error'}`);
-      if (cache) {
+      console.error(`Unified catalog refresh failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+      if (catalogCache) {
         return {
-          ...cache.payload,
-          meta: { ...cache.payload.meta, live: false, stale: true, warning: 'Live refresh temporarily failed; showing cached data.' },
+          ...catalogCache.payload,
+          meta: { ...catalogCache.payload.meta, live: false, stale: true, warning: 'Live refresh temporarily failed; showing cached data.' },
         };
       }
       return {
         products: fallbackProducts,
         meta: {
           source: 'Local product snapshot',
-          merchant: 'Ottocast',
           fetchedAt: null,
           live: false,
           stale: true,
           priceSource: 'snapshot',
+          productCount: fallbackProducts.length,
+          storeCount: 1,
+          stores: [{ name: 'Ottocast', count: fallbackProducts.length, mode: 'snapshot' }],
+          sources: [],
           warning: 'Live sources are temporarily unavailable; showing the last local snapshot.',
         },
       };
@@ -257,33 +308,18 @@ async function getProducts() {
 
 async function searchAllMerchants(query) {
   const q = String(query || '').trim().slice(0, 120);
-  if (q.length < 2) return { products: [], meta: { live: true, query: q, sources: [] } };
-
-  const [catalog, publicSearch] = await Promise.all([
-    getProducts(),
-    searchPublicMerchants(q),
-  ]);
-  const ottocast = (catalog.products || []).filter(product => productMatches(product, q)).slice(0, 24);
-  const products = [...publicSearch.products, ...ottocast];
-  const seen = new Set();
-  const deduped = products.filter(product => {
-    const key = `${product.merchant || ''}|${product.url || product.id}`;
-    if (seen.has(key)) return false;
-    seen.add(key);
-    return true;
-  });
+  const catalog = await getProducts();
+  const products = q.length >= 2
+    ? catalog.products.filter(product => productMatches(product, q))
+    : catalog.products;
 
   return {
-    products: deduped,
+    products,
     meta: {
-      live: true,
+      ...catalog.meta,
       query: q,
+      productCount: products.length,
       fetchedAt: new Date().toISOString(),
-      sources: [
-        ...publicSearch.sources,
-        { name: 'Ottocast', ok: true, count: ottocast.length },
-      ],
-      productCount: deduped.length,
     },
   };
 }
@@ -307,21 +343,28 @@ function sendJson(res, status, payload, cacheControl = 'public, max-age=120, sta
 
 const server = http.createServer(async (req, res) => {
   setCors(req, res);
-  if (req.method === 'OPTIONS') { res.statusCode = 204; return res.end(); }
+  if (req.method === 'OPTIONS') {
+    res.statusCode = 204;
+    return res.end();
+  }
 
   const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+
   if (req.method === 'GET' && url.pathname === '/health') {
+    const payload = await getProducts();
     return sendJson(res, 200, {
       ok: true,
       service: 'cenaradar-feed-api',
-      cachedProducts: cache?.payload?.products?.length || 0,
-      source: cache?.payload?.meta?.source || null,
-      priceSource: cache?.payload?.meta?.priceSource || null,
-      verifiedPrices: cache?.payload?.meta?.verifiedPrices || 0,
-      correctedPrices: cache?.payload?.meta?.correctedPrices || 0,
-      searchMerchants: ['Dateks.lv', '220.lv', 'RD Electronics', 'Ottocast'],
+      cachedProducts: payload.products.length,
+      source: payload.meta?.source || null,
+      priceSource: payload.meta?.priceSource || null,
+      storeCount: payload.meta?.storeCount || 0,
+      stores: payload.meta?.stores || [],
+      verifiedPrices: payload.meta?.verifiedPrices || 0,
+      correctedPrices: payload.meta?.correctedPrices || 0,
     });
   }
+
   if (req.method === 'GET' && url.pathname === '/api/search') {
     try {
       const query = url.searchParams.get('q') || '';
@@ -330,18 +373,17 @@ const server = http.createServer(async (req, res) => {
       return sendJson(res, 502, { error: error instanceof Error ? error.message : 'Search failed' }, 'no-store');
     }
   }
+
   if (req.method === 'GET' && (url.pathname === '/api/ottocast' || url.pathname === '/api/products')) {
-    return sendJson(res, 200, await getProducts());
+    return sendJson(res, 200, await getProducts(), 'public, max-age=300, stale-while-revalidate=900');
   }
+
   return sendJson(res, 404, { error: 'Not found' }, 'no-store');
 });
 
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`CenaRadar feed API listening on ${PORT}`);
-  void getProducts().then(payload => {
-    console.log(`Product warmup: ${payload.products.length} products, source=${payload.meta?.source}, live=${Boolean(payload.meta?.live)}`);
-  });
-  void searchPublicMerchants('iphone 16 pro max')
-    .then(result => console.log(`Merchant search smoke: ${result.sources.map(source => `${source.name}=${source.ok ? source.count : `ERROR:${source.error}`}`).join(', ')}`))
-    .catch(error => console.error(`Merchant search smoke failed: ${error instanceof Error ? error.message : 'unknown error'}`));
+  void getProducts()
+    .then(payload => console.log(`Product warmup: ${payload.products.length} products, stores=${payload.meta?.storeCount || 0}, live=${Boolean(payload.meta?.live)}`))
+    .catch(error => console.error(`Product warmup failed: ${error instanceof Error ? error.message : 'unknown error'}`));
 });
