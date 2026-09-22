@@ -4,7 +4,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { decodeMaybeGzip, firstValue, mapProductRow, parseCsv } from './feed-utils.mjs';
 import { verifyMerchantPrices } from './storefront-price.mjs';
-import { searchConfiguredMerchantFeeds } from './merchant-feeds.mjs';
+import { configuredMerchantNames, searchConfiguredMerchantFeeds } from './merchant-feeds.mjs';
+import { getTradedoublerStatus, searchTradedoublerProducts, tradedoublerConfigured } from './tradedoubler-products.mjs';
 
 const PORT = Number(process.env.PORT || 10000);
 const API_KEY = process.env.AWIN_DATAFEED_API_KEY || '';
@@ -121,6 +122,28 @@ function dedupeProducts(products) {
   return output;
 }
 
+function mergeStores(...lists) {
+  const map = new Map();
+  for (const list of lists) {
+    for (const store of Array.isArray(list) ? list : []) {
+      if (!store?.name || store.ok === false) continue;
+      const key = String(store.name).toLowerCase();
+      const existing = map.get(key);
+      const count = Number(store.total ?? store.count ?? 0);
+      if (!existing) {
+        map.set(key, {
+          name: store.name,
+          count: Number.isFinite(count) ? count : 0,
+          mode: store.mode,
+        });
+      } else if (Number.isFinite(count) && count > existing.count) {
+        existing.count = count;
+      }
+    }
+  }
+  return [...map.values()];
+}
+
 function mapShopifyProduct(product) {
   const allVariants = Array.isArray(product.variants) ? product.variants : [];
   const availableVariants = allVariants.filter(variant => variant.available !== false);
@@ -231,9 +254,10 @@ async function loadOttocast() {
 }
 
 async function loadUnifiedCatalog() {
-  const [merchantFeeds, ottocast] = await Promise.all([
+  const [merchantFeeds, ottocast, tradedoubler] = await Promise.all([
     searchConfiguredMerchantFeeds('', 100000),
     loadOttocast(),
+    getTradedoublerStatus(),
   ]);
 
   const products = dedupeProducts([
@@ -243,22 +267,25 @@ async function loadUnifiedCatalog() {
   const sources = [
     ...merchantFeeds.sources,
     ottocast.source,
+    ...tradedoubler.sources,
   ];
-  const connected = sources.filter(source => source.ok && source.count > 0);
+  const connected = sources.filter(source => source.ok && (source.count > 0 || source.searchOnly));
+  const stores = mergeStores(connected);
 
-  console.log(`Unified catalog: ${products.length} products, ${connected.length} active stores (${connected.map(source => `${source.name}=${source.count}`).join(', ')})`);
+  console.log(`Unified catalog: ${products.length} cached products, ${stores.length} active stores (${stores.map(store => `${store.name}=${store.count}`).join(', ')})`);
 
   return {
     products,
     meta: {
       source: 'Direct merchant catalog feeds',
       fetchedAt: new Date().toISOString(),
-      live: connected.length > 0,
+      live: stores.length > 0,
       priceSource: 'merchant_direct',
       productCount: products.length,
-      storeCount: connected.length,
-      stores: connected.map(source => ({ name: source.name, count: source.count, mode: source.mode })),
+      storeCount: stores.length,
+      stores,
       sources,
+      tradedoublerConfigured: tradedoubler.configured,
       verifiedPrices: ottocast.verifiedPrices,
       correctedPrices: ottocast.correctedPrices,
     },
@@ -295,6 +322,7 @@ async function getProducts() {
           storeCount: 1,
           stores: [{ name: 'Ottocast', count: fallbackProducts.length, mode: 'snapshot' }],
           sources: [],
+          tradedoublerConfigured: tradedoublerConfigured(),
           warning: 'Live sources are temporarily unavailable; showing the last local snapshot.',
         },
       };
@@ -308,10 +336,19 @@ async function getProducts() {
 
 async function searchAllMerchants(query) {
   const q = String(query || '').trim().slice(0, 120);
-  const catalog = await getProducts();
-  const products = q.length >= 2
+  const [catalog, tradedoubler] = await Promise.all([
+    getProducts(),
+    q.length >= 2 ? searchTradedoublerProducts(q, 120) : Promise.resolve({ products: [], sources: [] }),
+  ]);
+
+  const localProducts = q.length >= 2
     ? catalog.products.filter(product => productMatches(product, q))
     : catalog.products;
+  const products = dedupeProducts([
+    ...tradedoubler.products,
+    ...localProducts,
+  ]);
+  const stores = mergeStores(catalog.meta?.stores, tradedoubler.sources);
 
   return {
     products,
@@ -319,6 +356,9 @@ async function searchAllMerchants(query) {
       ...catalog.meta,
       query: q,
       productCount: products.length,
+      storeCount: stores.length,
+      stores,
+      searchSources: tradedoubler.sources,
       fetchedAt: new Date().toISOString(),
     },
   };
@@ -360,9 +400,21 @@ const server = http.createServer(async (req, res) => {
       priceSource: payload.meta?.priceSource || null,
       storeCount: payload.meta?.storeCount || 0,
       stores: payload.meta?.stores || [],
+      tradedoublerConfigured: tradedoublerConfigured(),
       verifiedPrices: payload.meta?.verifiedPrices || 0,
       correctedPrices: payload.meta?.correctedPrices || 0,
     });
+  }
+
+  if (req.method === 'GET' && url.pathname === '/api/integrations') {
+    const tradedoubler = await getTradedoublerStatus();
+    return sendJson(res, 200, {
+      merchantFeeds: configuredMerchantNames(),
+      tradedoubler: {
+        configured: tradedoubler.configured,
+        sources: tradedoubler.sources,
+      },
+    }, 'no-store');
   }
 
   if (req.method === 'GET' && url.pathname === '/api/search') {
