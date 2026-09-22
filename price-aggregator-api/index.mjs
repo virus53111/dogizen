@@ -319,7 +319,7 @@ const server = http.createServer(async (req, res) => {
       priceSource: cache?.payload?.meta?.priceSource || null,
       verifiedPrices: cache?.payload?.meta?.verifiedPrices || 0,
       correctedPrices: cache?.payload?.meta?.correctedPrices || 0,
-      searchMerchants: ['Dateks.lv', '220.lv', 'Ottocast'],
+      searchMerchants: ['Dateks.lv', '220.lv', 'RD Electronics', 'Ottocast'],
     });
   }
   if (req.method === 'GET' && url.pathname === '/api/search') {
@@ -341,4 +341,7 @@ server.listen(PORT, '0.0.0.0', () => {
   void getProducts().then(payload => {
     console.log(`Product warmup: ${payload.products.length} products, source=${payload.meta?.source}, live=${Boolean(payload.meta?.live)}`);
   });
+  void searchPublicMerchants('iphone 16 pro max')
+    .then(result => console.log(`Merchant search smoke: ${result.sources.map(source => `${source.name}=${source.ok ? source.count : `ERROR:${source.error}`}`).join(', ')}`))
+    .catch(error => console.error(`Merchant search smoke failed: ${error instanceof Error ? error.message : 'unknown error'}`));
 });
