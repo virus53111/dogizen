@@ -84,6 +84,8 @@ const merchants: MerchantDirectoryItem[] = [
   { name: 'Ksenukai.lv', home: 'https://www.ksenukai.lv/' },
   { name: 'Tet', home: 'https://www.tet.lv/veikals/', search: q => `https://www.tet.lv/veikals/search?query=${encodeURIComponent(q)}` },
   { name: 'M79.lv', home: 'https://m79.lv/' },
+  { name: 'AiO.lv', home: 'https://aio.lv/' },
+  { name: 'iStore.lv', home: 'https://istore.lv/' },
   { name: 'Valenas.lv', home: 'https://valenas.lv/' },
   { name: 'Vilders.lv', home: 'https://vilders.lv/' },
   { name: 'EG Tools', home: 'https://egtools.lv/' },
