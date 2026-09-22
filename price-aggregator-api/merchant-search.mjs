@@ -230,6 +230,49 @@ function parse220Fallback($) {
   return results;
 }
 
+function parseRdFallback($) {
+  const baseUrl = 'https://www.rdveikals.lv';
+  const productHref = /(?:^|\/)products\/lv\/\d+\/(\d+)\/[^?#]+\.html(?:[?#].*)?$/i;
+  const results = [];
+  const seen = new Set();
+
+  $('a[href]').each((_, el) => {
+    const href = $(el).attr('href') || '';
+    const match = href.match(productHref);
+    if (!match) return;
+    const rootedHref = href.startsWith('/') ? href : `/${href.replace(/^\.\//, '')}`;
+    const url = absoluteUrl(baseUrl, rootedHref);
+    if (!url || seen.has(url)) return;
+    const name = clean($(el).text());
+    if (name.length < 4) return;
+    const card = findCompactCard($, el, productHref);
+    const text = clean(card.text());
+    const price = firstEuroPrice(text);
+    if (!price) return;
+    seen.add(url);
+    results.push({
+      id: `RD Electronics:${match[1]}`,
+      name,
+      sku: '',
+      description: '',
+      price,
+      compareAtPrice: null,
+      currency: 'EUR',
+      image: firstImage($, card, baseUrl),
+      url,
+      merchantUrl: url,
+      merchant: 'RD Electronics',
+      delivery: /Saņem šodien/i.test(text) ? 'Pickup today' : /Saņem rīt|Saņem rītdien/i.test(text) ? 'Pickup tomorrow' : /Saņem no/i.test(text) ? 'Delivery available' : '',
+      brand: '',
+      inStock: /Nav pieejams|Izpārdots/i.test(text) ? '0' : '1',
+      priceSource: 'merchant_search_page',
+      lastUpdated: null,
+      category: '',
+    });
+  });
+  return results;
+}
+
 function dedupe(products, limit = 24) {
   const seen = new Set();
   const output = [];
@@ -261,6 +304,15 @@ async function search220(query) {
   return dedupe(structured.length ? structured : fallback, 24);
 }
 
+async function searchRd(query) {
+  const searchUrl = `https://www.rdveikals.lv/search/lv/word/${encodeURIComponent(query)}/page/1/`;
+  const html = await fetchHtml(searchUrl);
+  const $ = cheerio.load(html);
+  const structured = parseJsonLd($, 'RD Electronics', 'https://www.rdveikals.lv');
+  const fallback = parseRdFallback($);
+  return dedupe(structured.length ? structured : fallback, 24);
+}
+
 export async function searchPublicMerchants(query) {
   const q = clean(query).slice(0, 120);
   if (q.length < 2) return { products: [], sources: [] };
@@ -271,6 +323,7 @@ export async function searchPublicMerchants(query) {
   const connectors = [
     ['Dateks.lv', searchDateks],
     ['220.lv', search220],
+    ['RD Electronics', searchRd],
   ];
   const settled = await Promise.allSettled(connectors.map(([, fn]) => fn(q)));
   const products = [];
@@ -283,7 +336,7 @@ export async function searchPublicMerchants(query) {
     return { name, ok: false, count: 0, error: result.reason instanceof Error ? result.reason.message : 'Search failed' };
   });
 
-  const payload = { products: dedupe(products, 48), sources, fetchedAt: new Date().toISOString() };
+  const payload = { products: dedupe(products, 72), sources, fetchedAt: new Date().toISOString() };
   cache.set(key, { time: Date.now(), payload });
   return payload;
 }
