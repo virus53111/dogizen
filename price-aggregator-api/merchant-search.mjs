@@ -1,4 +1,5 @@
 import * as cheerio from 'cheerio';
+import { firstValue, parseCsv } from './feed-utils.mjs';
 
 const UA = 'Mozilla/5.0 (compatible; CenaRadar/1.0; +https://cenaradar.online)';
 const QUERY_CACHE_MS = 10 * 60 * 1000;
@@ -340,3 +341,34 @@ export async function searchPublicMerchants(query) {
   cache.set(key, { time: Date.now(), payload });
   return payload;
 }
+
+async function inspectAwinFeedList() {
+  const apiKey = process.env.AWIN_DATAFEED_API_KEY || '';
+  if (!apiKey) return;
+  const response = await fetch(`https://productdata.awin.com/datafeed/list/apikey/${encodeURIComponent(apiKey)}`, {
+    headers: { 'User-Agent': UA, Accept: 'text/csv,text/plain,*/*' },
+    signal: AbortSignal.timeout(20000),
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const rows = parseCsv(await response.text());
+  const candidates = rows.filter(row => {
+    const region = clean(firstValue(row, ['Primary Region', 'primary_region'])).toUpperCase();
+    const name = clean(firstValue(row, ['Advertiser Name', 'advertiser_name', 'Merchant Name', 'merchant_name']));
+    return region === 'LV' || /220\.lv|1a\.lv|dateks|euronics|ksenukai|modivo|eapavi|douglas/i.test(name);
+  });
+  const compact = candidates.slice(0, 40).map(row => ({
+    advertiserId: clean(firstValue(row, ['Advertiser ID', 'advertiser_id', 'Merchant ID', 'merchant_id'])),
+    advertiser: clean(firstValue(row, ['Advertiser Name', 'advertiser_name', 'Merchant Name', 'merchant_name'])),
+    region: clean(firstValue(row, ['Primary Region', 'primary_region'])),
+    membership: clean(firstValue(row, ['Membership Status', 'membership_status'])),
+    feedId: clean(firstValue(row, ['Feed ID', 'feed_id', 'Datafeed ID', 'data_feed_id'])),
+    feedName: clean(firstValue(row, ['Feed Name', 'feed_name', 'Datafeed Name', 'datafeed_name'])),
+    language: clean(firstValue(row, ['Language', 'language'])),
+    lastImported: clean(firstValue(row, ['Last Imported', 'last_imported'])),
+  }));
+  console.log(`Awin feed candidates (${compact.length}/${rows.length}): ${JSON.stringify(compact)}`);
+}
+
+void inspectAwinFeedList().catch(error => {
+  console.error(`Awin feed inspection failed: ${error instanceof Error ? error.message : 'unknown error'}`);
+});
