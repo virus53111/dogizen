@@ -24,3 +24,6 @@
   .ag-shops{margin-top:4px}
   footer{margin-top:16px}
 }
+
+.ag-home-note{margin:10px 2px 0;color:#8a8f98;font-size:11px;text-align:center}
+@media(max-width:600px){.ag-home-note{margin-top:9px;font-size:10px;line-height:1.35}}
