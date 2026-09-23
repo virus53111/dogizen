@@ -55,3 +55,11 @@
 
 .ag-loading-more{padding:12px;text-align:center;color:#777;font-size:12px;font-weight:700}
 .ag-img img{aspect-ratio:22/17}
+
+/* Render off-screen catalog cards lazily without changing layout */
+.ag-card{content-visibility:auto;contain-intrinsic-size:280px 360px}
+@media(max-width:600px){
+ .ag-card{contain-intrinsic-size:170px 245px}
+ .ag-catalog .ag-img{height:105px}
+ .ag-img img{width:100%;height:100%;object-fit:contain}
+}
