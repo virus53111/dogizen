@@ -27,3 +27,6 @@
 
 .ag-home-note{margin:10px 2px 0;color:#8a8f98;font-size:11px;text-align:center}
 @media(max-width:600px){.ag-home-note{margin-top:9px;font-size:10px;line-height:1.35}}
+
+.ag-home-products{margin-top:18px}.ag-home-products h2{margin:0 0 10px;font-size:18px}.ag-home-products>div{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}.ag-home-products button{min-width:0;border:1px solid #e3e5e8;background:#fff;border-radius:12px;padding:10px;text-align:left;display:grid;grid-template-columns:58px minmax(0,1fr);grid-template-rows:auto auto;gap:3px 9px;align-items:center}.ag-home-products img,.ag-home-products svg{width:58px;height:58px;object-fit:contain;grid-row:1/3}.ag-home-products span{font-size:12px;font-weight:700;line-height:1.2;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.ag-home-products b{font-size:13px;color:#15171b}
+@media(max-width:600px){.ag-home-products{margin-top:13px}.ag-home-products h2{font-size:16px}.ag-home-products>div{grid-template-columns:1fr 1fr;gap:8px}.ag-home-products button{grid-template-columns:48px minmax(0,1fr);padding:8px}.ag-home-products img,.ag-home-products svg{width:48px;height:48px}.ag-home-products span{font-size:11px}.ag-home-products b{font-size:12px}}
