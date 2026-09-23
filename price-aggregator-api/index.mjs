@@ -32,10 +32,19 @@ const SYN={
  'наушники':['наушники','headphones','earbuds','austinas','austiņas'],
  'шины':['шины','резина','tyres','tires','riepas'],
  'диски':['диски','rims','wheels','diski'],
- 'пылесос':['пылесос','vacuum','puteklsucejs','putekļsūcējs']
+ 'пылесос':['пылесос','vacuum','puteklsucejs','putekļsūcējs'],
+ 'автотовары':['riepa','riepas','tyre','tire','auto','automotive','carplay','ottocast'],
+ 'авто товары':['riepa','riepas','tyre','tire','auto','automotive','carplay','ottocast'],
+ 'одежда':['apgerb','drebes','clothing','dress','shirt','pants','jaka','krekls','bikses'],
+ 'инструменты':['instrument','makita','bosch','dewalt','urbis','drill','saw','zagis'],
+ 'смартфоны':['phone','smartphone','telefons','iphone'],
+ 'генераторы':['generator','generators','generators'],
+ 'ноутбуки':['laptop','notebook','macbook'],
+ 'беспроводные наушники':['headphones','earbuds','austinas'],
+ 'игровые консоли':['nintendo','playstation','xbox','gaming']
 };
 function queryTerms(q){const n=norm(q),out=new Set(n.split(' ').filter(Boolean));for(const [k,vs] of Object.entries(SYN))if(n.includes(norm(k)))for(const v of vs)out.add(norm(v));return[...out]}
-function matchesQuery(p,q){if(!q)return true;const original=norm(q).split(' ').filter(Boolean);return original.every(t=>{const alts=SYN[t]||[t];return alts.some(a=>p._h.includes(norm(a)))})}
+function matchesQuery(p,q){if(!q)return true;const n=norm(q),phraseAlts=SYN[n];if(phraseAlts)return phraseAlts.some(a=>p._h.includes(norm(a)));const original=n.split(' ').filter(Boolean);return original.every(t=>{const alts=SYN[t]||[t];return alts.some(a=>p._h.includes(norm(a)))})}
 function scoreQuery(p,q){const n=norm(q);if(!n)return 0;let s=0;if(norm(p.ean||'')===n||norm(p.model||'')===n||norm(p.mpn||'')===n)s+=100;if(norm(p.name||'').includes(n))s+=50;if(norm(p.brand||'')===n)s+=20;for(const t of queryTerms(q))if(p._h.includes(t))s+=2;return s}
 
 const SUB={auto:[['tires',['riepa','riepas','tyre','tire']],['wheels',['diski','wheel rim']],['electronics',['dash cam','carplay','android auto','ottocast']]],tools:[['drills',['urbis','urbj','drill']],['saws',['zagis','saw']],['grinders',['slipmasina','grinder']],['accessories',['filtrs','filter','adapter','akumulators','battery']]],fashion:[['shoes',['apavi','shoes','boots']],['dresses',['kleita','dress']],['pants',['bikses','pants']],['tops',['krekls','shirt','jaka','jacket']]],computers:[['laptops',['laptop','notebook','macbook']],['monitors',['monitor']],['components',['procesors','ryzen','intel core','ssd','videokarte']]],home:[['cleaning',['puteklu sucejs','puteklsucejs','vacuum']],['climate',['gaisa sausinatajs','humidifier','dehumidifier']],['furniture',['mebeles','gulta','skapis']]],audio:[['headphones',['austinas','headphones','earbuds']],['speakers',['skalrunis','speaker']]],gaming:[['playstation',['playstation']],['xbox',['xbox']],['nintendo',['nintendo']]]};
