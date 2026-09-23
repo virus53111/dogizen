@@ -52,3 +52,6 @@
 
 .ag-save{margin-top:8px;padding-top:8px;border-top:1px solid #edf0f3;color:#3566d6;font-size:10px;font-weight:800}
 @media(max-width:600px){.ag-save{margin-top:6px;padding-top:6px;font-size:9px}}
+
+.ag-loading-more{padding:12px;text-align:center;color:#777;font-size:12px;font-weight:700}
+.ag-img img{aspect-ratio:22/17}
