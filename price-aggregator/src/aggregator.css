@@ -5,3 +5,22 @@
 /* compact comparison-style discovery */
 .ag-start{padding-top:8px}.ag-start .ag-discovery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:#d6d6d6;border:1px solid #d6d6d6}.ag-start .ag-discovery button{border:0;border-radius:0;background:#fff;min-height:112px;padding:8px 10px;display:flex;align-items:center;gap:10px;text-align:left;color:#5266e5;font-size:17px;line-height:1.2;font-weight:500;overflow:hidden}.ag-start .ag-discovery img{width:82px;height:82px;object-fit:contain;flex:0 0 82px}.ag-start .ag-discovery span{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}.ag-start>h2,.ag-homecats{display:none!important}@media(max-width:600px){.ag-start{padding:0 7px 10px}.ag-start .ag-discovery button{min-height:105px;padding:7px;font-size:16px}.ag-start .ag-discovery img{width:72px;height:72px;flex-basis:72px}.ag-hero{padding-bottom:12px}.ag-hero h1{margin-bottom:10px}.ag-shops{margin-top:8px}}
 .ag-demoimg{width:82px;flex:0 0 82px;font-size:48px;text-align:center;line-height:1}.ag-start .ag-discovery button>.ag-demoimg+span{font-size:17px;color:#5266e5}@media(max-width:600px){.ag-demoimg{width:72px;flex-basis:72px;font-size:42px}}
+/* CenaRadar compact mobile discovery polish */
+.ag-start .ag-discovery button{min-width:0}
+.ag-start .ag-discovery button>.ag-demoimg+span{min-width:0;overflow:visible;display:block;-webkit-line-clamp:unset;font-weight:700}
+@media(max-width:600px){
+  .ag-hero{padding:28px 14px 18px}
+  .ag-hero>b,.ag-hero p{display:none}
+  .ag-hero h1{font-size:31px;line-height:1.02;margin:0 auto 18px;max-width:520px}
+  .ag-search{margin:0 auto 12px;padding:6px 6px 6px 12px;grid-template-columns:25px minmax(0,1fr) auto;border-radius:13px}
+  .ag-search input{font-size:14px}
+  .ag-search button{height:44px;padding:0 16px;border-radius:9px}
+  .ag-hero small{font-size:12px}
+  .ag-start{padding:8px 10px 14px}
+  .ag-start .ag-discovery{gap:8px;background:transparent;border:0}
+  .ag-start .ag-discovery button{min-height:82px;padding:9px 10px;gap:8px;border:1px solid #e2e4e8;border-radius:12px;background:#fff}
+  .ag-demoimg{width:48px;flex-basis:48px;font-size:34px}
+  .ag-start .ag-discovery button>.ag-demoimg+span{font-size:14px;line-height:1.15;overflow-wrap:anywhere}
+  .ag-shops{margin-top:4px}
+  footer{margin-top:16px}
+}
