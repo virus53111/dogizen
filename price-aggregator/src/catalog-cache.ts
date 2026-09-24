@@ -22,7 +22,7 @@ function isCatalogRequest(input: RequestInfo | URL, init?: RequestInit) {
   const method = String(init?.method || (input instanceof Request ? input.method : 'GET')).toUpperCase();
   if (method !== 'GET') return false;
   const url = requestUrl(input);
-  return /cenaradar-feed-api\.onrender\.com\/api\/(products|ottocast)(?:\?|$)/.test(url);
+  return /cenaradar-feed-api\.onrender\.com\/api\/catalog(?:\?|$)/.test(url);
 }
 
 function readCache(): CachedCatalog | null {
