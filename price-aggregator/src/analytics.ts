@@ -7,8 +7,9 @@ const source=(()=>{try{return document.referrer?new URL(document.referrer).hostn
 
 export function track(event:string,extra:Record<string,string>={}){
   const body=JSON.stringify({site:'cenaradar',event,session,path:location.pathname,source,device,language:navigator.language,...extra});
-  if(navigator.sendBeacon){navigator.sendBeacon(ENDPOINT,new Blob([body],{type:'application/json'}));return}
-  void fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json'},body,keepalive:true}).catch(()=>{});
+  void fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=UTF-8'},body,keepalive:true,mode:'cors'}).catch(()=>{
+    window.setTimeout(()=>{void fetch(ENDPOINT,{method:'POST',body,keepalive:true,mode:'cors'}).catch(()=>{})},2500);
+  });
 }
 
 track('page_view');
