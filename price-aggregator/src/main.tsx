@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import AggregatorApp from './AggregatorApp';
 import LanguageGuard from './LanguageGuard';
 import './catalog-cache';
+import './analytics';
 import './aggregator.css';
 
 createRoot(document.getElementById('root')!).render(
