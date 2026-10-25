@@ -19,12 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - name: Diagnose Pages domain mapping
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          echo "Checking GitHub Pages settings visible to deployment token"
-          gh api "repos/${GITHUB_REPOSITORY}/pages" --jq '{custom_domain: .cname, build_type: .build_type, source: .source, html_url: .html_url}' || echo "Pages configuration unavailable to deployment token"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
