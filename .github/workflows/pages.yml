@@ -19,15 +19,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - name: Configure custom domain
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          if gh api -X PUT "repos/${GITHUB_REPOSITORY}/pages" -f cname=murdilimax.com; then
-            echo "Custom domain configured"
-          else
-            echo "::warning::GitHub token cannot configure custom domain; repository Pages admin access is needed."
-          fi
       - uses: actions/upload-pages-artifact@v3
         with:
           path: .
