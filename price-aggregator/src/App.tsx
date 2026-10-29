@@ -27,6 +27,13 @@ function timecode(seconds: number, kind: 'srt' | 'vtt' = 'srt') {
   const rest = (ms % 1000).toString().padStart(3, '0');
   return h + ':' + m + ':' + s + (kind === 'srt' ? ',' : '.') + rest;
 }
+function formatFragments(n: number) {
+  const mod10 = n % 10;
+  const mod100 = n % 100;
+  const word = mod10 === 1 && mod100 !== 11 ? 'фрагмент' :
+    mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14) ? 'фрагмента' : 'фрагментов';
+  return n + ' ' + word;
+}
 function formatDuration(seconds: number) {
   if (!Number.isFinite(seconds)) return '—';
   const mins = Math.floor(seconds / 60);
@@ -395,7 +402,7 @@ function App() {
       if (!next.length) throw new Error('Речь не обнаружена. Попробуйте видео с более чётким звуком.');
       setCaptions(next);
       setDuration(audio.duration);
-      setPhase('Готово: ' + next.length + ' фрагментов. ' + (outputMode === 'translate' ? 'Проверьте английский перевод и тайминги.' : 'Проверьте текст и тайминги.') + ' Скачайте результат ниже.');
+      setPhase('Готово: ' + formatFragments(next.length) + '. ' + (outputMode === 'translate' ? 'Проверьте английский перевод и тайминги.' : 'Проверьте текст и тайминги.') + ' Скачайте результат ниже.');
       // Temporary FFmpeg files are cleaned up inside extractAudio().
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
@@ -439,7 +446,7 @@ function App() {
       setCaptions(entries.slice(0, 500));
       setDemo(false);
       setMuxStatus('');
-      setPhase('Импортировано ' + entries.length + ' фрагментов субтитров.');
+      setPhase('Импортировано ' + formatFragments(entries.length) + ' субтитров.');
     } catch (err: unknown) {
       setErrorText('Не удалось импортировать субтитры: ' + (err instanceof Error ? err.message : String(err)));
     } finally {
@@ -580,7 +587,7 @@ function App() {
             </div>
 
             <section className="card transcript-panel">
-              <div className="transcript-header"><div className="card-heading"><div className="card-icon teal"><Subtitles size={19}/></div><div><h3>Редактор субтитров</h3><p>{captions.length ? captions.length + ' фрагментов · можно исправить текст и тайминг' : 'Здесь появится распознанная речь'}</p></div></div><div className="export-actions"><button className="secondary-btn" disabled={!captions.length} onClick={() => exportAs('srt')}><Download size={16}/> SRT</button><button className="secondary-btn" disabled={!captions.length} onClick={() => exportAs('vtt')}><ArrowDownToLine size={16}/> VTT</button><button className="secondary-btn" disabled={!captions.length} onClick={() => exportAs('txt')}><Download size={16}/> TXT</button></div></div>
+              <div className="transcript-header"><div className="card-heading"><div className="card-icon teal"><Subtitles size={19}/></div><div><h3>Редактор субтитров</h3><p>{captions.length ? formatFragments(captions.length) + ' · можно исправить текст и тайминг' : 'Здесь появится распознанная речь'}</p></div></div><div className="export-actions"><button className="secondary-btn" disabled={!captions.length} onClick={() => exportAs('srt')}><Download size={16}/> SRT</button><button className="secondary-btn" disabled={!captions.length} onClick={() => exportAs('vtt')}><ArrowDownToLine size={16}/> VTT</button><button className="secondary-btn" disabled={!captions.length} onClick={() => exportAs('txt')}><Download size={16}/> TXT</button></div></div>
               {captions.length ? (
                 <div className="caption-list">{captions.map((caption, idx) => <div className="caption-row" key={caption.id}><span className="caption-index">{(idx + 1).toString().padStart(2, '0')}</span><div className="caption-content"><div className="caption-times"><label>От <input aria-label={'Начало фрагмента ' + (idx + 1)} type="number" step="0.1" min="0" value={Number(caption.start.toFixed(1))} onChange={e => updateCaption(caption.id, { start: Number(e.target.value) })}/></label><span>→</span><label>До <input aria-label={'Конец фрагмента ' + (idx + 1)} type="number" step="0.1" min="0" value={Number(caption.end.toFixed(1))} onChange={e => updateCaption(caption.id, { end: Math.max(caption.start + 0.1, Number(e.target.value)) })}/></label></div><textarea aria-label={'Текст фрагмента ' + (idx + 1)} rows={2} value={caption.text} onChange={e => updateCaption(caption.id, {text:e.target.value})}/></div><button className="icon-btn" onClick={() => setCaptions(current => current.filter(c => c.id !== caption.id))} aria-label={'Удалить фрагмент ' + (idx + 1)}><Trash2 size={16}/></button></div>)}</div>
               ) : <div className="transcript-empty"><div className="transcript-empty-icon"><AudioLines size={29}/></div><strong>Здесь будет твоя расшифровка</strong><span>После обработки ты сможешь отредактировать текст и скачать субтитры.</span><button onClick={showSample}>Открыть демонстрационный пример <ArrowRight size={15}/></button></div>}
