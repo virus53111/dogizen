@@ -32,3 +32,6 @@ The former CenaRadar content was preserved in the backup branch `backup/cenarada
 
 ### In-frame subtitle export
 New Canvas + MediaRecorder export paints captions permanently on video frames. MP4 is offered only if the browser supports H.264/AAC; otherwise WebM is downloaded. Uses WebAudio to retain source audio. Mobile clips are limited to 90s; keep the recording tab active. The completed video can be previewed before download. Do not misrepresent as a soft MP4 subtitle track. Video codec support and audio require real-device QA.
+
+## Local video demo
+The button «Проверить без своего видео» builds a 4-second synthetic video locally using Canvas+MediaRecorder and provides 2 obviously demo captions to test preview and burned-in export without running Whisper.

@@ -71,3 +71,6 @@
 .rendered-preview video{width:100%;max-height:490px;background:#08080e;object-fit:contain;border-radius:10px}
 .render-download-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;background:linear-gradient(120deg,#9e62f5,#7650d2);border-radius:9px;color:#fff;text-decoration:none;font-weight:800;font-size:12px}
 @media(max-width:650px){.render-actions,.render-actions .secondary-btn{width:100%;justify-content:center}}
+
+.demo-video-btn{display:flex;width:100%;align-items:center;justify-content:center;gap:9px;padding:12px 11px;margin-top:8px;border:1px solid #48626e;border-radius:9px;color:#bce8ee;background:#183038;font-weight:700;font-size:11px}
+.demo-video-btn:hover:not(:disabled){background:#23404a}

@@ -184,6 +184,7 @@ function App() {
   const [currentTime, setCurrentTime] = useState(0);
   const [showMenu, setShowMenu] = useState(false);
   const [demo, setDemo] = useState(false);
+  const [demoBusy, setDemoBusy] = useState(false);
   useEffect(() => {
     try { localStorage.setItem('sublume-captions-v1', JSON.stringify(captions)); } catch { /* storage unavailable */ }
   }, [captions]);
@@ -191,8 +192,88 @@ function App() {
   useEffect(() => () => { if (renderedUrl) URL.revokeObjectURL(renderedUrl); }, [renderedUrl]);
   useEffect(() => () => { renderAbortRef.current?.abort(); }, []);
 
+  useEffect(() => { if (renderedUrl) {setRenderedUrl('');setMuxStatus('Субтитры или стиль изменены. Пересоздай видео для актуального результата.');} }, [captions, preset]);
   const activeCaption = captions.find(c => currentTime >= c.start && currentTime < c.end);
   const fileBase = (file?.name || 'sublume-subtitles').replace(/\.[^.]+$/, '').replace(/[^\wа-яА-ЯёЁ.-]/g, '_');
+
+  // Self-contained sample video: helps users verify frame captions without any AI download.
+  async function createDemoVideo() {
+    if (!canRenderVideo() || demoBusy) {
+      setErrorText('Запись демо-видео не поддерживается этим браузером.');
+      return;
+    }
+    setDemoBusy(true);
+    setErrorText('');
+    setPhase('Создаём тестовое видео для предпросмотра…');
+    let audio: AudioContext | null = null;
+    let animation = 0;
+    let recorder: MediaRecorder | null = null;
+    let stream: MediaStream | null = null;
+    try {
+      const canvas = document.createElement('canvas');
+      canvas.width = 360; canvas.height = 640;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas не работает в этом браузере.');
+      const mime = ['video/webm;codecs=vp8,opus', 'video/webm', 'video/mp4']
+        .find(t => MediaRecorder.isTypeSupported(t));
+      if (!mime) throw new Error('Запись демо недоступна.');
+      audio = new AudioContext();
+      const sound = audio.createMediaStreamDestination();
+      const tone = audio.createOscillator();
+      const gain = audio.createGain();
+      tone.type = 'sine'; tone.frequency.value = 330; gain.gain.value = 0.015;
+      tone.connect(gain); gain.connect(sound);
+      void audio.resume();
+      tone.start();
+      stream = new MediaStream([...canvas.captureStream(24).getVideoTracks(), ...sound.stream.getAudioTracks()]);
+      recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 500000 });
+      const chunks: Blob[] = [];
+      recorder.addEventListener('dataavailable', e => { if (e.data.size) chunks.push(e.data); });
+      const stopped = new Promise<void>((resolve,reject)=>{
+        recorder!.addEventListener('stop',()=>resolve(),{once:true});
+        recorder!.addEventListener('error',()=>reject(new Error('Не удалось записать тестовое видео.')),{once:true});
+      });
+      const started = performance.now();
+      const render = (now: number) => {
+        const t = Math.min(4.2, (now - started) / 1000);
+        const gradient = ctx.createLinearGradient(0,0,360,640);
+        gradient.addColorStop(0,'#1c1534'); gradient.addColorStop(1,'#613795');
+        ctx.fillStyle=gradient; ctx.fillRect(0,0,360,640);
+        ctx.fillStyle='#a685f7';
+        ctx.fillRect(55 + Math.sin(t*2)*18,190,250,12);
+        ctx.fillRect(70,405,220 + Math.sin(t*3)*20,8);
+        ctx.font='800 33px system-ui';ctx.fillStyle='#fff';ctx.textAlign='center';
+        ctx.fillText('SUBLUME',180,302);
+        ctx.font='600 18px system-ui';ctx.fillStyle='#d7c6ff';
+        ctx.fillText('Демо видео • 4 секунды',180,345);
+        if (t < 4.2) animation=requestAnimationFrame(render);
+      };
+      recorder.start(250);
+      render(performance.now());
+      await new Promise(resolve=>setTimeout(resolve,4200));
+      recorder.stop();
+      await stopped;
+      const extension=recorder.mimeType.startsWith('video/mp4')?'mp4':'webm';
+      const file=new File(chunks,'sublume-demo.'+extension,{type:recorder.mimeType});
+      if(file.size<1000)throw new Error('Тестовый файл пуст.');
+      chooseFile(file);
+      setCaptions([
+        {id:1,start:0,end:2.0,text:'СУБТИТРЫ ПРЯМО НА ВИДЕО'},
+        {id:2,start:2.0,end:4.15,text:'Их видно даже без включения дорожки'}
+      ]);
+      setDemo(true);
+      setPhase('Демо готово. Нажми «Показать субтитры», а затем «Создать видео с текстом». Это пример, а не результат работы Whisper.');
+    } catch (err: unknown) {
+      setErrorText('Не удалось подготовить демо: '+(err instanceof Error?err.message:String(err)));
+      setPhase('');
+    } finally {
+      if(animation)cancelAnimationFrame(animation);
+      if(recorder?.state==='recording')recorder.stop();
+      stream?.getTracks().forEach(t=>t.stop());
+      if(audio)await audio.close().catch(()=>{});
+      setDemoBusy(false);
+    }
+  }
 
   function chooseFile(next: File | undefined | null) {
     if (!next) return;
@@ -431,6 +512,7 @@ function App() {
                 {phase && <div className={'notice ' + (processing ? 'working' : 'success')}><span className={processing ? 'pulse' : 'check-dot'} />{phase}</div>}
                 {errorText && <div className="error-notice" role="alert"><Info size={17}/>{errorText}</div>}
                 <button className="import-btn" onClick={() => subtitleInput.current?.click()}><UploadCloud size={16}/> Уже есть субтитры? Импорт SRT / VTT</button>
+                <button className="demo-video-btn" disabled={demoBusy || processing || muxing} onClick={() => {void createDemoVideo();}}><Play size={15}/>{demoBusy ? 'Готовим демо…' : 'Проверить без своего видео — демо 4 секунды'}</button>
                 <p className="tiny-note"><Info size={13}/> На первом запуске скачивается Whisper и, при необходимости, FFmpeg (~32 МБ) с нашего сайта. Начни с короткого видео и модели Tiny.</p>
               </section>
 
