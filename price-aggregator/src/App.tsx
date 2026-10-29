@@ -109,6 +109,10 @@ function App() {
   const [processing, setProcessing] = useState(false);
   const [phase, setPhase] = useState('');
   const [errorText, setErrorText] = useState('');
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [showMenu, setShowMenu] = useState(false);
+  const [demo, setDemo] = useState(false);
   useEffect(() => {
     try { localStorage.setItem('sublume-captions-v1', JSON.stringify(captions)); } catch { /* storage unavailable */ }
   }, [captions]);
