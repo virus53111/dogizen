@@ -102,8 +102,14 @@ export async function renderVideoWithText(args: {
       video.addEventListener('loadedmetadata',ready);
       video.addEventListener('error',failed);
     });
-    const dur=video.duration;
-    if(!Number.isFinite(dur)||dur<=0) throw new Error('Неизвестная длительность видео.');
+    // Browser-created WebM files frequently report Infinity instead of a duration.
+    // We can still render safely based on the last known caption cue and the media ended event.
+    const reportedDuration = video.duration;
+    const lastCue = args.captions.reduce((max,c)=>Math.max(max,c.end),0);
+    const dur = Number.isFinite(reportedDuration) && reportedDuration > 0
+      ? reportedDuration
+      : lastCue > 0 && Number.isFinite(lastCue) ? lastCue + 0.25 : 0;
+    if(dur <= 0) throw new Error('Не удалось определить длительность видео. Попробуй файл MP4 или WebM с субтитрами.');
     const max=/Android|iPhone|iPad/i.test(navigator.userAgent)?90:180;
     if(dur>max) throw new Error('В этом браузере лимит '+max+' секунд. Используй более короткий файл.');
     const scale=Math.min(1,960/Math.max(video.videoWidth,video.videoHeight));
@@ -145,14 +151,17 @@ export async function renderVideoWithText(args: {
     const end=new Promise<void>((resolve,reject)=>{
       const cleanup=()=>{
         video.removeEventListener('ended',complete);
+        video.removeEventListener('timeupdate',timeCheck);
         video.removeEventListener('error',failed);
         args.signal?.removeEventListener('abort',aborted);
         if(timer)clearTimeout(timer);
       };
       const complete=()=>{cleanup();resolve()};
+      const timeCheck=()=>{if(!Number.isFinite(reportedDuration) && video.currentTime>=dur-0.08)complete()};
       const failed=()=>{cleanup();reject(new Error('Исходное видео перестало воспроизводиться.'))};
       const aborted=()=>{cleanup();reject(new Error('Экспорт отменён.'))};
       video.addEventListener('ended',complete,{once:true});
+      if(!Number.isFinite(reportedDuration))video.addEventListener('timeupdate',timeCheck);
       video.addEventListener('error',failed,{once:true});
       args.signal?.addEventListener('abort',aborted,{once:true});
       timer=setTimeout(()=>{cleanup();reject(new Error('Истекло время записи. Не сворачивай вкладку.'))},dur*2000+30000);
