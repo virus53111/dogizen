@@ -33,7 +33,8 @@
       "responsive studio",
       "navigation",
       "searchable multilingual language selector",
-      "model quality selector"
+      "model quality selector",
+      "Whisper English-only translation mode"
     ],
     "description": "Confirms that recognition cannot start without a real file and the mobile layout remains usable.",
     "steps": [
@@ -42,9 +43,10 @@
       "Type немец in language search and check German appears as an option",
       "Clear language search and switch to Whisper Base",
       "Inspect the Создать субтитры action",
-      "Navigate to Как это работает"
+      "Navigate to Как это работает",
+      "Select Перевод речи на английский and verify the UI explains that other target languages are not yet supported."
     ],
-    "expected": "Recognition is disabled without an uploaded media file; language search filters supported languages, and the user can change the model."
+    "expected": "Recognition is disabled without an uploaded media file; language search filters the 99 languages, both model sizes and English translation mode are selectable."
   },
   {
     "name": "Pricing transparently marks checkout unavailable",

@@ -109,6 +109,7 @@ function App() {
   const [language, setLanguage] = useState('auto');
   const [languageQuery, setLanguageQuery] = useState('');
   const [modelChoice, setModelChoice] = useState<ModelChoice>('fast');
+  const [outputMode, setOutputMode] = useState<'transcribe' | 'translate'>('transcribe');
   const [muxing, setMuxing] = useState(false);
   const [muxError, setMuxError] = useState('');
   const [muxStatus, setMuxStatus] = useState('');
@@ -204,7 +205,7 @@ function App() {
         return_timestamps: true,
         chunk_length_s: 30,
         stride_length_s: 5,
-        task: 'transcribe'
+        task: outputMode
       };
       if (language !== 'auto') options.language = language;
       const result = await model(audio.getChannelData(0), options) as Output | Output[];
@@ -222,7 +223,7 @@ function App() {
       if (!next.length) throw new Error('Речь не обнаружена. Попробуйте видео с более чётким звуком.');
       setCaptions(next);
       setDuration(audio.duration);
-      setPhase('Готово: ' + next.length + ' фрагментов. Проверьте текст и скачайте субтитры.');
+      setPhase('Готово: ' + next.length + ' фрагментов. ' + (outputMode === 'translate' ? 'Проверьте английский перевод и тайминги.' : 'Проверьте текст и тайминги.') + ' Скачайте результат ниже.');
       await ffmpeg.deleteFile(inputName).catch(() => {});
       await ffmpeg.deleteFile('audio.wav').catch(() => {});
     } catch (error: unknown) {
@@ -386,6 +387,9 @@ function App() {
                   <span className="language-count">Доступно {LANGUAGE_OPTIONS.length} языков распознавания · качество зависит от языка и записи</span>
                   <label htmlFor="model-choice">Модель распознавания</label>
                   <div className="select-wrap"><Sparkles size={17}/><select id="model-choice" value={modelChoice} onChange={event => setModelChoice(event.target.value as ModelChoice)}><option value="fast">Whisper Tiny — быстрее, меньше загрузка</option><option value="quality">Whisper Base — точнее, но медленнее</option></select><ChevronDown size={15}/></div>
+                  <label htmlFor="output-mode">Результат обработки</label>
+                  <div className="select-wrap"><Languages size={17}/><select id="output-mode" value={outputMode} onChange={event => setOutputMode(event.target.value as 'transcribe' | 'translate')}><option value="transcribe">Субтитры на языке оригинала</option><option value="translate">Перевод речи на английский (Whisper)</option></select><ChevronDown size={15}/></div>
+                  <span className="language-count">Перевод сейчас доступен только на английский язык. Это функция Whisper, без платного API.</span>
                 </div>
                 <button className="primary-btn" disabled={!file || processing || muxing} onClick={transcribe}>{processing ? <><span className="spin-circle"/> Обрабатываем…</> : <><Sparkles size={18}/> Создать субтитры <ArrowRight size={17}/></>}</button>
                 {phase && <div className={'notice ' + (processing ? 'working' : 'success')}><span className={processing ? 'pulse' : 'check-dot'} />{phase}</div>}
@@ -423,7 +427,7 @@ function App() {
             <div className="bottom-trust"><span><ShieldCheck size={16}/> Никаких секретных API-ключей</span><span><CloudOff size={16}/> Исходные файлы не покидают браузер</span><span><Code2 size={16}/> Open-source технологии</span></div>
           </main>
         ) : tab === 'how' ? (
-          <main className="page info-page"><div className="info-heading"><div className="eyebrow dark"><Sparkles size={14}/> ПРОЗРАЧНЫЙ ИИ</div><h1>Как работает Sublume</h1><p>Никаких скрытых платежей за нейросеть. Файл обрабатывается локально в браузере.</p></div><div className="how-grid">{[{no:'01',ico:<UploadCloud/>,title:'Загрузи файл',desc:'Выбери видео или аудио до 150 МБ. Файл остаётся на твоём устройстве.'},{no:'02',ico:<Mic2/>,title:'Запусти Whisper',desc:'Мы скачиваем открытую модель и автоматически распознаём речь. Первый запуск самый долгий.'},{no:'03',ico:<Scissors/>,title:'Исправь субтитры',desc:'Проверь текст, измени интервалы и сравни с видео.'},{no:'04',ico:<Download/>,title:'Забери результат',desc:'Скачай SRT, VTT, TXT или MP4 с переключаемой дорожкой субтитров.'}].map(step => <div className="how-card" key={step.no}><span className="step-num">{step.no}</span><div className="step-ico">{step.ico}</div><h3>{step.title}</h3><p>{step.desc}</p></div>)}</div><div className="important-panel"><Info size={22}/><div><strong>Что умеет текущая бета-версия</strong><p>Распознавание на десятках языков, импорт и экспорт SRT/VTT/TXT, а также отдельная переключаемая дорожка субтитров внутри MP4. Субтитры, наложенные прямо на кадры, облачные задания, аккаунты и оплата ещё не подключены. Для работы нужен современный браузер и достаточно оперативной памяти.</p></div></div><button className="primary-btn page-return" onClick={() => setTab('studio')}>Перейти в студию <ArrowRight size={16}/></button></main>
+          <main className="page info-page"><div className="info-heading"><div className="eyebrow dark"><Sparkles size={14}/> ПРОЗРАЧНЫЙ ИИ</div><h1>Как работает Sublume</h1><p>Никаких скрытых платежей за нейросеть. Файл обрабатывается локально в браузере.</p></div><div className="how-grid">{[{no:'01',ico:<UploadCloud/>,title:'Загрузи файл',desc:'Выбери видео или аудио до 150 МБ. Файл остаётся на твоём устройстве.'},{no:'02',ico:<Mic2/>,title:'Запусти Whisper',desc:'Мы скачиваем открытую модель и автоматически распознаём речь. Первый запуск самый долгий.'},{no:'03',ico:<Scissors/>,title:'Исправь субтитры',desc:'Проверь текст, измени интервалы и сравни с видео.'},{no:'04',ico:<Download/>,title:'Забери результат',desc:'Скачай SRT, VTT, TXT или MP4 с переключаемой дорожкой субтитров.'}].map(step => <div className="how-card" key={step.no}><span className="step-num">{step.no}</span><div className="step-ico">{step.ico}</div><h3>{step.title}</h3><p>{step.desc}</p></div>)}</div><div className="important-panel"><Info size={22}/><div><strong>Что умеет текущая бета-версия</strong><p>Распознавание на 99 языках, перевод речи на английский через Whisper, импорт и экспорт SRT/VTT/TXT, а также отдельная переключаемая дорожка субтитров внутри MP4. Субтитры, наложенные прямо на кадры, облачные задания, аккаунты и оплата ещё не подключены. Для работы нужен современный браузер и достаточно оперативной памяти.</p></div></div><button className="primary-btn page-return" onClick={() => setTab('studio')}>Перейти в студию <ArrowRight size={16}/></button></main>
         ) : (
           <main className="page info-page"><div className="info-heading"><div className="eyebrow dark"><BadgeCheck size={14}/> ТАРИФЫ</div><h1>Начни бесплатно</h1><p>Сначала проверим, насколько хорошо работает модель на твоём устройстве. Платежей в бета-версии нет.</p></div><div className="pricing-grid"><div className="plan active-plan"><div className="plan-icon"><Sparkles/></div><h3>Local Beta</h3><div className="plan-price">0 € <span>/ всегда в бета-версии</span></div><p>Всё необходимое, чтобы попробовать автоматические субтитры.</p><ul><li><Check/> Whisper на устройстве</li><li><Check/> Русская и многоязычная речь</li><li><Check/> Редактор таймингов</li><li><Check/> SRT, VTT, TXT и MP4-дорожка</li></ul><button className="primary-btn" onClick={() => setTab('studio')}>Попробовать бесплатно</button></div><div className="plan"><span className="coming-tag">ПЛАНИРУЕТСЯ</span><div className="plan-icon secondary"><Globe2/></div><h3>Cloud Pro</h3><div className="plan-price">— <span>/ цена не назначена</span></div><p>Для тех, кому нужны длинные видео и автоматическая обработка на сервере.</p><ul><li><Check/> Обработка без нагрузки на ПК</li><li><Check/> Задания в очереди</li><li><Check/> Экспорт готового видео</li><li><Check/> История проектов</li></ul><div className="soon-btn">Пока недоступно</div></div></div><div className="important-panel"><LockKeyhole size={22}/><div><strong>Никаких фиктивных покупок</strong><p>Платёжная система и подписки не включены, пока нет проверки качества обработки и подключения платёжного аккаунта владельца проекта.</p></div></div></main>
         )}

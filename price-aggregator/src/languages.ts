@@ -102,8 +102,7 @@ export const WHISPER_LANGUAGES: ReadonlyArray<readonly [string, string]> = [
   ['ha', 'hausa'],
   ['ba', 'bashkir'],
   ['jw', 'javanese'],
-  ['su', 'sundanese'],
-  ['yue', 'cantonese']
+  ['su', 'sundanese']
 ];
 
 const suggested = ['ru', 'en', 'lv', 'uk', 'pl', 'de', 'fr', 'es', 'lt', 'et', 'it', 'pt', 'tr', 'ar', 'zh', 'ja', 'ko'];

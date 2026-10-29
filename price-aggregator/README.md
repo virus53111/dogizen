@@ -21,3 +21,5 @@ This subproject is deployed to Render Static Site `cenaradar` via the `price-agg
 The former CenaRadar content was preserved in the backup branch `backup/cenaradar-before-sublume-2026-10-29`.
 
 - Recognition: searchable full Whisper language list, Tiny and Base model selections.
+
+- Translation mode uses the open Whisper model to translate speech into English only; other target languages are not yet supported.
