@@ -82,5 +82,22 @@
       "Check MP4 button is absent without an uploaded source video"
     ],
     "expected": "Both imported captions appear for editing and export; video export is offered only when a video is present."
+  },
+  {
+    "name": "Mobile audio loading without unpkg CDN",
+    "viewport": "mobile",
+    "covers": [
+      "same-origin FFmpeg core",
+      "native AudioContext decoding",
+      "16kHz PCM input",
+      "accurate error message"
+    ],
+    "steps": [
+      "Confirm /ffmpeg/ffmpeg-core.js and ffmpeg-core.wasm are accessible",
+      "Upload a short MP3 or WAV and test browser-native decoder",
+      "Upload an MP4 with speech and test FFmpeg fallback if browser cannot decode it directly",
+      "Check any error text is shown clearly"
+    ],
+    "expected": "No ffmpeg-core.js import from external unpkg CDN; the mobile user can reach Whisper when browser or bundled FFmpeg can decode the file."
   }
 ]

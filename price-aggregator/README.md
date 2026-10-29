@@ -23,3 +23,9 @@ The former CenaRadar content was preserved in the backup branch `backup/cenarada
 - Recognition: searchable full Whisper language list, Tiny and Base model selections.
 
 - Translation mode uses the open Whisper model to translate speech into English only; other target languages are not yet supported.
+
+## Android audio extraction fix
+- FFmpeg ESM core (32 MB WASM) is served from the same domain; no external CDN required.
+- Try native AudioContext decoding before FFmpeg; both paths produce mono 16kHz PCM for Whisper.
+- The FFmpeg core is GPL-2.0-or-later: retain appropriate license notice and make corresponding sources available when distributing.
+- Mobile inference still requires device-level tests and sufficient memory.

@@ -56,22 +56,78 @@ function loadSavedCaptions() {
   } catch { return []; }
 }
 
+
 async function loadFfmpeg(onPhase: (message: string) => void) {
   if (!enginePromise) {
     enginePromise = (async () => {
       const { FFmpeg } = await import('@ffmpeg/ffmpeg');
-      const { toBlobURL } = await import('@ffmpeg/util');
       const ff = new FFmpeg();
-      onPhase('Загружаем движок обработки аудио…');
-      const base = 'https://unpkg.com/@ffmpeg/core@0.12.10/dist/umd';
-      await ff.load({
-        coreURL: await toBlobURL(base + '/ffmpeg-core.js', 'text/javascript'),
-        wasmURL: await toBlobURL(base + '/ffmpeg-core.wasm', 'application/wasm')
-      });
+      // FFmpeg is served from this site's origin: no third-party CDN or Blob-based core import.
+      const localBase = new URL(import.meta.env.BASE_URL + 'ffmpeg/', window.location.origin);
+      onPhase('Загружаем FFmpeg с нашего сайта (около 32 МБ при первом запуске)…');
+      try {
+        await ff.load({
+          coreURL: new URL('ffmpeg-core.js', localBase).href,
+          wasmURL: new URL('ffmpeg-core.wasm', localBase).href
+        });
+      } catch (e) {
+        ff.terminate();
+        throw new Error('Не удалось запустить FFmpeg: ' + (e instanceof Error ? e.message : String(e)));
+      }
       return ff;
     })().catch((err: unknown) => { enginePromise = null; throw err; });
   }
   return enginePromise;
+}
+
+/** Whisper requires mono Float32 PCM sampled at 16 kHz. */
+async function decodeToPcm16k(bytes: ArrayBuffer): Promise<{pcm: Float32Array; duration: number}> {
+  const context = new AudioContext();
+  try {
+    const audio = await context.decodeAudioData(bytes);
+    if (!Number.isFinite(audio.duration) || audio.duration <= 0) throw new Error('Нет аудиодорожки.');
+    if (audio.duration > 15 * 60) throw new Error('Бета-версия принимает записи до 15 минут.');
+    const length = Math.ceil(audio.duration * 16000);
+    const offline = new OfflineAudioContext(1, length, 16000);
+    const source = offline.createBufferSource();
+    source.buffer = audio;
+    source.connect(offline.destination);
+    source.start();
+    const rendered = await offline.startRendering();
+    return { pcm: new Float32Array(rendered.getChannelData(0)), duration: audio.duration };
+  } finally {
+    await context.close().catch(() => {});
+  }
+}
+
+async function extractAudio(file: File, onPhase: (message: string) => void) {
+  // Native decoding first for audio (and some video formats). Saves mobile users a 32 MB WASM download.
+  if (file.size < 35 * 1024 * 1024) {
+    try {
+      onPhase('Пробуем прочитать аудио средствами браузера…');
+      return await decodeToPcm16k(await file.arrayBuffer());
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('15 минут')) throw error;
+    }
+  }
+
+  const ffmpeg = await loadFfmpeg(onPhase);
+  const { fetchFile } = await import('@ffmpeg/util');
+  const ext = (file.name.split('.').pop() || 'mp4').toLowerCase();
+  const input = 'upload.' + ext;
+  const wavFile = 'audio.wav';
+  try {
+    onPhase('FFmpeg извлекает звук из видео…');
+    await ffmpeg.writeFile(input, await fetchFile(file));
+    const code = await ffmpeg.exec(['-i', input, '-vn', '-ac', '1', '-ar', '16000', '-f', 'wav', wavFile]);
+    if (code !== 0) throw new Error('Не удалось извлечь аудиодорожку.');
+    const wav = await ffmpeg.readFile(wavFile);
+    if (typeof wav === 'string') throw new Error('Неверный формат аудиофайла.');
+    return await decodeToPcm16k(new Uint8Array(wav).slice().buffer as ArrayBuffer);
+  } finally {
+    await ffmpeg.deleteFile(input).catch(() => {});
+    await ffmpeg.deleteFile(wavFile).catch(() => {});
+  }
 }
 
 async function loadTranscriber(which: ModelChoice, onPhase: (message: string) => void) {
@@ -182,23 +238,7 @@ function App() {
     setDemo(false);
     try {
       setPhase('Подготавливаем видео и извлекаем звук…');
-      const ffmpeg = await loadFfmpeg(setPhase);
-      const { fetchFile } = await import('@ffmpeg/util');
-      const suffix = (file.name.split('.').pop() || 'mp4').toLowerCase();
-      const inputName = 'upload.' + suffix;
-      await ffmpeg.writeFile(inputName, await fetchFile(file));
-      const resultCode = await ffmpeg.exec(['-i', inputName, '-vn', '-ac', '1', '-ar', '16000', '-f', 'wav', 'audio.wav']);
-      if (resultCode !== 0) throw new Error('Не удалось прочитать аудиодорожку файла.');
-      const wav = await ffmpeg.readFile('audio.wav') as Uint8Array;
-      const wavCopy = new Uint8Array(wav);
-      const context = new AudioContext();
-      let audio: AudioBuffer;
-      try {
-        audio = await context.decodeAudioData(wavCopy.buffer as ArrayBuffer);
-      } finally {
-        await context.close();
-      }
-      if (audio.duration > 15 * 60) throw new Error('Сейчас поддерживаются ролики до 15 минут. Обрежьте длинное видео.');
+      const audio = await extractAudio(file, setPhase);
       const model = await loadTranscriber(modelChoice, setPhase);
       setPhase('ИИ распознаёт речь. Обработка выполняется на вашем устройстве…');
       const options: any = {
@@ -208,7 +248,7 @@ function App() {
         task: outputMode
       };
       if (language !== 'auto') options.language = language;
-      const result = await model(audio.getChannelData(0), options) as Output | Output[];
+      const result = await model(audio.pcm, options) as Output | Output[];
       const output = Array.isArray(result) ? result[0] : result;
       const chunks = (output?.chunks || []).filter(chunk => chunk.text?.trim());
       let next: Caption[] = chunks.map((c, i) => ({
@@ -224,11 +264,10 @@ function App() {
       setCaptions(next);
       setDuration(audio.duration);
       setPhase('Готово: ' + next.length + ' фрагментов. ' + (outputMode === 'translate' ? 'Проверьте английский перевод и тайминги.' : 'Проверьте текст и тайминги.') + ' Скачайте результат ниже.');
-      await ffmpeg.deleteFile(inputName).catch(() => {});
-      await ffmpeg.deleteFile('audio.wav').catch(() => {});
+      // Temporary FFmpeg files are cleaned up inside extractAudio().
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : String(error);
-      setErrorText('Обработка не завершена. ' + message + ' Для браузерной модели нужны свободная память, поддерживаемый браузер и доступ к сети при первой загрузке.');
+      setErrorText('Обработка не завершена: ' + message + '. Попробуй короткий MP3/WAV или другое видео. На телефоне может потребоваться больше свободной памяти.');
       setPhase('');
     } finally {
       setProcessing(false);
@@ -395,7 +434,7 @@ function App() {
                 {phase && <div className={'notice ' + (processing ? 'working' : 'success')}><span className={processing ? 'pulse' : 'check-dot'} />{phase}</div>}
                 {errorText && <div className="error-notice" role="alert"><Info size={17}/>{errorText}</div>}
                 <button className="import-btn" onClick={() => subtitleInput.current?.click()}><UploadCloud size={16}/> Уже есть субтитры? Импорт SRT / VTT</button>
-                <p className="tiny-note"><Info size={13}/> Первая загрузка модели требует интернета. Для длинных видео и телефонов нужна память. Если приложение тормозит, попробуй короткий ролик и модель Tiny.</p>
+                <p className="tiny-note"><Info size={13}/> На первом запуске скачивается Whisper и, при необходимости, FFmpeg (~32 МБ) с нашего сайта. Начни с короткого видео и модели Tiny.</p>
               </section>
 
               <section className="card preview-panel">
