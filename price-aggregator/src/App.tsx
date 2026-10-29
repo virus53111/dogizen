@@ -174,6 +174,7 @@ function App() {
   const [renderedExt, setRenderedExt] = useState<'mp4'|'webm'>('webm');
   const [previewError, setPreviewError] = useState('');
   const [previewReady, setPreviewReady] = useState(false);
+  const [videoIsPortrait, setVideoIsPortrait] = useState(false);
   const renderAbortRef = useRef<AbortController|null>(null);
   const [preset, setPreset] = useState<Preset>('bold');
   const [captions, setCaptions] = useState<Caption[]>(loadSavedCaptions);
@@ -293,6 +294,7 @@ function App() {
     setRenderedUrl('');
     setPreviewError('');
     setPreviewReady(false);
+    setVideoIsPortrait(false);
     setFile(next);
     setFileUrl(URL.createObjectURL(next));
     setIsAudio(['mp3', 'wav', 'm4a', 'ogg', 'flac'].includes(extension));
@@ -518,10 +520,10 @@ function App() {
 
               <section className="card preview-panel">
                 <div className="card-heading"><div className="card-icon purple"><Play size={18}/></div><div><h3>Предпросмотр</h3><p>Смотри субтитры синхронно с видео</p></div></div>
-                <div className="preview-screen">
+                <div className={'preview-screen ' + (videoIsPortrait && !isAudio ? 'portrait' : '')}>
                   {fileUrl ? (
                     isAudio ? <div className="audio-stage"><div className="audio-disc"><AudioLines size={42}/></div><audio controls ref={el => { mediaRef.current = el; }} src={fileUrl} onTimeUpdate={event => setCurrentTime(event.currentTarget.currentTime)} onLoadedMetadata={event => setDuration(event.currentTarget.duration)}/></div> :
-                    <video controls playsInline preload="metadata" ref={el => {mediaRef.current=el;}} src={fileUrl} onTimeUpdate={event=>setCurrentTime(event.currentTarget.currentTime)} onLoadedMetadata={event=>setDuration(event.currentTarget.duration)} onCanPlay={()=>{setPreviewReady(true);setPreviewError('');}} onError={()=>{setPreviewReady(false);setPreviewError('Предпросмотр этого формата не поддерживается телефоном. Попробуй MP4 (H.264) или WebM.');}}/>
+                    <video controls playsInline preload="metadata" ref={el => {mediaRef.current=el;}} src={fileUrl} onTimeUpdate={event=>setCurrentTime(event.currentTarget.currentTime)} onLoadedMetadata={event=>{setDuration(event.currentTarget.duration);setVideoIsPortrait(event.currentTarget.videoHeight > event.currentTarget.videoWidth);}} onCanPlay={()=>{setPreviewReady(true);setPreviewError('');}} onError={()=>{setPreviewReady(false);setPreviewError('Предпросмотр этого формата не поддерживается телефоном. Попробуй MP4 (H.264) или WebM.');}}/>
                   ) : <div className="empty-stage"><div className="empty-play"><Play size={28} fill="currentColor"/></div><span>Предпросмотр появится здесь</span><small>Добавь видео, чтобы начать</small></div>}
                   {fileUrl && !isAudio && activeCaption && <div className={'caption-overlay ' + preset}>{activeCaption.text}</div>}
                 </div>

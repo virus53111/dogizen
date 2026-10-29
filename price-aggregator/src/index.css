@@ -74,3 +74,9 @@
 
 .demo-video-btn{display:flex;width:100%;align-items:center;justify-content:center;gap:9px;padding:12px 11px;margin-top:8px;border:1px solid #48626e;border-radius:9px;color:#bce8ee;background:#183038;font-weight:700;font-size:11px}
 .demo-video-btn:hover:not(:disabled){background:#23404a}
+
+/* Keep preview proportional to original portrait footage on phones. */
+.preview-screen.portrait{aspect-ratio:9/16;width:min(100%,350px);margin-left:auto;margin-right:auto;}
+.preview-screen.portrait video{object-fit:contain}
+.preview-screen.portrait .caption-overlay{bottom:12%;left:7%;width:86%;font-size:clamp(14px,3vw,21px);line-height:1.35}
+@media(max-width:580px){.preview-screen.portrait{width:min(100%,350px)}}
