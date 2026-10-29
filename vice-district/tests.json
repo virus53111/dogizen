@@ -1,0 +1,10 @@
+{
+  "testedManually": false,
+  "scenarios": [
+    "Load 3D street and enter nearby car using E",
+    "WASD drive and HUD speed increases",
+    "Collect three glowing checkpoints",
+    "Mobile joystick and E/NITRO buttons work",
+    "Mute sound and unmute"
+  ]
+}
