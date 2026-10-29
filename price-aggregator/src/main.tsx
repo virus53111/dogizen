@@ -1,14 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import AggregatorApp from './AggregatorApp';
-import LanguageGuard from './LanguageGuard';
-import './catalog-cache';
-import './analytics';
-import './aggregator.css';
+import App from './App';
+import './index.css';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <LanguageGuard />
-    <AggregatorApp />
-  </StrictMode>,
+    <App />
+  </StrictMode>
 );

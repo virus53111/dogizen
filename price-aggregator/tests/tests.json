@@ -1,43 +1,60 @@
 [
   {
-    "name": "Find iPhone 16 Pro Max and open details",
+    "name": "Open subtitle sample, edit caption and export",
     "sanity": true,
     "viewport": "desktop",
-    "covers": ["tokenized product search", "product photo card", "store offer comparison", "product detail view"],
-    "description": "Verifies the primary product-discovery workflow finds a model from a short query and opens a full product card.",
-    "steps": ["Enter 16 pro max in the search field", "Open Apple iPhone 16 Pro Max 256GB with Подробнее", "Review the product photo, specifications and offers"],
-    "expected": "The iPhone 16 Pro Max result is shown with a product image and its detail view displays specifications and merchant offers."
+    "covers": [
+      "subtitle editor sample",
+      "caption editing",
+      "SRT export",
+      "VTT export",
+      "text export",
+      "local transcript persistence"
+    ],
+    "description": "Checks the useful local editor workflow without requiring an external AI model download.",
+    "steps": [
+      "Open the AI studio",
+      "Click Открыть демонстрационный пример",
+      "Edit the first caption text",
+      "Click SRT and confirm a subtitle file downloads",
+      "Refresh and check the edited caption text is restored"
+    ],
+    "expected": "The editor exposes editable captions, subtitle export is available, and text persists after refresh."
   },
   {
-    "name": "Review project and how-it-works information",
-    "viewport": "desktop",
-    "covers": ["about page", "how-it-works page", "beta launch disclosure"],
-    "description": "Verifies a reviewer can understand what CenaRadar is and how merchant data will be integrated.",
-    "steps": ["Open О проекте from the top navigation", "Close it and open Как работает", "Review the beta status note"],
-    "expected": "Both information dialogs clearly describe CenaRadar as a Latvian comparison service in beta and explain that live product feeds are connected only after partner approval."
-  },
-  {
-    "name": "Review partner, privacy and affiliate disclosures on mobile",
+    "name": "Empty upload blocks processing",
     "viewport": "mobile",
-    "covers": ["partner information", "privacy disclosure", "affiliate disclosure", "mobile footer navigation"],
-    "description": "Verifies compliance and partnership information is reachable on a phone-sized viewport.",
-    "steps": ["Scroll to the footer", "Open Partneriem or Партнёрам and close it", "Open Privacy, then Affiliate disclosure"],
-    "expected": "Each information dialog is readable on mobile and states the launch-stage partner status, local browser storage behavior, and affiliate commission disclosure."
+    "covers": [
+      "file upload validation",
+      "disabled processing guardrail",
+      "responsive studio",
+      "navigation"
+    ],
+    "description": "Confirms that recognition cannot start without a real file and the mobile layout remains usable.",
+    "steps": [
+      "Open AI-студия on a mobile viewport",
+      "Do not upload a video",
+      "Inspect the Создать субтитры action",
+      "Navigate to Как это работает"
+    ],
+    "expected": "Recognition button is disabled without a file, and the help page explains actual capabilities and limits."
   },
   {
-    "name": "Persist favorites and price alerts",
+    "name": "Pricing transparently marks checkout unavailable",
     "viewport": "desktop",
-    "covers": ["favorites persistence", "price alert persistence", "quick views"],
-    "description": "Verifies saved user preferences remain available after reload.",
-    "steps": ["Add a product to favorites", "Open its details and enable a price alert", "Refresh the page and use the heart and bell quick views"],
-    "expected": "The favorite and price alert remain saved and their quick views can still filter the catalogue."
-  },
-  {
-    "name": "Filter catalogue and enforce comparison limit",
-    "viewport": "desktop",
-    "covers": ["store filtering", "maximum price filtering", "filter reset", "comparison limit guardrail"],
-    "description": "Verifies catalogue controls remain usable after the review-site polish.",
-    "steps": ["Choose a store and lower the maximum price", "Reset the filters", "Add three products to comparison and try to add a fourth"],
-    "expected": "Filters narrow and restore the catalogue, comparison stays limited to three products, and a visible maximum-three message appears for the fourth item."
+    "covers": [
+      "pricing visibility",
+      "beta purchase disclosure",
+      "no fake payment flow",
+      "backend info endpoint"
+    ],
+    "description": "Checks the app explains client-side processing and does not pretend payment works in this beta.",
+    "steps": [
+      "Open Тарифы",
+      "Review Local Beta features",
+      "Review Cloud Pro planned features",
+      "Return to studio"
+    ],
+    "expected": "Free beta is clearly available, Cloud Pro is clearly unavailable, and the studio reports on-device processing."
   }
 ]
