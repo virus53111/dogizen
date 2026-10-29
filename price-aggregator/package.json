@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/copy-ffmpeg-core.mjs && vite --host",
-    "build": "node scripts/copy-ffmpeg-core.mjs && vite build",
-    "preview": "vite preview"
+    "build": "node scripts/copy-ffmpeg-core.mjs && npm run typecheck && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
