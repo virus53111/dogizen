@@ -83,3 +83,12 @@
 
 .speech-test-btn{display:flex;width:100%;gap:9px;align-items:center;justify-content:center;padding:12px;margin-top:8px;border-radius:9px;border:1px solid #4f6b83;background:#1c293b;color:#b3d7fa;font-size:11px;font-weight:800}
 .speech-test-btn:hover:not(:disabled){background:#263d5e}
+
+/* Visible subtitle file import and text-paste alternative for mobile and accessible browser automation */
+.subtitle-file-input{display:block;width:100%;border-radius:9px;margin:9px 0 0;padding:9px;color:#b7accb;background:#1c1b2a;border:1px solid #4a3d61;font-size:11px}
+.subtitle-file-input::file-selector-button{border:1px solid #7350ab;padding:9px 10px;margin-right:11px;border-radius:7px;color:#e2d3ff;background:#382851;cursor:pointer}
+.paste-subtitle-toggle{display:flex;width:100%;align-items:center;justify-content:center;gap:9px;margin-top:9px;background:#231d35;border:1px solid #534374;padding:11px 12px;border-radius:9px;color:#d5c7ee;font-size:11px;font-weight:700}
+.paste-subtitle-box{padding:13px;margin-top:9px;border:1px solid #554471;border-radius:10px;background:#1c192b;display:flex;flex-direction:column;gap:9px}
+.paste-subtitle-box label{font-size:11px;font-weight:700}
+.paste-subtitle-box textarea{background:#10121f;color:#e9e4f7;border:1px solid #605078;border-radius:8px;padding:11px;font-family:ui-monospace,SFMono-Regular,monospace;font-size:11px;line-height:1.6;resize:vertical;width:100%}
+.paste-apply-btn{display:flex;align-items:center;justify-content:center;gap:8px;border:1px solid #8363bc;background:#53357d;color:#fff;border-radius:8px;font-size:12px;font-weight:700;padding:11px}

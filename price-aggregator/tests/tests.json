@@ -137,5 +137,25 @@
       "Confirm recognizable English transcript appears without an error"
     ],
     "expected": "Whisper returns real text from the audio sample and creates subtitles; the synthetic demo alone is not considered an ASR test."
+  },
+  {
+    "name": "Paste SRT and VTT with robust timestamp editing",
+    "viewport": "mobile",
+    "covers": [
+      "visible SRT/VTT file input",
+      "textarea paste importer",
+      "SRT parse",
+      "VTT parse",
+      "timestamp clamping"
+    ],
+    "steps": [
+      "Open Вставить текст SRT / VTT вручную",
+      "Paste two valid SRT cues and click Импортировать текст",
+      "Verify two rows and exact start/end times",
+      "Paste WEBVTT format with 2 cues and verify parsing",
+      "Change a start time to exceed its end and verify end adjusts automatically",
+      "Paste malformed captions and verify an error is displayed"
+    ],
+    "expected": "Both subtitle formats import into editable rows, timing remains valid, and invalid text shows a useful error."
   }
 ]

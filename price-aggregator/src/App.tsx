@@ -187,6 +187,8 @@ function App() {
   const [demo, setDemo] = useState(false);
   const [demoBusy, setDemoBusy] = useState(false);
   const [speechSampleBusy, setSpeechSampleBusy] = useState(false);
+  const [showPasteInput, setShowPasteInput] = useState(false);
+  const [subtitlePaste, setSubtitlePaste] = useState('');
   useEffect(() => {
     try { localStorage.setItem('sublume-captions-v1', JSON.stringify(captions)); } catch { /* storage unavailable */ }
   }, [captions]);
@@ -333,7 +335,14 @@ function App() {
     setPhase('');
   }
   function updateCaption(id: number, patch: Partial<Caption>) {
-    setCaptions(current => current.map(c => c.id === id ? { ...c, ...patch } : c));
+    setCaptions(current => current.map(c => {
+      if (c.id !== id) return c;
+      // A single bad timestamp must not corrupt exported SRT/VTT or video rendering.
+      const start = Math.max(0, typeof patch.start === 'number' && Number.isFinite(patch.start) ? patch.start : c.start);
+      const requestedEnd = typeof patch.end === 'number' && Number.isFinite(patch.end) ? patch.end : c.end;
+      const end = Math.max(start + 0.1, requestedEnd);
+      return {...c, ...patch, start, end};
+    }));
   }
   function showSample() {
     setCaptions(sampleCaptions.map(c => ({ ...c })));
@@ -516,7 +525,7 @@ function App() {
               <section className="card upload-panel">
                 <div className="card-heading"><div className="card-icon"><FileVideo size={19}/></div><div><h3>Исходный файл</h3><p>Видео или аудиозапись для обработки</p></div></div>
                 <input ref={fileInput} className="sr-only" type="file" accept="video/*,audio/*,.mkv,.mov,.m4a,.flac" onChange={event => chooseFile(event.target.files?.[0])}/>
-                <input ref={subtitleInput} className="sr-only" type="file" accept=".srt,.vtt,text/vtt" onChange={event => { void importSubtitles(event.target.files?.[0]); }}/>
+                <input ref={subtitleInput} id="subtitle-upload" aria-label="Выбрать файл SRT или VTT" className="subtitle-file-input" type="file" accept=".srt,.vtt,text/vtt" onChange={event => { void importSubtitles(event.target.files?.[0]); }}/>
                 <div className={'dropzone ' + (drag ? 'dragging' : '') + (file ? ' has-file' : '')}
                   onDragOver={event => { event.preventDefault(); setDrag(true); }}
                   onDragLeave={event => { event.preventDefault(); setDrag(false); }}
@@ -542,6 +551,12 @@ function App() {
                 {phase && <div className={'notice ' + (processing ? 'working' : 'success')}><span className={processing ? 'pulse' : 'check-dot'} />{phase}</div>}
                 {errorText && <div className="error-notice" role="alert"><Info size={17}/>{errorText}</div>}
                 <button className="import-btn" onClick={() => subtitleInput.current?.click()}><UploadCloud size={16}/> Уже есть субтитры? Импорт SRT / VTT</button>
+                <button className="paste-subtitle-toggle" onClick={() => setShowPasteInput(value => !value)}><Subtitles size={16}/>{showPasteInput ? 'Скрыть вставку субтитров' : 'Вставить текст SRT / VTT вручную'}</button>
+                {showPasteInput && <div className="paste-subtitle-box">
+                  <label htmlFor="subtitle-paste">Текст файла SRT / VTT</label>
+                  <textarea id="subtitle-paste" value={subtitlePaste} onChange={event=>setSubtitlePaste(event.target.value)} rows={6} spellCheck={false} placeholder={'1\\n00:00:00,000 --> 00:00:02,000\\nПривет!\\n\\n2\\n00:00:02,000 --> 00:00:04,000\\nВторой субтитр'}/>
+                  <button className="paste-apply-btn" disabled={!subtitlePaste.trim()} onClick={() => { void importSubtitles(new File([subtitlePaste], 'pasted.srt', {type:'text/plain'})); }}><Check size={15}/> Импортировать текст</button>
+                </div>}
                 <button className="demo-video-btn" disabled={demoBusy || processing || muxing} onClick={() => {void createDemoVideo();}}><Play size={15}/>{demoBusy ? 'Готовим демо…' : 'Проверить без своего видео — демо 4 секунды'}</button>
                 <button className="speech-test-btn" disabled={speechSampleBusy || demoBusy || processing || muxing} onClick={() => {void loadSpeechTest();}}><Mic2 size={16}/>{speechSampleBusy ? 'Загружаем голос…' : 'Проверить Whisper на настоящей речи'}</button>
                 <p className="tiny-note"><Info size={13}/> На первом запуске скачивается Whisper и, при необходимости, FFmpeg (~32 МБ) с нашего сайта. Начни с короткого видео и модели Tiny.</p>
