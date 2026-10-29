@@ -1,6 +1,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { LANGUAGE_OPTIONS, matchLanguages } from './languages';
+import { canRenderVideo, renderVideoWithText } from './videoExport';
 import {
   ArrowDownToLine, ArrowRight, AudioLines, BadgeCheck, Check, ChevronDown,
   CircleHelp, Clock3, CloudOff, Code2, Download, Film, FileAudio, FileVideo,
@@ -169,6 +170,11 @@ function App() {
   const [muxing, setMuxing] = useState(false);
   const [muxError, setMuxError] = useState('');
   const [muxStatus, setMuxStatus] = useState('');
+  const [renderedUrl, setRenderedUrl] = useState('');
+  const [renderedExt, setRenderedExt] = useState<'mp4'|'webm'>('webm');
+  const [previewError, setPreviewError] = useState('');
+  const [previewReady, setPreviewReady] = useState(false);
+  const renderAbortRef = useRef<AbortController|null>(null);
   const [preset, setPreset] = useState<Preset>('bold');
   const [captions, setCaptions] = useState<Caption[]>(loadSavedCaptions);
   const [processing, setProcessing] = useState(false);
@@ -182,6 +188,8 @@ function App() {
     try { localStorage.setItem('sublume-captions-v1', JSON.stringify(captions)); } catch { /* storage unavailable */ }
   }, [captions]);
   useEffect(() => () => { if (fileUrl) URL.revokeObjectURL(fileUrl); }, [fileUrl]);
+  useEffect(() => () => { if (renderedUrl) URL.revokeObjectURL(renderedUrl); }, [renderedUrl]);
+  useEffect(() => () => { renderAbortRef.current?.abort(); }, []);
 
   const activeCaption = captions.find(c => currentTime >= c.start && currentTime < c.end);
   const fileBase = (file?.name || 'sublume-subtitles').replace(/\.[^.]+$/, '').replace(/[^\wа-яА-ЯёЁ.-]/g, '_');
@@ -200,6 +208,10 @@ function App() {
     }
     setMuxError('');
     setMuxStatus('');
+    renderAbortRef.current?.abort();
+    setRenderedUrl('');
+    setPreviewError('');
+    setPreviewReady(false);
     setFile(next);
     setFileUrl(URL.createObjectURL(next));
     setIsAudio(['mp3', 'wav', 'm4a', 'ogg', 'flac'].includes(extension));
@@ -316,52 +328,37 @@ function App() {
   }
 
   // MP4 contains an optional selectable subtitle track (mov_text), not burned-in stylized captions.
-  async function downloadCaptionedMp4() {
-    if (!file || !captions.length || isAudio || muxing || processing) return;
-    if (!/\.(mp4|mov)$/i.test(file.name)) {
-      setMuxError('Экспорт MP4 сейчас поддерживает только исходные файлы MP4/MOV.');
-      return;
-    }
-    setMuxing(true);
-    setMuxError('');
-    setMuxStatus('Добавляем субтитры отдельной дорожкой в MP4…');
-    try {
-      const ffmpeg = await loadFfmpeg(setMuxStatus);
-      const { fetchFile } = await import('@ffmpeg/util');
-      const input = 'source.' + (file.name.toLowerCase().endsWith('.mov') ? 'mov' : 'mp4');
-      const captionsFile = 'captions.srt';
-      const output = 'sublume-captioned.mp4';
-      const ordered = [...captions].filter(c => c.end > c.start && c.text.trim()).sort((a,b) => a.start - b.start);
-      if (!ordered.length) throw new Error('Нет корректных строк с временными метками.');
-      const srt = ordered.map((c, i) => (i + 1) + '\n' + timecode(c.start) + ' --> ' + timecode(c.end) + '\n' + c.text.trim()).join('\n\n') + '\n';
-      await ffmpeg.writeFile(input, await fetchFile(file));
-      await ffmpeg.writeFile(captionsFile, new TextEncoder().encode(srt));
-      // Copy original video/audio bitstreams: much faster than re-encoding in WASM.
-      const args = ['-i', input, '-i', captionsFile, '-map', '0:v:0', '-map', '0:a?', '-map', '1:0', '-c:v', 'copy', '-c:a', 'copy', '-c:s', 'mov_text', '-movflags', '+faststart', output];
-      const exitCode = await ffmpeg.exec(args);
-      if (exitCode !== 0) throw new Error('Не удалось создать MP4. Попробуй скачать SRT отдельно.');
-      const bytes = await ffmpeg.readFile(output);
-      if (typeof bytes === 'string') throw new Error('Ошибка чтения готового видео.');
-      const copy = new Uint8Array(bytes);
-      const blob = new Blob([copy.slice().buffer as ArrayBuffer], { type: 'video/mp4' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileBase + '-с-субтитрами.mp4';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 10000);
-      setMuxStatus('MP4 готов. Субтитры — отдельная дорожка: включите их в видеоплеере.');
-      await ffmpeg.deleteFile(output).catch(() => {});
-      await ffmpeg.deleteFile(input).catch(() => {});
-      await ffmpeg.deleteFile(captionsFile).catch(() => {});
-    } catch (err: unknown) {
-      setMuxError('Экспорт MP4 не удался: ' + (err instanceof Error ? err.message : String(err)) + ' Попробуй скачать SRT.');
-      setMuxStatus('');
-    } finally {
-      setMuxing(false);
-    }
+  function showCaptionPreview(){
+    const media=mediaRef.current;
+    const first=captions.filter(c=>c.text.trim()).sort((a,b)=>a.start-b.start)[0];
+    if(!media||!first){setPreviewError('Выбери видео и создай или импортируй субтитры.');return;}
+    setPreviewError('');
+    try{
+      media.currentTime=Math.max(0,first.start+0.1);
+      void media.play().catch(()=>setPreviewError('Браузер не поддерживает просмотр этого видео. Попробуй MP4 H.264 или WebM.'));
+      document.querySelector('.preview-panel')?.scrollIntoView({behavior:'smooth',block:'start'});
+    }catch{setPreviewError('Не удалось открыть видео в этом браузере.')}
+  }
+
+  async function downloadCaptionedMp4(){
+    if(!file||!fileUrl||!captions.length||isAudio||muxing||processing)return;
+    setMuxing(true);setMuxError('');setRenderedUrl('');
+    setMuxStatus('Готовим запись нового видео с текстом на кадрах…');
+    const controller=new AbortController();renderAbortRef.current=controller;
+    try{
+      const result=await renderVideoWithText({
+        sourceUrl:fileUrl,
+        captions:captions.filter(c=>c.end>c.start&&c.text.trim()),
+        style:preset,signal:controller.signal,onProgress:setMuxStatus
+      });
+      setRenderedExt(result.extension);
+      setRenderedUrl(URL.createObjectURL(result.blob));
+      setMuxStatus('Готово! Субтитры теперь на самих кадрах. Проверь видео и скачай '+result.extension.toUpperCase()+'.');
+    }catch(err:unknown){
+      const msg=err instanceof Error?err.message:String(err);
+      if(msg==='Экспорт отменён.')setMuxStatus(msg);
+      else {setMuxError('Ошибка экспорта: '+msg);setMuxStatus('');}
+    }finally{renderAbortRef.current=null;setMuxing(false);}
   }
 
   const availableLanguages = matchLanguages(languageQuery, language);
@@ -442,11 +439,14 @@ function App() {
                 <div className="preview-screen">
                   {fileUrl ? (
                     isAudio ? <div className="audio-stage"><div className="audio-disc"><AudioLines size={42}/></div><audio controls ref={el => { mediaRef.current = el; }} src={fileUrl} onTimeUpdate={event => setCurrentTime(event.currentTarget.currentTime)} onLoadedMetadata={event => setDuration(event.currentTarget.duration)}/></div> :
-                    <video controls playsInline ref={el => { mediaRef.current = el; }} src={fileUrl} onTimeUpdate={event => setCurrentTime(event.currentTarget.currentTime)} onLoadedMetadata={event => setDuration(event.currentTarget.duration)}/>
+                    <video controls playsInline preload="metadata" ref={el => {mediaRef.current=el;}} src={fileUrl} onTimeUpdate={event=>setCurrentTime(event.currentTarget.currentTime)} onLoadedMetadata={event=>setDuration(event.currentTarget.duration)} onCanPlay={()=>{setPreviewReady(true);setPreviewError('');}} onError={()=>{setPreviewReady(false);setPreviewError('Предпросмотр этого формата не поддерживается телефоном. Попробуй MP4 (H.264) или WebM.');}}/>
                   ) : <div className="empty-stage"><div className="empty-play"><Play size={28} fill="currentColor"/></div><span>Предпросмотр появится здесь</span><small>Добавь видео, чтобы начать</small></div>}
                   {fileUrl && !isAudio && activeCaption && <div className={'caption-overlay ' + preset}>{activeCaption.text}</div>}
                 </div>
                 <div className="preview-foot"><span><Clock3 size={14}/> {formatDuration(currentTime)} / {formatDuration(duration)}</span><span><Film size={14}/> {file ? (isAudio ? 'Аудио' : 'Видео') : 'Файл не выбран'}</span></div>
+                {previewError && <div className="error-notice" role="alert">{previewError}</div>}
+                {file && !isAudio && !previewReady && !previewError && <p className="preview-tip">Нажми ▶ в плеере. Некоторые MOV/MKV не поддерживаются на телефоне.</p>}
+                {file && !isAudio && captions.length>0 && <button className="preview-subtitles-btn" onClick={showCaptionPreview}><Play size={15}/> Показать субтитры в предпросмотре</button>}
                 <div className="styles-row"><div><strong>Стиль субтитров</strong><p>Применяется к предпросмотру</p></div><div className="styles-options">{(['classic', 'bold', 'neon'] as Preset[]).map(name => <button key={name} className={'style-pill ' + (preset === name ? 'selected' : '')} onClick={() => setPreset(name)}>{name === 'classic' ? 'Classic' : name === 'bold' ? 'Bold' : 'Neon'}</button>)}</div></div>
               </section>
             </div>
@@ -457,18 +457,19 @@ function App() {
                 <div className="caption-list">{captions.map((caption, idx) => <div className="caption-row" key={caption.id}><span className="caption-index">{(idx + 1).toString().padStart(2, '0')}</span><div className="caption-content"><div className="caption-times"><label>От <input aria-label={'Начало фрагмента ' + (idx + 1)} type="number" step="0.1" min="0" value={Number(caption.start.toFixed(1))} onChange={e => updateCaption(caption.id, { start: Number(e.target.value) })}/></label><span>→</span><label>До <input aria-label={'Конец фрагмента ' + (idx + 1)} type="number" step="0.1" min="0" value={Number(caption.end.toFixed(1))} onChange={e => updateCaption(caption.id, { end: Math.max(caption.start + 0.1, Number(e.target.value)) })}/></label></div><textarea aria-label={'Текст фрагмента ' + (idx + 1)} rows={2} value={caption.text} onChange={e => updateCaption(caption.id, {text:e.target.value})}/></div><button className="icon-btn" onClick={() => setCaptions(current => current.filter(c => c.id !== caption.id))} aria-label={'Удалить фрагмент ' + (idx + 1)}><Trash2 size={16}/></button></div>)}</div>
               ) : <div className="transcript-empty"><div className="transcript-empty-icon"><AudioLines size={29}/></div><strong>Здесь будет твоя расшифровка</strong><span>После обработки ты сможешь отредактировать текст и скачать субтитры.</span><button onClick={showSample}>Открыть демонстрационный пример <ArrowRight size={15}/></button></div>}
               {captions.length > 0 && file && !isAudio && (
-                <div className="mp4-area"><div><strong>Скачать видео с субтитрами</strong><p>MP4 с переключаемой дорожкой субтитров (не наложены на кадры). Для MP4/MOV; стили применяются только в предпросмотре.</p></div><button className="secondary-btn" disabled={processing || muxing || !/\.(mp4|mov)$/i.test(file.name)} onClick={() => { void downloadCaptionedMp4(); }}><Film size={16}/>{muxing ? 'Создаём MP4…' : 'Скачать MP4'}</button></div>
+                <div className="mp4-area"><div><strong>Готовое видео с видимыми субтитрами</strong><p>Текст рисуется непосредственно на кадрах. Обработка идёт в реальном времени, не сворачивай вкладку. Формат MP4 или WebM зависит от браузера. На телефоне — ролики до 90 секунд.</p></div><div className="render-actions"><button className="secondary-btn" disabled={processing || muxing || !canRenderVideo()} onClick={()=>{void downloadCaptionedMp4();}}><Film size={16}/>{muxing?'Создаём видео…':'Создать видео с текстом'}</button>{muxing && <button className="cancel-render-btn" onClick={()=>renderAbortRef.current?.abort()}>Отменить</button>}</div></div>
               )}
-              {muxStatus && <div className="notice success">{muxStatus}</div>}
+              {muxStatus && <div className={'notice '+(muxing?'working':'success')}>{muxStatus}</div>}
+              {renderedUrl && <div className="rendered-preview"><h3><Check size={18}/> Готовое видео — субтитры уже на кадрах</h3><p>Посмотри файл и проверь звук перед скачиванием. На некоторых телефонах видео WebM открывается только в браузере.</p><video controls playsInline src={renderedUrl} preload="metadata"/><a className="render-download-btn" href={renderedUrl} download={fileBase+'-с-субтитрами.'+renderedExt}><Download size={18}/> Скачать готовое видео ({renderedExt.toUpperCase()})</a></div>}
               {muxError && <div className="error-notice" role="alert">{muxError}</div>}
               {captions.length > 0 && <div className="transcript-footer"><span>{demo ? 'Демонстрационные субтитры — не результат обработки файла' : 'Сохраняем текст локально в этом браузере'}</span><button onClick={() => setCaptions(current => [...current, {id: Date.now(), start: current.length ? current[current.length-1].end : 0, end: current.length ? current[current.length-1].end + 3 : 3, text: 'Новый фрагмент'}])}><Plus size={15}/> Добавить строку</button></div>}
             </section>
             <div className="bottom-trust"><span><ShieldCheck size={16}/> Никаких секретных API-ключей</span><span><CloudOff size={16}/> Исходные файлы не покидают браузер</span><span><Code2 size={16}/> Open-source технологии</span></div>
           </main>
         ) : tab === 'how' ? (
-          <main className="page info-page"><div className="info-heading"><div className="eyebrow dark"><Sparkles size={14}/> ПРОЗРАЧНЫЙ ИИ</div><h1>Как работает Sublume</h1><p>Никаких скрытых платежей за нейросеть. Файл обрабатывается локально в браузере.</p></div><div className="how-grid">{[{no:'01',ico:<UploadCloud/>,title:'Загрузи файл',desc:'Выбери видео или аудио до 150 МБ. Файл остаётся на твоём устройстве.'},{no:'02',ico:<Mic2/>,title:'Запусти Whisper',desc:'Мы скачиваем открытую модель и автоматически распознаём речь. Первый запуск самый долгий.'},{no:'03',ico:<Scissors/>,title:'Исправь субтитры',desc:'Проверь текст, измени интервалы и сравни с видео.'},{no:'04',ico:<Download/>,title:'Забери результат',desc:'Скачай SRT, VTT, TXT или MP4 с переключаемой дорожкой субтитров.'}].map(step => <div className="how-card" key={step.no}><span className="step-num">{step.no}</span><div className="step-ico">{step.ico}</div><h3>{step.title}</h3><p>{step.desc}</p></div>)}</div><div className="important-panel"><Info size={22}/><div><strong>Что умеет текущая бета-версия</strong><p>Распознавание на 99 языках, перевод речи на английский через Whisper, импорт и экспорт SRT/VTT/TXT, а также отдельная переключаемая дорожка субтитров внутри MP4. Субтитры, наложенные прямо на кадры, облачные задания, аккаунты и оплата ещё не подключены. Для работы нужен современный браузер и достаточно оперативной памяти.</p></div></div><button className="primary-btn page-return" onClick={() => setTab('studio')}>Перейти в студию <ArrowRight size={16}/></button></main>
+          <main className="page info-page"><div className="info-heading"><div className="eyebrow dark"><Sparkles size={14}/> ПРОЗРАЧНЫЙ ИИ</div><h1>Как работает Sublume</h1><p>Никаких скрытых платежей за нейросеть. Файл обрабатывается локально в браузере.</p></div><div className="how-grid">{[{no:'01',ico:<UploadCloud/>,title:'Загрузи файл',desc:'Выбери видео или аудио до 150 МБ. Файл остаётся на твоём устройстве.'},{no:'02',ico:<Mic2/>,title:'Запусти Whisper',desc:'Мы скачиваем открытую модель и автоматически распознаём речь. Первый запуск самый долгий.'},{no:'03',ico:<Scissors/>,title:'Исправь субтитры',desc:'Проверь текст, измени интервалы и сравни с видео.'},{no:'04',ico:<Download/>,title:'Забери результат',desc:'Скачай SRT, VTT, TXT или готовое видео с субтитрами прямо на кадрах.'}].map(step => <div className="how-card" key={step.no}><span className="step-num">{step.no}</span><div className="step-ico">{step.ico}</div><h3>{step.title}</h3><p>{step.desc}</p></div>)}</div><div className="important-panel"><Info size={22}/><div><strong>Что умеет текущая бета-версия</strong><p>Распознавание на 99 языках, перевод речи на английский через Whisper, импорт и экспорт SRT/VTT/TXT, а также отдельная переключаемая дорожка субтитров внутри MP4. Субтитры рисуются на кадрах через запись видео в браузере (MP4 или WebM в зависимости от устройства). Облачная обработка, аккаунты и оплата ещё не подключены. Для работы нужен современный браузер и достаточно оперативной памяти.</p></div></div><button className="primary-btn page-return" onClick={() => setTab('studio')}>Перейти в студию <ArrowRight size={16}/></button></main>
         ) : (
-          <main className="page info-page"><div className="info-heading"><div className="eyebrow dark"><BadgeCheck size={14}/> ТАРИФЫ</div><h1>Начни бесплатно</h1><p>Сначала проверим, насколько хорошо работает модель на твоём устройстве. Платежей в бета-версии нет.</p></div><div className="pricing-grid"><div className="plan active-plan"><div className="plan-icon"><Sparkles/></div><h3>Local Beta</h3><div className="plan-price">0 € <span>/ всегда в бета-версии</span></div><p>Всё необходимое, чтобы попробовать автоматические субтитры.</p><ul><li><Check/> Whisper на устройстве</li><li><Check/> Русская и многоязычная речь</li><li><Check/> Редактор таймингов</li><li><Check/> SRT, VTT, TXT и MP4-дорожка</li></ul><button className="primary-btn" onClick={() => setTab('studio')}>Попробовать бесплатно</button></div><div className="plan"><span className="coming-tag">ПЛАНИРУЕТСЯ</span><div className="plan-icon secondary"><Globe2/></div><h3>Cloud Pro</h3><div className="plan-price">— <span>/ цена не назначена</span></div><p>Для тех, кому нужны длинные видео и автоматическая обработка на сервере.</p><ul><li><Check/> Обработка без нагрузки на ПК</li><li><Check/> Задания в очереди</li><li><Check/> Экспорт готового видео</li><li><Check/> История проектов</li></ul><div className="soon-btn">Пока недоступно</div></div></div><div className="important-panel"><LockKeyhole size={22}/><div><strong>Никаких фиктивных покупок</strong><p>Платёжная система и подписки не включены, пока нет проверки качества обработки и подключения платёжного аккаунта владельца проекта.</p></div></div></main>
+          <main className="page info-page"><div className="info-heading"><div className="eyebrow dark"><BadgeCheck size={14}/> ТАРИФЫ</div><h1>Начни бесплатно</h1><p>Сначала проверим, насколько хорошо работает модель на твоём устройстве. Платежей в бета-версии нет.</p></div><div className="pricing-grid"><div className="plan active-plan"><div className="plan-icon"><Sparkles/></div><h3>Local Beta</h3><div className="plan-price">0 € <span>/ всегда в бета-версии</span></div><p>Всё необходимое, чтобы попробовать автоматические субтитры.</p><ul><li><Check/> Whisper на устройстве</li><li><Check/> Русская и многоязычная речь</li><li><Check/> Редактор таймингов</li><li><Check/> SRT, VTT, TXT и видео с текстом</li></ul><button className="primary-btn" onClick={() => setTab('studio')}>Попробовать бесплатно</button></div><div className="plan"><span className="coming-tag">ПЛАНИРУЕТСЯ</span><div className="plan-icon secondary"><Globe2/></div><h3>Cloud Pro</h3><div className="plan-price">— <span>/ цена не назначена</span></div><p>Для тех, кому нужны длинные видео и автоматическая обработка на сервере.</p><ul><li><Check/> Обработка без нагрузки на ПК</li><li><Check/> Задания в очереди</li><li><Check/> Экспорт готового видео</li><li><Check/> История проектов</li></ul><div className="soon-btn">Пока недоступно</div></div></div><div className="important-panel"><LockKeyhole size={22}/><div><strong>Никаких фиктивных покупок</strong><p>Платёжная система и подписки не включены, пока нет проверки качества обработки и подключения платёжного аккаунта владельца проекта.</p></div></div></main>
         )}
       </div>
     </div>

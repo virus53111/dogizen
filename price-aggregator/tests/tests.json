@@ -99,5 +99,25 @@
       "Check any error text is shown clearly"
     ],
     "expected": "No ffmpeg-core.js import from external unpkg CDN; the mobile user can reach Whisper when browser or bundled FFmpeg can decode the file."
+  },
+  {
+    "name": "Burned-in subtitles export and recorded playback",
+    "viewport": "mobile",
+    "covers": [
+      "video with captions on pixels",
+      "video recording preview",
+      "audio track",
+      "WebM or MP4 download"
+    ],
+    "description": "Verify an exported video visibly contains subtitle text in the frames, not a selectable track.",
+    "steps": [
+      "Select a short supported MP4 with speech",
+      "Import SRT with captions from first second",
+      "Use Показать субтитры в предпросмотре",
+      "Create new video with text and keep browser in foreground",
+      "Play and verify rendered file includes text and sound",
+      "Download video and re-open it"
+    ],
+    "expected": "Subtitle letters are always visible in recorded video; file can be played and downloaded in a supported format."
   }
 ]

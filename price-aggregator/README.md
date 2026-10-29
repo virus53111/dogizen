@@ -29,3 +29,6 @@ The former CenaRadar content was preserved in the backup branch `backup/cenarada
 - Try native AudioContext decoding before FFmpeg; both paths produce mono 16kHz PCM for Whisper.
 - The FFmpeg core is GPL-2.0-or-later: retain appropriate license notice and make corresponding sources available when distributing.
 - Mobile inference still requires device-level tests and sufficient memory.
+
+### In-frame subtitle export
+New Canvas + MediaRecorder export paints captions permanently on video frames. MP4 is offered only if the browser supports H.264/AAC; otherwise WebM is downloaded. Uses WebAudio to retain source audio. Mobile clips are limited to 90s; keep the recording tab active. The completed video can be previewed before download. Do not misrepresent as a soft MP4 subtitle track. Video codec support and audio require real-device QA.
