@@ -119,5 +119,23 @@
       "Download video and re-open it"
     ],
     "expected": "Subtitle letters are always visible in recorded video; file can be played and downloaded in a supported format."
+  },
+  {
+    "name": "Actual Whisper ASR with documented English audio example",
+    "viewport": "desktop",
+    "covers": [
+      "sample WAV download",
+      "native AudioContext decoding",
+      "Whisper tiny download",
+      "English transcription with timestamps",
+      "caption editor"
+    ],
+    "steps": [
+      "Click Проверить Whisper на настоящей речи",
+      "Confirm audio file test-speech-english.wav is loaded and language English selected",
+      "Click Создать субтитры and allow the model to download",
+      "Confirm recognizable English transcript appears without an error"
+    ],
+    "expected": "Whisper returns real text from the audio sample and creates subtitles; the synthetic demo alone is not considered an ASR test."
   }
 ]

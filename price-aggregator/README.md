@@ -35,3 +35,6 @@ New Canvas + MediaRecorder export paints captions permanently on video frames. M
 
 ## Local video demo
 The button «Проверить без своего видео» builds a 4-second synthetic video locally using Canvas+MediaRecorder and provides 2 obviously demo captions to test preview and burned-in export without running Whisper.
+
+## Real speech QA fixture
+The optional «Проверить Whisper на настоящей речи» downloads a short English WAV used by the official Transformers.js documentation from Hugging Face, selects English+Tiny, and lets the user click the ordinary Create Subtitles button. Unlike the synthetic video demo, this tests model download, actual audio decoding, inference, timestamps, and editor output. It requires network access to fetch the sample and the model.

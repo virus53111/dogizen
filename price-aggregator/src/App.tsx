@@ -186,6 +186,7 @@ function App() {
   const [showMenu, setShowMenu] = useState(false);
   const [demo, setDemo] = useState(false);
   const [demoBusy, setDemoBusy] = useState(false);
+  const [speechSampleBusy, setSpeechSampleBusy] = useState(false);
   useEffect(() => {
     try { localStorage.setItem('sublume-captions-v1', JSON.stringify(captions)); } catch { /* storage unavailable */ }
   }, [captions]);
@@ -273,6 +274,33 @@ function App() {
       stream?.getTracks().forEach(t=>t.stop());
       if(audio)await audio.close().catch(()=>{});
       setDemoBusy(false);
+    }
+  }
+
+  async function loadSpeechTest() {
+    if (speechSampleBusy || processing || muxing || demoBusy) return;
+    setSpeechSampleBusy(true);
+    setErrorText('');
+    setPhase('Загружаем открытый образец английской речи для проверки Whisper…');
+    try {
+      // Audio fixture is used by the official Transformers.js ASR documentation.
+      // This optional diagnostic requires a network connection only for the sample download.
+      const url = 'https://huggingface.co/datasets/Xenova/transformers.js-docs/resolve/main/jfk.wav';
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Тестовое аудио недоступно (HTTP ' + response.status + ').');
+      const blob = await response.blob();
+      if (blob.size > 20 * 1024 * 1024 || blob.size === 0) throw new Error('Неверный размер тестовой записи.');
+      chooseFile(new File([blob], 'test-speech-english.wav', {type:'audio/wav'}));
+      setLanguage('en');
+      setLanguageQuery('');
+      setModelChoice('fast');
+      setOutputMode('transcribe');
+      setPhase('Речевая запись загружена. Язык — английский, модель — Tiny. Теперь нажми «Создать субтитры»: это реальная проверка Whisper, не демонстрационный текст.');
+    } catch (err: unknown) {
+      setPhase('');
+      setErrorText('Не удалось загрузить проверочный голосовой файл: ' + (err instanceof Error ? err.message : String(err)) + '. Можно загрузить собственный WAV/MP3.');
+    } finally {
+      setSpeechSampleBusy(false);
     }
   }
 
@@ -515,6 +543,7 @@ function App() {
                 {errorText && <div className="error-notice" role="alert"><Info size={17}/>{errorText}</div>}
                 <button className="import-btn" onClick={() => subtitleInput.current?.click()}><UploadCloud size={16}/> Уже есть субтитры? Импорт SRT / VTT</button>
                 <button className="demo-video-btn" disabled={demoBusy || processing || muxing} onClick={() => {void createDemoVideo();}}><Play size={15}/>{demoBusy ? 'Готовим демо…' : 'Проверить без своего видео — демо 4 секунды'}</button>
+                <button className="speech-test-btn" disabled={speechSampleBusy || demoBusy || processing || muxing} onClick={() => {void loadSpeechTest();}}><Mic2 size={16}/>{speechSampleBusy ? 'Загружаем голос…' : 'Проверить Whisper на настоящей речи'}</button>
                 <p className="tiny-note"><Info size={13}/> На первом запуске скачивается Whisper и, при необходимости, FFmpeg (~32 МБ) с нашего сайта. Начни с короткого видео и модели Tiny.</p>
               </section>
 
