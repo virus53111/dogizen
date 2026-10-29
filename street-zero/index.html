@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#161e29">
+<meta name="description" content="STREET ZERO — игровой 3D-прототип города: ходи, садись в машину и езжай.">
+<title>STREET ZERO — 3D Open City</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800;900&family=Inter:wght@400;600;700;800&display=swap');
+:root{font-family:Inter,system-ui,sans-serif;color:#fff;background:#1a2632;-webkit-font-smoothing:antialiased}
+*{box-sizing:border-box}
+html,body,#world{margin:0;width:100%;height:100%;overflow:hidden;touch-action:none}
+#world{position:fixed;inset:0}
+#view{position:absolute;inset:0}
+#view canvas{display:block;width:100%;height:100%}
+#world:after{content:'';position:absolute;inset:0;pointer-events:none;background:linear-gradient(0deg,#0b17268a 0%,transparent 29%,transparent 78%,#09132230)}
+#ui{position:absolute;inset:0;pointer-events:none}
+button{cursor:pointer;font:inherit;pointer-events:auto}
+header{position:absolute;z-index:10;top:18px;left:22px;right:22px;display:flex;justify-content:space-between;align-items:center}
+.logo{font:900 32px/.8 'Barlow Condensed',sans-serif;letter-spacing:.07em;text-shadow:0 3px 16px #061726}
+.logo em{font-style:normal;color:#ffdaa2}
+.logo small{display:block;margin-top:8px;font:800 9px Inter, sans-serif;letter-spacing:.2em;color:#e6e9e7}
+.badge{font:700 13px 'Barlow Condensed',sans-serif;letter-spacing:.12em;color:#fff;padding:9px 13px;background:#111f2ac9;border:1px solid #e5dbb36e;backdrop-filter:blur(7px)}
+#cash{color:#bff2c5;font:900 22px 'Barlow Condensed';margin-right:16px}
+#sound{border:1px solid #d9e1de84;border-radius:3px;background:#142433ce;color:#fff;padding:11px}
+#start{position:absolute;z-index:20;inset:0;display:flex;align-items:center;padding:6% 10%;background:linear-gradient(90deg,#101b29f2,#0f1c2aca 47%,#0f1b2580 77%,#0c152f33);backdrop-filter:blur(2px)}
+#start.hide{display:none}
+.card{width:min(600px,100%)}
+.eyebrow{font:800 13px 'Barlow Condensed';letter-spacing:.31em;color:#eed0a1}
+h1{font:900 clamp(75px,13vw,170px)/.75 'Barlow Condensed';letter-spacing:.01em;margin:28px 0 30px;text-shadow:0 8px 35px #080f1e}
+h1 span{color:#f6d69d}
+.lead{font-size:clamp(15px,2vw,21px);line-height:1.55;color:#e9f3f8;max-width:480px}
+.note{font-size:12px;line-height:1.65;color:#b7cbd4;max-width:455px}
+#play{margin:27px 0 16px;padding:16px 30px;min-width:236px;border:0;border-radius:3px;background:#f9d6a1;color:#152636;box-shadow:0 12px 55px #1323386b;font:900 22px 'Barlow Condensed';letter-spacing:.1em}
+#play:hover{background:#fff1da}
+.chips{display:flex;gap:15px;flex-wrap:wrap;margin-top:17px;color:#d6e2e5;font-size:10px;letter-spacing:.08em}
+.chips span{border-left:2px solid #f6cb93;padding-left:9px}
+#hud{display:none}
+#hud.show{display:block}
+#mission{position:absolute;top:94px;left:22px;background:linear-gradient(90deg,#0b1928e8,#091b2bc4);border-left:3px solid #f9d8a1;padding:11px 16px;width:min(320px,75vw)}
+.small{font:800 11px 'Barlow Condensed';letter-spacing:.2em;color:#eed0a1}
+#quest{font:900 21px 'Barlow Condensed';letter-spacing:.05em;margin:5px 0}
+#mission p{font:600 11px Inter;line-height:1.5;color:#cbd9e0;margin:0}
+#toast{position:absolute;top:23%;left:50%;transform:translateX(-50%);background:#14263be8;border:1px solid #f9d8a1;color:#ffe9b9;padding:11px 20px;font:800 17px 'Barlow Condensed';letter-spacing:.1em;text-align:center;min-width:230px}
+#toast.off{display:none}
+#radar{position:absolute;bottom:42px;left:23px;background:#173040dc;border:3px solid #e5e2cb;width:148px;height:148px;box-shadow:0 9px 25px #0005}
+#speedometer{position:absolute;right:25px;bottom:34px;text-align:right}
+#speed{font:900 72px/.85 'Barlow Condensed';text-shadow:0 7px 24px #06131b}
+#mode{color:#f8d39e;letter-spacing:.13em;font:800 15px 'Barlow Condensed';margin-bottom:7px}
+#speedometer small{font:800 11px Inter;letter-spacing:.12em}
+#buttons{position:absolute;right:25px;bottom:160px;display:flex;flex-direction:column;gap:8px}
+.action{background:#102337d7;color:white;border:1px solid #d8e3e1ac;min-width:115px;padding:13px 12px;border-radius:4px;font:900 15px 'Barlow Condensed';letter-spacing:.06em}
+.action.main{background:#f7d9aa;color:#101924;border-color:#fff0cf}
+#hint{position:absolute;bottom:21px;left:50%;transform:translateX(-50%);background:#0d1b27c6;color:#f3faff;padding:9px 15px;font-size:11px;text-align:center;max-width:480px}
+#help{position:absolute;right:25px;bottom:21px;color:#e7edf4;font-size:10px;text-align:right;line-height:1.8}
+#help kbd{background:#101e30a8;border:1px solid #edf2fa9c;padding:4px 6px;border-radius:4px}
+#stick-wrap{display:none}
+#stars{position:absolute;top:91px;right:23px;color:#f8d48c;letter-spacing:.15em;font-size:23px}
+#error{position:absolute;inset:0;z-index:100;background:#121b27;display:none;align-items:center;justify-content:center;text-align:center;padding:30px;line-height:1.7}
+@media(max-width:750px){
+header{top:13px;left:12px;right:12px}
+.logo{font-size:23px}.logo small{font-size:6px}
+#cash{font-size:17px;margin-right:5px}
+#sound{font-size:10px;padding:8px}
+#mission{top:71px;left:12px;padding:9px 12px;width:min(265px,75vw)}
+#quest{font-size:17px}#mission p{font-size:10px}
+#stars{top:75px;right:10px;font-size:15px}
+#radar{width:98px;height:98px;left:10px;bottom:50px}
+#speedometer{right:12px;bottom:47px}#speed{font-size:46px}#mode{font-size:12px}
+#buttons{right:12px;bottom:143px;gap:6px}
+.action{min-width:97px;font-size:13px;padding:12px 8px}
+#hint{bottom:8px;font-size:9px;width:calc(100% - 20px);padding:7px}
+#help{display:none}
+#stick-wrap{display:block;pointer-events:auto;touch-action:none;position:absolute;left:14px;bottom:161px;width:120px;height:120px;border:2px solid #ffe0b99a;border-radius:50%;background:#1b3148a8}
+#stick{position:absolute;left:50%;top:50%;width:51px;height:51px;border-radius:50%;transform:translate(-50%,-50%);background:#f0ce9f91;border:2px solid #ffe5b6;pointer-events:none}
+#start{padding:7%}
+h1{font-size:clamp(75px,20vw,125px)}
+.lead{font-size:15px}
+.note{font-size:11px}
+#toast{font-size:13px;max-width:80vw;min-width:0}
+}
+</style>
+</head>
+<body>
+<div id="world">
+<div id="view" aria-label="Трёхмерная игровая сцена города"></div>
+<div id="ui">
+<header>
+<div class="logo">STREET <em>ZERO</em><small>SAN VERDA · OPEN WORLD DEMO</small></div>
+<div><span id="cash">$0</span><button id="sound" aria-label="Звук">♫ ЗВУК</button></div>
+</header>
+<div id="hud">
+<div id="mission"><div class="small">◆ СВОБОДНЫЙ ГОРОД / МИССИЯ</div><div id="quest">ЗАБЕРИ СПОРТКАР</div><p>Садись в красную машину и езжай к жёлтому маркеру на миникарте. Награда $500.</p></div>
+<div id="stars">☆☆☆☆☆</div>
+<canvas id="radar" width="200" height="200" aria-label="Миникарта"></canvas>
+<div id="buttons"><button class="action main" id="enter">◇ СЕСТЬ</button><button class="action" id="boost">⚡ ТУРБО</button><button class="action" id="horn">♪ СИГНАЛ</button></div>
+<div id="stick-wrap"><div id="stick"></div></div>
+<div id="speedometer"><div id="mode">ПЕШКОМ</div><div id="speed">0</div><small>KM/H</small></div>
+<div id="hint">Подойди к красной машине. Нажми E, чтобы сесть за руль.</div>
+<div id="help"><kbd>WASD</kbd> ДВИЖЕНИЕ · <kbd>E</kbd> СЕСТЬ · <kbd>F</kbd> ТУРБО · <kbd>H</kbd> СИГНАЛ</div>
+</div>
+<div id="toast" class="off" role="status"></div>
+<div id="start">
+<div class="card">
+<div class="eyebrow">◆ PLAYABLE 3D / OPEN-CITY EXPERIMENT</div>
+<h1>STREET<br><span>ZERO.</span></h1>
+<p class="lead">У тебя есть машина. У тебя есть город. <strong>Остальное зависит от тебя.</strong></p>
+<p class="note">Прототип в духе городских экшенов: прогулки от третьего лица, управление автомобилем, улицы, трафик и задания. Это не GTA V и не готовая коммерческая игра.</p>
+<button id="play">▶ &nbsp; ВОЙТИ В ГОРОД</button>
+<div class="chips"><span>НАСТОЯЩИЙ WEBGL 3D</span><span>ЕЗДА ПО ГОРОДУ</span><span>ЖИВОЙ ЗВУК</span></div>
+</div></div>
+</div><div id="error">Не удалось запустить 3D-графику. Открой сайт в свежем Chrome, Safari или Edge с поддержкой WebGL.</div>
+</div>
+<script type="module">
+import * as T from 'https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js';
+const stage=document.getElementById('view'), ui=document.getElementById('hud');
+let renderer,scene,camera;
+try{
+renderer=new T.WebGLRenderer({antialias:true,powerPreference:'high-performance'});
+renderer.setPixelRatio(Math.min(devicePixelRatio,innerWidth<750?1.2:1.6));
+renderer.setSize(innerWidth,innerHeight);
+renderer.shadowMap.enabled=innerWidth>800;
+renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.35;
+renderer.outputColorSpace=T.SRGBColorSpace;
+stage.appendChild(renderer.domElement);
+scene=new T.Scene();scene.background=new T.Color('#9aafb9');scene.fog=new T.FogExp2(0x98a5af,.003);
+camera=new T.PerspectiveCamera(68,innerWidth/innerHeight,.1,450);
+}catch(e){document.getElementById('error').style.display='flex';throw e}
+const seed=(()=>{let s=291723;return()=>{s=(s*1664525+1013904223)>>>0;return s/4294967296}})();
+const material=(c,metal=.05,rough=.78)=>new T.MeshStandardMaterial({color:c,metalness:metal,roughness:rough});
+const road=material('#2d3238',.08,.87),concrete=material('#aab0ae'),stripe=material('#ebe5d4'),white=material('#e3f5ff');
+function box(parent,x,y,z,w,h,d,m,shadow=false){const obj=new T.Mesh(new T.BoxGeometry(w,h,d),m);obj.position.set(x,y,z);obj.castShadow=shadow;obj.receiveShadow=true;parent.add(obj);return obj}
+function textMat(label,bg='#1a2734',color='#f7eacb'){
+const cvs=document.createElement('canvas');cvs.width=512;cvs.height=128;
+const g=cvs.getContext('2d');g.fillStyle=bg;g.fillRect(0,0,512,128);
+g.strokeStyle='#ffffff40';g.strokeRect(3,3,506,122);
+g.font='900 66px Arial';g.textAlign='center';g.textBaseline='middle';g.fillStyle=color;g.fillText(label,256,66,483);
+const t=new T.CanvasTexture(cvs);t.colorSpace=T.SRGBColorSpace;
+return new T.MeshBasicMaterial({map:t,side:T.DoubleSide});
+}
+scene.add(new T.HemisphereLight('#c9e5ff','#263b45',2.7));
+const sun=new T.DirectionalLight('#ffead0',3);
+sun.position.set(-45,70,-65);
+sun.castShadow=innerWidth>800;sun.shadow.mapSize.set(1024,1024);
+sun.shadow.camera.left=-105;sun.shadow.camera.right=105;sun.shadow.camera.top=105;sun.shadow.camera.bottom=-105;
+scene.add(sun);
+const ground=new T.Mesh(new T.PlaneGeometry(900,900),material('#566f70'));
+ground.rotation.x=-Math.PI/2;ground.position.y=-.17;ground.receiveShadow=true;scene.add(ground);
+const positions=[-120,-80,-40,0,40,80,120],BUILD=40;
+const buildings=[],carAI=[],peds=[];
+const city=new T.Group();scene.add(city);
+const roadPlane=new T.Mesh(new T.PlaneGeometry(370,370),road);roadPlane.rotation.x=-Math.PI/2;roadPlane.position.y=-.08;roadPlane.receiveShadow=true;city.add(roadPlane);
+for(const p of positions){
+box(city,p,0,0,11,.05,340,road);
+box(city,0,0,p,340,.05,11,road);
+for(let v=-165;v<=165;v+=7){
+if(positions.some(a=>Math.abs(a-v)<9))continue;
+box(city,p,.045,v,.16,.013,3.2,stripe);
+box(city,v,.045,p,3.2,.013,.16,stripe);
+}}
+for(let i=0;i<6;i++)for(let j=0;j<6;j++){
+const x=(positions[i]+positions[i+1])/2,z=(positions[j]+positions[j+1])/2;
+box(city,x,.12,z,28,.32,28,concrete);
+const h=13+seed()*40+(seed()>.8?27:0),w=16+seed()*9,d=16+seed()*9;
+const pal=['#b8b7b2','#bec9c8','#b3b6b6','#dad0c3','#8e99a4','#c3b1a8'];
+const bmat=material(pal[Math.floor(seed()*pal.length)],.15,.77);
+box(city,x,h/2+.25,z,w,h,d,bmat,true);
+buildings.push({x,z,w,d});
+box(city,x,h+.48,z,w+.6,.7,d+.6,material('#717c85',.43,.5));
+const floors=Math.floor(h/3.3);
+const windowmat=material('#4b768b',.55,.25),lit=new T.MeshBasicMaterial({color:'#f9e6b4'});
+for(let f=1;f<floors;f++){
+let y=f*3.3;
+for(let u=-Math.floor(w/5)/2;u<Math.floor(w/5)/2;u++){
+const px=x+u*3.7;const m=seed()>.88?lit:windowmat;
+box(city,px,y,z+d/2+.05,2.05,1.7,.07,m);
+box(city,px,y,z-d/2-.05,2.05,1.7,.07,m);
+}}
+const storeNames=['NOVA COFFEE','VOLT GARAGE','THE PALMS','24 MARKET','SUNSET CLUB','AUTO LIFE'];
+const sign=new T.Mesh(new T.PlaneGeometry(w*.77,1.5),textMat(storeNames[(i*7+j*3)%storeNames.length]));
+sign.position.set(x,4.3,z+d/2+.13);city.add(sign);
+box(city,x,2.1,z+d/2+.09,w*.75,3.4,.15,material('#2f4358',.4,.2));
+for(const side of [-1,1]){
+ const lamp=material('#293744',.7,.35);
+ box(city,x+side*14,3.2,z+side*13,.13,6.4,.13,lamp);
+ box(city,x+side*14,6.5,z+side*13,1.0,.12,.5,new T.MeshBasicMaterial({color:'#ffe2ae'}));
+ const tree=new T.Group();city.add(tree);tree.position.set(x+side*13.6,0,z-side*12);
+ box(tree,0,1.35,0,.34,2.7,.34,material('#665344'));
+ const crown=new T.Mesh(new T.IcosahedronGeometry(1.6,1),material('#427e63'));
+ crown.position.y=3.5;tree.add(crown);
+}}
+function character(cloth='#26374c'){
+const g=new T.Group(),m=material(cloth),skin=material('#cfa185');
+const body=new T.Mesh(new T.CapsuleGeometry(.28,.7,4,8),m);body.position.y=1.38;g.add(body);
+const head=new T.Mesh(new T.SphereGeometry(.24,10,9),skin);head.position.y=2.08;g.add(head);
+const legs=[];
+for(const s of [-1,1]){
+ const l=new T.Group();l.position.set(s*.16,.9,0);box(l,0,-.42,0,.22,.82,.29,material('#232c3c'));g.add(l);legs.push(l);
+ const a=new T.Group();a.position.set(s*.39,1.69,0);box(a,0,-.32,0,.18,.64,.22,m);g.add(a);legs.push(a);
+}g.userData.legs=legs;return g;
+}
+function vehicle(color,police=false){
+ const g=new T.Group(),paint=material(color,.68,.19),black=material('#141b24',.35,.62),glass=material('#233e50',.55,.15);
+ box(g,0,.72,0,2.2,.58,4.4,paint,true);
+ box(g,0,1.23,-.2,1.98,.73,2.2,paint,true);
+ box(g,0,1.26,.95,1.8,.51,.07,glass);
+ box(g,0,1.26,-1.31,1.8,.51,.08,glass);
+ box(g,0,.37,2.23,2.1,.2,.21,black);
+ box(g,0,.36,-2.23,2.1,.2,.21,black);
+ const wheels=[];
+ for(const side of [-1,1])for(const z of [-1.43,1.45]){
+ const group=new T.Group();group.position.set(side*1.12,.49,z);
+ const cyl=new T.Mesh(new T.CylinderGeometry(.53,.53,.26,20),black);cyl.rotation.z=Math.PI/2;group.add(cyl);
+ const rim=new T.Mesh(new T.CylinderGeometry(.29,.29,.28,12),material('#c1c8cf',.8,.22));rim.rotation.z=Math.PI/2;group.add(rim);
+ g.add(group);wheels.push(group);
+ for(const dir of [-1,1]){
+ const face=box(g,side*.77,.77,dir*2.22,.48,.16,.09,new T.MeshBasicMaterial({color:dir>0?'#fff4d6':'#fc3149'}));
+ }}
+ if(police){box(g,0,1.74,-.2,1.1,.12,.40,black);box(g,-.31,1.85,-.2,.5,.15,.4,new T.MeshBasicMaterial({color:'#446aff'}));box(g,.31,1.85,-.2,.5,.15,.4,new T.MeshBasicMaterial({color:'#ff4972'}))}
+ g.userData.wheels=wheels;return g;
+}
+const player=character('#2c334c');player.position.set(1,0,5);scene.add(player);
+const sport=vehicle('#b82940');sport.position.set(3.2,0,7.0);scene.add(sport);
+let drive=false,velocity=0,heading=0,boostTime=0,cash=0,wanted=0,mission=0,run=false,t=0,last=performance.now(),timeLost=0;
+const target=new T.Vector3(),temp=new T.Vector3();
+const marker=new T.Group();scene.add(marker);
+const torus=new T.Mesh(new T.TorusGeometry(3.6,.17,7,50),new T.MeshBasicMaterial({color:'#f8d87c'}));
+torus.rotation.x=Math.PI/2;marker.add(torus);
+const diamond=new T.Mesh(new T.OctahedronGeometry(1,0),new T.MeshBasicMaterial({color:'#f8e49c'}));
+diamond.position.y=4.4;marker.add(diamond);
+const points=[[-3,-78],[78,-35],[36,75],[-83,45]];
+function nextMission(){
+const v=points[mission%points.length];marker.position.set(v[0],.25,v[1]);mission++;
+document.getElementById('quest').textContent=mission===1?'ПЕРВАЯ ПОЕЗДКА':'НОВЫЙ РАЙОН / '+mission;
+}
+nextMission();
+for(let i=0;i<12;i++){
+ const c=vehicle(['#62a6d3','#dadbd5','#b3a45c','#61737c','#ac5260'][i%5],i===0);
+ const lane=positions[Math.floor(seed()*positions.length)], vertical=i%2===0, x=seed()*300-150,offset=i%4===0?2.6:-2.6;
+ c.position.set(vertical?lane+offset:x,0,vertical?x:lane+offset);
+ c.rotation.y=vertical?(offset>0?Math.PI:0):(offset>0?Math.PI/2:-Math.PI/2);
+ scene.add(c);carAI.push({mesh:c,vertical,line:lane+offset,dir:offset>0?-1:1,speed:5+seed()*5});
+}
+for(let i=0;i<22;i++){
+ const p=character(['#263e53','#765c69','#425c4e','#b47c69'][i%4]);
+ const lane=positions[Math.floor(seed()*positions.length)];
+ p.position.set(lane+(seed()>.5?9:-9),0,seed()*280-140);
+ scene.add(p);peds.push({mesh:p,initial:p.position.clone(),phase:seed()*10,speed:.7+seed()*.7});
+}
+const keys={},stick={x:0,y:0};
+let AC=null,master=null,engine=null,engineGain=null,engineFilter=null,beat=null,sirenTime=0,lastStep=0;
+function tone(f,d=.12,g=.1,wave='sine',end=1){
+ if(!AC||!master)return;
+ const at=AC.currentTime,o=AC.createOscillator(),gain=AC.createGain();
+ o.type=wave;o.frequency.setValueAtTime(f,at);o.frequency.exponentialRampToValueAtTime(Math.max(25,f*end),at+d);
+ gain.gain.setValueAtTime(.0001,at);gain.gain.exponentialRampToValueAtTime(Math.max(.0001,g),at+.015);
+ gain.gain.exponentialRampToValueAtTime(.0001,at+d);
+ o.connect(gain);gain.connect(master);o.start(at);o.stop(at+d+.05);
+}
+function activateAudio(){
+ if(!AC){
+ AC=new(window.AudioContext||window.webkitAudioContext)();
+ master=AC.createGain();master.gain.value=.32;master.connect(AC.destination);
+ let index=0;
+ beat=setInterval(()=>{if(!AC)return;
+ const a=[110,164.8,130.8,196][index%4];
+ tone(a,.37,.035,'triangle',1.005);
+ if(index%2===0)tone(60,.21,.13,'sine',.55);
+ if(index%4===2)tone(245,.08,.025,'sawtooth',.5);
+ index++;
+ },400);
+ }return AC.resume();
+}
+function engineOn(){
+ if(!AC||engine)return;
+ engine=AC.createOscillator();engine.type='sawtooth';engine.frequency.value=60;
+ engineFilter=AC.createBiquadFilter();engineFilter.type='lowpass';engineFilter.frequency.value=180;
+ engineGain=AC.createGain();engineGain.gain.value=.05;
+ engine.connect(engineFilter);engineFilter.connect(engineGain);engineGain.connect(master);engine.start();
+}
+function engineOff(){if(engine){engine.stop();engine.disconnect();engine=null}}
+let toastDuration=0;
+function notify(s,d=2.3){const el=document.getElementById('toast');el.textContent=s;el.classList.remove('off');toastDuration=d}
+function enter(){
+ if(!run)return;
+ if(!drive&&player.position.distanceTo(sport.position)>6.7){notify('МАШИНА ДАЛЕКО. ПОДОЙДИ БЛИЖЕ.');return}
+ drive=!drive;player.visible=!drive;
+ if(drive){heading=sport.rotation.y;engineOn();notify('ЗА РУЛЁМ. ГОРОД ТВОЙ.')}
+ else{engineOff();player.position.copy(sport.position).add(new T.Vector3(2.8,0,1.6));notify('ТЕПЕРЬ ТЫ ПЕШКОМ.')}
+ document.getElementById('mode').textContent=drive?'ЗА РУЛЁМ':'ПЕШКОМ';
+ document.getElementById('enter').textContent=drive?'↳ ВЫЙТИ':'◇ СЕСТЬ';
+}
+document.getElementById('enter').addEventListener('click',enter);
+document.getElementById('boost').addEventListener('click',()=>{if(drive){boostTime=2;tone(160,.52,.12,'sawtooth',2.7);notify('ТУРБО АКТИВИРОВАНО')}else notify('СНАЧАЛА СЯДЬ В МАШИНУ')});
+document.getElementById('horn').addEventListener('click',()=>{tone(375,.26,.1,'sawtooth');tone(463,.28,.09,'square')});
+document.getElementById('sound').addEventListener('click',()=>{if(!AC){activateAudio().catch(()=>{});return}
+const enabled=master.gain.value>.01;master.gain.value=enabled?0:.32;
+document.getElementById('sound').textContent=enabled?'♫ ВЫКЛ':'♫ ЗВУК'});
+document.getElementById('play').addEventListener('click',async()=>{
+ document.getElementById('start').classList.add('hide');document.getElementById('hud').classList.add('show');
+ run=true;await activateAudio().catch(()=>{});notify('ДОБРО ПОЖАЛОВАТЬ В САН-ВЕРДУ');
+});
+document.addEventListener('keydown',e=>{
+ keys[e.code]=true;
+ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code))e.preventDefault();
+ if(e.repeat)return;
+ if(e.code==='KeyE')enter();
+ if(e.code==='KeyF'&&drive)boostTime=2;
+ if(e.code==='KeyH'){tone(380,.26,.09,'square');tone(470,.23,.07,'sawtooth')}
+});
+document.addEventListener('keyup',e=>{keys[e.code]=false});
+window.addEventListener('blur',()=>{Object.keys(keys).forEach(k=>keys[k]=false);stick.x=stick.y=0});
+const stickWrap=document.getElementById('stick-wrap'),knob=document.getElementById('stick');
+let pointer=-1;
+stickWrap.addEventListener('pointerdown',e=>{pointer=e.pointerId;stickWrap.setPointerCapture(pointer);moveStick(e)});
+stickWrap.addEventListener('pointermove',e=>{if(e.pointerId===pointer)moveStick(e)});
+function moveStick(e){const b=stickWrap.getBoundingClientRect(),x=e.clientX-b.left-b.width/2,y=e.clientY-b.top-b.height/2,q=Math.min(1,42/Math.max(1,Math.hypot(x,y)));
+stick.x=x*q/42;stick.y=y*q/42;knob.style.transform='translate(calc(-50% + '+x*q+'px),calc(-50% + '+y*q+'px))'}
+const reset=(e)=>{if(e.pointerId!==pointer)return;pointer=-1;stick.x=stick.y=0;knob.style.transform='translate(-50%,-50%)'};
+stickWrap.addEventListener('pointerup',reset);stickWrap.addEventListener('pointercancel',reset);
+const c2d=document.getElementById('radar').getContext('2d');
+let lastMap=0;
+function minimap(){
+const C=c2d,w=200,h=200,focus=drive?sport.position:player.position;
+C.fillStyle='#233b47';C.fillRect(0,0,w,h);
+C.save();C.translate(100,100);
+for(const p of positions){C.strokeStyle='#718c98';C.lineWidth=13;
+C.beginPath();C.moveTo((p-focus.x)*1.2,-110);C.lineTo((p-focus.x)*1.2,110);C.stroke();
+C.beginPath();C.moveTo(-110,(p-focus.z)*1.2);C.lineTo(110,(p-focus.z)*1.2);C.stroke();
+}
+C.fillStyle='#98aaa8';
+for(const b of buildings)C.fillRect((b.x-focus.x-b.w/2)*1.2,(b.z-focus.z-b.d/2)*1.2,b.w*1.2,b.d*1.2);
+C.fillStyle='#ffd663';C.beginPath();C.arc((marker.position.x-focus.x)*1.2,(marker.position.z-focus.z)*1.2,6,0,Math.PI*2);C.fill();
+C.restore();C.fillStyle='#65ffce';
+C.beginPath();C.moveTo(100,88);C.lineTo(107,109);C.lineTo(100,103);C.lineTo(93,109);C.closePath();C.fill();
+}
+function step(now){
+requestAnimationFrame(step);
+const dt=Math.min(.042,Math.max(0,(now-last)/1000));last=now;t+=dt;
+if(run){
+let fwd=(keys.KeyW||keys.ArrowUp?1:0)-(keys.KeyS||keys.ArrowDown?1:0)-stick.y;
+let turn=(keys.KeyD||keys.ArrowRight?1:0)-(keys.KeyA||keys.ArrowLeft?1:0)+stick.x;
+const len=Math.hypot(fwd,turn);
+if(len>1){fwd/=len;turn/=len}
+if(drive){
+let acceleration=boostTime>0?18:11;
+if(fwd>0)velocity=Math.min(boostTime>0?30:22,velocity+dt*acceleration);
+else if(fwd<0)velocity=Math.max(-9,velocity-dt*16);
+else velocity*=Math.pow(.96,dt*60);
+if(keys.Space)velocity*=Math.pow(.91,dt*60);
+heading+=turn*dt*1.6*Math.min(1,Math.abs(velocity)/6)*(velocity>=0?1:-1);
+sport.rotation.y=heading;
+const ox=sport.position.x,oz=sport.position.z;
+sport.position.x+=Math.sin(heading)*velocity*dt;
+sport.position.z+=Math.cos(heading)*velocity*dt;
+sport.position.x=T.MathUtils.clamp(sport.position.x,-155,155);
+sport.position.z=T.MathUtils.clamp(sport.position.z,-155,155);
+for(const b of buildings){
+if(Math.abs(sport.position.x-b.x)<b.w/2+1.25&&Math.abs(sport.position.z-b.z)<b.d/2+1.8){
+sport.position.set(ox,0,oz);
+if(Math.abs(velocity)>6){wanted=Math.min(3,wanted+1);timeLost=24;tone(125,.33,.14,'sawtooth',.3);notify('СТОЛКНОВЕНИЕ! ПОЛИЦИЯ НА ПУТИ')}
+velocity*=-.14;break}
+}
+sport.userData.wheels.forEach(w=>w.rotation.x+=velocity*dt*1.5);
+if(engine){engine.frequency.setTargetAtTime(56+Math.abs(velocity)*6,AC.currentTime,.08);
+ engineFilter.frequency.setTargetAtTime(240+Math.abs(velocity)*70,AC.currentTime,.06);
+ engineGain.gain.setTargetAtTime(.06+Math.abs(velocity)*.005,AC.currentTime,.06)}
+document.getElementById('speed').textContent=String(Math.round(Math.abs(velocity)*3.6));
+document.getElementById('hint').textContent='W — ГАЗ, S — ТОРМОЗ, A/D — РУЛЬ, E — ВЫЙТИ, F — ТУРБО';
+boostTime=Math.max(0,boostTime-dt);
+if(sport.position.distanceTo(marker.position)<5.6){
+cash+=mission===1?500:750;
+document.getElementById('cash').textContent='$'+cash.toLocaleString();
+tone(550,.3,.11,'triangle',1.6);notify('ЗАДАНИЕ ВЫПОЛНЕНО · +$'+(mission===1?'500':'750'),3.5);nextMission();
+}
+}else{
+if(len>.05){
+const nx=player.position.x+turn*dt*5.8,nz=player.position.z-fwd*dt*5.8;
+player.position.x=T.MathUtils.clamp(nx,-155,155);
+player.position.z=T.MathUtils.clamp(nz,-155,155);
+const aim=Math.atan2(turn,fwd);player.rotation.y=T.MathUtils.lerp(player.rotation.y,aim,Math.min(1,dt*9));
+lastStep+=dt;
+if(lastStep>.35){tone(100,.07,.018,'sine',.63);lastStep=0}
+}const sw=Math.sin(t*12)*(len>.05?.45:0);
+player.userData.legs.forEach((l,i)=>l.rotation.x=T.MathUtils.lerp(l.rotation.x,sw*(i%2?-1:1),dt*10));
+document.getElementById('hint').textContent=player.position.distanceTo(sport.position)<6.7?'НАЖМИ E ИЛИ «СЕСТЬ», ЧТОБЫ УПРАВЛЯТЬ СПОРТКАРОМ.':'ПОДОЙДИ К КРАСНОМУ СПОРТКАРУ. НАЖМИ E.';
+document.getElementById('speed').textContent='0';
+}
+timeLost=Math.max(0,timeLost-dt);if(timeLost===0&&wanted>0){wanted--;timeLost=20}
+document.getElementById('stars').textContent='★'.repeat(wanted)+'☆'.repeat(5-wanted);
+toastDuration=Math.max(0,toastDuration-dt);if(toastDuration===0)document.getElementById('toast').classList.add('off');
+const focus=drive?sport.position:player.position,yaw=drive?sport.rotation.y:player.rotation.y;
+const distance=drive?12:7;
+temp.set(focus.x-Math.sin(yaw)*distance,drive?5.6:4.0,focus.z-Math.cos(yaw)*distance);
+camera.position.lerp(temp,Math.min(1,dt*3.7));
+camera.lookAt(focus.x,drive?1.7:1.5,focus.z+Math.cos(yaw)*5);
+if(t-lastMap>.25){minimap();lastMap=t}
+}else{camera.position.set(14+Math.sin(t*.15)*5,9.5,24);camera.lookAt(0,1,0)}
+for(const car of carAI){
+const v=dt*car.speed*car.dir;
+if(car.vertical){car.mesh.position.z+=v;if(Math.abs(car.mesh.position.z)>154)car.mesh.position.z*=-.98}
+else{car.mesh.position.x+=v;if(Math.abs(car.mesh.position.x)>154)car.mesh.position.x*=-.98}
+car.mesh.userData.wheels.forEach(w=>w.rotation.x+=dt*car.speed*.7);
+}
+for(const p of peds){
+p.phase+=dt;p.mesh.position.z=p.initial.z+Math.sin(p.phase*p.speed)*6;
+p.mesh.rotation.y=Math.cos(p.phase*p.speed)>0?0:Math.PI;
+p.mesh.userData.legs.forEach((l,i)=>l.rotation.x=Math.sin(p.phase*8+(i%2?Math.PI:0))*.3);
+}
+torus.rotation.z=t*.35;diamond.rotation.y=t*1.1;diamond.position.y=4.6+Math.sin(t*2)*.3;
+renderer.render(scene,camera);
+}
+requestAnimationFrame(step);
+window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,innerWidth<750?1.2:1.6))});
+</script></body></html>
