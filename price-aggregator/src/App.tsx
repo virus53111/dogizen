@@ -1,5 +1,6 @@
 
 import { useEffect, useRef, useState } from 'react';
+import { LANGUAGE_OPTIONS, matchLanguages } from './languages';
 import {
   ArrowDownToLine, ArrowRight, AudioLines, BadgeCheck, Check, ChevronDown,
   CircleHelp, Clock3, CloudOff, Code2, Download, Film, FileAudio, FileVideo,
@@ -11,10 +12,11 @@ type Caption = { id: number; start: number; end: number; text: string };
 type Tab = 'studio' | 'how' | 'pricing';
 type Preset = 'classic' | 'bold' | 'neon';
 type Output = { text?: string; chunks?: { timestamp?: [number | null, number | null]; text?: string }[] };
-const MODEL_ID = 'onnx-community/whisper-tiny';
+const MODELS = { fast: 'onnx-community/whisper-tiny', quality: 'onnx-community/whisper-base' } as const;
+type ModelChoice = keyof typeof MODELS;
 const MAX_FILE_SIZE = 150 * 1024 * 1024;
 let enginePromise: Promise<any> | null = null;
-let asrPromise: Promise<any> | null = null;
+const asrPromises: Partial<Record<ModelChoice, Promise<any>>> = {};
 
 function timecode(seconds: number, kind: 'srt' | 'vtt' = 'srt') {
   const ms = Math.max(0, Math.round(seconds * 1000));
@@ -72,14 +74,14 @@ async function loadFfmpeg(onPhase: (message: string) => void) {
   return enginePromise;
 }
 
-async function loadTranscriber(onPhase: (message: string) => void) {
-  if (!asrPromise) {
-    asrPromise = (async () => {
+async function loadTranscriber(which: ModelChoice, onPhase: (message: string) => void) {
+  if (!asrPromises[which]) {
+    asrPromises[which] = (async () => {
       const { env, pipeline } = await import('@huggingface/transformers');
       env.allowLocalModels = false;
       env.useBrowserCache = true;
       onPhase('Скачиваем бесплатную модель Whisper — первый запуск может занять несколько минут…');
-      return pipeline('automatic-speech-recognition', MODEL_ID, {
+      return pipeline('automatic-speech-recognition', MODELS[which], {
         device: 'wasm',
         dtype: 'q8',
         progress_callback: (progress: any) => {
@@ -90,13 +92,14 @@ async function loadTranscriber(onPhase: (message: string) => void) {
           if (progress.status === 'ready') onPhase('Модель готова. Начинаем распознавание…');
         }
       });
-    })().catch((err: unknown) => { asrPromise = null; throw err; });
+    })().catch((err: unknown) => { delete asrPromises[which]; throw err; });
   }
-  return asrPromise;
+  return asrPromises[which]!;
 }
 
 function App() {
   const fileInput = useRef<HTMLInputElement>(null);
+  const subtitleInput = useRef<HTMLInputElement>(null);
   const mediaRef = useRef<HTMLVideoElement | HTMLAudioElement | null>(null);
   const [tab, setTab] = useState<Tab>('studio');
   const [file, setFile] = useState<File | null>(null);
@@ -104,6 +107,11 @@ function App() {
   const [isAudio, setIsAudio] = useState(false);
   const [drag, setDrag] = useState(false);
   const [language, setLanguage] = useState('auto');
+  const [languageQuery, setLanguageQuery] = useState('');
+  const [modelChoice, setModelChoice] = useState<ModelChoice>('fast');
+  const [muxing, setMuxing] = useState(false);
+  const [muxError, setMuxError] = useState('');
+  const [muxStatus, setMuxStatus] = useState('');
   const [preset, setPreset] = useState<Preset>('bold');
   const [captions, setCaptions] = useState<Caption[]>(loadSavedCaptions);
   const [processing, setProcessing] = useState(false);
@@ -133,6 +141,8 @@ function App() {
       setErrorText('Поддерживаются MP4, MOV, WebM, MKV, MP3, WAV, M4A, OGG и FLAC.');
       return;
     }
+    setMuxError('');
+    setMuxStatus('');
     setFile(next);
     setFileUrl(URL.createObjectURL(next));
     setIsAudio(['mp3', 'wav', 'm4a', 'ogg', 'flac'].includes(extension));
@@ -165,7 +175,7 @@ function App() {
     saveText(fileBase + '.' + kind, content, 'text/plain;charset=utf-8');
   }
   async function transcribe() {
-    if (!file || processing) return;
+    if (!file || processing || muxing) return;
     setProcessing(true);
     setErrorText('');
     setDemo(false);
@@ -188,7 +198,7 @@ function App() {
         await context.close();
       }
       if (audio.duration > 15 * 60) throw new Error('Сейчас поддерживаются ролики до 15 минут. Обрежьте длинное видео.');
-      const model = await loadTranscriber(setPhase);
+      const model = await loadTranscriber(modelChoice, setPhase);
       setPhase('ИИ распознаёт речь. Обработка выполняется на вашем устройстве…');
       const options: any = {
         return_timestamps: true,
@@ -223,6 +233,98 @@ function App() {
       setProcessing(false);
     }
   }
+
+  async function importSubtitles(next: File | undefined) {
+    if (!next) return;
+    setErrorText('');
+    if (next.size > 1024 * 1024) {
+      setErrorText('Файл субтитров должен быть не больше 1 МБ.');
+      return;
+    }
+    try {
+      const raw = (await next.text()).replace(/\uFEFF/g, '').replace(/\r/g, '');
+      const blocks = raw.replace(/^WEBVTT[^\n]*\n/, '').trim().split(/\n\s*\n/);
+      const toSeconds = (stamp: string): number => {
+        const parts = stamp.replace(',', '.').split(':').map(Number);
+        if (parts.some(n => !Number.isFinite(n))) return NaN;
+        return parts.length === 3 ? parts[0] * 3600 + parts[1] * 60 + parts[2] : parts[0] * 60 + parts[1];
+      };
+      const entries: Caption[] = [];
+      for (const block of blocks) {
+        const lines = block.split('\n').map(x => x.trim());
+        const at = lines.findIndex(line => line.includes('-->'));
+        if (at < 0) continue;
+        const found = lines[at].match(/((?:\d+:)?\d{2}:\d{2}[.,]\d{3})\s*-->\s*((?:\d+:)?\d{2}:\d{2}[.,]\d{3})/);
+        if (!found) continue;
+        const start = toSeconds(found[1]);
+        const end = toSeconds(found[2]);
+        const text = lines.slice(at + 1).join('\n').trim();
+        if (Number.isFinite(start) && Number.isFinite(end) && end > start && text) {
+          entries.push({ id: entries.length + 1, start, end, text });
+        }
+      }
+      if (!entries.length) throw new Error('В файле не найдены временные метки SRT/VTT.');
+      setCaptions(entries.slice(0, 500));
+      setDemo(false);
+      setMuxStatus('');
+      setPhase('Импортировано ' + entries.length + ' фрагментов субтитров.');
+    } catch (err: unknown) {
+      setErrorText('Не удалось импортировать субтитры: ' + (err instanceof Error ? err.message : String(err)));
+    } finally {
+      if (subtitleInput.current) subtitleInput.current.value = '';
+    }
+  }
+
+  // MP4 contains an optional selectable subtitle track (mov_text), not burned-in stylized captions.
+  async function downloadCaptionedMp4() {
+    if (!file || !captions.length || isAudio || muxing || processing) return;
+    if (!/\.(mp4|mov)$/i.test(file.name)) {
+      setMuxError('Экспорт MP4 сейчас поддерживает только исходные файлы MP4/MOV.');
+      return;
+    }
+    setMuxing(true);
+    setMuxError('');
+    setMuxStatus('Добавляем субтитры отдельной дорожкой в MP4…');
+    try {
+      const ffmpeg = await loadFfmpeg(setMuxStatus);
+      const { fetchFile } = await import('@ffmpeg/util');
+      const input = 'source.' + (file.name.toLowerCase().endsWith('.mov') ? 'mov' : 'mp4');
+      const captionsFile = 'captions.srt';
+      const output = 'sublume-captioned.mp4';
+      const ordered = [...captions].filter(c => c.end > c.start && c.text.trim()).sort((a,b) => a.start - b.start);
+      if (!ordered.length) throw new Error('Нет корректных строк с временными метками.');
+      const srt = ordered.map((c, i) => (i + 1) + '\n' + timecode(c.start) + ' --> ' + timecode(c.end) + '\n' + c.text.trim()).join('\n\n') + '\n';
+      await ffmpeg.writeFile(input, await fetchFile(file));
+      await ffmpeg.writeFile(captionsFile, new TextEncoder().encode(srt));
+      // Copy original video/audio bitstreams: much faster than re-encoding in WASM.
+      const args = ['-i', input, '-i', captionsFile, '-map', '0:v:0', '-map', '0:a?', '-map', '1:0', '-c:v', 'copy', '-c:a', 'copy', '-c:s', 'mov_text', '-movflags', '+faststart', output];
+      const exitCode = await ffmpeg.exec(args);
+      if (exitCode !== 0) throw new Error('Не удалось создать MP4. Попробуй скачать SRT отдельно.');
+      const bytes = await ffmpeg.readFile(output);
+      if (typeof bytes === 'string') throw new Error('Ошибка чтения готового видео.');
+      const copy = new Uint8Array(bytes);
+      const blob = new Blob([copy.slice().buffer as ArrayBuffer], { type: 'video/mp4' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileBase + '-с-субтитрами.mp4';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+      setMuxStatus('MP4 готов. Субтитры — отдельная дорожка: включите их в видеоплеере.');
+      await ffmpeg.deleteFile(output).catch(() => {});
+      await ffmpeg.deleteFile(input).catch(() => {});
+      await ffmpeg.deleteFile(captionsFile).catch(() => {});
+    } catch (err: unknown) {
+      setMuxError('Экспорт MP4 не удался: ' + (err instanceof Error ? err.message : String(err)) + ' Попробуй скачать SRT.');
+      setMuxStatus('');
+    } finally {
+      setMuxing(false);
+    }
+  }
+
+  const availableLanguages = matchLanguages(languageQuery, language);
 
   return (
     <div className="app-shell">
@@ -266,6 +368,7 @@ function App() {
               <section className="card upload-panel">
                 <div className="card-heading"><div className="card-icon"><FileVideo size={19}/></div><div><h3>Исходный файл</h3><p>Видео или аудиозапись для обработки</p></div></div>
                 <input ref={fileInput} className="sr-only" type="file" accept="video/*,audio/*,.mkv,.mov,.m4a,.flac" onChange={event => chooseFile(event.target.files?.[0])}/>
+                <input ref={subtitleInput} className="sr-only" type="file" accept=".srt,.vtt,text/vtt" onChange={event => { void importSubtitles(event.target.files?.[0]); }}/>
                 <div className={'dropzone ' + (drag ? 'dragging' : '') + (file ? ' has-file' : '')}
                   onDragOver={event => { event.preventDefault(); setDrag(true); }}
                   onDragLeave={event => { event.preventDefault(); setDrag(false); }}
@@ -278,12 +381,17 @@ function App() {
                 </div>
                 <div className="settings">
                   <label htmlFor="audio-language">Язык речи</label>
-                  <div className="select-wrap"><Languages size={17}/><select id="audio-language" value={language} onChange={event => setLanguage(event.target.value)}><option value="auto">Определить автоматически</option><option value="russian">Русский</option><option value="english">Английский</option><option value="ukrainian">Украинский</option><option value="german">Немецкий</option><option value="french">Французский</option><option value="spanish">Испанский</option><option value="latvian">Латышский</option></select><ChevronDown size={15}/></div>
+                  <input className="language-search" type="search" aria-label="Поиск языка" placeholder="Поиск языка: русский, latviešu, English…" value={languageQuery} onChange={e => setLanguageQuery(e.target.value)} />
+                  <div className="select-wrap"><Languages size={17}/><select id="audio-language" value={language} onChange={event => setLanguage(event.target.value)}><option value="auto">Определить автоматически</option>{availableLanguages.map(item => <option key={item.code} value={item.code}>{item.label} ({item.code})</option>)}</select><ChevronDown size={15}/></div>
+                  <span className="language-count">Доступно {LANGUAGE_OPTIONS.length} языков распознавания · качество зависит от языка и записи</span>
+                  <label htmlFor="model-choice">Модель распознавания</label>
+                  <div className="select-wrap"><Sparkles size={17}/><select id="model-choice" value={modelChoice} onChange={event => setModelChoice(event.target.value as ModelChoice)}><option value="fast">Whisper Tiny — быстрее, меньше загрузка</option><option value="quality">Whisper Base — точнее, но медленнее</option></select><ChevronDown size={15}/></div>
                 </div>
-                <button className="primary-btn" disabled={!file || processing} onClick={transcribe}>{processing ? <><span className="spin-circle"/> Обрабатываем…</> : <><Sparkles size={18}/> Создать субтитры <ArrowRight size={17}/></>}</button>
+                <button className="primary-btn" disabled={!file || processing || muxing} onClick={transcribe}>{processing ? <><span className="spin-circle"/> Обрабатываем…</> : <><Sparkles size={18}/> Создать субтитры <ArrowRight size={17}/></>}</button>
                 {phase && <div className={'notice ' + (processing ? 'working' : 'success')}><span className={processing ? 'pulse' : 'check-dot'} />{phase}</div>}
                 {errorText && <div className="error-notice" role="alert"><Info size={17}/>{errorText}</div>}
-                <p className="tiny-note"><Info size={13}/> Первая загрузка модели требует интернета. Обработка до 15 минут видео зависит от мощности устройства.</p>
+                <button className="import-btn" onClick={() => subtitleInput.current?.click()}><UploadCloud size={16}/> Уже есть субтитры? Импорт SRT / VTT</button>
+                <p className="tiny-note"><Info size={13}/> Первая загрузка модели требует интернета. Для длинных видео и телефонов нужна память. Если приложение тормозит, попробуй короткий ролик и модель Tiny.</p>
               </section>
 
               <section className="card preview-panel">
@@ -305,14 +413,19 @@ function App() {
               {captions.length ? (
                 <div className="caption-list">{captions.map((caption, idx) => <div className="caption-row" key={caption.id}><span className="caption-index">{(idx + 1).toString().padStart(2, '0')}</span><div className="caption-content"><div className="caption-times"><label>От <input aria-label={'Начало фрагмента ' + (idx + 1)} type="number" step="0.1" min="0" value={Number(caption.start.toFixed(1))} onChange={e => updateCaption(caption.id, { start: Number(e.target.value) })}/></label><span>→</span><label>До <input aria-label={'Конец фрагмента ' + (idx + 1)} type="number" step="0.1" min="0" value={Number(caption.end.toFixed(1))} onChange={e => updateCaption(caption.id, { end: Math.max(caption.start + 0.1, Number(e.target.value)) })}/></label></div><textarea aria-label={'Текст фрагмента ' + (idx + 1)} rows={2} value={caption.text} onChange={e => updateCaption(caption.id, {text:e.target.value})}/></div><button className="icon-btn" onClick={() => setCaptions(current => current.filter(c => c.id !== caption.id))} aria-label={'Удалить фрагмент ' + (idx + 1)}><Trash2 size={16}/></button></div>)}</div>
               ) : <div className="transcript-empty"><div className="transcript-empty-icon"><AudioLines size={29}/></div><strong>Здесь будет твоя расшифровка</strong><span>После обработки ты сможешь отредактировать текст и скачать субтитры.</span><button onClick={showSample}>Открыть демонстрационный пример <ArrowRight size={15}/></button></div>}
+              {captions.length > 0 && file && !isAudio && (
+                <div className="mp4-area"><div><strong>Скачать видео с субтитрами</strong><p>MP4 с переключаемой дорожкой субтитров (не наложены на кадры). Для MP4/MOV; стили применяются только в предпросмотре.</p></div><button className="secondary-btn" disabled={processing || muxing || !/\.(mp4|mov)$/i.test(file.name)} onClick={() => { void downloadCaptionedMp4(); }}><Film size={16}/>{muxing ? 'Создаём MP4…' : 'Скачать MP4'}</button></div>
+              )}
+              {muxStatus && <div className="notice success">{muxStatus}</div>}
+              {muxError && <div className="error-notice" role="alert">{muxError}</div>}
               {captions.length > 0 && <div className="transcript-footer"><span>{demo ? 'Демонстрационные субтитры — не результат обработки файла' : 'Сохраняем текст локально в этом браузере'}</span><button onClick={() => setCaptions(current => [...current, {id: Date.now(), start: current.length ? current[current.length-1].end : 0, end: current.length ? current[current.length-1].end + 3 : 3, text: 'Новый фрагмент'}])}><Plus size={15}/> Добавить строку</button></div>}
             </section>
             <div className="bottom-trust"><span><ShieldCheck size={16}/> Никаких секретных API-ключей</span><span><CloudOff size={16}/> Исходные файлы не покидают браузер</span><span><Code2 size={16}/> Open-source технологии</span></div>
           </main>
         ) : tab === 'how' ? (
-          <main className="page info-page"><div className="info-heading"><div className="eyebrow dark"><Sparkles size={14}/> ПРОЗРАЧНЫЙ ИИ</div><h1>Как работает Sublume</h1><p>Никаких скрытых платежей за нейросеть. Файл обрабатывается локально в браузере.</p></div><div className="how-grid">{[{no:'01',ico:<UploadCloud/>,title:'Загрузи файл',desc:'Выбери видео или аудио до 150 МБ. Файл остаётся на твоём устройстве.'},{no:'02',ico:<Mic2/>,title:'Запусти Whisper',desc:'Мы скачиваем открытую модель и автоматически распознаём речь. Первый запуск самый долгий.'},{no:'03',ico:<Scissors/>,title:'Исправь субтитры',desc:'Проверь текст, измени интервалы и сравни с видео.'},{no:'04',ico:<Download/>,title:'Забери результат',desc:'Скачай стандартные файлы SRT, VTT или обычный текст — без водяного знака.'}].map(step => <div className="how-card" key={step.no}><span className="step-num">{step.no}</span><div className="step-ico">{step.ico}</div><h3>{step.title}</h3><p>{step.desc}</p></div>)}</div><div className="important-panel"><Info size={22}/><div><strong>Что умеет текущая бета-версия</strong><p>Распознавание речи и экспорт текстовых субтитров. Встраивание субтитров непосредственно в итоговый MP4, облачные задания, аккаунты и оплата ещё не подключены. Для работы нужен современный браузер и достаточно оперативной памяти.</p></div></div><button className="primary-btn page-return" onClick={() => setTab('studio')}>Перейти в студию <ArrowRight size={16}/></button></main>
+          <main className="page info-page"><div className="info-heading"><div className="eyebrow dark"><Sparkles size={14}/> ПРОЗРАЧНЫЙ ИИ</div><h1>Как работает Sublume</h1><p>Никаких скрытых платежей за нейросеть. Файл обрабатывается локально в браузере.</p></div><div className="how-grid">{[{no:'01',ico:<UploadCloud/>,title:'Загрузи файл',desc:'Выбери видео или аудио до 150 МБ. Файл остаётся на твоём устройстве.'},{no:'02',ico:<Mic2/>,title:'Запусти Whisper',desc:'Мы скачиваем открытую модель и автоматически распознаём речь. Первый запуск самый долгий.'},{no:'03',ico:<Scissors/>,title:'Исправь субтитры',desc:'Проверь текст, измени интервалы и сравни с видео.'},{no:'04',ico:<Download/>,title:'Забери результат',desc:'Скачай SRT, VTT, TXT или MP4 с переключаемой дорожкой субтитров.'}].map(step => <div className="how-card" key={step.no}><span className="step-num">{step.no}</span><div className="step-ico">{step.ico}</div><h3>{step.title}</h3><p>{step.desc}</p></div>)}</div><div className="important-panel"><Info size={22}/><div><strong>Что умеет текущая бета-версия</strong><p>Распознавание на десятках языков, импорт и экспорт SRT/VTT/TXT, а также отдельная переключаемая дорожка субтитров внутри MP4. Субтитры, наложенные прямо на кадры, облачные задания, аккаунты и оплата ещё не подключены. Для работы нужен современный браузер и достаточно оперативной памяти.</p></div></div><button className="primary-btn page-return" onClick={() => setTab('studio')}>Перейти в студию <ArrowRight size={16}/></button></main>
         ) : (
-          <main className="page info-page"><div className="info-heading"><div className="eyebrow dark"><BadgeCheck size={14}/> ТАРИФЫ</div><h1>Начни бесплатно</h1><p>Сначала проверим, насколько хорошо работает модель на твоём устройстве. Платежей в бета-версии нет.</p></div><div className="pricing-grid"><div className="plan active-plan"><div className="plan-icon"><Sparkles/></div><h3>Local Beta</h3><div className="plan-price">0 € <span>/ всегда в бета-версии</span></div><p>Всё необходимое, чтобы попробовать автоматические субтитры.</p><ul><li><Check/> Whisper на устройстве</li><li><Check/> Русская и многоязычная речь</li><li><Check/> Редактор таймингов</li><li><Check/> SRT, VTT и TXT</li></ul><button className="primary-btn" onClick={() => setTab('studio')}>Попробовать бесплатно</button></div><div className="plan"><span className="coming-tag">ПЛАНИРУЕТСЯ</span><div className="plan-icon secondary"><Globe2/></div><h3>Cloud Pro</h3><div className="plan-price">— <span>/ цена не назначена</span></div><p>Для тех, кому нужны длинные видео и автоматическая обработка на сервере.</p><ul><li><Check/> Обработка без нагрузки на ПК</li><li><Check/> Задания в очереди</li><li><Check/> Экспорт готового видео</li><li><Check/> История проектов</li></ul><div className="soon-btn">Пока недоступно</div></div></div><div className="important-panel"><LockKeyhole size={22}/><div><strong>Никаких фиктивных покупок</strong><p>Платёжная система и подписки не включены, пока нет проверки качества обработки и подключения платёжного аккаунта владельца проекта.</p></div></div></main>
+          <main className="page info-page"><div className="info-heading"><div className="eyebrow dark"><BadgeCheck size={14}/> ТАРИФЫ</div><h1>Начни бесплатно</h1><p>Сначала проверим, насколько хорошо работает модель на твоём устройстве. Платежей в бета-версии нет.</p></div><div className="pricing-grid"><div className="plan active-plan"><div className="plan-icon"><Sparkles/></div><h3>Local Beta</h3><div className="plan-price">0 € <span>/ всегда в бета-версии</span></div><p>Всё необходимое, чтобы попробовать автоматические субтитры.</p><ul><li><Check/> Whisper на устройстве</li><li><Check/> Русская и многоязычная речь</li><li><Check/> Редактор таймингов</li><li><Check/> SRT, VTT, TXT и MP4-дорожка</li></ul><button className="primary-btn" onClick={() => setTab('studio')}>Попробовать бесплатно</button></div><div className="plan"><span className="coming-tag">ПЛАНИРУЕТСЯ</span><div className="plan-icon secondary"><Globe2/></div><h3>Cloud Pro</h3><div className="plan-price">— <span>/ цена не назначена</span></div><p>Для тех, кому нужны длинные видео и автоматическая обработка на сервере.</p><ul><li><Check/> Обработка без нагрузки на ПК</li><li><Check/> Задания в очереди</li><li><Check/> Экспорт готового видео</li><li><Check/> История проектов</li></ul><div className="soon-btn">Пока недоступно</div></div></div><div className="important-panel"><LockKeyhole size={22}/><div><strong>Никаких фиктивных покупок</strong><p>Платёжная система и подписки не включены, пока нет проверки качества обработки и подключения платёжного аккаунта владельца проекта.</p></div></div></main>
         )}
       </div>
     </div>

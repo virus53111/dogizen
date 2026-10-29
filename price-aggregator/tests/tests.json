@@ -9,11 +9,14 @@
       "SRT export",
       "VTT export",
       "text export",
-      "local transcript persistence"
+      "local transcript persistence",
+      "import SRT/VTT subtitles",
+      "MP4 soft-caption export guardrails"
     ],
     "description": "Checks the useful local editor workflow without requiring an external AI model download.",
     "steps": [
       "Open the AI studio",
+      "Inspect language list and choose a language",
       "Click Открыть демонстрационный пример",
       "Edit the first caption text",
       "Click SRT and confirm a subtitle file downloads",
@@ -28,16 +31,20 @@
       "file upload validation",
       "disabled processing guardrail",
       "responsive studio",
-      "navigation"
+      "navigation",
+      "searchable multilingual language selector",
+      "model quality selector"
     ],
     "description": "Confirms that recognition cannot start without a real file and the mobile layout remains usable.",
     "steps": [
       "Open AI-студия on a mobile viewport",
       "Do not upload a video",
+      "Type немец in language search and check German appears as an option",
+      "Clear language search and switch to Whisper Base",
       "Inspect the Создать субтитры action",
       "Navigate to Как это работает"
     ],
-    "expected": "Recognition button is disabled without a file, and the help page explains actual capabilities and limits."
+    "expected": "Recognition is disabled without an uploaded media file; language search filters supported languages, and the user can change the model."
   },
   {
     "name": "Pricing transparently marks checkout unavailable",
@@ -45,8 +52,7 @@
     "covers": [
       "pricing visibility",
       "beta purchase disclosure",
-      "no fake payment flow",
-      "backend info endpoint"
+      "no fake payment flow"
     ],
     "description": "Checks the app explains client-side processing and does not pretend payment works in this beta.",
     "steps": [
@@ -56,5 +62,23 @@
       "Return to studio"
     ],
     "expected": "Free beta is clearly available, Cloud Pro is clearly unavailable, and the studio reports on-device processing."
+  },
+  {
+    "name": "Import existing subtitles and export formats",
+    "viewport": "desktop",
+    "covers": [
+      "SRT/VTT import",
+      "caption editor",
+      "video export availability validation"
+    ],
+    "description": "A subtitle file can be imported directly without running AI, and is editable and exportable.",
+    "steps": [
+      "Open subtitle import in the studio and select a small valid .srt file with two captions",
+      "Verify two captions appear in the editor",
+      "Edit the second caption",
+      "Download VTT and TXT",
+      "Check MP4 button is absent without an uploaded source video"
+    ],
+    "expected": "Both imported captions appear for editing and export; video export is offered only when a video is present."
   }
 ]
