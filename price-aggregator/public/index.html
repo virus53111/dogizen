@@ -1,10 +1,10 @@
 <!doctype html><html lang="ru"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#090e13"><meta name="description" content="CenaRadar: все спотовые пары MEXC, поиск пампов и всплесков объёма, RAVE Hunter, проверка стакана и моделирование выхода из позиции в Risk X-Ray.">
-<title>CenaRadar — скринер MEXC, RAVE Hunter и Risk X-Ray</title>
+<title>CenaRadar — скринер MEXC, RAVE Hunter, Risk X-Ray и Alpha DNA Lab</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/hunter.css"><link rel="stylesheet" href="/xray.css"><script>window.MEXC_API_BASE="https://cenaradar-feed-api.onrender.com";</script><link rel="canonical" href="https://cenaradar.online/">
+<link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/hunter.css"><link rel="stylesheet" href="/xray.css"><link rel="stylesheet" href="/dna.css"><script>window.MEXC_API_BASE="https://cenaradar-feed-api.onrender.com";</script><link rel="canonical" href="https://cenaradar.online/">
 <meta name="robots" content="index,follow,max-snippet:-1">
 <meta property="og:type" content="website"><meta property="og:locale" content="ru_RU"><meta property="og:site_name" content="CenaRadar">
 <meta property="og:title" content="CenaRadar — MEXC скринер, RAVE Hunter и Risk X-Ray">
@@ -16,13 +16,13 @@
 <div class="app" id="app">
 <header class="header">
  <div class="brand"><div class="brand-symbol"><span class="brand-signal"></span><i></i><i></i></div><div class="brand-lines"><div class="brand-name">MEXC<span>RADAR</span><sup>®</sup></div><div class="brand-tag">INDEPENDENT MARKET INTELLIGENCE</div></div></div>
- <nav class="main-nav" aria-label="Основное меню"><a href="#terminal" class="active">ТЕРМИНАЛ</a><a href="#hunter">RAVE HUNTER</a><a href="#xray">RISK X-RAY</a><a href="#markets">РЫНКИ</a><a href="#method">МЕТОДОЛОГИЯ</a></nav>
+ <nav class="main-nav" aria-label="Основное меню"><a href="#terminal" class="active">ТЕРМИНАЛ</a><a href="#hunter">RAVE HUNTER</a><a href="#xray">RISK X-RAY</a><a href="#dna">ALPHA DNA</a><a href="#markets">РЫНКИ</a><a href="#method">МЕТОДОЛОГИЯ</a></nav>
  <div class="header-right"><span class="live"><i></i><span id="feedLive">ПОДКЛЮЧЕНИЕ</span></span><span id="headerTime" class="header-time">—</span><button class="button-icon" id="refreshBtn" title="Обновить все пары" aria-label="Обновить">↻</button><button class="top-cta" id="planBtn">✧ PRO <span>↗</span></button></div>
 </header>
 <div class="noticebar"><div><span class="notice-beacon">✳</span> <strong>ТОЛЬКО ФАКТЫ С MEXC</strong><span class="notice-underline">Спот · Все доступные пары · Никаких прогнозов доходности</span></div><span class="notice-source">OFFICIAL SPOT API V3 / NO ACCOUNT REQUIRED</span></div>
 <main>
 <section id="terminal" class="intro">
- <div class="intro-copy"><span class="eyebrow"><i class="mini-sun">✧</i> LIVE MEXC SCREENER <span class="eyebrow-id">/ VERSION 5.0</span></span>
+ <div class="intro-copy"><span class="eyebrow"><i class="mini-sun">✧</i> LIVE MEXC SCREENER <span class="eyebrow-id">/ VERSION 6.0</span></span>
  <h1>Найди движение.<br><em>Раньше, чем шум.</em></h1>
  <p>Один экран для всего спотового рынка MEXC. Просматривай реальные движения, сравнивай оборот и спред, изучай стакан любой пары и оценивай риск до сделки.</p>
  <div class="intro-actions"><button class="cta-primary" id="goMarkets">Открыть все пары <span>↗</span></button><a href="#method">КАК РАБОТАЕТ СКАНЕР <span>→</span></a></div><div class="referral-banner"><div class="referral-banner-copy"><span class="referral-kicker">◈ ПАРТНЁРСКАЯ ССЫЛКА</span><strong>Нет аккаунта MEXC?</strong><span>Зарегистрироваться по ссылке владельца MEXC Radar. Код: <b>3Vm9o</b></span></div><a class="referral-cta" href="https://s.mexc.com/referral/MJ5URa4FkX" target="_blank" rel="sponsored noopener noreferrer">РЕГИСТРАЦИЯ НА MEXC ↗</a></div><p class="referral-disclosure">Партнёрская ссылка: сайт может получить вознаграждение за регистрацию. Условия определяет MEXC. Это не рекомендация торговать.</p></div>
@@ -78,6 +78,43 @@
  <div class="xray-guard"><div><span class="xray-guard-title">◉ EXIT GUARD / ЛИЧНЫЙ МОНИТОР</span><p>Предупреждать, когда модельные потери при продаже достигнут заданного порога или стакан станет недостаточным. Проверка — только при открытой вкладке.</p></div><label>ПОРОГ ПОТЕРЬ<select id="xrayGuardThreshold"><option value="1">1%</option><option value="2" selected>2%</option><option value="3">3%</option><option value="5">5%</option><option value="10">10%</option></select></label><button class="border-btn" type="button" id="xrayGuardButton">ВКЛЮЧИТЬ МОНИТОР</button></div><div class="xray-status"><i></i><span id="xrayStatus">ПОЛУЧАЕМ ДАННЫЕ MEXC</span><span id="xrayAsOf" style="margin-left:auto">—</span></div>
  <div id="xrayResults" class="xray-results"><div class="xray-load">Запрашиваем реальные стаканы MEXC и моделируем исполнение ордеров…</div></div>
  <div class="xray-disclaimer"><b>Как читать риск:</b> оценка считается по снимку лучших 100 уровней биржевого стакана и условной комиссии 0,1%. Она не гарантирует исполнение и не предсказывает направление цены. Флаги — эвристика, а не вероятность обвала.</div>
+</section>
+<section id="dna" class="dna-section">
+  <div class="section-heading dna-heading"><div><div class="section-kicker">05 / HISTORICAL PATTERN INTELLIGENCE</div><h2>ALPHA <em>DNA LAB</em> <span class="dna-beta">PATTERN REPLAY / BETA</span></h2><p>Насколько текущая ситуация похожа на прошлые часы этой же пары? Показываем реальные аналоги и движение цены после них — без фальшивых шансов на памп.</p></div><div class="heading-hint"><span class="hint-pulse"></span> MEXC HISTORICAL OHLCV</div></div>
+  <div class="dna-hero">
+    <div class="dna-hero-left"><span>◉ PATTERN FINGERPRINT</span><h3>Найди похожее.<br><em>Проверь последствия.</em></h3><p>Сравнение пяти параметров: импульса за 3 и 12 часов, объёма относительно нормы, волатильности и верхней тени свечи. Отбираются только прошлые эпизоды с известным последующим результатом.</p></div>
+    <div class="dna-orbit" aria-hidden="true"><div class="dna-orbit-a"></div><div class="dna-orbit-b"></div><div class="dna-orbit-c"></div><i>✳</i><span>01 / DETECT<br>02 / MATCH<br>03 / AUDIT</span></div>
+  </div>
+  <div class="dna-controller"><label>ТОКЕН MEXC / USDT <input id="dnaSymbol" value="RAVEUSDT" placeholder="RAVEUSDT" spellcheck="false" autocomplete="off" aria-label="Торговая пара для анализа"/></label><label>ИСТОРИЧЕСКАЯ ДАТА <input type="date" id="dnaDate" aria-label="Дата для исторического воспроизведения"/></label><button id="dnaRun" class="cta-primary">НАЙТИ АНАЛОГИ ↗</button><button id="dnaRecent" class="border-btn">СЕЙЧАС</button><button id="dnaRave" class="border-btn dna-preset">↺ RAVE / 10.04.2026</button></div>
+  <div id="dnaStatus" class="dna-status">Загружаем исторические свечи MEXC...</div>
+  <div id="dnaResult" hidden>
+    <div class="dna-current">
+      <div class="dna-current-head"><div><span class="dna-small">ТЕКУЩИЙ ОТПЕЧАТОК РЫНКА</span><h3 id="dnaRefSymbol">—</h3><span id="dnaRefPattern" class="dna-pattern">—</span></div><div class="dna-reference"><span id="dnaAsOf">—</span><strong id="dnaRefPrice">—</strong></div></div>
+      <div class="dna-features">
+        <div><small>ДВИЖЕНИЕ 3Ч</small><strong id="dnaMom3">—</strong></div>
+        <div><small>ДВИЖЕНИЕ 12Ч</small><strong id="dnaMom12">—</strong></div>
+        <div><small>ОБЪЁМ / НОРМА</small><strong id="dnaVol">—</strong></div>
+        <div><small>ДИАПАЗОН 6Ч</small><strong id="dnaRange">—</strong></div>
+        <div><small>ВЕРХНЯЯ ТЕНЬ</small><strong id="dnaWick">—</strong></div>
+        <div><small>ОБЪЁМ 1Ч</small><strong id="dnaVolume">—</strong></div>
+      </div>
+    </div>
+    <div class="dna-results">
+      <div class="dna-results-top"><div><strong>ИСТОРИЧЕСКИЕ СОВПАДЕНИЯ</strong><span id="dnaQuality" class="dna-quality">—</span></div><small id="dnaDateRange">—</small></div>
+      <div class="dna-summary">
+        <div><small>НЕЗАВИСИМЫХ ЭПИЗОДОВ</small><strong id="dnaMatches">—</strong></div>
+        <div><small>В ПЛЮСЕ ЧЕРЕЗ 24Ч</small><strong id="dnaHitRate">—</strong></div>
+        <div><small>МЕДИАНА 24Ч</small><strong id="dnaMedian">—</strong></div>
+        <div><small>ХУДШИЙ ИСХОД 24Ч</small><strong id="dnaWorst">—</strong></div>
+      </div>
+      <div class="dna-outcome-bar"><span id="dnaBarPositive"></span><i id="dnaBarNegative"></i></div>
+      <div class="dna-distribution-caption" id="dnaDistributionCaption">—</div>
+      <div class="dna-list-head"><span>№ / ДАТА И ЧТО БЫЛО</span><span>СХОДСТВО</span><span>4 ЧАСА</span><span>24 ЧАСА</span><span>MAX / MIN 24Ч</span></div>
+      <div class="dna-cases" id="dnaCases"></div>
+      <div class="dna-caveat" id="dnaAuditNote">Методология и ограничения загрузятся вместе с анализом.</div>
+    </div>
+  </div>
+  <div class="dna-footer"><span>◈ ЭТО АНАЛИЗ ПРОШЛОГО, НЕ ПРЕДСКАЗАНИЕ БУДУЩЕГО. ИСТОРИЧЕСКИЕ СХОДСТВА МОГУТ ВВОДИТЬ В ЗАБЛУЖДЕНИЕ ПРИ МАЛОЙ ВЫБОРКЕ.</span><a href="#audit">ПОДРОБНЫЙ SIGNAL AUDIT ↗</a></div>
 </section>
 <section id="audit" class="audit-section">
  <div class="audit-header"><div><span class="section-kicker">03 / SIGNAL PROOF LAB</span><h2>Signal <em>Audit</em></h2><p>Не «сколько можно было заработать на пике», а что реально показывал сигнал после своего закрытия — на истории выбранной пары.</p></div><span class="audit-stamp">NO LOOK-AHEAD<br>NO GUARANTEES</span></div>
@@ -144,5 +181,5 @@
 <div id="plansModal" class="plan-overlay" aria-hidden="true"><div class="plan-scrim" id="planScrim"></div><section class="plan-modal" role="dialog" aria-modal="true" aria-label="О подписке"><button id="closePlans" aria-label="Закрыть" class="close-detail">×</button><div class="eyebrow">ПРОДУКТ В РАЗРАБОТКЕ</div><h2>Платная подписка <em>не запущена.</em></h2><p>Сейчас все функции скринера бесплатны. История сигналов, проверенное обнаружение аномалий по всему рынку, Telegram-оповещения и персональные фильтры требуют отдельной надёжной инфраструктуры и тестирования качества.</p><div class="plan-pill">✳ НИКАКОЙ ИМИТАЦИИ ОПЛАТЫ ИЛИ ПЛАТНЫХ СИГНАЛОВ</div><button id="plansOK" class="cta-primary">ПОНЯТНО →</button></section></div>
 <div id="toast" class="toast" role="status"></div>
 <nav class="mobile-nav" aria-label="Мобильная навигация"><a href="#terminal">◉<span>Обзор</span></a><a href="#hunter">↗<span>Hunter</span></a><a href="#markets">▤<span>Все пары</span></a><button id="mobileFavorites">☆<span>Избранное</span></button></nav>
-<script src="/app.js" defer></script><script src="/charts.js" defer></script><script src="/hunter.js" defer></script><script src="/xray.js" defer></script><script src="/deeplink.js" defer></script>
+<script src="/app.js" defer></script><script src="/charts.js" defer></script><script src="/hunter.js" defer></script><script src="/xray.js" defer></script><script src="/dna.js" defer></script><script src="/deeplink.js" defer></script>
 </body></html>

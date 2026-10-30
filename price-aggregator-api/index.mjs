@@ -5,7 +5,8 @@ import hunter from './hunter.mjs';
 import audit from './audit.mjs';
 import signals from './signals.mjs';
 import xray from './xray.mjs';
-const routes={'/api/market':market,'/api/pair':pair,'/api/hunter':hunter,'/api/audit':audit,'/api/signals':signals,'/api/xray':xray};
+import dna from './dna.mjs';
+const routes={'/api/market':market,'/api/pair':pair,'/api/hunter':hunter,'/api/audit':audit,'/api/signals':signals,'/api/xray':xray,'/api/dna':dna};
 http.createServer((req,res)=>{
 const url=new URL(req.url,'http://localhost');
 req.query=Object.fromEntries(url.searchParams);
