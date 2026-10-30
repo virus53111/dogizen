@@ -41,14 +41,53 @@ async function load(){
   try{response=await fetch((window.MEXC_API_BASE||'')+'/api/xray?symbols='+encodeURIComponent(input.join(','))+'&size='+encodeURIComponent(size)+'&fee=0.1',{signal:c.signal})}
   finally{clearTimeout(timer)}
   const d=await response.json();if(!response.ok)throw Error(d.error||'Не удалось получить стакан');
-  state.data=d;render();$('xrayStatus').textContent='ГОТОВО · '+d.pairs.length+' ПАР · данные обновляются только после нового запроса';
+  state.data=d;render();guardCheck(d);$('xrayStatus').textContent='ГОТОВО · '+d.pairs.length+' ПАР · данные обновляются только после нового запроса';
  }catch(e){$('xrayStatus').textContent='MEXC временно недоступен: '+e.message;
   $('xrayResults').innerHTML='<div class="xray-load">Не удалось получить стаканы. Повтори запрос; искусственные результаты не показываются.</div>';
  }finally{state.pending=false;$('xrayRun').disabled=false}
 }
+const guard={on:false,lastNotified:new Map(),lastHigh:new Map()};
+function guardUI(){
+ const b=$('xrayGuardButton');if(!b)return;
+ b.textContent=guard.on?'◉ МОНИТОР ВКЛ · ТОЛЬКО ВКЛАДКА':'ВКЛЮЧИТЬ МОНИТОР';
+ b.classList.toggle('is-active',guard.on);
+}
+function guardCheck(d){
+ if(!guard.on||!d?.pairs)return;
+ const threshold=Number($('xrayGuardThreshold').value)||2;
+ for(const p of d.pairs){
+  if(p.error)continue;
+  const risky=p.exit&&!p.exit.complete||p.exit?.totalImpactPct>=threshold;
+  const key=p.symbol,previous=guard.lastHigh.get(key)||false;
+  guard.lastHigh.set(key,Boolean(risky));
+  if(!risky||previous)continue;
+  const last=guard.lastNotified.get(key)||0;
+  if(Date.now()-last<1800000)continue;
+  guard.lastNotified.set(key,Date.now());
+  const message=p.symbol+' · '+(!p.exit?.complete?'Недостаточно видимых bid-заявок для выхода':'Модельные потери '+pct(p.exit.totalImpactPct));
+  $('xrayStatus').textContent='⚠ EXIT GUARD: '+message;
+  if('Notification'in window&&Notification.permission==='granted'){
+   try{new Notification('CenaRadar · EXIT GUARD',{body:message})}catch{}
+  }
+ }
+}
+async function guardToggle(){
+ guard.on=!guard.on;
+ if(guard.on&&'Notification'in window&&Notification.permission==='default'){
+  try{await Notification.requestPermission()}catch{}
+ }
+ try{localStorage.setItem('mexc-xray-guard',guard.on?'1':'0')}catch{}
+ guard.lastHigh.clear();
+ guardUI();
+ if(guard.on){guardCheck(state.data);$('xrayStatus').textContent='Монитор включён · обновление приблизительно каждые 5 минут, только при открытой странице';}
+}
 function init(){
  try{let s=localStorage.getItem('mexc-xray-symbols');if(s)$('xraySymbols').value=s;let z=localStorage.getItem('mexc-xray-size');if(z)$('xraySize').value=z}catch{}
  $('xrayRun').addEventListener('click',load);
+ $('xrayGuardButton').addEventListener('click',guardToggle);
+ $('xrayGuardThreshold').addEventListener('change',()=>{try{localStorage.setItem('mexc-xray-guard-threshold',$('xrayGuardThreshold').value)}catch{}guard.lastHigh.clear();guardCheck(state.data)});
+ try{let t=localStorage.getItem('mexc-xray-guard-threshold');if(['1','2','3','5','10'].includes(t))$('xrayGuardThreshold').value=t;guard.on=localStorage.getItem('mexc-xray-guard')==='1'}catch{}guardUI();
+ setInterval(()=>{if(guard.on&&document.visibilityState==='visible')load()},300000);
  document.querySelectorAll('[data-xray-amount]').forEach(b=>b.addEventListener('click',()=>{$('xraySize').value=b.dataset.xrayAmount;load()}));
  document.querySelectorAll('[data-xray-set]').forEach(b=>b.addEventListener('click',()=>{$('xraySymbols').value=b.dataset.xraySet;load()}));
  $('xrayResults').addEventListener('click',event=>{const b=event.target.closest('[data-xray-open]');if(b&&window.MEXCRadar?.openDetail)window.MEXCRadar.openDetail(b.dataset.xrayOpen)});
