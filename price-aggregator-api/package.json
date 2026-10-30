@@ -1,12 +1,1 @@
-{
-  "name": "cenaradar-feed-api",
-  "private": true,
-  "version": "1.0.0",
-  "type": "module",
-  "scripts": {
-    "start": "node index.mjs"
-  },
-  "dependencies": {
-    "cheerio": "^1.1.2"
-  }
-}
+{"name":"mexc-radar-api","version":"4.0.0","private":true,"type":"module","scripts":{"start":"node index.mjs"},"engines":{"node":">=18"}}

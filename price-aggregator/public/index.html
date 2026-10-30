@@ -1,0 +1,130 @@
+<!doctype html><html lang="ru"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090e13"><meta name="description" content="MEXC Radar — реальные цены, объёмы, спреды и аномалии по всем спотовым парам MEXC.">
+<title>MEXC RADAR — Real Market Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/hunter.css"><script>window.MEXC_API_BASE="https://cenaradar-feed-api.onrender.com";</script></head><body>
+<div class="app" id="app">
+<header class="header">
+ <div class="brand"><div class="brand-symbol"><span class="brand-signal"></span><i></i><i></i></div><div class="brand-lines"><div class="brand-name">MEXC<span>RADAR</span><sup>®</sup></div><div class="brand-tag">INDEPENDENT MARKET INTELLIGENCE</div></div></div>
+ <nav class="main-nav" aria-label="Основное меню"><a href="#terminal" class="active">ТЕРМИНАЛ</a><a href="#hunter">RAVE HUNTER</a><a href="#markets">РЫНКИ</a><a href="#method">МЕТОДОЛОГИЯ</a></nav>
+ <div class="header-right"><span class="live"><i></i><span id="feedLive">ПОДКЛЮЧЕНИЕ</span></span><span id="headerTime" class="header-time">—</span><button class="button-icon" id="refreshBtn" title="Обновить все пары" aria-label="Обновить">↻</button><button class="top-cta" id="planBtn">✧ PRO <span>↗</span></button></div>
+</header>
+<div class="noticebar"><div><span class="notice-beacon">✳</span> <strong>ТОЛЬКО ФАКТЫ С MEXC</strong><span class="notice-underline">Спот · Все доступные пары · Никаких прогнозов доходности</span></div><span class="notice-source">OFFICIAL SPOT API V3 / NO ACCOUNT REQUIRED</span></div>
+<main>
+<section id="terminal" class="intro">
+ <div class="intro-copy"><span class="eyebrow"><i class="mini-sun">✧</i> LIVE MEXC SCREENER <span class="eyebrow-id">/ VERSION 1.0</span></span>
+ <h1>Найди движение.<br><em>Раньше, чем шум.</em></h1>
+ <p>Один экран для всего спотового рынка MEXC. Просматривай реальные движения, сравнивай оборот и спред, изучай стакан любой пары и оценивай риск до сделки.</p>
+ <div class="intro-actions"><button class="cta-primary" id="goMarkets">Открыть все пары <span>↗</span></button><a href="#method">КАК РАБОТАЕТ СКАНЕР <span>→</span></a></div></div>
+ <div class="orb-panel" aria-hidden="true"><canvas id="orbCanvas"></canvas><div class="orb-meta"><span>01 // MARKET FIELD</span><span>LIVE CATALOG</span></div><div class="orb-label"><span>ALL MEXC<br>SPOT PAIRS</span><b id="orbPairCount">●●●●</b></div><div class="orbit-note">DATA-DRIVEN<br>NOT PREDICTIVE</div></div>
+</section>
+<section class="metrics-grid" id="overview">
+ <div class="metric" ><span class="metric-label">ПАР В КАТАЛОГЕ <i>↗</i></span><strong id="countPairs">—</strong><div class="metric-meta">Реальный список от биржи</div></div>
+ <div class="metric"><span class="metric-label">ДОСТУПНЫ ДЛЯ ТОРГОВ <i>◉</i></span><strong id="countActive">—</strong><div class="metric-meta">Статус в API MEXC</div></div>
+ <div class="metric"><span class="metric-label">РОСТ 24Ч ≥ 20% <i>↑</i></span><strong id="countGainers" class="up">—</strong><div class="metric-meta">По реальным спотовым котировкам</div></div>
+ <div class="metric"><span class="metric-label">ШИРОКИЙ СПРЕД ≥ 2% <i>◈</i></span><strong id="countWide" class="yellow">—</strong><div class="metric-meta">Риск исполнения по bid/ask</div></div>
+</section>
+<section class="opportunities" id="opportunities">
+ <div class="section-heading"><div><div class="section-kicker">01 / MARKET SCAN</div><h2>Что двигается <em>прямо сейчас</em></h2><p>Наблюдения за последние 24 часа. Нажми на пару — откроются свечи, стакан и реальные сделки.</p></div><div class="heading-hint"><span class="hint-pulse"></span> СРЕЗ РЫНКА 24Ч</div></div>
+ <div class="opportunity-grid">
+ <div class="opportunity-card" id="cardGainer"><div class="card-top"><span class="pictogram green">↗</span><span>01 / TOP GAINER</span><i>24Ч</i></div><div class="card-main"><h3 id="topGainerName">—</h3><strong id="topGainerVal">—</strong></div><div class="card-bottom"><span id="topGainerVol">Загрузка…</span><span>ОТКРЫТЬ ↗</span></div></div>
+ <div class="opportunity-card" id="cardLoser"><div class="card-top"><span class="pictogram rose">↘</span><span>02 / TOP LOSER</span><i>24Ч</i></div><div class="card-main"><h3 id="topLoserName">—</h3><strong id="topLoserVal">—</strong></div><div class="card-bottom"><span id="topLoserVol">Загрузка…</span><span>ОТКРЫТЬ ↗</span></div></div>
+ <div class="opportunity-card" id="cardVolume"><div class="card-top"><span class="pictogram violet">▥</span><span>03 / VOLUME LEADER</span><i>USDT</i></div><div class="card-main"><h3 id="topVolumeName">—</h3><strong id="topVolumeVal">—</strong></div><div class="card-bottom"><span id="topVolumeMove">Загрузка…</span><span>ОТКРЫТЬ ↗</span></div></div>
+ <div class="opportunity-card" id="cardSpread"><div class="card-top"><span class="pictogram gold">⋈</span><span>04 / WIDE SPREAD</span><i>RISK</i></div><div class="card-main"><h3 id="topSpreadName">—</h3><strong id="topSpreadVal">—</strong></div><div class="card-bottom"><span id="topSpreadVol">Загрузка…</span><span>ОТКРЫТЬ ↗</span></div></div>
+ </div>
+</section>
+<section id="hunter" class="hunter-section">
+ <div class="section-heading hunter-heading"><div><div class="section-kicker">02 / MEXC SIGNAL INTELLIGENCE</div><h2>RAVE <em>HUNTER</em> <span class="hunter-version">BETA / EVIDENCE MODE</span></h2>
+ <p>Обнаружение ускорений по закрытым свечам, затем проверка стакана и реальных принтов. Без предсказаний «100×» и выдуманной вероятности.</p></div>
+ <div class="heading-hint hunter-status"><span class="hint-pulse"></span> <span id="hunterUpdate">ПОДКЛЮЧАЕМ MEXC</span></div></div>
+ <div class="hunter-topline">
+  <div class="hunter-topstat"><small>ВСЯ БИРЖА / 24Ч ТИКЕРЫ</small><b id="hunterUniverse">—</b></div>
+  <div class="hunter-topstat"><small>ПРОВЕРЕНО 5-М СВЕЧЕЙ</small><b id="hunterScanned">—</b></div>
+  <div class="hunter-topstat"><small>АКТИВНЫЕ УСЛОВИЯ</small><b id="hunterActive">—</b></div>
+  <div class="hunter-topstat"><small>СТАКАН + СДЕЛКИ</small><b id="hunterBooks">—</b></div>
+  <div class="hunter-topaction"><button id="hunterReload" class="border-btn">↻ ОБНОВИТЬ</button><button id="hunterNotify" class="border-btn" title="Уведомления работают только при открытой странице">♧ ОПОВЕЩЕНИЯ</button></div>
+ </div>
+ <div class="hunter-banner"><span>◉ ЧТО МЫ ИЩЕМ</span><div><strong>Ранний импульс</strong><small>Цена растёт умеренно + объём выше обычного</small></div><div><strong>Ускорение</strong><small>Цена уже резко движется, риск выше</small></div><div><strong>Опасный разворот</strong><small>Резкое падение после активности</small></div><div><strong>Проверка исполнения</strong><small>Спрэд, доступные заявки и проскальзывание</small></div></div>
+ <div class="hunter-grid">
+ <div class="hunter-feed">
+   <div class="hunter-feed-top"><div><strong>ПРОВЕРЯЕМЫЕ НАБЛЮДЕНИЯ</strong><small>Только фактические свечи. Сначала ранние импульсы, затем ускорения.</small></div><div class="hunter-tabs" role="group" aria-label="Тип события"><button data-huntfilter="all" class="active">ВСЕ</button><button data-huntfilter="early">РАННИЕ</button><button data-huntfilter="hot">РАЗГОН</button><button data-huntfilter="dump">РИСК</button></div></div>
+   <div id="hunterCards" class="hunter-cards"><div class="hunter-empty">Подключаем источник MEXC и проверяем закрытые 5-минутные свечи…</div></div>
+   <div class="hunter-feedfoot"><span>Количество сигналов может быть нулевым. Это нормально. Фильтры не охватывают весь рынок на 5м.</span><span id="hunterError">ДАННЫЕ: MEXC REST</span></div>
+ </div>
+ <aside class="hunter-aside">
+  <div class="hunter-aside-kicker">◌ FOLLOW THE EVIDENCE</div><h3>Не «ракета».<br><em>Доказательства.</em></h3>
+  <p>Каждое наблюдение имеет фактические числа. Слабый стакан, большой спред или уже прошедший рост — причины осторожности, а не скрытые минусы.</p>
+  <div id="hunterWatch" class="hunter-watch"><div class="hunter-watch-title">☆ ИЗБРАННОЕ В ПРОВЕРКЕ</div><p>Добавь пары в избранное в таблице ниже. До восьми USDT-пар автоматически попадают в углублённую проверку.</p></div>
+  <div class="hunter-info"><b>ОТКРЫТАЯ ВКЛАДКА</b><span>Обновление примерно раз в 3 минуты. Звуковые/системные оповещения — только пока сайт открыт; серверные Telegram-уведомления ещё не запущены.</span></div>
+ </aside>
+ </div>
+ <div id="hunterLedger" class="hunter-ledger"><b>ИСТОРИЯ УВИДЕННЫХ СОБЫТИЙ</b><span id="hunterLedgerText">События фиксируются только локально в этом браузере.</span><button id="hunterClearLedger">ОЧИСТИТЬ</button></div>
+</section>
+<section id="audit" class="audit-section">
+ <div class="audit-header"><div><span class="section-kicker">03 / SIGNAL PROOF LAB</span><h2>Signal <em>Audit</em></h2><p>Не «сколько можно было заработать на пике», а что реально показывал сигнал после своего закрытия — на истории выбранной пары.</p></div><span class="audit-stamp">NO LOOK-AHEAD<br>NO GUARANTEES</span></div>
+ <div class="audit-layout"><div class="audit-control">
+  <label>ТОКЕН MEXC / USDT <input id="auditSymbol" value="RAVEUSDT" placeholder="RAVEUSDT" autocomplete="off" spellcheck="false"/></label>
+  <label>ДАТА ИСТОРИЧЕСКОГО СРЕЗА <input id="auditDate" type="date" value="2026-04-10" min="2022-01-01"/></label>
+  <div class="audit-buttons"><button class="cta-primary" id="auditRun">ПРОВЕРИТЬ ИСТОРИЮ ↗</button><button class="border-btn" id="auditCurrent">ПОСЛЕДНИЕ ДНИ</button></div>
+  <div class="audit-example">✳ Пример: <button id="auditRaveExample">RAVE / 10 апреля 2026</button></div>
+  <p>Правило: движение за 15 мин от +1,2% до +12%, объём 5м от 2,5× обычного, умеренное изменение за час. Вход в модели — по открытию следующей свечи.</p>
+ </div>
+ <div class="audit-results"><div class="audit-results-head"><b>РЕЗУЛЬТАТЫ ИСТОРИЧЕСКОГО ТЕСТА</b><span id="auditPeriod">ОЖИДАНИЕ</span></div>
+ <div class="audit-stats"><div><small>СИГНАЛОВ</small><strong id="auditCount">—</strong></div><div><small>ПЛЮС ЧЕРЕЗ 1Ч</small><strong id="auditWin1">—</strong></div><div><small>МЕДИАНА 4Ч</small><strong id="auditMed4">—</strong></div><div><small>ПРОСАДКА ≥ 20%</small><strong id="auditDrop">—</strong></div></div>
+ <div id="auditEvents" class="audit-events"><div class="hunter-empty">Нажми «Проверить историю». По умолчанию выбран реальный период роста RAVE.</div></div>
+ <div class="audit-caveat" id="auditCaveat">Историческая проверка не означает, что стратегия прибыльна. Проскальзывание и доступность ликвидности в прошлом не восстановлены.</div>
+ </div></div>
+</section>
+<section id="markets" class="screener">
+ <div class="screen-bar"><div><div class="section-kicker">02 / FULL EXCHANGE UNIVERSE</div><h2>Все пары <em>MEXC</em></h2></div><div class="screen-bar-right"><span class="last-data">ОБНОВЛЕНО: <b id="updatedAt">—</b></span><button class="border-btn" id="reloadTable">↻ ОБНОВИТЬ</button></div></div>
+ <div class="scanner-shell">
+ <aside class="filters-panel">
+   <div class="aside-head"><span>⚙ ФИЛЬТРЫ</span><button id="resetFilters">СБРОСИТЬ ↗</button></div>
+   <div class="filter-section"><label>ПОИСК ПАРЫ</label><div class="input-search"><span>⌕</span><input id="search" placeholder="RAVE, BTC, ETH..." autocomplete="off" spellcheck="false"><button id="clearSearch" aria-label="Очистить поиск">×</button></div></div>
+   <div class="filter-section"><label>КОТИРОВКА</label><div class="toggle-row" id="quoteToggle"><button class="active" data-quote="USDT">USDT</button><button data-quote="ALL">ВСЕ</button></div><select id="quoteSelect" aria-label="Котировка"><option value="USDT">USDT</option><option value="ALL">ВСЕ КОТИРОВКИ</option></select></div>
+   <div class="filter-section"><label>РЕЖИМ АНАЛИЗА</label><div class="mode-choices">
+     <button data-mode="all" class="active"><span>◉</span> ВСЕ ПАРЫ</button>
+     <button data-mode="gainers"><span class="green-text">↗</span> РОСТ ≥ 10%</button>
+     <button data-mode="losers"><span class="red-text">↘</span> ПАДЕНИЕ ≤ −10%</button>
+     <button data-mode="volume"><span class="violet-text">▥</span> ОБОРОТ ≥ $1M</button>
+     <button data-mode="spread"><span class="yellow-text">⋈</span> СПРЕД ≥ 1%</button>
+     <button data-mode="thin"><span class="yellow-text">◌</span> ТОНКИЙ TOP-OF-BOOK</button>
+     <button data-mode="new"><span>✳</span> НОВЫЕ ≤ 7 ДНЕЙ</button>
+     <button data-mode="favorites"><span>☆</span> ИЗБРАННОЕ</button>
+    </div></div>
+   <div class="filter-section"><label>МИН. ОБОРОТ ЗА 24Ч</label><select id="minVolume"><option value="0">Без ограничений</option><option value="1000">$1 000</option><option value="10000">$10 000</option><option value="100000">$100 000</option><option value="1000000">$1 000 000</option></select></div>
+   <label class="check-row"><input type="checkbox" id="activeOnly" checked> Только со статусом торгов</label>
+   <div class="aside-foot"><span class="mini-dot"></span> ИСТОЧНИК: ОФИЦИАЛЬНЫЙ API MEXC<br><small>Сигналы в таблице основаны на данных 24ч. Не являются прогнозами.</small></div>
+ </aside>
+ <div class="table-area">
+  <div class="table-actions"><div><span class="market-led"></span> <b id="visibleCount">—</b> ПАР <span class="muted">/ ОБНОВЛЯЕТСЯ ≈ 90 СЕК.</span></div><div class="sort-mobile"><label for="sortMobile">СОРТИРОВКА</label><select id="sortMobile"><option value="volume">Оборот 24ч</option><option value="gainers">Рост 24ч</option><option value="losers">Падение 24ч</option><option value="spread">Спред</option><option value="name">Имя</option></select></div><div class="table-legend"><i class="dot-green"></i> ДАННЫЕ БИРЖИ <span>·</span> <i class="dot-gray"></i> НЕТ АКТИВНЫХ КОТИРОВОК</div></div>
+  <div class="overflow-table"><table><thead><tr><th class="fav-th" aria-label="Избранное">☆</th><th data-sort="symbol">ПАРА <span>↕</span></th><th data-sort="price" class="right">ЦЕНА <span>↕</span></th><th data-sort="change24" class="right">24Ч % <span>↕</span></th><th data-sort="quoteVol" class="right">ОБОРОТ 24Ч <span>↕</span></th><th data-sort="spread" class="right">СПРЕД <span>↕</span></th><th class="right">СТАТУС / НАБЛЮДЕНИЕ</th><th></th></tr></thead><tbody id="marketRows"><tr><td colspan="8" class="table-empty">Подключаем весь рынок MEXC…</td></tr></tbody></table></div>
+  <div class="pagination"><span id="pageText">Загрузка…</span><div><button id="prevPage" aria-label="Предыдущая страница">←</button><button id="nextPage" aria-label="Следующая страница">→</button></div></div>
+ </div></div></section>
+<section id="method" class="method">
+ <div><span class="section-kicker">03 / NO BLACK BOX</span><h2>Никаких <em>выдуманных сигналов.</em></h2><p>Все значения на главной странице берутся из официального API MEXC. Сканер не прогнозирует будущее и не определяет «китов» по одной сделке.</p></div>
+ <div class="method-points"><div><b>01</b><strong>Весь каталог</strong><span>Цены, 24-часовые изменения и объём по всем спотовым парам, которые сообщает MEXC.</span></div><div><b>02</b><strong>Детали по запросу</strong><span>Изменения 5м/15м/1ч/4ч, свечи, спред и глубина стакана — только при открытии пары.</span></div><div><b>03</b><strong>Проверяемые риски</strong><span>Риск тонкого стакана, низкого оборота и резких движений. Без обещаний прибыли.</span></div></div>
+</section>
+</main>
+<footer><span>◉ MEXC RADAR <small>/ INDEPENDENT RESEARCH TERMINAL</small></span><span>ДАННЫЕ: <a href="https://www.mexc.com/" target="_blank" rel="noopener noreferrer">MEXC</a> · НЕ ЯВЛЯЕТСЯ ОФИЦИАЛЬНЫМ ПРОДУКТОМ БИРЖИ · НЕ ИНВЕСТИЦИОННЫЙ СОВЕТ</span><span>2026 ©</span></footer>
+</div>
+<div id="detailOverlay" class="detail-overlay" aria-hidden="true"><div id="detailScrim" class="detail-scrim"></div><section class="detail-pane" role="dialog" aria-modal="true" aria-label="Анализ пары">
+ <div class="detail-head"><div class="detail-eyebrow">MEXC SPOT / DEEP DIVE <span id="detailDataTime">—</span></div><button id="closeDetail" class="close-detail" aria-label="Закрыть">×</button><div class="detail-symbol-line"><div><h2 id="detailTitle">—</h2><span class="detail-label">РЕАЛЬНЫЕ ДАННЫЕ БИРЖИ</span></div><div class="detail-last"><strong id="detailPrice">—</strong><span id="detailChange">—</span></div></div></div>
+ <div class="detail-scroll">
+ <div class="detail-metrics"><div><small>ОБОРОТ 24Ч</small><b id="detailVolume">—</b></div><div><small>СПРЕД BID/ASK</small><b id="detailSpread">—</b></div><div><small>ДИАПАЗОН 24Ч</small><b id="detailRange">—</b></div><div><small>ОБЪЁМ 5М / НОРМА</small><b id="detailSpike">—</b></div></div>
+ <div class="detail-block"><div class="detail-block-head"><strong>ЦЕНА И ОБЪЁМ</strong><div id="chartTabs" class="chart-tabs"><button data-period="m5" class="active">5М</button><button data-period="h1">1Ч</button><button data-period="d1">1Д</button></div></div><canvas id="priceChart" height="240"></canvas><div id="chartStatus" class="chart-status">Загружаем реальные свечи...</div></div>
+ <div class="detail-block"><div class="detail-block-head"><strong>ИЗМЕНЕНИЕ ЦЕНЫ</strong><small>Рассчитано по свечам MEXC</small></div><div class="changes-grid" id="changeGrid"></div></div>
+ <div class="detail-block"><div class="detail-block-head"><strong>ЧТО ПРОИСХОДИТ И ПОЧЕМУ</strong><small>Автоматические правила, не рекомендации</small></div><div id="signalReason" class="signal-reason">Ожидаем данные…</div></div>
+ <div class="detail-block"><div class="detail-block-head"><strong>ГЛУБИНА СТАКАНА</strong><small>Снимок лучших 100 уровней</small></div><div class="depth-grid" id="depthGrid"></div><div class="impact-grid" id="impactGrid"></div></div>
+ <div class="detail-block"><div class="detail-block-head"><strong>ПОСЛЕДНИЕ СДЕЛКИ</strong><small>До 65 реальных принтов · биржевые ID могут отсутствовать</small></div><div class="trade-grid" id="tradeGrid"></div></div>
+ <div class="detail-disclaimer" id="detailDisclaimer">Вычисленные оценки основаны на снимке текущего рынка; глубина стакана меняется. Не гарантия исполнения сделки.</div>
+ </div>
+ <div class="detail-bottom"><button id="favoriteDetail" class="border-btn">☆ В ИЗБРАННОЕ</button><a id="openMexc" href="https://www.mexc.com/" target="_blank" rel="noopener noreferrer" class="cta-primary">ОТКРЫТЬ НА MEXC ↗</a><button id="refreshDetail" class="button-icon" title="Обновить анализ">↻</button></div>
+</section></div>
+<div id="plansModal" class="plan-overlay" aria-hidden="true"><div class="plan-scrim" id="planScrim"></div><section class="plan-modal" role="dialog" aria-modal="true" aria-label="О подписке"><button id="closePlans" aria-label="Закрыть" class="close-detail">×</button><div class="eyebrow">ПРОДУКТ В РАЗРАБОТКЕ</div><h2>Платная подписка <em>не запущена.</em></h2><p>Сейчас все функции скринера бесплатны. История сигналов, проверенное обнаружение аномалий по всему рынку, Telegram-оповещения и персональные фильтры требуют отдельной надёжной инфраструктуры и тестирования качества.</p><div class="plan-pill">✳ НИКАКОЙ ИМИТАЦИИ ОПЛАТЫ ИЛИ ПЛАТНЫХ СИГНАЛОВ</div><button id="plansOK" class="cta-primary">ПОНЯТНО →</button></section></div>
+<div id="toast" class="toast" role="status"></div>
+<nav class="mobile-nav" aria-label="Мобильная навигация"><a href="#terminal">◉<span>Обзор</span></a><a href="#hunter">↗<span>Hunter</span></a><a href="#markets">▤<span>Все пары</span></a><button id="mobileFavorites">☆<span>Избранное</span></button></nav>
+<script src="/app.js" defer></script><script src="/charts.js" defer></script><script src="/hunter.js" defer></script>
+</body></html>
