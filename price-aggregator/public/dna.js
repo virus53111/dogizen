@@ -6,7 +6,7 @@
  const usd=v=>Number(v)>=1000?"$"+(Number(v)/1000).toFixed(1)+"K":"$"+Math.round(Number(v)||0);
  const pattern={BUY_MOMENTUM:"УСКОРЕНИЕ ПОКУПОК",SELL_MOMENTUM:"ДАВЛЕНИЕ ПРОДАЖ",VOLUME_ANOMALY:"АНОМАЛЬНЫЙ ОБЪЁМ",STRONG_MOVE:"СИЛЬНОЕ ДВИЖЕНИЕ",VOLATILE:"ВЫСОКАЯ ВОЛАТИЛЬНОСТЬ",NEUTRAL:"СПОКОЙНЫЙ РЕЖИМ"};
  const style=v=>v>0?"dna-up":v<0?"dna-down":"dna-flat";
- let loading=false;
+ let loading=false,pending=false;
  function setNumbers(data){
  const samples=data.matching.nonOverlapping,out=data.outcomes,ref=data.reference;
  $("dnaMatches").textContent=samples;
@@ -47,7 +47,7 @@
  $("dnaResult").hidden=false;
  }
  async function run(){
-  if(loading)return;
+  if(loading){pending=true;return;}
   const symbol=$("dnaSymbol").value.trim().toUpperCase().replace(/\s+/g,"").replace(/\//g,"");
   if(!/^[A-Z0-9]{3,30}USDT$/.test(symbol)){$("dnaStatus").textContent="Введи пару, например RAVEUSDT";return}
   const date=$("dnaDate").value.trim();
@@ -64,7 +64,7 @@
    try{localStorage.setItem("mexc-dna-symbol",symbol)}catch{}
   }catch(e){$("dnaStatus").textContent="Не удалось получить достоверный результат: "+e.message;
    $("dnaResult").hidden=true;
-  }finally{loading=false;$("dnaRun").disabled=false}
+  }finally{loading=false;$("dnaRun").disabled=false;if(pending){pending=false;run();}}
  }
  function init(){
   $("dnaRun").addEventListener("click",run);
