@@ -69,7 +69,7 @@
  function init(){
   $("dnaRun").addEventListener("click",run);
   $("dnaRecent").addEventListener("click",()=>{$("dnaDate").value="";run()});
-  $("dnaRave").addEventListener("click",()=>{$("dnaSymbol").value="BTCUSDT";$("dnaDate").value="2026-04-10";run()});
+  $("dnaRave").addEventListener("click",()=>{$("dnaSymbol").value="RAVEUSDT";$("dnaDate").value="2026-04-10";run()});
   $("dnaSymbol").addEventListener("keydown",e=>{if(e.key==="Enter")run()});
   $("dnaDate").max=new Date().toISOString().slice(0,10);
   $("dnaDate").min="2022-01-01";
