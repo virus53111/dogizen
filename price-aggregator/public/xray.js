@@ -32,7 +32,7 @@ function render(){
 async function load(){
  if(state.pending)return;
  let input=$('xraySymbols').value.toUpperCase().replace(/[^A-Z0-9,]/g,'').split(',').filter(s=>/^[A-Z0-9]{3,30}USDT$/.test(s)).slice(0,4);
- if(!input.length){$('xrayStatus').textContent='Укажи хотя бы одну пару в формате RAVEUSDT';return}
+ if(!input.length){$('xrayStatus').textContent='Укажи хотя бы одну пару в формате BTCUSDT';return}
  let size=Math.max(50,Math.min(50000,Number($('xraySize').value)||1000));$('xraySize').value=size;save();
  state.pending=true;$('xrayRun').disabled=true;$('xrayStatus').textContent='Проверяем реальные стаканы MEXC…';
  try{

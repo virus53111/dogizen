@@ -37,7 +37,7 @@
    const validNotifications=fresh.slice(0,3);
    if("Notification" in window&&Notification.permission==="granted")
     validNotifications.forEach(x=>{try{const note=new Notification("MEXC Radar · "+x.symbol,{body:labels[x.stage]+" · объём 5м ×"+Number(x.volumeRatio||0).toFixed(1)});note.onclick=()=>{window.focus();window.MEXCRadar?.openDetail?.(x.symbol);note.close()}}catch{}});
-   toast("Новых событий RAVE Hunter: "+fresh.length);
+   toast("Новых событий Market Hunter: "+fresh.length);
   }
   S.first=false;renderLedger();
  }
@@ -169,7 +169,7 @@
   $("hunterClearLedger").addEventListener("click",()=>{S.history=[];save();renderLedger();toast("Локальная история очищена")});
   $("auditRun").addEventListener("click",loadAudit);
   $("auditCurrent").addEventListener("click",()=>{$("auditDate").value="";loadAudit()});
-  $("auditRaveExample").addEventListener("click",()=>{$("auditSymbol").value="RAVEUSDT";$("auditDate").value="2026-04-10";loadAudit()});
+  $("auditRaveExample").addEventListener("click",()=>{$("auditSymbol").value="BTCUSDT";$("auditDate").value="";loadAudit()});
   $("auditSymbol").addEventListener("keydown",e=>{if(e.key==="Enter")loadAudit()});
   $("auditDate").max=new Date().toISOString().slice(0,10);
   syncNotify();renderLedger();

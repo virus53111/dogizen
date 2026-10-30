@@ -49,7 +49,7 @@
  async function run(){
   if(loading){pending=true;return;}
   const symbol=$("dnaSymbol").value.trim().toUpperCase().replace(/\s+/g,"").replace(/\//g,"");
-  if(!/^[A-Z0-9]{3,30}USDT$/.test(symbol)){$("dnaStatus").textContent="Введи пару, например RAVEUSDT";return}
+  if(!/^[A-Z0-9]{3,30}USDT$/.test(symbol)){$("dnaStatus").textContent="Введи пару, например BTCUSDT";return}
   const date=$("dnaDate").value.trim();
   if(date&&isNaN(Date.parse(date+"T00:00:00Z"))){$("dnaStatus").textContent="Некорректная дата";return}
   loading=true;$("dnaRun").disabled=true;
@@ -69,7 +69,7 @@
  function init(){
   $("dnaRun").addEventListener("click",run);
   $("dnaRecent").addEventListener("click",()=>{$("dnaDate").value="";run()});
-  $("dnaRave").addEventListener("click",()=>{$("dnaSymbol").value="RAVEUSDT";$("dnaDate").value="2026-04-10";run()});
+  $("dnaRave").addEventListener("click",()=>{$("dnaSymbol").value="SOLUSDT";$("dnaDate").value="";run()});
   $("dnaSymbol").addEventListener("keydown",e=>{if(e.key==="Enter")run()});
   $("dnaDate").max=new Date().toISOString().slice(0,10);
   $("dnaDate").min="2022-01-01";
