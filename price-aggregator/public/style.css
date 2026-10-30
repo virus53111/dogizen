@@ -89,3 +89,14 @@ footer{display:flex;align-items:center;justify-content:space-between;gap:15px;pa
 }
 
 @media(max-width:380px){.app{padding:0 8px}.intro h1{font-size:36px}.noticebar strong{font-size:7px}.notice-underline{font-size:7px}.card-main strong{font-size:19px}.card-top span:nth-child(2){font-size:7px}.mode-choices button{font-size:7px}.metrics-grid{gap:4px}.metric strong{font-size:25px}.metric{padding:12px}.vol-cell{font-size:8px}}
+/* MEXC affiliate signup: distinct from trading-pair links */
+.referral-banner{display:flex;gap:15px;align-items:center;justify-content:space-between;margin-top:20px;padding:13px 15px;background:linear-gradient(110deg,#1b3028,#152621);border:1px solid #416a4c;border-radius:10px;max-width:595px}
+.referral-banner-copy{display:flex;flex-direction:column;gap:5px;min-width:0}
+.referral-kicker{font:700 8px var(--mono);color:var(--green);letter-spacing:.6px}
+.referral-banner-copy strong{font:700 13px var(--display);color:#f1ffe7}
+.referral-banner-copy>span:last-child{font:9px/1.5 var(--sans);color:#abc8b1}
+.referral-banner-copy b{color:#d9ffad}
+.referral-cta{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:11px 12px;border-radius:7px;border:1px solid #8ddf75;background:#b4ff55;color:#1b2b10;font:800 9px var(--mono);white-space:nowrap;text-align:center}
+.referral-cta:hover{background:#d1ff9b}
+.referral-disclosure{max-width:595px!important;margin-top:7px!important;font-size:9px!important;line-height:1.5!important;color:#769383!important}
+@media(max-width:760px){.referral-banner{align-items:stretch;flex-direction:column;gap:10px;margin-top:16px}.referral-cta{min-height:44px}.referral-banner-copy strong{font-size:14px}.referral-disclosure{font-size:9px!important}}
