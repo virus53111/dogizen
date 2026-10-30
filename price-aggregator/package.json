@@ -1,1 +1,9 @@
-{"name":"mexc-radar","version":"4.0.0","private":true,"scripts":{"build":"mkdir -p dist && cp -R public/. dist/"}}
+{
+  "name": "mexc-radar",
+  "version": "5.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs"
+  }
+}

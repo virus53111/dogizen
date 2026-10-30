@@ -4,7 +4,8 @@ import pair from './pair.mjs';
 import hunter from './hunter.mjs';
 import audit from './audit.mjs';
 import signals from './signals.mjs';
-const routes={'/api/market':market,'/api/pair':pair,'/api/hunter':hunter,'/api/audit':audit,'/api/signals':signals};
+import xray from './xray.mjs';
+const routes={'/api/market':market,'/api/pair':pair,'/api/hunter':hunter,'/api/audit':audit,'/api/signals':signals,'/api/xray':xray};
 http.createServer((req,res)=>{
 const url=new URL(req.url,'http://localhost');
 req.query=Object.fromEntries(url.searchParams);

@@ -1,20 +1,28 @@
 <!doctype html><html lang="ru"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090e13"><meta name="description" content="MEXC Radar — реальные цены, объёмы, спреды и аномалии по всем спотовым парам MEXC.">
-<title>MEXC RADAR — Real Market Intelligence</title>
+<meta name="theme-color" content="#090e13"><meta name="description" content="CenaRadar: все спотовые пары MEXC, поиск пампов и всплесков объёма, RAVE Hunter, проверка стакана и моделирование выхода из позиции в Risk X-Ray.">
+<title>CenaRadar — скринер MEXC, RAVE Hunter и Risk X-Ray</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/hunter.css"><script>window.MEXC_API_BASE="https://cenaradar-feed-api.onrender.com";</script></head><body>
+<link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/hunter.css"><link rel="stylesheet" href="/xray.css"><script>window.MEXC_API_BASE="https://cenaradar-feed-api.onrender.com";</script><link rel="canonical" href="https://cenaradar.online/">
+<meta name="robots" content="index,follow,max-snippet:-1">
+<meta property="og:type" content="website"><meta property="og:locale" content="ru_RU"><meta property="og:site_name" content="CenaRadar">
+<meta property="og:title" content="CenaRadar — MEXC скринер, RAVE Hunter и Risk X-Ray">
+<meta property="og:description" content="Все спотовые пары MEXC, реальные свечи, всплески объёма и проверка риска выхода из токена по стакану. Бесплатный Risk X-Ray.">
+<meta property="og:url" content="https://cenaradar.online/">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"CenaRadar","url":"https://cenaradar.online/","description":"Независимый скринер MEXC Spot, анализ ликвидности, аномалий объема и риска исполнения.","inLanguage":"ru"}</script>
+</head><body>
 <div class="app" id="app">
 <header class="header">
  <div class="brand"><div class="brand-symbol"><span class="brand-signal"></span><i></i><i></i></div><div class="brand-lines"><div class="brand-name">MEXC<span>RADAR</span><sup>®</sup></div><div class="brand-tag">INDEPENDENT MARKET INTELLIGENCE</div></div></div>
- <nav class="main-nav" aria-label="Основное меню"><a href="#terminal" class="active">ТЕРМИНАЛ</a><a href="#hunter">RAVE HUNTER</a><a href="#markets">РЫНКИ</a><a href="#method">МЕТОДОЛОГИЯ</a></nav>
+ <nav class="main-nav" aria-label="Основное меню"><a href="#terminal" class="active">ТЕРМИНАЛ</a><a href="#hunter">RAVE HUNTER</a><a href="#xray">RISK X-RAY</a><a href="#markets">РЫНКИ</a><a href="#method">МЕТОДОЛОГИЯ</a></nav>
  <div class="header-right"><span class="live"><i></i><span id="feedLive">ПОДКЛЮЧЕНИЕ</span></span><span id="headerTime" class="header-time">—</span><button class="button-icon" id="refreshBtn" title="Обновить все пары" aria-label="Обновить">↻</button><button class="top-cta" id="planBtn">✧ PRO <span>↗</span></button></div>
 </header>
 <div class="noticebar"><div><span class="notice-beacon">✳</span> <strong>ТОЛЬКО ФАКТЫ С MEXC</strong><span class="notice-underline">Спот · Все доступные пары · Никаких прогнозов доходности</span></div><span class="notice-source">OFFICIAL SPOT API V3 / NO ACCOUNT REQUIRED</span></div>
 <main>
 <section id="terminal" class="intro">
- <div class="intro-copy"><span class="eyebrow"><i class="mini-sun">✧</i> LIVE MEXC SCREENER <span class="eyebrow-id">/ VERSION 1.0</span></span>
+ <div class="intro-copy"><span class="eyebrow"><i class="mini-sun">✧</i> LIVE MEXC SCREENER <span class="eyebrow-id">/ VERSION 5.0</span></span>
  <h1>Найди движение.<br><em>Раньше, чем шум.</em></h1>
  <p>Один экран для всего спотового рынка MEXC. Просматривай реальные движения, сравнивай оборот и спред, изучай стакан любой пары и оценивай риск до сделки.</p>
  <div class="intro-actions"><button class="cta-primary" id="goMarkets">Открыть все пары <span>↗</span></button><a href="#method">КАК РАБОТАЕТ СКАНЕР <span>→</span></a></div><div class="referral-banner"><div class="referral-banner-copy"><span class="referral-kicker">◈ ПАРТНЁРСКАЯ ССЫЛКА</span><strong>Нет аккаунта MEXC?</strong><span>Зарегистрироваться по ссылке владельца MEXC Radar. Код: <b>3Vm9o</b></span></div><a class="referral-cta" href="https://s.mexc.com/referral/MJ5URa4FkX" target="_blank" rel="sponsored noopener noreferrer">РЕГИСТРАЦИЯ НА MEXC ↗</a></div><p class="referral-disclosure">Партнёрская ссылка: сайт может получить вознаграждение за регистрацию. Условия определяет MEXC. Это не рекомендация торговать.</p></div>
@@ -62,6 +70,15 @@
  </div>
  <div id="hunterLedger" class="hunter-ledger"><b>ИСТОРИЯ УВИДЕННЫХ СОБЫТИЙ</b><span id="hunterLedgerText">События фиксируются только локально в этом браузере.</span><button id="hunterClearLedger">ОЧИСТИТЬ</button></div>
 </section>
+<section id="xray" class="xray-section">
+ <div class="section-heading"><div><div class="section-kicker">04 / RISK RADAR · REAL ORDER BOOK</div><div class="xray-headline"><h2>RISK <em>X-RAY</em></h2><span class="xray-subtitle">EXIT LIQUIDITY LAB</span></div><p>Токен может вырасти в 100 раз на графике. Но сможешь ли ты продать позицию? Сравни до четырёх пар MEXC и рассчитай модельные потери от выхода по реальному стакану.</p></div><div class="heading-hint">100 УРОВНЕЙ BID/ASK · СНИМОК</div></div>
+ <div class="xray-control"><div class="xray-inputs"><label>ПАРЫ MEXC / USDT — ДО ЧЕТЫРЁХ<input id="xraySymbols" value="RAVEUSDT,BTCUSDT,SOLUSDT,DOGEUSDT" aria-label="Список пар USDT через запятую" spellcheck="false" autocomplete="off"/></label><label>РАЗМЕР ПОЗИЦИИ В USD<input id="xraySize" type="number" min="50" max="50000" step="50" value="1000" inputmode="decimal"/></label></div><div class="xray-actions"><button id="xrayRun" class="cta-primary">ПРОВЕРИТЬ ВЫХОД ↗</button></div></div>
+ <div class="xray-size-presets"><small>СУММА ПРОДАЖИ</small><button data-xray-amount="100">$100</button><button data-xray-amount="1000">$1 000</button><button data-xray-amount="5000">$5 000</button><button data-xray-amount="10000">$10 000</button></div>
+ <div class="xray-sets"><small>БЫСТРОЕ СРАВНЕНИЕ</small><button data-xray-set="RAVEUSDT,BTCUSDT,SOLUSDT,DOGEUSDT">RAVE VS ТОП</button><button data-xray-set="PEPEUSDT,BONKUSDT,DOGEUSDT,TRUMPUSDT">МЕМКОИНЫ</button><button data-xray-set="BTCUSDT,ETHUSDT,SOLUSDT,XRPUSDT">КРУПНЫЕ АКТИВЫ</button></div>
+ <div class="xray-status"><i></i><span id="xrayStatus">ПОЛУЧАЕМ ДАННЫЕ MEXC</span><span id="xrayAsOf" style="margin-left:auto">—</span></div>
+ <div id="xrayResults" class="xray-results"><div class="xray-load">Запрашиваем реальные стаканы MEXC и моделируем исполнение ордеров…</div></div>
+ <div class="xray-disclaimer"><b>Как читать риск:</b> оценка считается по снимку лучших 100 уровней биржевого стакана и условной комиссии 0,1%. Она не гарантирует исполнение и не предсказывает направление цены. Флаги — эвристика, а не вероятность обвала.</div>
+</section>
 <section id="audit" class="audit-section">
  <div class="audit-header"><div><span class="section-kicker">03 / SIGNAL PROOF LAB</span><h2>Signal <em>Audit</em></h2><p>Не «сколько можно было заработать на пике», а что реально показывал сигнал после своего закрытия — на истории выбранной пары.</p></div><span class="audit-stamp">NO LOOK-AHEAD<br>NO GUARANTEES</span></div>
  <div class="audit-layout"><div class="audit-control">
@@ -107,6 +124,7 @@
  <div><span class="section-kicker">03 / NO BLACK BOX</span><h2>Никаких <em>выдуманных сигналов.</em></h2><p>Все значения на главной странице берутся из официального API MEXC. Сканер не прогнозирует будущее и не определяет «китов» по одной сделке.</p></div>
  <div class="method-points"><div><b>01</b><strong>Весь каталог</strong><span>Цены, 24-часовые изменения и объём по всем спотовым парам, которые сообщает MEXC.</span></div><div><b>02</b><strong>Детали по запросу</strong><span>Изменения 5м/15м/1ч/4ч, свечи, спред и глубина стакана — только при открытии пары.</span></div><div><b>03</b><strong>Проверяемые риски</strong><span>Риск тонкого стакана, низкого оборота и резких движений. Без обещаний прибыли.</span></div></div>
 </section>
+<section id="seo-guides" class="method" aria-label="Руководства по торговой аналитике"><div><span class="section-kicker">05 / CENARADAR ACADEMY</span><h2>График — <em>не вся правда.</em></h2><p>Разбираем реальные риски торговли на MEXC. Все ссылки ведут на отдельные индексируемые страницы со ссылкой на живой анализ.</p></div><div class="method-points"><div><b>01</b><strong>Взрыв объёма</strong><span><a href="/guides/mexc-volume-spike/">Как увидеть необычные 5-минутные свечи на MEXC ↗</a></span></div><div><b>02</b><strong>Проскальзывание</strong><span><a href="/guides/mexc-orderbook-slippage/">Почему пик цены не означает, что позицию можно продать ↗</a></span></div><div><b>03</b><strong>Разборы пар</strong><span><a href="/pairs/raveusdt/">RAVE/USDT</a> · <a href="/pairs/btcusdt/">BTC/USDT</a> · <a href="/pairs/solusdt/">SOL/USDT</a> · <a href="/pairs/pepeusdt/">PEPE/USDT</a></span></div></div></section>
 </main>
 <footer><span>◉ MEXC RADAR <small>/ INDEPENDENT RESEARCH TERMINAL</small></span><span>ДАННЫЕ: <a href="https://www.mexc.com/" target="_blank" rel="noopener noreferrer">MEXC</a> · <a href="https://s.mexc.com/referral/MJ5URa4FkX" target="_blank" rel="sponsored noopener noreferrer">РЕГИСТРАЦИЯ MEXC (ПАРТНЁРСКАЯ ССЫЛКА)</a> · НЕЗАВИСИМЫЙ СЕРВИС · НЕ ИНВЕСТИЦИОННЫЙ СОВЕТ</span><span>2026 ©</span></footer>
 </div>
@@ -126,5 +144,5 @@
 <div id="plansModal" class="plan-overlay" aria-hidden="true"><div class="plan-scrim" id="planScrim"></div><section class="plan-modal" role="dialog" aria-modal="true" aria-label="О подписке"><button id="closePlans" aria-label="Закрыть" class="close-detail">×</button><div class="eyebrow">ПРОДУКТ В РАЗРАБОТКЕ</div><h2>Платная подписка <em>не запущена.</em></h2><p>Сейчас все функции скринера бесплатны. История сигналов, проверенное обнаружение аномалий по всему рынку, Telegram-оповещения и персональные фильтры требуют отдельной надёжной инфраструктуры и тестирования качества.</p><div class="plan-pill">✳ НИКАКОЙ ИМИТАЦИИ ОПЛАТЫ ИЛИ ПЛАТНЫХ СИГНАЛОВ</div><button id="plansOK" class="cta-primary">ПОНЯТНО →</button></section></div>
 <div id="toast" class="toast" role="status"></div>
 <nav class="mobile-nav" aria-label="Мобильная навигация"><a href="#terminal">◉<span>Обзор</span></a><a href="#hunter">↗<span>Hunter</span></a><a href="#markets">▤<span>Все пары</span></a><button id="mobileFavorites">☆<span>Избранное</span></button></nav>
-<script src="/app.js" defer></script><script src="/charts.js" defer></script><script src="/hunter.js" defer></script>
+<script src="/app.js" defer></script><script src="/charts.js" defer></script><script src="/hunter.js" defer></script><script src="/xray.js" defer></script><script src="/deeplink.js" defer></script>
 </body></html>

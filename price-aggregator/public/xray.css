@@ -1,0 +1,51 @@
+/* CenaRadar Risk X-Ray: transparent position-exit liquidity modelling */
+.xray-section{margin:30px 0 39px}
+.xray-section .section-heading p{max-width:690px}
+.xray-headline{display:flex;align-items:center;gap:12px}
+.xray-headline .xray-subtitle{border:1px solid #45614a;background:#20372b;color:#b8ff94;border-radius:5px;padding:6px 9px;font:700 9px var(--mono)}
+.xray-control{display:flex;gap:13px;align-items:end;justify-content:space-between;flex-wrap:wrap;padding:17px;background:#192924;border:1px solid #365548;border-radius:13px 13px 0 0}
+.xray-inputs{display:flex;gap:10px;align-items:end;flex-wrap:wrap;flex:1}
+.xray-inputs label{display:flex;flex-direction:column;gap:8px;color:#91b59d;font:700 9px var(--mono);min-width:160px}
+.xray-inputs label:first-child{flex:2;min-width:230px}
+.xray-inputs input{display:block;width:100%;min-height:43px;border-radius:7px;border:1px solid #42624e;background:#0d1b20;padding:10px 12px;font:700 12px var(--mono);color:#eafde1;outline:none}
+.xray-inputs input:focus{border-color:#b4ff55}
+.xray-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.xray-actions .cta-primary{min-height:43px}
+.xray-size-presets,.xray-sets{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.xray-size-presets{padding:11px 17px;border-left:1px solid #365548;border-right:1px solid #365548;background:#13231f}
+.xray-sets{padding:0 17px 12px;border-left:1px solid #365548;border-right:1px solid #365548;background:#13231f}
+.xray-size-presets small,.xray-sets small{font:700 9px var(--mono);color:#93b7a1;margin-right:5px}
+.xray-size-presets button,.xray-sets button{font:700 9px var(--mono);color:#c8eac4;background:#26392f;border:1px solid #3a6248;border-radius:6px;padding:9px 12px}
+.xray-size-presets button:hover,.xray-sets button:hover{background:#365a3f;color:#eaffde}
+.xray-status{display:flex;align-items:center;gap:12px;border:1px solid #365548;border-top:0;background:#0f211e;padding:12px 17px;color:#a0c2a9;font:9px var(--mono)}
+.xray-status i{height:6px;width:6px;border-radius:50%;background:var(--green);box-shadow:0 0 12px #b4ff55}
+.xray-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:12px;background:#111c1e;border:1px solid #354d42;border-top:0;border-radius:0 0 13px 13px}
+.xray-load{grid-column:1/-1;color:#9fc0aa;font:10px/1.7 var(--mono);padding:32px;text-align:center}
+.xray-card{min-width:0;border:1px solid #375345;border-radius:10px;padding:17px;background:linear-gradient(135deg,#162821,#132021)}
+.xray-card-head{display:flex;justify-content:space-between;gap:9px;align-items:start}
+.xray-card-head h3{font:700 20px var(--display);margin:6px 0 3px;color:#eeffe8}
+.xray-mini{color:#83ad93;font:8px var(--mono)}
+.xray-card-head>div>b{font:700 12px var(--mono);color:#acc9b3}
+.xray-risk{white-space:nowrap;font:700 9px var(--mono);padding:8px;border-radius:5px;text-align:center}
+.xray-risk.severe{color:#ff9ca7;background:#42272b;border:1px solid #94535b}
+.xray-risk.caution{color:#ffdc9a;background:#413623;border:1px solid #7d6945}
+.xray-risk.measured{color:#aef3b5;background:#243d2c;border:1px solid #477452}
+.xray-main-number{margin:16px 0;padding:15px 13px;border:1px solid #3e5f48;background:#1b3328;border-radius:8px}
+.xray-main-number small{display:block;color:#a1c4ac;font:700 9px var(--mono)}
+.xray-main-number strong{display:block;font:700 clamp(21px,2.6vw,33px) var(--display);color:var(--green);letter-spacing:-.7px;margin:8px 0;overflow-wrap:anywhere}
+.xray-main-number strong.danger{color:var(--red)}
+.xray-main-number>span{font:9px/1.6 var(--sans);color:#95b4a2}
+.xray-details{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.xray-details>div{border:1px solid #30483d;padding:11px;background:#142321;border-radius:5px}
+.xray-details small{display:block;color:#819e8c;font:8px var(--mono);line-height:1.5}
+.xray-details b{display:block;color:#e2f6df;font:700 15px var(--display);margin-top:5px}
+.xray-metrics{border-top:1px solid #335040;margin-top:16px;padding-top:13px}
+.xray-metrics>span{font:700 8px/1.5 var(--mono);color:#93b39a}
+.xray-metrics ul{margin:9px 0 0;padding-left:18px;line-height:1.7;color:#c6d6c6;font-size:10px}
+.xray-metrics li{padding:2px 0}
+.xray-footer{border-top:1px solid #335040;display:flex;justify-content:space-between;gap:7px;align-items:center;flex-wrap:wrap;margin-top:15px;padding-top:14px}
+.xray-footer a,.xray-footer button{border:1px solid #477450;background:#213a2e;border-radius:6px;color:#bafaa7;padding:10px 12px;font:700 9px var(--mono);cursor:pointer}
+.xray-disclaimer{color:#8ead98;font:10px/1.8 var(--sans);padding:10px 4px 0}
+.xray-disclaimer b{color:#cae6c6}
+@media(max-width:900px){.xray-control{display:block}.xray-actions{margin-top:12px}.xray-results{grid-template-columns:1fr}.xray-inputs label:first-child{min-width:180px}.xray-card-head h3{font-size:19px}}
+@media(max-width:760px){.xray-section{margin:23px 0}.xray-headline{flex-wrap:wrap}.xray-control{padding:12px}.xray-inputs{gap:10px}.xray-inputs label:first-child{flex:1 1 100%}.xray-inputs label:nth-child(2){flex:1 1 100%}.xray-size-presets,.xray-sets{padding:10px}.xray-size-presets button,.xray-sets button{padding:10px 8px;font-size:8px}.xray-results{padding:7px;gap:7px}.xray-card{padding:13px}.xray-main-number strong{font-size:26px}.xray-risk{font-size:8px}.xray-card-head h3{font-size:18px}.xray-details b{font-size:14px}.xray-footer a,.xray-footer button{font-size:8px}}
