@@ -4,6 +4,9 @@ on:
     branches: [feature/orbit-browser-only-2026-10-31]
     paths: ['browser/**', '.github/workflows/browser-build.yml']
   workflow_dispatch:
+concurrency:
+  group: browser-build-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
