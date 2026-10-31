@@ -70,4 +70,4 @@ class DeviceClient:
   return val
  def begin(self):return post('/start',{'installation_id':self.installation_id()})
  def poll(self,code,secret):return post('/poll',{'code':code,'secret':secret})
- def whoami(self,token):return post('/me',{'token':token})
+ def whoami(self,token):return post('/me',{'token':token,'installation_id':self.installation_id()})
