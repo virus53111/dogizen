@@ -6,26 +6,34 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import tkinter as tk
 import webbrowser
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from urllib.parse import urlsplit
 
+from auth_client import BrowserAccount
 from engine import pid_alive, request_stop, run_profile, start_background
 from store import Store
 
-BG = "#101322"
-PANEL = "#1a2034"
-TEXT = "#eef1ff"
-MUTED = "#a7afc9"
-ACCENT = "#76e4d4"
+BG = "#0b1117"
+PANEL = "#182329"
+TEXT = "#eee9dc"
+MUTED = "#abb9b7"
+ACCENT = "#e3c68e"
 
 class BrowserUI:
     def __init__(self):
         self.store = Store()
+        self.account = BrowserAccount()
+        self.authorized = False
+        self.plan = 'free'
+        self.entitlement_limit = 3
+        self.pairing = None
         self.root = tk.Tk()
-        self.root.title("Murdilimax Browser — Profiles")
+        self.root.title("Murdilimax Browser — Studio")
         self.root.geometry("1220x750")
         self.root.minsize(920, 620)
         self.root.configure(bg=BG)
@@ -36,21 +44,21 @@ class BrowserUI:
         style.configure(".", background=BG, foreground=TEXT, font=("Arial", 10))
         style.configure("TFrame", background=BG)
         style.configure("TLabel", background=BG, foreground=TEXT)
-        style.configure("TButton", background=PANEL, foreground=TEXT, padding=(12, 9), borderwidth=0)
-        style.map("TButton", background=[("active", "#344963")])
+        style.configure("TButton", background="#23313b", foreground=TEXT, padding=(14, 11), borderwidth=0, relief="flat")
+        style.map("TButton", background=[("active", "#655b44")], foreground=[("active", "#f8ecce")])
         style.configure("Treeview", background=PANEL, foreground=TEXT, fieldbackground=PANEL,
                         rowheight=36, borderwidth=0)
-        style.map("Treeview", background=[("selected", "#315b72")])
-        style.configure("Treeview.Heading", background="#222a45", foreground=TEXT, padding=11)
+        style.map("Treeview", background=[("selected", "#534e41")])
+        style.configure("Treeview.Heading", background="#27323a", foreground=ACCENT, padding=12)
         style.configure("TEntry", fieldbackground=PANEL, foreground=TEXT)
         style.configure("TCombobox", fieldbackground=PANEL, foreground="#111627")
         style.configure("TNotebook", background=BG, borderwidth=0)
-        style.configure("TNotebook.Tab", background=PANEL, foreground=TEXT, padding=(20, 12))
+        style.configure("TNotebook.Tab", background=PANEL, foreground=TEXT, padding=(22, 13))
         title = tk.Frame(self.root, bg=BG)
         title.pack(fill="x", padx=26, pady=(24, 12))
         tk.Label(title, text="◈ MURDILIMAX", fg=ACCENT, bg=BG,
-                 font=("Arial", 20, "bold")).pack(side="left")
-        tk.Label(title, text="BROWSER  /  LOCAL BETA", fg=MUTED, bg=BG,
+                 font=("Georgia", 25, "bold")).pack(side="left")
+        tk.Label(title, text="BROWSER STUDIO  /  PRIVATE WORKSPACE", fg=MUTED, bg=BG,
                  font=("Arial", 10)).pack(side="left", padx=22)
         ttk.Button(title, text="Открыть папку данных", command=self.open_folder).pack(side="right")
         self.tabs = ttk.Notebook(self.root)
@@ -58,15 +66,19 @@ class BrowserUI:
         self.profile_tab = ttk.Frame(self.tabs)
         self.proxy_tab = ttk.Frame(self.tabs)
         self.info_tab = ttk.Frame(self.tabs)
+        self.account_tab = ttk.Frame(self.tabs)
         self.tabs.add(self.profile_tab, text="Профили")
         self.tabs.add(self.proxy_tab, text="Прокси")
+        self.tabs.add(self.account_tab, text="Аккаунт и лицензия")
         self.tabs.add(self.info_tab, text="О программе")
         self.setup_profiles()
         self.setup_proxies()
+        self.setup_account()
         self.setup_info()
         tk.Label(self.root, textvariable=self.state, anchor="w", bg=BG, fg=MUTED, font=("Arial", 10)).pack(fill="x", padx=26, pady=(5, 15))
         self.refresh()
         self.root.after(2500, self.refresh_status)
+        self.root.after(1500, self.restore_login)
 
     def button(self, parent, label, command):
         ttk.Button(parent, text=label, command=lambda: self.call(command)).pack(side="left", padx=(0, 7), pady=5)
@@ -126,6 +138,106 @@ class BrowserUI:
         ttk.Label(self.proxy_tab,
                   text="Проверка TCP подтверждает соединение с сервером, но не проверяет выходной IP. Пароли — только в системном хранилище ключей.",
                   foreground=MUTED, wraplength=1000).pack(anchor="w", padx=14, pady=10)
+
+    def setup_account(self):
+        outer = ttk.Frame(self.account_tab)
+        outer.pack(fill="both", expand=True, padx=32, pady=26)
+        tk.Label(outer, text="YOUR LICENSE / SECURE ACCESS", bg=BG, fg=ACCENT,
+                 font=("Arial", 11, "bold")).pack(anchor="w", pady=(2, 10))
+        tk.Label(outer, text="Один аккаунт. Один компьютер.", bg=BG, fg=TEXT,
+                 font=("Georgia", 26)).pack(anchor="w", pady=(0, 13))
+        tk.Label(outer, text="Вход через браузер: Google, email-код или passkey. Пароль в настольную программу не вводится.",
+                 bg=BG, fg=MUTED, font=("Arial", 11), wraplength=780, justify="left").pack(anchor="w")
+        self.account_message = tk.StringVar(value="Локальная бета · не подключён к аккаунту")
+        self.account_code = tk.StringVar(value="")
+        tk.Label(outer, textvariable=self.account_message, bg=BG, fg=ACCENT,
+                 font=("Arial", 12), wraplength=780, justify="left").pack(anchor="w", pady=(26, 12))
+        tk.Label(outer, textvariable=self.account_code, bg=BG, fg=TEXT,
+                 font=("Georgia", 21, "bold")).pack(anchor="w", pady=(0, 15))
+        bar = ttk.Frame(outer)
+        bar.pack(anchor="w", pady=(7, 15))
+        self.button(bar, "↗ Подключить аккаунт", self.begin_login)
+        self.button(bar, "◈ Открыть личный кабинет",
+                    lambda: webbrowser.open("https://murdilimax-browser.hatchable.site/account.html"))
+        self.button(bar, "↻ Проверить лицензию", self.check_license)
+        self.button(bar, "Выйти", self.logout)
+        tk.Label(outer, text="Личный кабинет пока проходит настройку публичного доступа и Google OAuth. "
+                 "Платные подписки отключены до проверки оплаты Stripe. "
+                 "Текущая бесплатная бета ограничена тремя профилями.",
+                 bg=BG, fg=MUTED, font=("Arial", 10), wraplength=800, justify="left").pack(anchor="w", pady=(12, 0))
+
+    def restore_login(self):
+        if not self.account.load_token():
+            return
+        self.check_license()
+
+    def update_license(self, data):
+        self.authorized = bool(data.get("authorized"))
+        self.plan = data.get("tier", "free") if self.authorized else "free"
+        self.entitlement_limit = min(1000, max(0, int((data.get("entitlements") or {}).get("profiles", 3)))) if self.authorized else 3
+        self.account_message.set("✓ Привязан аккаунт · " + self.plan.upper()
+                                 + " · профилей: " + str(self.entitlement_limit) if self.authorized else "Не авторизован")
+        self.account_code.set("")
+
+    def check_license(self):
+        self.account_message.set("Проверяем серверную лицензию…")
+        def work():
+            try:
+                data = self.account.verify()
+                if not data.get("authorized"):
+                    raise RuntimeError(str(data.get("error", "Лицензия недействительна")))
+                self.root.after(0, lambda: self.update_license(data))
+            except Exception as exc:
+                self.root.after(0, lambda msg=str(exc): self.license_error(msg))
+        threading.Thread(target=work, daemon=True).start()
+
+    def license_error(self, message):
+        self.authorized = False
+        self.plan = "free"
+        self.entitlement_limit = 3
+        self.account_message.set("Не удалось проверить вход: " + message[:130])
+
+    def begin_login(self):
+        if self.pairing is not None:
+            raise ValueError("Подключение уже выполняется")
+        self.account_message.set("Запрашиваем одноразовый код…")
+        def worker():
+            try:
+                data = self.account.begin()
+                code,secret = data["code"],data["device_secret"]
+                self.pairing = (code,secret)
+                self.root.after(0, lambda: self.account_code.set("КОД: " + code))
+                self.root.after(0, lambda: self.account_message.set("Подтвердите этот код в открывшемся браузере"))
+                webbrowser.open(data["verification_uri"])
+                expires = time.monotonic() + min(600,int(data.get("expires_in",600)))
+                while time.monotonic() < expires and self.pairing == (code,secret):
+                    time.sleep(max(3,int(data.get("interval",3))))
+                    result = self.account.poll(code,secret)
+                    if result.get("status") == "authorized":
+                        self.account.save_token(result["token"])
+                        license_data = self.account.verify()
+                        if not license_data.get("authorized"):
+                            raise RuntimeError("Сервер не подтвердил лицензию")
+                        self.root.after(0, lambda d=license_data: self.update_license(d))
+                        return
+                    if result.get("status") in ("expired","consumed"):
+                        break
+                self.root.after(0, lambda: self.account_message.set("Код истёк или подключение отменено"))
+            except Exception as exc:
+                self.root.after(0, lambda msg=str(exc): self.license_error(msg))
+            finally:
+                self.pairing = None
+        threading.Thread(target=worker, daemon=True).start()
+
+    def logout(self):
+        self.pairing = None
+        def worker():
+            try:
+                self.account.revoke()
+            except Exception:
+                self.account.forget_token()
+            self.root.after(0, lambda: self.update_license({}))
+        threading.Thread(target=worker, daemon=True).start()
 
     def setup_info(self):
         intro = ("Murdilimax Browser · независимая настольная бета\n\n"
@@ -243,6 +355,8 @@ class BrowserUI:
         window.columnconfigure(1, weight=1)
 
     def new_profile(self):
+        if len(self.store.profiles()) >= self.entitlement_limit:
+            raise ValueError("Достигнут лимит профилей текущего тарифа (" + str(self.entitlement_limit) + ").")
         self.profile_form()
 
     def edit_profile(self):
@@ -252,7 +366,10 @@ class BrowserUI:
         self.profile_form(item)
 
     def duplicate(self):
-        for pid in self.selected(self.profile_tree):
+        selected = self.selected(self.profile_tree)
+        if len(self.store.profiles()) + len(selected) > self.entitlement_limit:
+            raise ValueError("Недостаточно мест в текущем тарифе: " + str(self.entitlement_limit))
+        for pid in selected:
             self.store.duplicate_profile(pid)
         self.refresh()
         self.state.set("Профили продублированы; cookies и сессии не копировались")
@@ -270,12 +387,18 @@ class BrowserUI:
         self.refresh()
 
     def start(self):
+        if os.environ.get("MURDILIMAX_REQUIRE_LOGIN") == "1" and not self.authorized:
+            raise ValueError("Для запуска требуется вход в аккаунт. Откройте вкладку «Аккаунт и лицензия».")
         selected = self.selected(self.profile_tree)
         if not selected:
             raise ValueError("Выбери профили")
         count = 0
         for pid in selected:
             if not self.running(pid):
+                profile = self.store.get_profile(pid)
+                allowed = self.store.profiles()[:self.entitlement_limit]
+                if profile not in allowed:
+                    raise ValueError("Профиль выходит за пределы вашего лимита")
                 start_background(self.store, pid)
                 count += 1
         self.state.set("Запуск " + str(count) + " браузеров. Первый запуск загружает Camoufox; смотри журнал.")
