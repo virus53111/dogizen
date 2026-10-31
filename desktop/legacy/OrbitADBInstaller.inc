@@ -1,14 +1,6 @@
 // Official Google ADB first-run installer for old Intel macOS.
 // Installs only into user's Application Support, after explicit approval,
 // and verifies a pinned SHA-256 before unpacking. Never uses shell scripts.
-#import <CommonCrypto/CommonDigest.h>
-#import <sys/stat.h>
-
-static NSString *OrbitPrivateAdbPath(void) {
-    NSString *home=NSHomeDirectory();
-    return [home stringByAppendingPathComponent:
-         @"Library/Application Support/Murdilimax Orbit Legacy/platform-tools/adb"];
-}
 -(void)orbitInstallAdb:(id)sender {
     if(self.orbitInstallingAdb){[self orbitToast:@"Установка ADB уже идёт"];return;}
     NSAlert *alert=[[NSAlert alloc]init];
