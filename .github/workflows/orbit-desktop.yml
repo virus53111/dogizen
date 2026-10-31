@@ -1,4 +1,4 @@
-name: Build Murdilimax Orbit macOS
+name: Build Murdilimax Orbit macOS 0.3
 on:
   push:
     branches: [main]
@@ -29,17 +29,30 @@ jobs:
         shell: bash
         run: |
           unzip -q Murdilimax-Orbit-Windows-macOS-Beta.zip -d orbit-build
-          cp desktop/orbit_auth.py desktop/account_ui.py orbit-build/MurdilimaxOrbit/
+          cp desktop/orbit_auth.py desktop/account_ui.py desktop/orbit_runtime.py orbit-build/MurdilimaxOrbit/
           python3 - <<'PY'
           from pathlib import Path
           p=Path("orbit-build/MurdilimaxOrbit/MurdilimaxOrbit.py")
           s=p.read_text(encoding="utf-8")
           marker="\ndef main():"
           if marker not in s: raise RuntimeError("Missing program entry point")
-          s=s.replace(marker,"\nfrom account_ui import attach\nattach(PocketFleet, globals())\n"+marker,1)
+          s=s.replace(marker,"\nfrom account_ui import attach as aa\naa(PocketFleet, globals())\nfrom orbit_runtime import attach as ar\nar(PocketFleet, globals())\n"+marker,1)
           p.write_text(s,encoding="utf-8")
           PY
           python3 -m py_compile orbit-build/MurdilimaxOrbit/*.py
+      - name: Download official Android tools
+        shell: bash
+        run: |
+          mkdir -p orbit-build/MurdilimaxOrbit/tools/platform-tools orbit-build/MurdilimaxOrbit/tools/scrcpy
+          curl -fLsS --retry 3 https://dl.google.com/android/repository/platform-tools-latest-darwin.zip -o /tmp/orbit-platform.zip
+          unzip -q /tmp/orbit-platform.zip -d /tmp/orbit-platform
+          cp -R /tmp/orbit-platform/platform-tools/. orbit-build/MurdilimaxOrbit/tools/platform-tools/
+          arch=aarch64
+          if [[ "${{ matrix.platform }}" == "Intel" ]]; then arch=x86_64; fi
+          curl -fLsS --retry 3 "https://github.com/Genymobile/scrcpy/releases/download/v5.0.1/scrcpy-macos-$arch-v5.0.1.tar.gz" -o /tmp/orbit-scrcpy.tgz
+          mkdir -p /tmp/orbit-scrcpy
+          tar -xzf /tmp/orbit-scrcpy.tgz -C /tmp/orbit-scrcpy
+          cp -R /tmp/orbit-scrcpy/. orbit-build/MurdilimaxOrbit/tools/scrcpy/
       - name: Install build dependencies
         shell: bash
         run: |
@@ -55,6 +68,8 @@ jobs:
             --collect-all camoufox \
             --collect-all playwright \
             --hidden-import keyring.backends.macOS \
+            --add-binary 'tools/platform-tools:tools/platform-tools' \
+            --add-binary 'tools/scrcpy:tools/scrcpy' \
             MurdilimaxOrbit.py
           test -d "dist/Murdilimax Orbit.app"
           "dist/Murdilimax Orbit.app/Contents/MacOS/Murdilimax Orbit" --check
@@ -86,8 +101,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh release view v0.2.0-mac-beta --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
-            gh release create v0.2.0-mac-beta --repo "$GITHUB_REPOSITORY" \
-              --title 'Murdilimax Orbit macOS Beta 0.2' --prerelease \
+          gh release view v0.3.0-mac-beta --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create v0.3.0-mac-beta --repo "$GITHUB_REPOSITORY" \
+              --title 'Murdilimax Orbit macOS Beta 0.3' --prerelease \
               --notes 'Experimental native .app DMG installers for Apple Silicon and Intel. Unsigned by an Apple Developer ID and not notarized. Requires Android Studio and scrcpy for Android operations. Email-code sign-in requires public account service; Google login pending operator setup.'
-          gh release upload v0.2.0-mac-beta artifacts/*.dmg --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload v0.3.0-mac-beta artifacts/*.dmg --repo "$GITHUB_REPOSITORY" --clobber
