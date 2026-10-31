@@ -60,7 +60,7 @@
       <div class="st-stat-small"><span>ОТКЛОНЕНИЕ ОТ VWAP</span><b id="stDeviation">—</b></div>
       <div class="st-stat-small"><span>ОБЪЁМ ПОСЛ. СВЕЧИ</span><b id="stVolume">—</b></div>
       <div class="st-plan"><div class="st-plan-head"><strong>ENTRY / RISK / TARGET</strong><span id="stPlanMode">AUTO</span></div>
-       <label>НАПРАВЛЕНИЕ<select id="stDirection"><option value="BUY">LONG (BUY)</option><option value="SELL">SHORT (SELL)</option></select></label>
+       <label>НАПРАВЛЕНИЕ<select id="stDirection"><option value="BUY">LONG (BUY)</option><option value="SELL">SELL / СНИЖЕНИЕ</option></select></label>
        <label>ENTRY<input type="number" step="any" min="0" id="stEntry" placeholder="—"/></label>
        <label>STOP LOSS<input type="number" step="any" min="0" id="stStop" placeholder="—"/></label>
        <label>TAKE PROFIT<input type="number" step="any" min="0" id="stTp" placeholder="—"/></label>
@@ -72,7 +72,7 @@
   </div>
   <div class="st-footer"><div id="stDataSource">ИСТОЧНИК: MEXC SPOT API V3 / ТОЛЬКО ЗАКРЫТЫЕ СВЕЧИ</div><div>VWAP HLC3 · ПОЛОСЫ 1σ И 2σ · UTC СЕССИЯ</div></div>
  </div>
- <p class="st-disclaimer">Метки BUY / SELL — эвристические условия пересечения VWAP на закрытых свечах с повышенным объёмом, не торговые рекомендации и не прогноз. Прямоугольники прибыли и риска показывают гипотетический план, а не исполненные сделки. Для 4h VWAP привязан к неделе UTC, для 1D — к месяцу UTC. Комиссии, спред и проскальзывание в зонах сделки не учтены.</p>
+ <p class="st-disclaimer">Метки BUY / SELL — эвристические условия пересечения VWAP на закрытых свечах с повышенным объёмом, не торговые рекомендации и не прогноз. На спотовом рынке SELL означает медвежий сценарий или продажу имеющегося актива, а не возможность открыть шорт. Прямоугольники прибыли и риска показывают гипотетический план, а не исполненные сделки. Для 4h VWAP привязан к неделе UTC, для 1D — к месяцу UTC. Комиссии, спред и проскальзывание в зонах сделки не учтены.</p>
 </section>
 <section id="watchtower" class="tw-section">
  <div class="section-heading"><div><div class="section-kicker">01 / PERSONAL POSITION INTELLIGENCE</div><h2>CENA <em>WATCHTOWER</em> <span class="tw-edition">MY POSITIONS / BETA</span></h2>

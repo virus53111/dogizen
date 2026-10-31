@@ -160,7 +160,7 @@
   $("stLossGain").textContent=valid?
     (100*Math.abs(p.stop-p.entry)/p.entry).toFixed(2)+"% / "+(100*Math.abs(p.tp-p.entry)/p.entry).toFixed(2)+"%":"—";
   $("stPlanHint").textContent=state.mode==="MANUAL"?
-   "Меняй уровни в полях или выбери ВХОД / СТОП / ЦЕЛЬ и нажми на график. План не является сигналом биржи.":
+   (valid?"Меняй уровни в полях или выбери ВХОД / СТОП / ЦЕЛЬ и нажми на график. План не является сигналом биржи.":"Проверь уровни: для BUY стоп должен быть ниже входа, цель выше. Для SELL — наоборот."):
    "В AUTO уровни строятся только для свежего сигнала по закрытым свечам. Иначе — WAIT. Не учитывает реальные издержки исполнения.";
  }
  function updatePlanFields(){
@@ -181,7 +181,7 @@
   if(!state.data)return;
   state.mode=mode;state.selectedField=null;
   if(mode==="MANUAL"){
-   const last=state.data.bars.at(-1),base=state.plan;
+   const last=state.data.bars.at(-1),base=state.plan?.auto?null:state.plan;
    const spread=Math.max(last.c*.012,(last.h-last.l)*1.5,last.c*.0003);
    state.plan={side:base?.side||"BUY",entry:base?.entry||last.c,
     stop:base?.stop||last.c-spread,tp:base?.tp||last.c+2*spread,auto:false};
