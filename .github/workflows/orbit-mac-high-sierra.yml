@@ -53,9 +53,9 @@ jobs:
           PLIST
           plutil -lint "$APP/Contents/Info.plist"
           file "$APP/Contents/MacOS/Murdilimax Orbit Legacy"
-          otool -l "$APP/Contents/MacOS/Murdilimax Orbit Legacy" | grep -A5 'LC_BUILD_VERSION' | head -6
+          otool -l "$APP/Contents/MacOS/Murdilimax Orbit Legacy" | grep -E -A5 'LC_BUILD_VERSION|LC_VERSION_MIN_MACOSX' | head -12 || true
           test "$(file "$APP/Contents/MacOS/Murdilimax Orbit Legacy" | grep -c x86_64)" -gt 0
-          DEPLOY_MIN="$(otool -l "$APP/Contents/MacOS/Murdilimax Orbit Legacy" | awk '/LC_BUILD_VERSION/{s=1} s&&/minos/{print $2;exit}')"
+          DEPLOY_MIN="$(otool -l "$APP/Contents/MacOS/Murdilimax Orbit Legacy" | awk '/cmd LC_BUILD_VERSION|cmd LC_VERSION_MIN_MACOSX/{s=1;next} s&&($1=="minos"||$1=="version"){print $2;exit}')"
           echo "Minimum macOS: $DEPLOY_MIN"
           test "$DEPLOY_MIN" = "10.13"
       - name: Sign ad-hoc and create drag-and-drop DMG
