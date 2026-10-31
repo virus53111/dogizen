@@ -60,18 +60,6 @@ footer{border-top:1px solid #eceaf0;background:white;padding:32px 0}.footer-inne
 <h1>Beautiful online forms.<br><em>Better conversations.</em></h1>
 <p class="hero-desc">Create surveys, contact forms and feedback forms in minutes. Build multi-page forms, personalize questions and collect answers — without writing code.</p>
 <div class="cta-row"><a class="btn btn-primary" href="https://murdilimax-forms.hatchable.site/login">Create a free form <span aria-hidden="true">→</span></a><a class="btn btn-plain" href="#how">See how it works</a></div><p class="fine">Free to get started · No password required</p>
-<a href="/stats/" id="traffic-counter" aria-label="View site traffic statistics" style="display:inline-flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;margin:18px auto 3px;padding:11px 19px;background:#f1eeff;border:1px solid #dfd9ff;border-radius:30px;color:#5142c9;font:700 13px system-ui,sans-serif;text-decoration:none">
-<span aria-hidden="true">◉</span>
-<span>Посещения сайта: <strong id="visit-number" aria-live="polite">—</strong></span>
-<span aria-hidden="true">↗</span>
-<span>Статистика</span>
-</a>
-<script>
-fetch('https://murdilimax-forms.hatchable.site/api/public-traffic-stats',{credentials:'omit'})
-.then(r=>{if(!r.ok)throw new Error('unavailable');return r.json()})
-.then(d=>{if(d.ok)document.getElementById('visit-number').textContent=new Intl.NumberFormat('ru-RU').format(d.total.visits||0)})
-.catch(()=>{document.getElementById('visit-number').textContent='—'});
-</script>
 <div class="doodles" aria-hidden="true">
 <svg class="doodle" viewBox="0 0 150 100"><path class="ink" d="M10 40 C8 10 125 -4 127 33 C126 49 110 62 90 67 L90 82 L62 67 C24 64 12 56 10 40Z"/><text x="35" y="41" transform="rotate(-7 35 41)" fill="#252327">yes!</text><path class="ink purple" d="M115 15l5 -8m6 18l10 -2m-20 0l7 9"/></svg>
 <svg class="doodle" viewBox="0 0 150 100"><path class="ink" d="M16 58 C12 12 100 8 125 38 C141 68 88 92 56 75 L28 90 L33 69Z"/><path class="ink purple" d="M50 48l15 14l33 -32"/><path class="ink" d="M37 8l-4 -8m61 2l5 -7"/><path class="gold" d="M119 8l3 6 7 1-6 4 1 7-5-4-6 3 2-7-5-4 7-1z"/></svg>
