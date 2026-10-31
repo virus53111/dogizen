@@ -113,6 +113,7 @@ class BrowserUI:
         bar = ttk.Frame(self.proxy_tab)
         bar.pack(fill="x", padx=12, pady=10)
         self.button(bar, "＋ Добавить прокси", self.new_proxy)
+        self.button(bar, "✎ Изменить прокси", self.edit_proxy)
         self.button(bar, "✕ Удалить прокси", self.remove_proxy)
         self.button(bar, "Проверить TCP-подключение", self.check_proxy)
         self.proxy_tree = ttk.Treeview(self.proxy_tab, columns=("name", "server", "auth"), show="headings")
@@ -121,6 +122,7 @@ class BrowserUI:
             self.proxy_tree.heading(k, text=label)
             self.proxy_tree.column(k, width=width)
         self.proxy_tree.pack(fill="both", expand=True, padx=12, pady=8)
+        self.proxy_tree.bind("<Double-1>", lambda _: self.call(self.edit_proxy))
         ttk.Label(self.proxy_tab,
                   text="Проверка TCP подтверждает соединение с сервером, но не проверяет выходной IP. Пароли — только в системном хранилище ключей.",
                   foreground=MUTED, wraplength=1000).pack(anchor="w", padx=14, pady=10)
@@ -299,8 +301,20 @@ class BrowserUI:
             self.state.set("Импортировано профилей: " + str(count))
 
     def new_proxy(self):
+        self.proxy_form()
+
+    def edit_proxy(self):
+        pid = self.one(self.proxy_tree, "прокси")
+        proxy = next((p for p in self.store.proxies() if p["id"] == pid), None)
+        if proxy is None:
+            raise ValueError("Прокси не найден")
+        if any(self.running(p["id"]) and p.get("proxy_id") == pid for p in self.store.profiles()):
+            raise ValueError("Останови использующие этот прокси профили")
+        self.proxy_form(proxy)
+
+    def proxy_form(self, existing=None):
         window = tk.Toplevel(self.root)
-        window.title("Новый прокси")
+        window.title("Изменить прокси" if existing else "Новый прокси")
         window.configure(bg=BG)
         window.geometry("650x340")
         window.transient(self.root)
@@ -310,16 +324,22 @@ class BrowserUI:
             ("name", "Название"), ("server", "URL: http://host:port или socks5://host:port"),
             ("username", "Логин (необязательно)"), ("password", "Пароль (сохраняется в Keychain)")]):
             ttk.Label(window, text=label).grid(row=i, column=0, padx=12, pady=14, sticky="w")
-            v = tk.StringVar()
+            v = tk.StringVar(value=existing.get(field, "") if existing and field != "password" else "")
             ttk.Entry(window, textvariable=v, show="*" if field == "password" else "", width=35).grid(row=i, column=1, padx=15)
             fields[field] = v
         def save():
             try:
-                self.store.add_proxy(**{k: v.get() for k, v in fields.items()})
+                values = {k: v.get() for k, v in fields.items()}
+                if existing:
+                    self.store.update_proxy(existing["id"], **values)
+                else:
+                    self.store.add_proxy(**values)
                 window.destroy()
                 self.refresh()
             except Exception as exc:
                 messagebox.showerror("Прокси", str(exc), parent=window)
+        if existing:
+            ttk.Label(window, text="Оставь пароль пустым, чтобы сохранить прежний.", foreground=MUTED).grid(row=5, column=0, columnspan=2, padx=15)
         ttk.Button(window, text="Сохранить", command=save).grid(row=4, column=1, sticky="e", pady=16)
         window.columnconfigure(1, weight=1)
 
