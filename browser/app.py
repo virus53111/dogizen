@@ -401,6 +401,11 @@ def main():
     if args.selftest:
         selftest()
     elif args.run_profile:
+        if getattr(sys, "frozen", False):
+            log = Store().root / "logs" / (args.run_profile + ".log")
+            output = log.open("a", encoding="utf-8")
+            sys.stdout = output
+            sys.stderr = output
         try:
             run_profile(args.run_profile)
         except Exception as exc:
