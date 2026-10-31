@@ -1,0 +1,93 @@
+name: Build Murdilimax Orbit macOS
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/orbit-desktop.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  mac:
+    name: macOS / ${{ matrix.platform }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            platform: Apple-Silicon
+          - runner: macos-15-intel
+            platform: Intel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Prepare desktop source
+        shell: bash
+        run: |
+          unzip -q Murdilimax-Orbit-Windows-macOS-Beta.zip -d orbit-build
+          cp desktop/orbit_auth.py desktop/account_ui.py orbit-build/MurdilimaxOrbit/
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path("orbit-build/MurdilimaxOrbit/MurdilimaxOrbit.py")
+          s=p.read_text(encoding="utf-8")
+          marker="\ndef main():"
+          if marker not in s: raise RuntimeError("Missing program entry point")
+          s=s.replace(marker,"\nfrom account_ui import attach\nattach(PocketFleet, globals())\n"+marker,1)
+          p.write_text(s,encoding="utf-8")
+          PY
+          python3 -m py_compile orbit-build/MurdilimaxOrbit/*.py
+      - name: Install build dependencies
+        shell: bash
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install pyinstaller keyring camoufox
+      - name: Bundle native macOS application
+        shell: bash
+        run: |
+          cd orbit-build/MurdilimaxOrbit
+          python3 -m PyInstaller --noconfirm --clean --windowed \
+            --name 'Murdilimax Orbit' \
+            --osx-bundle-identifier 'com.murdilimax.orbit' \
+            --collect-all camoufox \
+            --collect-all playwright \
+            --hidden-import keyring.backends.macOS \
+            MurdilimaxOrbit.py
+          test -d "dist/Murdilimax Orbit.app"
+          "dist/Murdilimax Orbit.app/Contents/MacOS/Murdilimax Orbit" --check
+          codesign --force --deep --sign - "dist/Murdilimax Orbit.app"
+          mkdir -p dmgroot
+          cp -R "dist/Murdilimax Orbit.app" dmgroot/
+          ln -s /Applications dmgroot/Applications
+          hdiutil create -ov -fs HFS+ \
+            -volname "Murdilimax Orbit" -srcfolder dmgroot -format UDZO \
+            "Murdilimax-Orbit-macOS-${{ matrix.platform }}.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Orbit-macOS-${{ matrix.platform }}
+          path: orbit-build/MurdilimaxOrbit/*.dmg
+          if-no-files-found: error
+          retention-days: 30
+  release:
+    needs: mac
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Orbit-macOS-*
+          merge-multiple: true
+          path: artifacts
+      - name: Publish beta DMGs to GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          gh release view v0.2.0-mac-beta --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create v0.2.0-mac-beta --repo "$GITHUB_REPOSITORY" \
+              --title 'Murdilimax Orbit macOS Beta 0.2' --prerelease \
+              --notes 'Experimental native .app DMG installers for Apple Silicon and Intel. Unsigned by an Apple Developer ID and not notarized. Requires Android Studio and scrcpy for Android operations. Email-code sign-in requires public account service; Google login pending operator setup.'
+          gh release upload v0.2.0-mac-beta artifacts/*.dmg --repo "$GITHUB_REPOSITORY" --clobber
