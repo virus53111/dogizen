@@ -1,0 +1,39 @@
+name: Validate Mobile + SEO release
+on:
+  push:
+    branches: [feature/mobile-seo-icon-2026-10-31]
+    paths: ['mobile/**','assets/**','tools/**','*.html','guides/**','privacy/**','robots.txt','sitemap.xml','favicon.svg','.github/workflows/site-validation.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  seo-mobile:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Site SEO, manifests and link checks
+        run: |
+          python tools/check_site.py
+          node --check mobile/mobile.js
+          node --check mobile/sw.js
+          node --check bright.js
+      - name: Render icons and verify generated manifest assets
+        run: |
+          python -m pip install 'pillow>=10,<13' 'cairosvg>=2.7,<3'
+          python tools/build_brand_assets.py
+          python - <<'PY'
+          from pathlib import Path
+          from PIL import Image
+          paths = ["favicon.png", "apple-touch-icon.png", "mobile/icon-180.png", "mobile/icon-192.png", "mobile/icon-512.png", "og-image.png", "assets/generated/murdilimax.ico"]
+          for s in paths:
+              p = Path(s)
+              assert p.is_file() and p.stat().st_size > 200, s
+              Image.open(p).verify()
+          print("All PNG/ICO assets generated and validated")
+          PY
