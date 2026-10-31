@@ -1,0 +1,94 @@
+name: Build Murdilimax Orbit Legacy for macOS High Sierra 10.13 Intel
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/legacy/**'
+      - '.github/workflows/orbit-mac-high-sierra.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  legacy:
+    runs-on: macos-15-intel
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect compiler and target
+        shell: bash
+        run: |
+          uname -m
+          xcrun --find clang
+          xcrun --show-sdk-version
+      - name: Compile native Cocoa/WebKit Intel app targeting macOS 10.13
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="build/Murdilimax Orbit Legacy.app"
+          mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
+          xcrun clang \
+            -arch x86_64 -mmacosx-version-min=10.13 \
+            -std=gnu11 -fobjc-arc -fmodules \
+            -Werror=unguarded-availability -O2 \
+            -framework Cocoa -framework WebKit \
+            -o "$APP/Contents/MacOS/Murdilimax Orbit Legacy" \
+            desktop/legacy/OrbitLegacy.m
+          cat > "$APP/Contents/Info.plist" <<'PLIST'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0"><dict>
+            <key>CFBundleExecutable</key><string>Murdilimax Orbit Legacy</string>
+            <key>CFBundleIdentifier</key><string>com.murdilimax.orbit.legacy</string>
+            <key>CFBundleName</key><string>Murdilimax Orbit Legacy</string>
+            <key>CFBundleDisplayName</key><string>Murdilimax Orbit Legacy</string>
+            <key>CFBundlePackageType</key><string>APPL</string>
+            <key>CFBundleShortVersionString</key><string>0.5.0</string>
+            <key>CFBundleVersion</key><string>5</string>
+            <key>LSMinimumSystemVersion</key><string>10.13</string>
+            <key>NSHighResolutionCapable</key><true/>
+            <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
+            <key>NSAppTransportSecurity</key><dict>
+              <key>NSAllowsArbitraryLoads</key><false/>
+            </dict>
+          </dict></plist>
+          PLIST
+          plutil -lint "$APP/Contents/Info.plist"
+          file "$APP/Contents/MacOS/Murdilimax Orbit Legacy"
+          otool -l "$APP/Contents/MacOS/Murdilimax Orbit Legacy" | grep -A5 'LC_BUILD_VERSION' | head -6
+          test "$(file "$APP/Contents/MacOS/Murdilimax Orbit Legacy" | grep -c x86_64)" -gt 0
+          DEPLOY_MIN="$(otool -l "$APP/Contents/MacOS/Murdilimax Orbit Legacy" | awk '/LC_BUILD_VERSION/{s=1} s&&/minos/{print $2;exit}')"
+          echo "Minimum macOS: $DEPLOY_MIN"
+          test "$DEPLOY_MIN" = "10.13"
+      - name: Sign ad-hoc and create drag-and-drop DMG
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="build/Murdilimax Orbit Legacy.app"
+          codesign --force --sign - "$APP"
+          codesign --verify --deep --verbose "$APP"
+          "$APP/Contents/MacOS/Murdilimax Orbit Legacy" --check
+          mkdir -p build/dmg
+          ditto "$APP" "build/dmg/Murdilimax Orbit Legacy.app"
+          ln -s /Applications build/dmg/Applications
+          hdiutil create -volname "Murdilimax Orbit Legacy" \
+            -srcfolder build/dmg -ov -format UDZO \
+            "build/Murdilimax-Orbit-Legacy-macOS-10.13-Intel.dmg"
+          shasum -a 256 "build/Murdilimax-Orbit-Legacy-macOS-10.13-Intel.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Orbit-Legacy-HighSierra-Intel
+          path: build/Murdilimax-Orbit-Legacy-macOS-10.13-Intel.dmg
+          if-no-files-found: error
+          retention-days: 90
+      - name: Publish GitHub prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release view v0.5.0-mac-high-sierra-beta --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create v0.5.0-mac-high-sierra-beta --repo "$GITHUB_REPOSITORY" --prerelease \
+              --title "Murdilimax Orbit Legacy · Intel macOS 10.13+" \
+              --notes "Experimental High Sierra 10.13 variant for old Intel Macs, built on macOS 15. Old WebKit on unpatched macOS is unsafe for sensitive online accounts. Requires macOS 10.13 or later. Contains two isolated nonpersistent WebKit sessions and live movable/resizable ADB Android windows (one in free beta). Not Camoufox/fingerprint-spoofing. Does not bundle Android emulator or SDK. Ad-hoc signed, not Apple notarized. Built on macOS 15 for a 10.13 minimum; NOT YET VERIFIED ON ACTUAL CATALINA HARDWARE."
+          gh release upload v0.5.0-mac-high-sierra-beta \
+            build/Murdilimax-Orbit-Legacy-macOS-10.13-Intel.dmg \
+            --repo "$GITHUB_REPOSITORY" --clobber
