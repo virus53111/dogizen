@@ -143,6 +143,23 @@ class Store:
         self._write("proxies", all_proxies)
         return obj
 
+    def update_proxy(self, proxy_id, name, server, username="", password=""):
+        if not name.strip() or not valid_proxy(server):
+            raise ValueError("Invalid proxy name or server URL")
+        items = self.proxies()
+        obj = next((p for p in items if p["id"] == proxy_id), None)
+        if obj is None:
+            raise ValueError("Proxy not found")
+        if password:
+            try:
+                import keyring
+                keyring.set_password("Murdilimax Browser Proxy", proxy_id, password)
+            except Exception as e:
+                raise RuntimeError("Cannot update credentials in system keychain") from e
+        obj.update(name=name.strip()[:100], server=server, username=username.strip())
+        self._write("proxies", items)
+        return obj
+
     def delete_proxy(self, proxy_id):
         if any(p.get("proxy_id") == proxy_id for p in self.profiles()):
             raise ValueError("Proxy is assigned to a profile; unassign it first")
