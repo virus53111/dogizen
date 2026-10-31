@@ -1,0 +1,53 @@
+name: Build Android mobile companion beta APK
+on:
+  push:
+    branches: [feature/mobile-seo-icon-2026-10-31, main]
+    paths:
+      - 'android/**'
+      - 'mobile/**'
+      - 'assets/murdilimax-icon.svg'
+      - 'tools/build_brand_assets.py'
+      - '.github/workflows/android-mobile.yml'
+  workflow_dispatch:
+concurrency:
+  group: android-mobile-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  android-apk:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      # Ubuntu runners already provide Android cmdline tools and SDK_ROOT.
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.10.2'
+      - name: Install Android 35 SDK
+        run: |
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-35" "build-tools;35.0.0"
+      - name: Render neon Murdilimax icon
+        run: |
+          python -m pip install 'pillow>=10,<13' 'cairosvg>=2.7,<3'
+          python tools/build_brand_assets.py
+          mkdir -p android/app/src/main/res/drawable-nodpi
+          cp assets/generated/app-icon-512.png android/app/src/main/res/drawable-nodpi/app_icon.png
+      - name: Build unsigned-for-production, debug-signed APK
+        run: gradle -p android :app:assembleDebug --no-daemon --stacktrace
+      - name: Verify APK
+        run: |
+          test -s android/app/build/outputs/apk/debug/app-debug.apk
+          unzip -l android/app/build/outputs/apk/debug/app-debug.apk | grep -q AndroidManifest.xml
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Murdilimax-Mobile-Android-Companion-Preview-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 30

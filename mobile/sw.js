@@ -1,6 +1,6 @@
 /* Offline access only to the mobile companion app shell. */
-const CACHE='murdilimax-mobile-v1';
-const SHELL=['/mobile/','/mobile/mobile.css?v=1','/mobile/mobile.js?v=1','/mobile/manifest.webmanifest','/mobile/icon-192.png','/mobile/icon-512.png','/assets/murdilimax-icon.svg'];
+const CACHE='murdilimax-mobile-v2';
+const SHELL=['/mobile/','/mobile/mobile.css?v=2','/mobile/mobile.js?v=2','/mobile/manifest.webmanifest','/mobile/icon-192.png','/mobile/icon-512.png','/assets/murdilimax-icon.svg'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()))});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener('fetch',e=>{
