@@ -171,7 +171,7 @@ static NSString *OrbitSavePath(void){
 -(void)windowWillClose:(NSNotification *)notification{[self.timer invalidate];self.timer=nil;}
 @end
 
-@interface OrbitMain : NSObject<NSApplicationDelegate>
+@interface OrbitMain : NSObject<NSApplicationDelegate,WKScriptMessageHandler,WKNavigationDelegate>
 @property(nonatomic,strong) NSWindow *window;
 @property(nonatomic,strong) NSTextField *status;
 @property(nonatomic,strong) NSTextField *browserName;
@@ -180,75 +180,16 @@ static NSString *OrbitSavePath(void){
 @property(nonatomic,strong) NSMutableArray<OrbitPhone*> *phones;
 @property(nonatomic,strong) NSMutableDictionary<NSString*,NSWindow*> *browsers;
 @property(nonatomic,strong) NSMutableDictionary<NSString*,WKWebsiteDataStore*> *browserStores;
+@property(nonatomic,strong) WKWebView *dashboard;
+@property(nonatomic,strong) NSTimer *orbitDashboardTimer;
+@property(nonatomic,strong) NSMutableArray<NSString*> *orbitDeviceSerials;
+@property(nonatomic,strong) NSMutableSet<NSString*> *orbitBusySerials;
 @end
 
 @implementation OrbitMain
+#import "OrbitDashboard.inc"
 -(void)applicationDidFinishLaunching:(NSNotification*)notification{
-    self.phones=[NSMutableArray array];self.browsers=[NSMutableDictionary dictionary];
-    self.browserStores=[NSMutableDictionary dictionary];
-    self.window=[[NSWindow alloc]initWithContentRect:NSMakeRect(250,180,730,610)
-      styleMask:NSWindowStyleMaskTitled|NSWindowStyleMaskClosable|NSWindowStyleMaskMiniaturizable|
-       NSWindowStyleMaskResizable backing:NSBackingStoreBuffered defer:NO];
-    self.window.title=@"Murdilimax Orbit Legacy · macOS 10.15+";
-    self.window.minSize=NSMakeSize(620,550);
-    NSView *content=self.window.contentView;
-    content.wantsLayer=YES;
-    content.layer.backgroundColor=[[NSColor colorWithCalibratedRed:.075 green:.075 blue:.15 alpha:1] CGColor];
-    NSStackView *stack=[[NSStackView alloc]init];
-    stack.orientation=NSUserInterfaceLayoutOrientationVertical;
-    stack.alignment=NSLayoutAttributeLeading;
-    stack.spacing=13;
-    stack.edgeInsets=NSEdgeInsetsMake(20,22,20,22);
-    stack.translatesAutoresizingMaskIntoConstraints=NO;
-    [content addSubview:stack];
-    [NSLayoutConstraint activateConstraints:@[
-      [stack.topAnchor constraintEqualToAnchor:content.topAnchor constant:12],
-      [stack.leadingAnchor constraintEqualToAnchor:content.leadingAnchor constant:8],
-      [stack.trailingAnchor constraintLessThanOrEqualToAnchor:content.trailingAnchor constant:-8]
-    ]];
-    [stack addArrangedSubview:OrbitLabel(@"◈  MURDILIMAX  ORBIT  /  LEGACY",22,YES)];
-    NSOperatingSystemVersion version=NSProcessInfo.processInfo.operatingSystemVersion;
-    [stack addArrangedSubview:OrbitLabel([NSString stringWithFormat:
-      @"Облегчённый Intel-клиент для старых Mac. Обнаружена macOS %ld.%ld. Без установки Python.",
-      (long)version.majorVersion,(long)version.minorVersion],12,NO)];
-    [stack addArrangedSubview:OrbitRow(@[
-        OrbitButton(@"Мой аккаунт ↗",self,@selector(openAccount:)),
-        OrbitButton(@"Диагностика",self,@selector(diagnose:)),
-        OrbitButton(@"Инструкция ↗",self,@selector(openHelp:))
-    ])];
-    [stack addArrangedSubview:OrbitLabel(@"БРАУЗЕРНЫЕ СЕССИИ",15,YES)];
-    [stack addArrangedSubview:OrbitLabel(@"Отдельные временные профили WebKit: cookies разных окон не смешиваются. Это не Camoufox и не антидетект.",11,NO)];
-    self.browserName=[[NSTextField alloc]initWithFrame:NSMakeRect(0,0,155,25)];
-    self.browserName.stringValue=@"Профиль 1";
-    [self.browserName.widthAnchor constraintEqualToConstant:155].active=YES;
-    self.browserUrl=[[NSTextField alloc]initWithFrame:NSMakeRect(0,0,255,25)];
-    self.browserUrl.stringValue=@"https://example.org";
-    [self.browserUrl.widthAnchor constraintEqualToConstant:255].active=YES;
-    [stack addArrangedSubview:OrbitRow(@[
-      OrbitLabel(@"Имя:",12,NO),self.browserName,
-      OrbitLabel(@"URL:",12,NO),self.browserUrl
-    ])];
-    [stack addArrangedSubview:OrbitButton(@"＋ Открыть отдельный браузер",self,@selector(newBrowser:))];
-    [stack addArrangedSubview:OrbitLabel(@"ANDROID · НАСТОЯЩИЕ ЭКРАНЫ",15,YES)];
-    [stack addArrangedSubview:OrbitLabel(@"Управление подключёнными Android через ADB. Каждый телефон — отдельное свободно перемещаемое и масштабируемое окно.",11,NO)];
-    [stack addArrangedSubview:OrbitRow(@[
-      OrbitButton(@"◉ Открыть подключённые телефоны",self,@selector(openPhones:)),
-      OrbitButton(@"▦ Сетка",self,@selector(gridPhones:)),
-      OrbitButton(@"☷ В ряд",self,@selector(rowPhones:))
-    ])];
-    self.avdName=[[NSTextField alloc]initWithFrame:NSMakeRect(0,0,190,25)];
-    self.avdName.placeholderString=@"Например: Pixel_2";
-    [self.avdName.widthAnchor constraintEqualToConstant:190].active=YES;
-    [stack addArrangedSubview:OrbitRow(@[
-      OrbitLabel(@"AVD:",12,NO),self.avdName,
-      OrbitButton(@"Запустить установленный AVD",self,@selector(startAVD:))
-    ])];
-    [stack addArrangedSubview:OrbitLabel(@"Для виртуальных устройств необходим совместимый со старой macOS Android SDK. Новые версии Android Studio обычно не подходят.",10,NO)];
-    self.status=OrbitLabel(@"Готов к работе. Нажми «Диагностика» для проверки Android.",12,YES);
-    self.status.textColor=[NSColor colorWithCalibratedRed:.62 green:.88 blue:.75 alpha:1];
-    [stack addArrangedSubview:self.status];
-    [self.window makeKeyAndOrderFront:nil];
-    [NSApp activateIgnoringOtherApps:YES];
+    [self orbitSetupDashboard];
 }
 -(BOOL)applicationShouldTerminateAfterLastWindowClosed:(NSApplication*)sender{return YES;}
 -(void)openAccount:(id)sender{
