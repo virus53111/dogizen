@@ -103,8 +103,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
-          gh release view v0.3.0-mac-beta --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
-            gh release create v0.3.0-mac-beta --repo "$GITHUB_REPOSITORY" \
-              --title 'Murdilimax Orbit macOS Beta 0.3' --prerelease \
+          gh release view v0.4.0-mac-beta --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create v0.4.0-mac-beta --repo "$GITHUB_REPOSITORY" \
+              --title 'Murdilimax Orbit macOS Beta 0.4' --prerelease \
               --notes 'Experimental native .app DMG installers for Apple Silicon and Intel. Unsigned by an Apple Developer ID and not notarized. Requires Android Studio and scrcpy for Android operations. Email-code sign-in requires public account service; Google login pending operator setup.'
-          gh release upload v0.3.0-mac-beta artifacts/*.dmg --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload v0.4.0-mac-beta artifacts/*.dmg --repo "$GITHUB_REPOSITORY" --clobber
