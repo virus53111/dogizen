@@ -4,7 +4,7 @@
 
 В левом верхнем углу Mac нажми ** → Об этом Mac (About This Mac)**. Запиши версию macOS, модель и объём памяти.
 
-Поддерживаемая цель для Legacy-сборки: **Intel + macOS Catalina 10.15 и выше**.
+Поддерживаемые экспериментальные цели: **Intel + macOS High Sierra 10.13 и выше**. Предпочтительно Catalina 10.15+, если твой Mac поддерживает её.
 
 - MacBook Pro / Air 2012: как правило, официально максимум Catalina 10.15.
 - MacBook Pro / Air 2013–2014: многие модели могут официально использовать Big Sur 11.
@@ -17,6 +17,10 @@ Apple: https://support.apple.com/en-us/102662
 Скачать именно **Murdilimax-Orbit-Legacy-macOS-10.15-Intel.dmg**:
 
 https://github.com/virus53111/dogizen/releases/download/v0.5.0-mac-legacy-beta/Murdilimax-Orbit-Legacy-macOS-10.15-Intel.dmg
+
+Прямая ссылка на High Sierra 10.13 / Mojave 10.14:
+
+https://github.com/virus53111/dogizen/releases/download/v0.5.0-mac-high-sierra-beta/Murdilimax-Orbit-Legacy-macOS-10.13-Intel.dmg
 
 Дважды кликни DMG, затем перетащи **Murdilimax Orbit Legacy.app → Applications (Программы)**. Открывай приложение из Applications.
 
@@ -37,7 +41,7 @@ https://github.com/virus53111/dogizen/releases/download/v0.5.0-mac-legacy-beta/M
 
 Для физических Android-телефонов: установи ADB версии, совместимой со старой macOS, включи USB debugging, подтверди доступ на Android и нажми **«Открыть подключённые телефоны»**.
 
-Для виртуального Android: необходима *старшая совместимая с твоей macOS версия Android SDK/Emulator* с установленным Android AVD. Современный Android Studio требует macOS 12 и более современный Intel/M1 CPU, поэтому его нельзя поставить на Catalina как обычную актуальную версию. Устаревший Android SDK следует использовать только в тестовой изолированной среде.
+Для виртуального Android: необходима *старшая совместимая с твоей macOS версия Android SDK/Emulator* с установленным Android AVD. Современный Android Studio требует macOS 12 и более современный Intel/M1 CPU, поэтому его нельзя поставить на High Sierra/Catalina как обычную актуальную версию. Устаревший Android SDK следует использовать только в тестовой изолированной среде.
 
 После подключения телефон открывается в **настоящем отдельном окне**, которое можно двигать и менять по размеру. Клик отправляет касание через ADB. Обновление изображения около 1,6 секунды (не поток 60 FPS).
 
@@ -55,4 +59,4 @@ https://github.com/virus53111/dogizen/releases/download/v0.5.0-mac-legacy-beta/M
 
 ## 7. Совместимость ещё не проверена на физическом Mac
 
-DMG скомпилирован на CI под Intel c `-mmacosx-version-min=10.15`, и проверены заголовки бинарного файла. Но сборка происходила на macOS 15. Проверка с настоящими Catalina и Big Sur ещё обязательна. Если Mac пишет «Программа не поддерживается», пришли: модель, macOS, ошибку и запускалась ли программа при открытии из Applications. Не отправляй пароли или токены.
+DMG скомпилированы на CI под Intel c минимальными версиями macOS `10.13` и `10.15`; проверены заголовки бинарных файлов. Но сборка происходила на macOS 15. Проверка с настоящими Catalina и Big Sur ещё обязательна. Если Mac пишет «Программа не поддерживается», пришли: модель, macOS, ошибку и запускалась ли программа при открытии из Applications. Не отправляй пароли или токены.
