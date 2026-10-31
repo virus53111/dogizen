@@ -10,14 +10,17 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.webkit.WebChromeClient;
 import android.webkit.WebResourceRequest;
+import android.webkit.ValueCallback;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 public final class MainActivity extends Activity {
     private static final String HOME = "https://murdilimax.com/mobile/";
     private static final int SAVE_JSON = 9071;
+    private static final int IMPORT_JSON = 9072;
     private WebView web;
     private String pendingExport;
+    private ValueCallback<Uri[]> incomingFiles;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -33,7 +36,24 @@ public final class MainActivity extends Activity {
         settings.setMixedContentMode(WebSettings.MIXED_CONTENT_NEVER_ALLOW);
         settings.setJavaScriptCanOpenWindowsAutomatically(false);
         settings.setSupportMultipleWindows(false);
-        web.setWebChromeClient(new WebChromeClient());
+        web.setWebChromeClient(new WebChromeClient() {
+            @Override public boolean onShowFileChooser(WebView view,
+                    ValueCallback<Uri[]> callback, FileChooserParams params) {
+                if (incomingFiles != null) incomingFiles.onReceiveValue(null);
+                incomingFiles = callback;
+                Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("application/json");
+                try {
+                    startActivityForResult(intent, IMPORT_JSON);
+                    return true;
+                } catch (Exception e) {
+                    incomingFiles = null;
+                    callback.onReceiveValue(null);
+                    return false;
+                }
+            }
+        });
         web.addJavascriptInterface(new SafeBridge(), "MurdilimaxAndroid");
         web.setWebViewClient(new WebViewClient() {
             @Override public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
@@ -85,6 +105,14 @@ public final class MainActivity extends Activity {
 
     @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == IMPORT_JSON) {
+            ValueCallback<Uri[]> callback = incomingFiles;
+            incomingFiles = null;
+            if (callback != null)
+                callback.onReceiveValue(resultCode == RESULT_OK && data != null && data.getData() != null
+                        ? new Uri[]{data.getData()} : null);
+            return;
+        }
         if (requestCode == SAVE_JSON) {
             String contents = pendingExport;
             pendingExport = null;
