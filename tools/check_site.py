@@ -46,6 +46,6 @@ for f in FILES:
    if target.endswith("/"):target+="index.html"
    assert (ROOT/target.lstrip("/")).exists() or target in ["/mobile/icon-192.png","/mobile/icon-512.png","/mobile/icon-180.png","/apple-touch-icon.png","/favicon.png","/og-image.png"],f"Missing link {link} in {f}"
 for p in PUBLIC:
- fp=ROOT/(p.lstrip("/")+"index.html" if p.endswith("/") else p)
+ fp=ROOT/(p.lstrip("/")+"index.html" if p.endswith("/") else p.lstrip("/"))
  assert fp.exists(),f"Missing sitemap target {p}"
 print(f"SEO/site audit passed: {len(FILES)} pages; {len(urls)} indexable sitemap entries")
