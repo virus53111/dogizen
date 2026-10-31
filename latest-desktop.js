@@ -13,13 +13,13 @@
  const l=tr[locale]||tr.ru;
  const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
  const platforms=[
-  {key:'mac',label:l.mac,ext:'.dmg',asset:'Murdilimax-Orbit-macOS-Apple-Silicon.dmg',version:'v0.3.0-mac-beta'},
-  {key:'intel',label:l.intel,ext:'.dmg',asset:'Murdilimax-Orbit-macOS-Intel.dmg',version:'v0.3.0-mac-beta'},
-  {key:'win',label:l.win,ext:'.exe',asset:'Murdilimax-Orbit-Windows-Setup.exe',version:'v0.3.0-win-beta'}
+  {key:'mac',label:l.mac,ext:'.dmg',asset:'Murdilimax-Orbit-macOS-Apple-Silicon.dmg',version:'v0.4.0-mac-beta'},
+  {key:'intel',label:l.intel,ext:'.dmg',asset:'Murdilimax-Orbit-macOS-Intel.dmg',version:'v0.4.0-mac-beta'},
+  {key:'win',label:l.win,ext:'.exe',asset:'Murdilimax-Orbit-Windows-Setup.exe',version:'v0.4.0-win-beta'}
  ];
  root.style.cssText='margin-top:28px;padding:24px;border:1px solid #69548b;background:#201b3b;border-radius:17px';
  root.innerHTML='<h2 style="font-size:22px;margin:0 0 8px">'+esc(l.title)+'</h2><p style="font-size:12px;color:#b9b5d6;margin:0 0 16px">'+esc(l.desc)+'</p><p style="font-size:12px;color:#b8aec6">'+esc(l.pending)+'…</p>';
- const urls=['v0.3.0-mac-beta','v0.3.0-win-beta'].map(tag=>'https://api.github.com/repos/virus53111/dogizen/releases/tags/'+tag);
+ const urls=['v0.4.0-mac-beta','v0.4.0-win-beta'].map(tag=>'https://api.github.com/repos/virus53111/dogizen/releases/tags/'+tag);
  Promise.all(urls.map(url=>fetch(url,{headers:{Accept:'application/vnd.github+json'}}).then(r=>r.ok?r.json():null).catch(()=>null))).then(releases=>{
   const assets=new Map();
   releases.filter(Boolean).forEach(release=>(release.assets||[]).forEach(a=>{if(a.browser_download_url&&a.name)assets.set(a.name,a)}));
@@ -27,7 +27,7 @@
    const a=assets.get(p.asset),ready=!!a;
    return '<div style="min-width:0;background:#30284a;border:1px solid #66547d;padding:16px;border-radius:12px;display:flex;flex-direction:column;gap:13px">'+
     '<div style="font-weight:800;font-size:14px">'+esc(p.label)+'</div>'+
-    '<small style="color:#aaa0ca">'+(ready?'Beta 0.3 · '+esc(l.size)+': '+(a.size/1048576).toFixed(0)+' MB':esc(l.pending))+'</small>'+
+    '<small style="color:#aaa0ca">'+(ready?'Beta 0.4 · '+esc(l.size)+': '+(a.size/1048576).toFixed(0)+' MB':esc(l.pending))+'</small>'+
     (ready?'<a href="'+esc(a.browser_download_url)+'" style="display:block;background:#c8adff;color:#241836;border-radius:9px;padding:12px;text-decoration:none;font-weight:800;text-align:center;font-size:12px">'+esc(l.download)+' '+p.ext+'</a>':'<span style="color:#8a829e;font-size:12px">⌛</span>')+'</div>';
   }).join('');
   root.innerHTML='<h2 style="font-size:22px;margin:0 0 8px">'+esc(l.title)+'</h2><p style="font-size:12px;color:#b9b5d6;margin:0 0 18px">'+esc(l.desc)+'</p>'+
