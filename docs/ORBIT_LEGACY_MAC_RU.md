@@ -14,13 +14,13 @@ Apple: https://support.apple.com/en-us/102662
 
 ## 2. Установка без Python
 
-Скачать именно **Murdilimax-Orbit-Legacy-macOS-10.15-Intel.dmg**:
+Скачать именно **Murdilimax-Orbit-Studio-ADB-macOS-10.15-Intel.dmg**:
 
-https://github.com/virus53111/dogizen/releases/download/v0.5.0-mac-legacy-beta/Murdilimax-Orbit-Legacy-macOS-10.15-Intel.dmg
+https://github.com/virus53111/dogizen/releases/download/v0.7.0-mac-legacy-adb-beta/Murdilimax-Orbit-Studio-ADB-macOS-10.15-Intel.dmg
 
 Прямая ссылка на High Sierra 10.13 / Mojave 10.14:
 
-https://github.com/virus53111/dogizen/releases/download/v0.5.0-mac-high-sierra-beta/Murdilimax-Orbit-Legacy-macOS-10.13-Intel.dmg
+https://github.com/virus53111/dogizen/releases/download/v0.7.0-mac-high-sierra-adb-beta/Murdilimax-Orbit-Studio-ADB-macOS-10.13-Intel.dmg
 
 Дважды кликни DMG, затем перетащи **Murdilimax Orbit Legacy.app → Applications (Программы)**. Открывай приложение из Applications.
 
@@ -53,15 +53,15 @@ https://github.com/virus53111/dogizen/releases/download/v0.5.0-mac-high-sierra-b
 
 ## 4. Телефоны Android
 
-Программа использует **ADB** (Android Debug Bridge). Сама Legacy-сборка не содержит большой Android SDK и не создаёт виртуальное устройство автоматически.
+Программа использует **ADB** (Android Debug Bridge). В Studio 0.7 добавлена проверенная установка официального ADB одной кнопкой. Сама Legacy-сборка не содержит большой Android SDK и не создаёт виртуальное устройство автоматически.
 
-Для физических Android-телефонов: установи ADB версии, совместимой со старой macOS, включи USB debugging, подтверди доступ на Android и нажми **«Открыть подключённые телефоны»**.
+Для физических Android-телефонов: **в Studio 0.7 открой раздел «Android / ADB» и нажми «Установить ADB автоматически»**. После твоего согласия программа скачает официальный архив Google Platform-Tools 34.0.5 (~11 МБ), проверит SHA-256 и установит его в `~/Library/Application Support/Murdilimax Orbit Legacy/platform-tools`. Затем включи USB debugging на Android, подключи телефон и нажми «Найти Android». ADB не создаёт Android-эмулятор.
 
 Для виртуального Android: необходима *старшая совместимая с твоей macOS версия Android SDK/Emulator* с установленным Android AVD. Современный Android Studio требует macOS 12 и более современный Intel/M1 CPU, поэтому его нельзя поставить на High Sierra/Catalina как обычную актуальную версию. Устаревший Android SDK следует использовать только в тестовой изолированной среде.
 
-После подключения телефон открывается в **настоящем отдельном окне**, которое можно двигать и менять по размеру. Клик отправляет касание через ADB. Обновление изображения около 1,6 секунды (не поток 60 FPS).
+После подключения телефоны отображаются в **общей рабочей области Orbit Studio**: их можно двигать мышкой, менять размеры, раскладывать в сетку или ряд, клик отправляет касание через ADB. Изображение периодически обновляется — это не видеопоток 60 FPS.
 
-Встроенные кнопки **Сетка** и **В ряд** располагают открытые телефоны на экране.
+Встроенные кнопки **Сетка** и **В ряд** располагают карточки подключённых телефонов в Studio.
 
 ## 5. Производительность старого Mac
 
@@ -75,4 +75,4 @@ https://github.com/virus53111/dogizen/releases/download/v0.5.0-mac-high-sierra-b
 
 ## 7. Совместимость ещё не проверена на физическом Mac
 
-DMG скомпилированы на CI под Intel c минимальными версиями macOS `10.13` и `10.15`; проверены заголовки бинарных файлов. Но сборка происходила на macOS 15. Проверка с настоящими Catalina и Big Sur ещё обязательна. Если Mac пишет «Программа не поддерживается», пришли: модель, macOS, ошибку и запускалась ли программа при открытии из Applications. Не отправляй пароли или токены.
+DMG Studio 0.7 скомпилированы на CI под Intel с минимальными версиями macOS `10.13` и `10.15`; дополнительно проверен скачиваемый архив Google ADB 34.0.5 с SHA-256 и Intel-бинарник с минимальной macOS 10.13. На физическом Mac 2012–2014 нужен отдельный тест. Но сборка происходила на macOS 15. Проверка с настоящими Catalina и Big Sur ещё обязательна. Если Mac пишет «Программа не поддерживается», пришли: модель, macOS, ошибку и запускалась ли программа при открытии из Applications. Не отправляй пароли или токены.
