@@ -1,67 +1,29 @@
-<!doctype html><html lang="ru"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#0b0d1e">
-<meta name="description" content="Download Murdilimax Orbit Studio beta installers for Windows, Mac Intel Catalina/High Sierra and Apple Silicon.">
-<title>Скачать Murdilimax Orbit Studio — Windows & Mac</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/orbit.css?v=4">
-<link rel="stylesheet" href="/orbit-premium.css?v=2">
-<style>
-.download-page{position:relative;background:radial-gradient(ellipse 44% 33% at 88% 10%,#59348b56,transparent 75%),radial-gradient(ellipse 65% 35% at 15% 30%,#1b35644d,transparent 86%),#0b0d1d;min-height:100vh}
-.dl-shell{max-width:1270px;padding:90px 32px 110px;margin:auto}
-.dl-hero{display:grid;grid-template-columns:1fr .62fr;gap:48px;align-items:center;margin-bottom:56px}
-.dl-hero h1{font:900 clamp(40px,4.7vw,75px)/1.1 Manrope,sans-serif;letter-spacing:-.06em;margin:19px 0 21px}
-.dl-hero h1 em{font-style:normal;background:linear-gradient(110deg,#ded0ff,#baabff 35%,#a5deec 95%);color:transparent;background-clip:text;-webkit-background-clip:text}
-.dl-hero p{font-size:15px;line-height:1.85;color:#babbd0;max-width:670px}
-.dl-art{position:relative;min-height:315px;background:radial-gradient(circle at 55% 45%,#654ea0bb,transparent 65%);display:grid;place-items:center}
-.dl-art .visual-orbit{position:absolute;border:1px solid #bfa1ff36;border-radius:50%;width:90%;height:39%;transform:rotate(-22deg)}.dl-art .visual-orbit:nth-child(2){width:110%;height:60%;transform:rotate(20deg)}
-.dl-art .central{width:215px;height:215px;border-radius:53px;display:grid;place-items:center;background:linear-gradient(140deg,#b395ff 4%,#8b6afa 53%,#674da9 100%);box-shadow:0 25px 80px #8561f46e,inset 0 3px #fff7,inset 0 -9px 20px #452679;transform:rotate(-10deg);color:#f8f1ff;font-size:95px;text-shadow:0 4px 32px #fff7}
-.dl-title{font-size:25px;font-weight:900;font-family:Manrope,sans-serif;letter-spacing:-.035em;margin:0 0 12px}
-.dl-subtitle{color:#b4accb;line-height:1.7;font-size:13px;margin:0 0 23px}
-.dl-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:19px}
-.dl-card{background:linear-gradient(160deg,#1c203b,#10162d 90%);border:1px solid #ffffff24;border-radius:23px;padding:29px;position:relative;overflow:hidden;box-shadow:0 18px 48px #03031154,inset 0 1px #ffffff15;display:flex;flex-direction:column;min-height:290px}
-.dl-card::before{position:absolute;content:"";width:250px;height:250px;border-radius:50%;background:#a96efa16;right:-130px;top:-150px;filter:blur(16px)}
-.dl-card:nth-child(2){border-color:#9879e573;background:linear-gradient(155deg,#302254,#15162f 90%)}
-.dl-card .card-head{display:flex;align-items:center;gap:17px;margin-bottom:17px}.dl-os{width:58px;height:58px;display:grid;place-items:center;font:800 29px Manrope,sans-serif;background:#ffffff15;color:#ddceff;border:1px solid #ffffff24;border-radius:17px;flex:none}
-.dl-card h3{font:850 22px Manrope,sans-serif;letter-spacing:-.03em;margin:0 0 5px}.dl-card small{color:#b2b4c9;font-size:11px}
-.dl-card p{line-height:1.8;color:#b6b6d2;font-size:12px;flex:1;margin:0 0 14px}
-.dl-meta{display:flex;gap:9px;align-items:center;margin-bottom:17px;flex-wrap:wrap}
-.dl-meta span{border:1px solid #ffffff24;border-radius:100px;padding:6px 10px;font-size:10px;color:#d4c9e8;background:#ffffff08}
-.dl-download{display:inline-flex;align-items:center;justify-content:space-between;gap:15px;width:100%;padding:15px 18px;text-decoration:none;border-radius:12px;background:linear-gradient(115deg,#d7c4ff,#bfa0ff);color:#21153a;font-weight:900;font-size:12px;box-shadow:0 8px 27px #906bcf40;transition:transform .2s,filter .2s}
-.dl-download:hover{transform:translateY(-2px);filter:brightness(1.06)}.dl-download.disabled{pointer-events:none;background:#403858;color:#b4adca}
-.dl-foot{display:flex;gap:14px;align-items:flex-start;color:#b6b0cb;font-size:11px;line-height:1.65;margin:14px 2px 0}
-.dl-foot .indicator{width:7px;height:7px;border-radius:50%;background:#6fe1c4;flex:none;margin-top:5px;box-shadow:0 0 15px #6fe1c4}
-.dl-row{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:72px}
-.dl-info{padding:31px;border:1px solid #ffffff25;border-radius:22px;background:linear-gradient(140deg,#1c1b34,#101527)}.dl-info h3{font:850 22px Manrope,sans-serif;letter-spacing:-.03em;margin:0 0 15px}.dl-info p,.dl-info li{font-size:12px;line-height:1.9;color:#b7b7cf}.dl-info ol{padding-left:20px;margin:0}.dl-info a{color:#d4b6ff;text-decoration:underline;text-underline-offset:4px}
-.dl-info .note{background:#322a4c88;border-radius:12px;border:1px solid #8a6fb552;padding:13px;font-size:11px;color:#dfd0ed;margin-top:17px}
-.dl-preview{border-radius:25px;border:1px solid #a58ade42;background:radial-gradient(circle at 50% 35%,#6044b359,transparent 75%),#17182c;margin:80px 0 0;display:flex;align-items:center;gap:40px;justify-content:space-between;padding:43px 50px}
-.dl-preview>div{max-width:680px}.dl-preview h2{font:900 clamp(25px,3vw,39px)/1.2 Manrope,sans-serif;letter-spacing:-.04em;margin:12px 0}.dl-preview p{color:#c0b9d5;font-size:13px;line-height:1.9}.dl-preview a{display:inline-block;padding:15px 18px;border:1px solid #c9a7ff91;border-radius:11px;color:#eee0ff;font-weight:800;font-size:12px;text-decoration:none}
-.dl-preview .prism{width:130px;height:130px;display:grid;place-items:center;border-radius:36px;flex:none;background:linear-gradient(125deg,#7f5adf,#d3a6ff);transform:rotate(13deg);font-size:58px;box-shadow:0 20px 55px #7957b476}
-.dl-bottom{text-align:center;margin:75px 0 0;color:#888aa4;font-size:11px}.dl-bottom a{color:#d1b1ff}
-@media(max-width:950px){.dl-hero{grid-template-columns:1fr .5fr;gap:5px}.dl-grid{grid-template-columns:1fr 1fr}.dl-shell{padding:65px 25px}.dl-art .central{width:130px;height:130px;font-size:57px;border-radius:32px}}
-@media(max-width:680px){.dl-hero{grid-template-columns:1fr}.dl-art{min-height:145px;order:-1}.dl-art .central{width:92px;height:92px;font-size:40px;border-radius:23px}.dl-shell{padding:46px 20px 70px}.dl-hero h1{font-size:42px}.dl-grid,.dl-row{grid-template-columns:1fr;gap:14px}.dl-card{padding:24px;min-height:250px}.dl-preview{padding:27px 25px;gap:15px;margin-top:40px}.dl-preview .prism{display:none}.dl-row{margin-top:50px}}
-</style></head><body class="download-page">
-<header class="nav"><a class="brand" href="/"><span class="brand-icon">◈</span><span>MURDILIMAX<b>ORBIT</b></span></a>
-<nav class="links"><a href="/#features" data-dl="navFeatures">Возможности</a><a href="/#pricing" data-dl="navPricing">Тарифы</a><a href="/orbit-studio-preview.html" data-dl="navStudio">Студия</a></nav>
-<div class="nav-right"><label class="language"><span>🌐</span><select id="lang" aria-label="Language"><option value="ru">RU</option><option value="en">EN</option><option value="lv">LV</option><option value="et">ET</option><option value="lt">LT</option><option value="de">DE</option></select></label><a href="/" class="nav-cta" data-dl="home">← На сайт</a></div></header>
-<main class="dl-shell">
-<section class="dl-hero">
- <div><div class="kicker">DOWNLOAD / MURDILIMAX ORBIT STUDIO</div><h1 data-dl="hero">Твоя студия.<br><em>Твои устройства.</em></h1><p data-dl="desc">Устанавливаемые версии для Windows и Mac. Выбери свою систему, скачай программу и подключи Android через ADB. На старых Mac есть отдельная облегчённая версия.</p><div class="hero-flags"><span>◈ Intel Mac 2012–2014</span><span>◉ Apple Silicon</span><span>⊞ Windows</span></div></div>
- <div class="dl-art" aria-hidden="true"><span class="visual-orbit"></span><span class="visual-orbit"></span><div class="central">◈</div></div>
-</section>
-<section aria-label="Desktop installers">
-<h2 class="dl-title" data-dl="choose">Выбери свою систему</h2><p class="dl-subtitle" data-dl="chooseDesc">Реальные установщики из GitHub Releases. Новая версия появляется только после успешной сборки.</p>
-<div class="dl-grid">
-<article class="dl-card" id="mac-catalina"><div class="card-head"><span class="dl-os">◉</span><div><h3>Mac Intel</h3><small>macOS Catalina 10.15+ · Mac 2012–2014</small></div></div><p data-dl="macDesc">Новая студия с интерфейсом телефонов. В версии 0.7 доступна установка ADB одной кнопкой с проверкой файла Google. Для самого эмулятора потребуется SDK.</p><div class="dl-meta"><span id="catalina-version">Studio 0.7 + ADB Beta</span><span data-dl="oldMac">Для старых Mac</span></div><a class="dl-download" id="catalina-link" href="https://github.com/virus53111/dogizen/releases/download/v0.7.0-mac-legacy-adb-beta/Murdilimax-Orbit-Studio-ADB-macOS-10.15-Intel.dmg"><span data-dl="download">↓ Скачать .dmg</span>↗</a></article>
-<article class="dl-card" id="mac-highsierra"><div class="card-head"><span class="dl-os">◉</span><div><h3>Mac Intel Legacy</h3><small>macOS High Sierra 10.13 / Mojave 10.14</small></div></div><p data-dl="sierraDesc">Лёгкая версия для ещё более старых Mac. Браузеры здесь на WebKit, не Camoufox. Поддержка Android зависит от системы и ресурсов компьютера.</p><div class="dl-meta"><span id="sierra-version">Studio 0.7 + ADB Beta</span><span>Intel x86_64</span></div><a class="dl-download" id="sierra-link" href="https://github.com/virus53111/dogizen/releases/download/v0.7.0-mac-high-sierra-adb-beta/Murdilimax-Orbit-Studio-ADB-macOS-10.13-Intel.dmg"><span data-dl="download">↓ Скачать .dmg</span>↗</a></article>
-<article class="dl-card" id="windows"><div class="card-head"><span class="dl-os">⊞</span><div><h3>Windows</h3><small>Windows 10 / 11 · x64</small></div></div><p data-dl="winDesc">Настольная версия с Android ADB, scrcpy, браузерными профилями Camoufox и мастером создания AVD. Android SDK скачивается отдельно.</p><div class="dl-meta"><span>Orbit 0.4 Beta</span><span>Setup.exe</span></div><a class="dl-download" href="https://github.com/virus53111/dogizen/releases/download/v0.4.0-win-beta/Murdilimax-Orbit-Windows-Setup.exe"><span data-dl="downloadExe">↓ Скачать .exe</span>↗</a></article>
-<article class="dl-card" id="mac-apple"><div class="card-head"><span class="dl-os">◉</span><div><h3>Mac Apple Silicon</h3><small>Apple M1 / M2 / M3 / M4</small></div></div><p data-dl="appleDesc">Версия для современных Mac. Браузер Camoufox и Android-инструменты, поддержка AVD через совместимый Android SDK. Не подходит для Intel Mac 2012 года.</p><div class="dl-meta"><span>Orbit 0.4 Beta</span><span>Apple Silicon</span></div><a class="dl-download" href="https://github.com/virus53111/dogizen/releases/download/v0.4.0-mac-beta/Murdilimax-Orbit-macOS-Apple-Silicon.dmg"><span data-dl="download">↓ Скачать .dmg</span>↗</a></article>
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#090d13"><title>Загрузка — Murdilimax Browser</title>
+<link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/browser-site.css?v=1">
+</head><body>
+<header class="header container"><a class="brand" href="/"><span class="mark">◈</span><span>MURDILIMAX <span>BROWSER STUDIO</span></span></a><nav class="nav"><a href="/">Главная</a><a href="/#features">Возможности</a><a href="/#roadmap">План</a></nav><div class="right"><a class="btn outline" href="https://github.com/virus53111/dogizen/actions/workflows/browser-build.yml">GitHub Actions</a></div></header>
+<main class="container">
+<section class="section" style="border-top:0;padding-top:75px"><div class="eyebrow">INSTALLER CENTER</div>
+<h1 style="font:700 clamp(40px,5vw,64px)/1.1 'Space Grotesk',sans-serif;letter-spacing:-2px;margin:18px 0">Установщики <span style="color:#75e5c9">Murdilimax Browser</span></h1>
+<p class="lead">Новая линейка программы — исключительно браузерные профили. Проверяем сборку для каждой операционной системы. Пока ни одна версия browser-only не признана стабильной.</p>
+<div class="notice">Ниже указаны честные статусы. Кнопки ведут к тестовым сборкам GitHub Actions, если они уже успешно завершены. Предварительные артефакты не являются проверенным публичным релизом.</div>
+<div class="card-list">
+<article class="os-card"><div class="status pending">ПРЕДВАРИТЕЛЬНАЯ СБОРКА / QA НЕ ПРОЙДЕН</div><h3>⊞ Windows 10 / 11</h3><p>64-bit. Настольное приложение с локальными браузерными профилями Camoufox, HTTP/SOCKS5, группами и массовыми действиями. Сборка на GitHub Windows runner.</p><a class="btn outline" href="https://github.com/virus53111/dogizen/actions/workflows/browser-build.yml">Посмотреть сборку →</a></article>
+<article class="os-card"><div class="status pending">ПРЕДВАРИТЕЛЬНАЯ СБОРКА / QA НЕ ПРОЙДЕН</div><h3>◉ Mac Apple Silicon</h3><p>Для Mac с M1/M2/M3/M4 и новее. Пакет DMG с той же программой. Точные минимальные версии macOS проверяем отдельно.</p><a class="btn outline" href="https://github.com/virus53111/dogizen/actions/workflows/browser-build.yml">Посмотреть сборку →</a></article>
+<article class="os-card"><div class="status pending">ПРЕДВАРИТЕЛЬНАЯ СБОРКА / QA НЕ ПРОЙДЕН</div><h3>◉ Mac Intel</h3><p>Версия для современных Intel Mac. После успешной CI-сборки требуется запуск на настоящем компьютере и проверка Camoufox.</p><a class="btn outline" href="https://github.com/virus53111/dogizen/actions/workflows/browser-build.yml">Посмотреть сборку →</a></article>
+<article class="os-card"><div class="status pending">НЕ ПОДТВЕРЖДЕНА СОВМЕСТИМОСТЬ</div><h3>◉ macOS Catalina 10.15</h3><p>Для старых Intel Mac нужна отдельная сборка и тест браузерного движка. Временный WebKit без полной защиты отпечатка не будет называться Camoufox.</p><a class="btn outline" href="https://github.com/virus53111/dogizen/blob/feature/orbit-browser-only-2026-10-31/docs/BROWSER_PRODUCT_ROADMAP_RU.md">План совместимости →</a></article>
+</div></section>
+<section class="section"><div class="eyebrow">WHAT IS IN THE PACKAGE?</div><h2>Проверяем настоящий браузер, а не демонстрацию</h2>
+<div class="split">
+<div class="panel"><h3>Что уже закодировано</h3><ul class="bullets"><li>Десктопный менеджер профилей с локальной базой настроек</li><li>Отдельные процессы и папки данных</li><li>HTTP/HTTPS/SOCKS5 прокси</li><li>Поиск, группы, теги и массовые операции</li><li>Проверки исходников и пакетов в CI</li></ul></div>
+<div class="panel"><h3>Что не объявляем готовым</h3><ul class="bullets"><li>Постоянный отпечаток между запусками</li><li>Проверенный обход обнаружения / неуязвимость к банам</li><li>Синхронизация cookies через облако</li><li>Сертификация на Catalina</li><li>Коммерческий биллинг и командный API</li></ul></div>
 </div>
-<div class="dl-foot"><span class="indicator"></span><span data-dl="betaNotice">Все программы — экспериментальные бета-сборки. Сборка в CI не заменяет испытания на настоящем компьютере. Установщики Mac ещё не нотариально заверены Apple.</span></div>
+<div class="notice">Для установки тестовой сборки из GitHub Actions может потребоваться вход в GitHub. После успешного QA выпустим обычные прямые ссылки на EXE/DMG в GitHub Releases и подпишем установщики.</div>
+<div class="actions"><a class="btn primary" href="https://github.com/virus53111/dogizen/tree/feature/orbit-browser-only-2026-10-31/browser">Открыть исходники →</a><a class="btn outline" href="https://github.com/virus53111/dogizen/releases">Архив прежних Orbit-релизов</a></div>
 </section>
-<div class="dl-row">
-<section class="dl-info"><h3 data-dl="macHow">Как установить на старый Mac</h3><ol><li data-dl="step1">Скачай версию для своей macOS, открой DMG и перетащи Orbit Studio в Applications.</li><li data-dl="step2">Открой Finder → Applications → Control + клик по программе → Open. Подтверди только если доверяешь источнику.</li><li data-dl="step3">Открой «Android / ADB» и в версии 0.7 нажми «Установить ADB» — программа скачает официальный архив Google после твоего согласия.</li><li data-dl="step4">Подключи физический Android с USB-отладкой или создай совместимый Android AVD.</li></ol><div class="note" data-dl="gatekeeper">Внимание: Mac-бета не подписана Apple Developer ID и не нотариально заверена. Не отключай защиту macOS глобально.</div><p><a href="https://github.com/virus53111/dogizen/blob/main/docs/ORBIT_LEGACY_MAC_RU.md" data-dl="instructions">Полная инструкция на русском ↗</a></p></section>
-<section class="dl-info"><h3 data-dl="adbTitle">ADB — связь с Android, не эмулятор</h3><p data-dl="adbExplain">ADB подключает настоящие Android-телефоны или запущенные эмуляторы к Studio. Сам по себе он не создаёт виртуальный телефон. Для локальных AVD нужен совместимый Android SDK, достаточно памяти и виртуализация. Облачные телефоны, как в GeeLark, здесь пока отсутствуют.</p><div class="note" data-dl="browserWarn">Legacy на старой macOS использует системный WebKit и не обеспечивает антидетект-защиту. Никакой гарантии «невидимого» Android нет.</div><p><a href="https://developer.android.com/tools/releases/platform-tools" target="_blank" rel="noopener">Android Platform-Tools / Google ↗</a></p></section>
-</div>
-<section class="dl-preview"><div><span class="kicker">DESKTOP STUDIO</span><h2 data-dl="previewTitle">Посмотри рабочую область до установки</h2><p data-dl="previewDesc">Интерактивный просмотр с перетаскиваемыми телефонами. Все экраны в браузере помечены DEMO; настоящие Android подключаются только в программе.</p><a href="/orbit-studio-preview.html" data-dl="previewButton">Открыть Studio Preview ↗</a></div><div class="prism" aria-hidden="true">▦</div></section>
-<p class="dl-bottom">© 2026 Murdilimax Orbit · <span data-dl="footer">Бета-версия · Разработка продолжается</span> · <a href="/">murdilimax.com</a></p>
-</main><script src="/download-premium.js?v=1"></script></body></html>
+</main>
+<footer class="footer container"><span>© 2026 Murdilimax Browser · Beta development</span><span><a href="/">Главная</a> · <a href="https://github.com/virus53111/dogizen/actions">Проверки сборки</a></span></footer>
+</body></html>
