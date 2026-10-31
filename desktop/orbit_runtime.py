@@ -83,6 +83,12 @@ def attach(cls, scope):
         if bare in ('adb','scrcpy'):
             return _installed_tools().get(bare)
         return None
+    bundled=_installed_tools()
+    if bundled.get('adb'):
+        os.environ['ADB']=bundled['adb']
+        os.environ['PATH']=str(Path(bundled['adb']).parent)+os.pathsep+os.environ.get('PATH','')
+    if bundled.get('scrcpy'):
+        os.environ['PATH']=str(Path(bundled['scrcpy']).parent)+os.pathsep+os.environ.get('PATH','')
     scope['find_sdk']=find_sdk
     scope['find_executable']=executable
     def make_android(self,p):
