@@ -9,6 +9,26 @@ from urllib.parse import urlsplit
 
 from store import Store
 
+def pid_alive(pid):
+    """Non-destructive cross-platform process status probe."""
+    if not isinstance(pid, int) or pid <= 0:
+        return False
+    if sys.platform == "win32":
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(0x00100000, False, pid)  # SYNCHRONIZE
+        if not handle:
+            return False
+        try:
+            return kernel32.WaitForSingleObject(handle, 0) == 0x102  # WAIT_TIMEOUT
+        finally:
+            kernel32.CloseHandle(handle)
+    try:
+        os.kill(pid, 0)
+        return True
+    except (OSError, ValueError):
+        return False
+
 def launch_command(profile_id):
     if getattr(sys, "frozen", False):
         return [sys.executable, "--run-profile", profile_id]
@@ -29,11 +49,12 @@ def run_profile(profile_id):
     except FileExistsError:
         try:
             pid = int(lock.read_text().strip())
-            os.kill(pid, 0)
-        except (ProcessLookupError, ValueError, OSError):
-            lock.unlink(missing_ok=True)
-            return run_profile(profile_id)
-        raise RuntimeError("The profile is already running")
+        except (ValueError, OSError):
+            pid = -1
+        if pid_alive(pid):
+            raise RuntimeError("The profile is already running")
+        lock.unlink(missing_ok=True)
+        return run_profile(profile_id)
     with os.fdopen(fd, "w") as writer:
         writer.write(str(os.getpid()))
     try:
@@ -46,8 +67,8 @@ def run_profile(profile_id):
             "user_data_dir": str(folder / "data"),
             "enable_cache": True,
         }
-        if os_name != "native":
-            opts["os"] = os_name
+        opts["os"] = ({"win32": "windows", "darwin": "macos"}.get(sys.platform, "linux")
+                      if os_name == "native" else os_name)
         if profile.get("proxy_id"):
             opts["proxy"] = store.proxy_config(profile["proxy_id"])
             opts["geoip"] = True
@@ -89,10 +110,11 @@ def start_background(store, profile_id):
     if lock.exists():
         try:
             pid = int(lock.read_text().strip())
-            os.kill(pid, 0)
+        except (OSError, ValueError):
+            pid = -1
+        if pid_alive(pid):
             raise RuntimeError("Profile is already open")
-        except ProcessLookupError:
-            lock.unlink(missing_ok=True)
+        lock.unlink(missing_ok=True)
     log_path = store.root / "logs" / (profile_id + ".log")
     with log_path.open("a", encoding="utf-8") as log:
         process = subprocess.Popen(launch_command(profile_id), stdin=subprocess.DEVNULL,
