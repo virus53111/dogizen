@@ -33,6 +33,14 @@ class BrowserUI:
         self.entitlement_limit = 3
         self.pairing = None
         self.root = tk.Tk()
+        try:
+            icon_root = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[1]))
+            image = icon_root / "assets" / "generated" / "app-icon-512.png"
+            if image.exists():
+                self._window_icon = tk.PhotoImage(file=str(image))
+                self.root.iconphoto(True, self._window_icon)
+        except (tk.TclError, OSError):
+            pass  # Window-manager icon is cosmetic; never block startup.
         self.root.title("Murdilimax Browser — Studio")
         self.root.geometry("1220x750")
         self.root.minsize(920, 620)
