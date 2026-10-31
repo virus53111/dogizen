@@ -30,7 +30,7 @@ jobs:
           inject='\nfrom account_ui import attach as aa\naa(PocketFleet, globals())\nfrom orbit_runtime import attach as ar\nar(PocketFleet, globals())\n'
           p.write_text(s.replace(needle,inject+needle,1),encoding='utf-8')
           '@ | python -
-          python -m py_compile orbit-build/MurdilimaxOrbit/*.py
+          python -m compileall -q orbit-build/MurdilimaxOrbit
       - name: Download official scrcpy and Android platform-tools
         shell: pwsh
         run: |
