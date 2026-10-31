@@ -7,10 +7,11 @@ import signals from './signals.mjs';
 import xray from './xray.mjs';
 import dna from './dna.mjs';
 import watchtower from './watchtower.mjs';
+import signalChart from './signal-chart.mjs';
 
 const routes={'/api/market':market,'/api/pair':pair,'/api/hunter':hunter,
  '/api/audit':audit,'/api/signals':signals,'/api/xray':xray,'/api/dna':dna,
- '/api/watchtower':watchtower};
+ '/api/watchtower':watchtower,'/api/signal-chart':signalChart};
 const origins=new Set(['https://cenaradar.online','https://www.cenaradar.online']);
 const MAX_BODY=12000;
 const listener=http.createServer((req,res)=>{

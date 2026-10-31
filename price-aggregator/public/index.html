@@ -1,10 +1,10 @@
 <!doctype html><html lang="ru"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090e13"><meta name="description" content="CenaRadar — скринер всех спотовых пар MEXC, монитор Watchtower для личных позиций, ликвидность стакана, цена исполнения и рыночные аномалии.">
-<title>CenaRadar — Watchtower позиций и скринер MEXC Spot</title>
+<meta name="theme-color" content="#090e13"><meta name="description" content="CenaRadar: VWAP на свечном графике MEXC, полосы ±1σ/±2σ, BUY/SELL-маркеры, ручные Entry/Stop/Take Profit и все спотовые пары биржи.">
+<title>CenaRadar — VWAP Signal Terminal, Watchtower и скринер MEXC</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/hunter.css"><link rel="stylesheet" href="/xray.css"><link rel="stylesheet" href="/dna.css"><link rel="stylesheet" href="/watchtower.css"><script>window.MEXC_API_BASE="https://cenaradar-feed-api.onrender.com";</script><link rel="canonical" href="https://cenaradar.online/">
+<link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/hunter.css"><link rel="stylesheet" href="/xray.css"><link rel="stylesheet" href="/dna.css"><link rel="stylesheet" href="/watchtower.css"><link rel="stylesheet" href="/signal-chart.css"><script>window.MEXC_API_BASE="https://cenaradar-feed-api.onrender.com";</script><link rel="canonical" href="https://cenaradar.online/">
 <meta name="robots" content="index,follow,max-snippet:-1">
 <meta property="og:type" content="website"><meta property="og:locale" content="ru_RU"><meta property="og:site_name" content="CenaRadar">
 <meta property="og:title" content="CenaRadar — MEXC скринер, Market Hunter и Risk X-Ray">
@@ -16,13 +16,13 @@
 <div class="app" id="app">
 <header class="header">
  <div class="brand"><div class="brand-symbol"><span class="brand-signal"></span><i></i><i></i></div><div class="brand-lines"><div class="brand-name">MEXC<span>RADAR</span><sup>®</sup></div><div class="brand-tag">INDEPENDENT MARKET INTELLIGENCE</div></div></div>
- <nav class="main-nav" aria-label="Основное меню"><a href="#terminal" class="active">ОБЗОР</a><a href="#watchtower">WATCHTOWER</a><a href="#hunter">АНОМАЛИИ</a><a href="#xray">ЛИКВИДНОСТЬ</a><a href="#dna">DNA LAB</a><a href="#markets">ВСЕ ПАРЫ</a></nav>
+ <nav class="main-nav" aria-label="Основное меню"><a href="#terminal" class="active">ОБЗОР</a><a href="#signal-terminal">VWAP CHART</a><a href="#watchtower">WATCHTOWER</a><a href="#hunter">АНОМАЛИИ</a><a href="#xray">ЛИКВИДНОСТЬ</a><a href="#dna">DNA LAB</a><a href="#markets">ВСЕ ПАРЫ</a></nav>
  <div class="header-right"><span class="live"><i></i><span id="feedLive">ПОДКЛЮЧЕНИЕ</span></span><span id="headerTime" class="header-time">—</span><button class="button-icon" id="refreshBtn" title="Обновить все пары" aria-label="Обновить">↻</button><button class="top-cta" id="planBtn">✧ PRO <span>↗</span></button></div>
 </header>
 <div class="noticebar"><div><span class="notice-beacon">✳</span> <strong>ТОЛЬКО ФАКТЫ С MEXC</strong><span class="notice-underline">Спот · Все доступные пары · Никаких прогнозов доходности</span></div><span class="notice-source">OFFICIAL SPOT API V3 / NO ACCOUNT REQUIRED</span></div>
 <main>
 <section id="terminal" class="intro">
- <div class="intro-copy"><span class="eyebrow"><i class="mini-sun">✧</i> LIVE MEXC SCREENER <span class="eyebrow-id">/ VERSION 7.0</span></span>
+ <div class="intro-copy"><span class="eyebrow"><i class="mini-sun">✧</i> LIVE MEXC SCREENER <span class="eyebrow-id">/ VERSION 8.0</span></span>
  <h1>Найди движение.<br><em>Раньше, чем шум.</em></h1>
  <p>Один экран для всего спотового рынка MEXC. Просматривай реальные движения, сравнивай оборот и спред, изучай стакан любой пары и оценивай риск до сделки.</p>
  <div class="intro-actions"><button class="cta-primary" id="goMarkets">Открыть все пары <span>↗</span></button><a href="#method">КАК РАБОТАЕТ СКАНЕР <span>→</span></a></div><div class="referral-banner"><div class="referral-banner-copy"><span class="referral-kicker">◈ ПАРТНЁРСКАЯ ССЫЛКА</span><strong>Нет аккаунта MEXC?</strong><span>Зарегистрироваться по ссылке владельца MEXC Radar. Код: <b>3Vm9o</b></span></div><a class="referral-cta" href="https://s.mexc.com/referral/MJ5URa4FkX" target="_blank" rel="sponsored noopener noreferrer">РЕГИСТРАЦИЯ НА MEXC ↗</a></div><p class="referral-disclosure">Партнёрская ссылка: сайт может получить вознаграждение за регистрацию. Условия определяет MEXC. Это не рекомендация торговать.</p></div>
@@ -33,6 +33,46 @@
  <div class="metric"><span class="metric-label">ДОСТУПНЫ ДЛЯ ТОРГОВ <i>◉</i></span><strong id="countActive">—</strong><div class="metric-meta">Статус в API MEXC</div></div>
  <div class="metric"><span class="metric-label">РОСТ 24Ч ≥ 20% <i>↑</i></span><strong id="countGainers" class="up">—</strong><div class="metric-meta">По реальным спотовым котировкам</div></div>
  <div class="metric"><span class="metric-label">ШИРОКИЙ СПРЕД ≥ 2% <i>◈</i></span><strong id="countWide" class="yellow">—</strong><div class="metric-meta">Риск исполнения по bid/ask</div></div>
+</section>
+<section id="signal-terminal" class="st-section">
+ <div class="section-heading st-heading"><div><div class="section-kicker">02 / VISUAL TRADE ANALYSIS / MEXC SPOT</div>
+  <h2>VWAP <em>SIGNAL TERMINAL</em> <span class="st-beta">LIVE DATA · BETA</span></h2>
+  <p>Свечной график, сессионный VWAP, полосы стандартного отклонения, метки BUY / SELL и редактируемая зона Entry / Stop / Take Profit. Всё рассчитано из реальных завершённых свечей MEXC.</p></div>
+ <div class="heading-hint"><span class="hint-pulse"></span> <span id="stUpdated">ПОЛУЧАЕМ СВЕЧИ</span></div></div>
+ <div class="st-shell">
+  <div class="st-toolbar">
+   <div class="st-pair-picker"><label for="stSymbol">ТОРГОВАЯ ПАРА MEXC</label>
+   <div class="st-symbol-row"><input id="stSymbol" list="stPairList" value="BTCUSDT" placeholder="BTCUSDT" aria-label="Введи или выбери торговую пару" autocomplete="off" spellcheck="false"/><datalist id="stPairList"></datalist><button id="stLoadSymbol" class="st-load" title="Загрузить пару">↗</button></div></div>
+   <div class="st-tf-group"><span>ТАЙМФРЕЙМ</span><div id="stTimeframes" class="st-tf-buttons"><button data-st-tf="1m">1m</button><button data-st-tf="5m" class="active">5m</button><button data-st-tf="15m">15m</button><button data-st-tf="1h">1h</button><button data-st-tf="4h">4h</button><button data-st-tf="1d">1D</button></div></div>
+   <button class="st-reload" id="stRefresh" title="Обновить данные MEXC">↻</button>
+  </div>
+  <div class="st-chart-layout">
+    <div class="st-main">
+      <div class="st-chart-subtoolbar"><span class="st-dot"></span><strong id="stChartName">BTC / USDT</strong><span id="stLastPrice">—</span><span id="stSignalStatus">ОЖИДАНИЕ ДАННЫХ</span><span id="stCursor" class="st-cursor">HLC3 · VWAP</span></div>
+      <div class="st-chart-frame"><canvas id="stCanvas" aria-label="Интерактивный свечной график MEXC, VWAP, полосы и зоны риска" role="img"></canvas><div id="stChartLoader" class="st-chart-loader">Загружаем свечи и рассчитываем VWAP…</div><div class="st-chart-overlay-legend"><span class="st-line-blue">VWAP</span><span class="st-line-mint">±1σ</span><span class="st-line-gold">±2σ</span><span class="st-chart-legend-signal">▲ BUY / ▼ SELL</span></div></div>
+      <div class="st-underchart"><div id="stChartInfo">VWAP: 00:00 UTC, отклонение взвешено по объёму</div><div class="st-view-tools"><button id="stZoomOut" title="Уменьшить масштаб">−</button><button id="stZoomIn" title="Увеличить масштаб">+</button><button id="stResetView">СБРОС ВИДА</button></div></div>
+    </div>
+    <aside class="st-sidebar">
+      <div class="st-panel-heading"><span>◈ STRATEGY CONTROL</span><strong>Сценарий сделки</strong></div>
+      <div class="st-mode-toggle" role="group" aria-label="Режим построения сделки"><button id="stAutoMode" class="active">◉ AUTO</button><button id="stManualMode">✎ MANUAL</button></div>
+      <div class="st-signal-card"><small>ПОСЛЕДНЕЕ ЗАКРЫТОЕ СОБЫТИЕ</small><strong id="stTradeSignal" class="st-wait">WAIT</strong><span id="stTradeReason">Получаем данные закрытых свечей…</span><small id="stSignalTime">—</small></div>
+      <div class="st-stat-small"><span>VWAP</span><b id="stVwapValue">—</b></div>
+      <div class="st-stat-small"><span>ОТКЛОНЕНИЕ ОТ VWAP</span><b id="stDeviation">—</b></div>
+      <div class="st-stat-small"><span>ОБЪЁМ ПОСЛ. СВЕЧИ</span><b id="stVolume">—</b></div>
+      <div class="st-plan"><div class="st-plan-head"><strong>ENTRY / RISK / TARGET</strong><span id="stPlanMode">AUTO</span></div>
+       <label>НАПРАВЛЕНИЕ<select id="stDirection"><option value="BUY">LONG (BUY)</option><option value="SELL">SHORT (SELL)</option></select></label>
+       <label>ENTRY<input type="number" step="any" min="0" id="stEntry" placeholder="—"/></label>
+       <label>STOP LOSS<input type="number" step="any" min="0" id="stStop" placeholder="—"/></label>
+       <label>TAKE PROFIT<input type="number" step="any" min="0" id="stTp" placeholder="—"/></label>
+       <div class="st-risk-reward"><div><small>РИСК К ЦЕЛИ</small><strong id="stRR">—</strong></div><div><small>СТОП / ЦЕЛЬ, %</small><strong id="stLossGain">—</strong></div></div>
+       <div class="st-click-toolbar"><button data-st-place="entry">↖ ВХОД</button><button data-st-place="stop">↖ СТОП</button><button data-st-place="tp">↖ ЦЕЛЬ</button></div>
+       <p id="stPlanHint">В AUTO зоне соответствует лишь свежий подтверждённый сигнал. В MANUAL можно менять значения или устанавливать их нажатием на график.</p>
+      </div>
+    </aside>
+  </div>
+  <div class="st-footer"><div id="stDataSource">ИСТОЧНИК: MEXC SPOT API V3 / ТОЛЬКО ЗАКРЫТЫЕ СВЕЧИ</div><div>VWAP HLC3 · ПОЛОСЫ 1σ И 2σ · UTC СЕССИЯ</div></div>
+ </div>
+ <p class="st-disclaimer">Метки BUY / SELL — эвристические условия пересечения VWAP на закрытых свечах с повышенным объёмом, не торговые рекомендации и не прогноз. Прямоугольники прибыли и риска показывают гипотетический план, а не исполненные сделки. Для 4h VWAP привязан к неделе UTC, для 1D — к месяцу UTC. Комиссии, спред и проскальзывание в зонах сделки не учтены.</p>
 </section>
 <section id="watchtower" class="tw-section">
  <div class="section-heading"><div><div class="section-kicker">01 / PERSONAL POSITION INTELLIGENCE</div><h2>CENA <em>WATCHTOWER</em> <span class="tw-edition">MY POSITIONS / BETA</span></h2>
@@ -207,10 +247,10 @@
  <div class="detail-block"><div class="detail-block-head"><strong>ПОСЛЕДНИЕ СДЕЛКИ</strong><small>До 65 реальных принтов · биржевые ID могут отсутствовать</small></div><div class="trade-grid" id="tradeGrid"></div></div>
  <div class="detail-disclaimer" id="detailDisclaimer">Вычисленные оценки основаны на снимке текущего рынка; глубина стакана меняется. Не гарантия исполнения сделки.</div>
  </div>
- <div class="detail-bottom"><button id="twFromPair" class="border-btn">⊕ WATCHTOWER</button><button id="favoriteDetail" class="border-btn">☆ В ИЗБРАННОЕ</button><a id="openMexc" href="https://www.mexc.com/" target="_blank" rel="noopener noreferrer" class="cta-primary">ОТКРЫТЬ НА MEXC ↗</a><button id="refreshDetail" class="button-icon" title="Обновить анализ">↻</button></div>
+ <div class="detail-bottom"><button id="stFromPair" class="border-btn">▥ VWAP ГРАФИК</button><button id="twFromPair" class="border-btn">⊕ WATCHTOWER</button><button id="favoriteDetail" class="border-btn">☆ В ИЗБРАННОЕ</button><a id="openMexc" href="https://www.mexc.com/" target="_blank" rel="noopener noreferrer" class="cta-primary">ОТКРЫТЬ НА MEXC ↗</a><button id="refreshDetail" class="button-icon" title="Обновить анализ">↻</button></div>
 </section></div>
 <div id="plansModal" class="plan-overlay" aria-hidden="true"><div class="plan-scrim" id="planScrim"></div><section class="plan-modal" role="dialog" aria-modal="true" aria-label="О подписке"><button id="closePlans" aria-label="Закрыть" class="close-detail">×</button><div class="eyebrow">ПРОДУКТ В РАЗРАБОТКЕ</div><h2>Платная подписка <em>не запущена.</em></h2><p>Сейчас все функции скринера бесплатны. История сигналов, проверенное обнаружение аномалий по всему рынку, персональные фильтры требуют отдельной надёжной инфраструктуры и тестирования качества.</p><div class="plan-pill">✳ НИКАКОЙ ИМИТАЦИИ ОПЛАТЫ ИЛИ ПЛАТНЫХ СИГНАЛОВ</div><button id="plansOK" class="cta-primary">ПОНЯТНО →</button></section></div>
 <div id="toast" class="toast" role="status"></div>
-<nav class="mobile-nav" aria-label="Мобильная навигация"><a href="#terminal">◉<span>Обзор</span></a><a href="#watchtower">◈<span>Позиции</span></a><a href="#markets">▤<span>Все пары</span></a><button id="mobileFavorites">☆<span>Избранное</span></button></nav>
-<script src="/app.js" defer></script><script src="/charts.js" defer></script><script src="/hunter.js" defer></script><script src="/xray.js" defer></script><script src="/dna.js" defer></script><script src="/watchtower.js" defer></script><script src="/deeplink.js" defer></script>
+<nav class="mobile-nav" aria-label="Мобильная навигация"><a href="#terminal">◉<span>Обзор</span></a><a href="#signal-terminal">▥<span>График</span></a><a href="#watchtower">◈<span>Позиции</span></a><a href="#markets">▤<span>Все пары</span></a><button id="mobileFavorites">☆<span>Избранное</span></button></nav>
+<script src="/app.js" defer></script><script src="/charts.js" defer></script><script src="/hunter.js" defer></script><script src="/xray.js" defer></script><script src="/dna.js" defer></script><script src="/watchtower.js" defer></script><script src="/signal-chart.js" defer></script><script src="/deeplink.js" defer></script>
 </body></html>
