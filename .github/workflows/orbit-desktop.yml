@@ -29,14 +29,14 @@ jobs:
         shell: bash
         run: |
           unzip -q Murdilimax-Orbit-Windows-macOS-Beta.zip -d orbit-build
-          cp desktop/orbit_auth.py desktop/account_ui.py desktop/orbit_runtime.py desktop/orbit_board.py orbit-build/MurdilimaxOrbit/
+          cp desktop/orbit_auth.py desktop/account_ui.py desktop/orbit_runtime.py desktop/orbit_board.py desktop/orbit_limits.py orbit-build/MurdilimaxOrbit/
           python3 - <<'PY'
           from pathlib import Path
           p=Path("orbit-build/MurdilimaxOrbit/MurdilimaxOrbit.py")
           s=p.read_text(encoding="utf-8")
           marker="\ndef main():"
           if marker not in s: raise RuntimeError("Missing program entry point")
-          s=s.replace(marker,"\nfrom account_ui import attach as aa\naa(PocketFleet, globals())\nfrom orbit_runtime import attach as ar\nar(PocketFleet, globals())\nfrom orbit_board import attach as ab\nab(PocketFleet, globals())\n"+marker,1)
+          s=s.replace(marker,"\nfrom account_ui import attach as aa\naa(PocketFleet, globals())\nfrom orbit_runtime import attach as ar\nar(PocketFleet, globals())\nfrom orbit_board import attach as ab\nab(PocketFleet, globals())\nfrom orbit_limits import attach as al\nal(PocketFleet, globals())\n"+marker,1)
           p.write_text(s,encoding="utf-8")
           PY
           python3 -m py_compile orbit-build/MurdilimaxOrbit/*.py
