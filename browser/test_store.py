@@ -46,6 +46,13 @@ class StoreTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.store.add_proxy("unsafe", "http://user:secret@example.com:8080")
 
+    def test_proxy_edit_persists(self):
+        p = self.store.add_proxy("Old", "http://localhost:9090")
+        self.store.update_proxy(p["id"], "New", "socks5://localhost:1080")
+        saved = self.store.proxies()[0]
+        self.assertEqual(saved["name"], "New")
+        self.assertEqual(saved["server"], "socks5://localhost:1080")
+
     def test_proxy_cannot_be_deleted_while_in_use(self):
         p = self.store.add_proxy("Dev", "socks5://127.0.0.1:1080")
         self.store.add_profile("Test", proxy_id=p["id"])
