@@ -52,7 +52,9 @@ jobs:
           curl -fLsS --retry 3 "https://github.com/Genymobile/scrcpy/releases/download/v5.0.1/scrcpy-macos-$arch-v5.0.1.tar.gz" -o /tmp/orbit-scrcpy.tgz
           mkdir -p /tmp/orbit-scrcpy
           tar -xzf /tmp/orbit-scrcpy.tgz -C /tmp/orbit-scrcpy
-          cp -R /tmp/orbit-scrcpy/. orbit-build/MurdilimaxOrbit/tools/scrcpy/
+          scrcpy_binary=$(find /tmp/orbit-scrcpy -type f -name scrcpy | head -1)
+          test -n "$scrcpy_binary"
+          cp -R "$(dirname "$scrcpy_binary")"/. orbit-build/MurdilimaxOrbit/tools/scrcpy/
       - name: Install build dependencies
         shell: bash
         run: |
