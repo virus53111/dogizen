@@ -20,7 +20,7 @@ jobs:
         shell: pwsh
         run: |
           Expand-Archive 'Murdilimax-Orbit-Windows-macOS-Beta.zip' -DestinationPath orbit-build -Force
-          Copy-Item desktop/orbit_auth.py,desktop/account_ui.py,desktop/orbit_runtime.py desktop/orbit_board.py orbit-build/MurdilimaxOrbit/
+          Copy-Item -Path @('desktop/orbit_auth.py','desktop/account_ui.py','desktop/orbit_runtime.py','desktop/orbit_board.py') -Destination 'orbit-build/MurdilimaxOrbit/' -Force
           @'
           from pathlib import Path
           p=Path('orbit-build/MurdilimaxOrbit/MurdilimaxOrbit.py')
