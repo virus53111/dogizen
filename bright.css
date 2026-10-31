@@ -218,3 +218,6 @@ img{max-width:100%;display:block}.container{width:min(1280px,calc(100% - 64px));
 @media(max-width:900px){.account-layout{gap:40px;grid-template-columns:1fr 390px}.account-gate{padding:28px}}
 @media(max-width:720px){.account-layout{grid-template-columns:1fr;gap:32px;padding-top:67px;padding-bottom:75px}.account-page{min-height:0}.account-info h1{font-size:50px;letter-spacing:-2px}.account-gate{width:100%;max-width:480px;margin:auto}.account-benefits{gap:9px}}
 @media(prefers-reduced-motion:reduce){.will-animate{transition:none}.will-animate:not(.is-visible){opacity:1;translate:none}}
+
+/* 390px mobile QA: keep primary header CTA from forcing horizontal overflow. */
+@media(max-width:720px){.nav-actions>.btn{display:none}.features-grid[style*='grid-template-columns:repeat(2']{grid-template-columns:1fr!important}}
