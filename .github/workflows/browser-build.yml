@@ -19,9 +19,13 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
+        env:
+          MURDILIMAX_BRAND_PNG: assets/generated/icon-1024.png
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r browser/requirements.txt pyinstaller 'pillow>=10,<13' 'cairosvg>=2.7,<3'
+          python -m pip install -r browser/requirements.txt pyinstaller 'pillow>=10,<13'
+          npm install --no-save --no-package-lock @resvg/resvg-js@2.6.2
+          node -e 'const fs=require("fs"); const {Resvg}=require("@resvg/resvg-js"); fs.mkdirSync("assets/generated",{recursive:true}); const r=new Resvg(fs.readFileSync("assets/murdilimax-icon.svg","utf8"),{fitTo:{mode:"width",value:1024}}); fs.writeFileSync("assets/generated/icon-1024.png",r.render().asPng());'
           python tools/build_brand_assets.py
       - name: Build EXE
         run: |
@@ -81,9 +85,13 @@ jobs:
         with:
           python-version: '3.11'
       - name: Install dependencies
+        env:
+          MURDILIMAX_BRAND_PNG: assets/generated/icon-1024.png
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r browser/requirements.txt pyinstaller 'pillow>=10,<13' 'cairosvg>=2.7,<3'
+          python -m pip install -r browser/requirements.txt pyinstaller 'pillow>=10,<13'
+          npm install --no-save --no-package-lock @resvg/resvg-js@2.6.2
+          node -e 'const fs=require("fs"); const {Resvg}=require("@resvg/resvg-js"); fs.mkdirSync("assets/generated",{recursive:true}); const r=new Resvg(fs.readFileSync("assets/murdilimax-icon.svg","utf8"),{fitTo:{mode:"width",value:1024}}); fs.writeFileSync("assets/generated/icon-1024.png",r.render().asPng());'
           python tools/build_brand_assets.py
       - name: Build .app and smoke test
         shell: bash
