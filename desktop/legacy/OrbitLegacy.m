@@ -22,6 +22,7 @@ static NSString *OrbitRun(NSString *exe, NSArray<NSString *> *args, NSData **bin
 static NSString *OrbitAdb(void) {
     NSString *sdk=NSProcessInfo.processInfo.environment[@"ANDROID_HOME"];
     NSArray *paths=@[
+        [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support/Murdilimax Orbit Legacy/platform-tools/adb"],
         [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Android/sdk/platform-tools/adb"],
         @"/usr/local/bin/adb", @"/opt/homebrew/bin/adb",
         sdk ? [sdk stringByAppendingPathComponent:@"platform-tools/adb"] : @"/unlikely"
@@ -184,10 +185,12 @@ static NSString *OrbitSavePath(void){
 @property(nonatomic,strong) NSTimer *orbitDashboardTimer;
 @property(nonatomic,strong) NSMutableArray<NSString*> *orbitDeviceSerials;
 @property(nonatomic,strong) NSMutableSet<NSString*> *orbitBusySerials;
+@property(nonatomic,assign) BOOL orbitInstallingAdb;
 @end
 
 @implementation OrbitMain
 #import "OrbitDashboard.inc"
+#import "OrbitADBInstaller.inc"
 -(void)applicationDidFinishLaunching:(NSNotification*)notification{
     [self orbitSetupDashboard];
 }
