@@ -19,6 +19,14 @@ jobs:
           uname -m
           xcrun --find clang
           xcrun --show-sdk-version
+      - name: Validate pinned Google Platform-Tools archive used by the app
+        shell: bash
+        run: |
+          curl -fLsS --retry 3 "https://dl.google.com/android/repository/platform-tools_r34.0.5-darwin.zip" -o /tmp/adb-platform-tools.zip
+          echo "b2c9757744a9d01fcc616b893ac6236233caf1bdf2ef384d73371ab68bfc4a43  /tmp/adb-platform-tools.zip" | shasum -a 256 -c -
+          unzip -q /tmp/adb-platform-tools.zip -d /tmp/official-adb
+          file /tmp/official-adb/platform-tools/adb
+          otool -l /tmp/official-adb/platform-tools/adb | grep -E -A5 'LC_BUILD_VERSION|LC_VERSION_MIN_MACOSX' | head -14 || true
       - name: Compile native Cocoa/WebKit Intel app targeting macOS 10.15
         shell: bash
         run: |
@@ -41,8 +49,8 @@ jobs:
             <key>CFBundleName</key><string>Murdilimax Orbit Legacy</string>
             <key>CFBundleDisplayName</key><string>Murdilimax Orbit Legacy</string>
             <key>CFBundlePackageType</key><string>APPL</string>
-            <key>CFBundleShortVersionString</key><string>0.6.0</string>
-            <key>CFBundleVersion</key><string>6</string>
+            <key>CFBundleShortVersionString</key><string>0.7.0</string>
+            <key>CFBundleVersion</key><string>7</string>
             <key>LSMinimumSystemVersion</key><string>10.15</string>
             <key>NSHighResolutionCapable</key><true/>
             <key>LSApplicationCategoryType</key><string>public.app-category.productivity</string>
@@ -73,12 +81,12 @@ jobs:
           ln -s /Applications build/dmg/Applications
           hdiutil create -volname "Murdilimax Orbit Legacy" \
             -srcfolder build/dmg -ov -format UDZO \
-            "build/Murdilimax-Orbit-Studio-Legacy-macOS-10.15-Intel.dmg"
-          shasum -a 256 "build/Murdilimax-Orbit-Studio-Legacy-macOS-10.15-Intel.dmg"
+            "build/Murdilimax-Orbit-Studio-ADB-macOS-10.15-Intel.dmg"
+          shasum -a 256 "build/Murdilimax-Orbit-Studio-ADB-macOS-10.15-Intel.dmg"
       - uses: actions/upload-artifact@v4
         with:
           name: Orbit-Legacy-Catalina-Intel
-          path: build/Murdilimax-Orbit-Studio-Legacy-macOS-10.15-Intel.dmg
+          path: build/Murdilimax-Orbit-Studio-ADB-macOS-10.15-Intel.dmg
           if-no-files-found: error
           retention-days: 90
       - name: Publish GitHub prerelease
@@ -87,10 +95,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          gh release view v0.6.0-mac-legacy-studio-beta --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
-            gh release create v0.6.0-mac-legacy-studio-beta --repo "$GITHUB_REPOSITORY" --prerelease \
+          gh release view v0.7.0-mac-legacy-adb-beta --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || \
+            gh release create v0.7.0-mac-legacy-adb-beta --repo "$GITHUB_REPOSITORY" --prerelease \
               --title "Murdilimax Orbit Studio 0.6 · Intel macOS 10.15+" \
-              --notes "New GeeLark-style Orbit Studio layout with sidebar, device list, draggable/resizable multi-device cards and live ADB screenshot/touch controls. Device screenshots require a connected physical Android or compatible Android emulator/SDK. Demo layouts are NOT real Android. Browser profiles are isolated temporary WebKit windows, NOT anti-detect. Not Apple-notarized and not tested on real old Mac."
-          gh release upload v0.6.0-mac-legacy-studio-beta \
-            build/Murdilimax-Orbit-Studio-Legacy-macOS-10.15-Intel.dmg \
+              --notes "Murdilimax Orbit Studio 0.7 for old Intel Macs: premium dashboard and actual ADB live device screens. One-click first-run download of Google Platform-Tools 34.0.5 after consent, validated by pinned SHA256. ADB is not an emulator. Device simulation requires compatible Android SDK/AVD or a physical Android; cloud Android and anti-detection are not implemented. Ad-hoc signed and NOT notarized; physical old Mac QA needed."
+          gh release upload v0.7.0-mac-legacy-adb-beta \
+            build/Murdilimax-Orbit-Studio-ADB-macOS-10.15-Intel.dmg \
             --repo "$GITHUB_REPOSITORY" --clobber
