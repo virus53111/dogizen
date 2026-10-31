@@ -20,14 +20,14 @@ jobs:
         shell: pwsh
         run: |
           Expand-Archive 'Murdilimax-Orbit-Windows-macOS-Beta.zip' -DestinationPath orbit-build -Force
-          Copy-Item -Path @('desktop/orbit_auth.py','desktop/account_ui.py','desktop/orbit_runtime.py','desktop/orbit_board.py','desktop/orbit_limits.py') -Destination 'orbit-build/MurdilimaxOrbit/' -Force
+          Copy-Item -Path @('desktop/orbit_auth.py','desktop/account_ui.py','desktop/orbit_runtime.py','desktop/orbit_board.py','desktop/orbit_limits.py','desktop/orbit_android_privacy.py') -Destination 'orbit-build/MurdilimaxOrbit/' -Force
           @'
           from pathlib import Path
           p=Path('orbit-build/MurdilimaxOrbit/MurdilimaxOrbit.py')
           s=p.read_text(encoding='utf-8')
           needle='\ndef main():'
           assert needle in s
-          inject='\nfrom account_ui import attach as aa\naa(PocketFleet, globals())\nfrom orbit_runtime import attach as ar\nar(PocketFleet, globals())\nfrom orbit_board import attach as ab\nab(PocketFleet, globals())\nfrom orbit_limits import attach as al\nal(PocketFleet, globals())\n'
+          inject='\nfrom account_ui import attach as aa\naa(PocketFleet, globals())\nfrom orbit_runtime import attach as ar\nar(PocketFleet, globals())\nfrom orbit_board import attach as ab\nab(PocketFleet, globals())\nfrom orbit_android_privacy import attach as ap\nap(PocketFleet, globals())\nfrom orbit_limits import attach as al\nal(PocketFleet, globals())\n'
           p.write_text(s.replace(needle,inject+needle,1),encoding='utf-8')
           '@ | python -
           python -m compileall -q orbit-build/MurdilimaxOrbit
