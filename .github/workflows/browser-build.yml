@@ -28,8 +28,10 @@ jobs:
       - name: Smoke test packaged executable
         shell: pwsh
         run: |
-          & 'dist/Murdilimax Browser/Murdilimax Browser.exe' --selftest
-          if ($LASTEXITCODE -ne 0) { throw "Selftest failed" }
+          $exe = (Resolve-Path 'dist/Murdilimax Browser/Murdilimax Browser.exe').Path
+          $proc = Start-Process -FilePath $exe -ArgumentList @('--selftest') -Wait -PassThru
+          Write-Host "Packaged Windows selftest exit code: $($proc.ExitCode)"
+          if ($proc.ExitCode -ne 0) { throw "Selftest failed with exit $($proc.ExitCode)" }
       - name: Build Setup.exe
         shell: pwsh
         run: |
