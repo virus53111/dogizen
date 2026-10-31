@@ -1,0 +1,146 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Murdilimax Orbit Studio — Preview</title>
+<style>
+:root{--purple:#7554da;--muted:#8890a0;--border:#e9eaf1;--ink:#242938;--soft:#f6f7fb;--white:#fff}
+*{box-sizing:border-box}html,body{height:100%;margin:0;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;font-size:13px;color:var(--ink);overflow:hidden;background:#f8f9fc}
+button,input{font:inherit}button{cursor:pointer;border:none;background:none;color:inherit}button:disabled{opacity:.38;cursor:not-allowed}
+.app{height:100vh;display:grid;grid-template-columns:225px minmax(0,1fr)}
+aside{background:#fff;border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:auto}
+.logo{height:83px;display:flex;gap:10px;align-items:center;padding:18px 17px;border-bottom:1px solid #f0f0f6}.brandmark{background:linear-gradient(135deg,#b392ff,#664cde);color:white;border-radius:13px;width:37px;height:37px;display:grid;place-items:center;font-size:23px;font-weight:900}.logo b{font-size:13px;letter-spacing:1px;display:block}.logo small{color:#8765c8;font-weight:800;letter-spacing:2.6px;font-size:11px}
+.grouphead{font-size:10px;color:#adb1be;text-transform:uppercase;letter-spacing:1.2px;margin:22px 18px 8px;font-weight:800}
+.nav{width:calc(100% - 20px);margin:3px 10px;text-align:left;padding:13px 14px;border-radius:10px;font-weight:650;color:#696c7c;display:flex;gap:12px;align-items:center}.nav .ico{font-size:17px;width:20px;text-align:center}.nav.active{background:#eeeafd;color:#704ed8}.nav:hover{background:#f3f1fb}
+.aside-bottom{margin-top:auto;padding:14px;border-top:1px solid var(--border)}.mini{background:#f4f3fc;padding:12px;border-radius:11px;color:#77738b;font-size:11px;line-height:1.7}
+main{min-width:0;display:flex;flex-direction:column}
+.top{height:80px;min-height:80px;background:#fff;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;padding:0 27px;gap:20px}
+.heading{font-size:21px;font-weight:800;letter-spacing:-.6px}.sub{font-size:11px;color:#a2a5b4;margin-top:6px}.right{display:flex;align-items:center;gap:12px}.account{font-weight:700;padding:11px;background:#f4f1fc;border-radius:10px;color:#7858c0}
+.pill{border-radius:9px;border:1px solid #e4e5ef;background:white;padding:10px 13px;font-weight:750;font-size:12px}.pill.purple{background:#805bdf;color:white;border-color:#805bdf;box-shadow:0 4px 12px #805bdf30}.pill:hover{filter:brightness(.97)}.pill.small{padding:7px 11px}
+.page{display:none;flex:1;min-height:0;flex-direction:column}.page.on{display:flex}
+.tools{display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid #eeeef4;padding:13px 25px;gap:12px;flex-wrap:wrap}
+.lefttools{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.metric{color:#7f8495;font-size:12px}.metric b{color:#6557c4}.badge{background:#e9fff1;color:#249567;border-radius:20px;padding:4px 9px;font-weight:800;font-size:11px}.badge.muted{color:#7f8390;background:#f1f2f7}
+.canvaswrap{position:relative;flex:1;min-height:0;overflow:auto;background-color:#f6f6fb;background-image:radial-gradient(#dfe1ec 1px,transparent 1px);background-size:20px 20px}
+.board{position:relative;min-width:100%;min-height:100%;width:1500px;height:900px}
+.panelbar{position:absolute;top:15px;left:22px;color:#8889a2;font-size:11px;border:1px solid #e2e1ef;background:#fff;padding:9px 12px;border-radius:9px;z-index:3}
+.phone{position:absolute;left:0;top:0;width:235px;height:455px;min-width:160px;min-height:270px;background:#191a2b;border:5px solid #34334e;border-radius:20px;box-shadow:0 17px 28px #181a3840,0 3px 5px #1114;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+.phone .ph-head{height:34px;min-height:34px;background:#292a40;color:#e3d9ff;display:flex;align-items:center;justify-content:space-between;gap:7px;padding:0 7px;cursor:move}
+.phone .dot{width:7px;height:7px;display:inline-block;border-radius:50%;background:#2ee39d;margin-right:5px}.phone .dot.demo{background:#ffca5d}
+.ph-title{overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-weight:800;letter-spacing:.1px;font-size:10px;flex:1}
+.ph-btn{color:#c2bfd9;font-size:16px;line-height:1;padding:4px}.ph-btn:hover{color:white}
+.phone .screen{position:relative;flex:1;min-height:0;background:#0d1023;overflow:hidden;display:flex;align-items:center;justify-content:center;cursor:crosshair}
+.screen img{display:block;max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.screen .loading{color:#c5c3db;font-size:11px;text-align:center;line-height:1.8;padding:10px}
+.phone.demo .screen{background:linear-gradient(165deg,#e2aacc 4%,#d48db8 35%,#9d6ab7 65%,#564589 100%);cursor:default}
+.demo-ui{color:white;text-align:center;font-size:11px;line-height:1.8;opacity:.95}.demo-ui strong{display:block;font-size:18px;font-weight:900;letter-spacing:2px}.demo-ui .app-dots{display:flex;gap:13px;justify-content:center;margin:50px 0 20px}.demo-ui .app-dots i{background:#fff9;padding:5px;border-radius:6px;font-style:normal}
+.ph-footer{height:30px;min-height:30px;background:#27293b;display:flex;align-items:center;justify-content:space-evenly;color:#fafaff}
+.ph-footer button{color:#e9e4ff;font-size:17px;min-width:30px}
+.ph-resize{position:absolute;width:24px;height:24px;bottom:0;right:0;cursor:nwse-resize;z-index:5;background:linear-gradient(135deg,transparent 54%,#a0a0d3 55%,#a0a0d3 58%,transparent 60%)}
+.empty{position:absolute;left:50%;top:43%;transform:translate(-50%,-50%);text-align:center;background:white;padding:28px 35px;border-radius:18px;box-shadow:0 9px 34px #18184c10;border:1px solid #e8e7f3;width:370px;max-width:90%;z-index:2}
+.empty h2{font-size:17px;margin:8px 0}.empty p{font-size:12px;color:#9599a8;line-height:1.7}
+.simple{padding:26px 30px;overflow:auto;flex:1}.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px}.card{background:white;border:1px solid #ecebf3;border-radius:16px;padding:22px;box-shadow:0 6px 22px #14143b06}.card h3{margin:0 0 13px;font-size:15px}.card p{color:#8e91a0;font-size:12px;line-height:1.75}.field{display:flex;flex-direction:column;gap:6px;margin:12px 0}.field label{font-weight:700;font-size:12px;color:#6d7183}.field input{width:100%;border:1px solid #dfe0e9;border-radius:8px;padding:12px;background:#fbfbfe}
+.table{border-collapse:collapse;background:white;width:100%;border:1px solid #ebedf2;border-radius:12px;overflow:hidden}.table td,.table th{padding:17px;border-bottom:1px solid #f0f0f5;text-align:left;font-size:12px}.table th{color:#8d91a2;font-size:11px;background:#fdfdff}.table td strong{display:block;font-size:12px}
+.note{padding:13px;background:#f3f0ff;border:1px solid #e8e1ff;border-radius:10px;color:#7a6a9f;line-height:1.6;font-size:12px}
+.toast{position:fixed;right:24px;bottom:20px;z-index:10;padding:13px 18px;background:#26243c;color:white;border-radius:10px;box-shadow:0 7px 18px #1124;font-size:12px;display:none;max-width:380px}
+.count{color:#7c5ecf;background:#eee9fc;border-radius:6px;padding:2px 6px;font-size:10px}
+@media(max-width:980px){.app{grid-template-columns:168px minmax(0,1fr)}.logo{padding:12px}.nav{font-size:11px;padding:11px}.tools{padding:12px}.top{padding:15px}.right{gap:6px}.pill{font-size:11px;padding:9px}}
+</style></head><body>
+<div class="app">
+<aside>
+<div class="logo"><div class="brandmark">◈</div><div><b>MURDILIMAX</b><small>ORBIT STUDIO</small></div></div>
+<div class="grouphead">PREVIEW (НЕ АНДРОИД)</div>
+<button class="nav active" data-page="devices"><span class="ico">▦</span>Мои телефоны <span class="count" id="nav-num">0</span></button>
+<button class="nav" data-page="browsers"><span class="ico">◉</span>Браузерные профили</button>
+<button class="nav" data-page="setup"><span class="ico">⊞</span>Android / ADB</button>
+<div class="grouphead">Account</div>
+<button class="nav" data-native="account"><span class="ico">♙</span>Личный кабинет</button>
+<button class="nav" data-page="settings"><span class="ico">⚙</span>Настройки</button>
+<button class="nav" data-native="help"><span class="ico">?</span>Поддержка</button>
+<div class="aside-bottom"><div class="mini"><b>◈ LEGACY 0.6 · INTEL</b><br>macOS Catalina 10.15+<br><span style="color:#8d66ce">Локальная бета • Без облачных Android</span></div></div>
+</aside>
+<main>
+<header class="top"><div><div class="heading" id="title">Мои телефоны</div><div class="sub" id="subtitle">Настоящие Android-экраны в одной рабочей области</div></div><div class="right"><span class="badge muted" id="connection">ADB: проверка...</span><button class="account" data-native="account">◉ Мой аккаунт ↗</button></div></header>
+<section class="page on" id="page-devices">
+<div class="tools"><div class="lefttools"><span class="metric">Телефонов: <b id="device-count">0</b></span><span class="metric">Статус: <b id="live-status">ожидание</b></span><button class="pill small" data-action="refresh">⟳ Обновить</button></div>
+<div class="lefttools"><button class="pill small" data-action="demo">◈ Пример раскладки</button><button class="pill small" data-action="grid">▦ Сетка</button><button class="pill small" data-action="row">☷ В ряд</button><button class="pill purple" data-page="setup">＋ Подключить телефон</button></div></div>
+<div class="canvaswrap" id="canvaswrap"><div id="board" class="board"><div class="panelbar" id="panelbar">Перетаскивай телефон за заголовок · изменяй размер за правый нижний угол</div><div class="empty" id="empty">
+<div style="font-size:40px">📱</div><h2>Пока нет подключённых Android</h2><p>Для живых экранов нужен настоящий телефон с USB Debugging или работающий Android-эмулятор. Не будем подменять их картинками.</p><button class="pill purple" data-page="setup">Настроить Android →</button><p>Можно нажать «Пример раскладки» — это лишь демонстрация интерфейса, не Android.</p>
+</div></div></div>
+</section>
+<section class="page" id="page-browsers">
+<div class="tools"><b>Изолированные браузерные сессии WebKit</b><span class="badge muted">Не Camoufox · legacy-режим</span></div>
+<div class="simple"><div class="cards">
+<div class="card"><h3>＋ Новый браузерный профиль</h3><p>Отдельные временные cookies. Каждое окно использует отдельное хранилище.</p>
+<div class="field"><label>Имя профиля</label><input id="browser-name" value="Мой браузер"></div>
+<div class="field"><label>Стартовый адрес</label><input id="browser-url" value="https://example.org"></div>
+<button class="pill purple" data-action="browser">Открыть браузер ↗</button></div>
+<div class="card"><h3>◉ Состояние браузеров</h3><p>На этом старом Mac используется встроенный WebKit. Сессии не сохраняются после закрытия. Защиту от обнаружения и подмену отпечатка эта версия не обеспечивает.</p><div class="note">Для полноценной поддержки Camoufox и современных Android нужна актуальная система или отдельный сервер с достаточными ресурсами.</div></div>
+</div></div>
+</section>
+<section class="page" id="page-setup">
+<div class="tools"><b>Устройства и Android SDK</b><button class="pill small" data-action="refresh">⟳ Найти устройства</button></div>
+<div class="simple">
+<div class="cards">
+<div class="card"><h3>📱 Подключить настоящий Android</h3><p>1. Включи на телефоне «Для разработчиков» → «Отладка по USB».<br>2. Подключи USB и разреши отладку на экране телефона.<br>3. Установи совместимый Android Platform Tools (ADB) на Mac.<br>4. Нажми «Найти устройства».</p>
+<button class="pill purple" data-action="refresh">Найти Android</button></div>
+<div class="card"><h3>▧ Запустить установленный эмулятор</h3><p>Для Mac 2012–2014 нужен старый совместимый Android SDK и уже созданный AVD. Android Studio новых версий на Catalina не запускается.</p>
+<div class="field"><label>Имя существующего AVD</label><input id="avd-name" placeholder="Pixel_2"></div>
+<button class="pill purple" data-action="avd">Запустить AVD</button><button class="pill" data-action="diagnose">Диагностика</button>
+</div>
+</div><h3 style="margin:24px 0 10px">Подключённые устройства</h3>
+<table class="table"><thead><tr><th>Устройство / Serial</th><th>Тип</th><th>Статус</th><th>Действие</th></tr></thead><tbody id="device-rows"><tr><td colspan="4">Проверка...</td></tr></tbody></table>
+</div>
+</section>
+<section class="page" id="page-settings"><div class="simple"><div class="cards">
+<div class="card"><h3>⚙ Murdilimax Orbit Legacy</h3><p>Совместимость: Intel Mac, macOS 10.15+.<br>Браузеры: WebKit (временные профили).<br>Android: ADB, живые экраны при подключении устройства.<br>Рабочая область: перемещение, масштабирование, сетка, ряд, клики по Android.</p><button class="pill" data-action="diagnose">Диагностика системы</button></div>
+<div class="card"><h3>Ограничения версии</h3><p>Для работы нескольких эмуляторов нужны оперативная память, процессор и виртуализация. На старых Mac рекомендуется физическое Android-устройство или удалённый сервер. Бета-версия без подтверждённых антидетект-функций и оплаты.</p><button class="pill" data-native="help">Документация</button></div>
+</div></div></section>
+</main></div><div id="toast" class="toast"></div>
+<script>
+(function(){
+'use strict';
+var state={devices:[],cards:{},demo:false,z:5},board=document.getElementById('board');
+function send(action,data){if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.orbit){window.webkit.messageHandlers.orbit.postMessage({action:action,data:data||{}})}else{if(action==='ready')document.getElementById('connection').textContent='Веб-превью (не программа)';else if(action!=='ready')toast('Это только предпросмотр. Подключение устройств доступно в приложении для Mac.')}}
+function toast(s){var n=document.getElementById('toast');n.textContent=s;n.style.display='block';setTimeout(function(){n.style.display='none'},4500)}
+function page(name){Array.prototype.forEach.call(document.querySelectorAll('.page'),function(e){e.classList.toggle('on',e.id==='page-'+name)});
+Array.prototype.forEach.call(document.querySelectorAll('.nav'),function(e){e.classList.toggle('active',e.getAttribute('data-page')===name)});
+var names={devices:['Мои телефоны','Все устройства в одном окне — перемещение, масштабирование, управление'],browsers:['Браузерные профили','Раздельные временные сеансы WebKit'],setup:['Android / ADB','Подключение физических телефонов и локальных эмуляторов'],settings:['Настройки','Информация о системе и диагностике']};
+document.getElementById('title').textContent=names[name][0];document.getElementById('subtitle').textContent=names[name][1]}
+function demoToggle(){state.demo=!state.demo;if(state.demo){toast('ДЕМО: это только пример расположения окон, Android не запущен');renderDemo()}else{clearDemo();if(!state.devices.length)document.getElementById('empty').style.display='block';refresh()}}
+function clearDemo(){Array.prototype.forEach.call(board.querySelectorAll('.phone.demo'),function(e){e.remove()})}
+function buildPhone(id,index,isDemo){var outer=document.createElement('div');outer.className='phone'+(isDemo?' demo':'');outer.style.left=(40+index*248)+'px';outer.style.top=(75+(index%2)*18)+'px';outer.style.zIndex=++state.z;outer.setAttribute('data-serial',id);
+outer.innerHTML='<div class="ph-head"><span class="dot '+(isDemo?'demo':'')+'"></span><span class="ph-title"></span><button class="ph-btn" data-ph="shrink" title="Уменьшить">−</button><button class="ph-btn" data-ph="grow" title="Увеличить">+</button><button class="ph-btn" data-ph="close" title="Закрыть">×</button></div>'+
+'<div class="screen">'+(isDemo?'<div class="demo-ui"><span>10:28 ▴ ▴ ▰</span><strong>DEMO</strong><div class="app-dots"><i>◉</i><i>▣</i><i>▶</i><i>✉</i></div>НЕТ ПОДКЛЮЧЕНИЯ<br>это не Android</div>':'<div class="loading">Подключение к Android…</div><img style="display:none">')+'</div>'+
+'<div class="ph-footer"><button data-key="4">◀</button><button data-key="3">○</button><button data-key="187">▣</button></div><span class="ph-resize"></span>';
+outer.querySelector('.ph-title').textContent=isDemo?('Демо-профиль '+(index+1)):id;
+var head=outer.querySelector('.ph-head'),resize=outer.querySelector('.ph-resize');
+var start=null;
+function dragStart(ev,kind){if(ev.target.tagName==='BUTTON')return;ev.preventDefault();outer.style.zIndex=++state.z;start={kind:kind,x:ev.clientX,y:ev.clientY,left:parseFloat(outer.style.left)||0,top:parseFloat(outer.style.top)||0,w:outer.offsetWidth,h:outer.offsetHeight};document.addEventListener('mousemove',move);document.addEventListener('mouseup',end)}
+function move(ev){if(!start)return;var dx=ev.clientX-start.x,dy=ev.clientY-start.y;if(start.kind==='drag'){outer.style.left=Math.max(0,start.left+dx)+'px';outer.style.top=Math.max(0,start.top+dy)+'px'}
+else{outer.style.width=Math.max(160,Math.min(480,start.w+dx))+'px';outer.style.height=Math.max(270,Math.min(820,start.h+dy))+'px'}}
+function end(){document.removeEventListener('mousemove',move);document.removeEventListener('mouseup',end);start=null}
+head.addEventListener('mousedown',function(e){dragStart(e,'drag')});
+resize.addEventListener('mousedown',function(e){dragStart(e,'resize')});
+outer.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var a=b.getAttribute('data-ph'),k=b.getAttribute('data-key');if(k&&!isDemo){send('key',{serial:id,key:k});return}
+if(a==='close'){outer.remove();delete state.cards[id];return}
+if(a==='grow'||a==='shrink'){var delta=a==='grow'?40:-40;outer.style.width=Math.max(160,Math.min(480,outer.offsetWidth+delta))+'px';outer.style.height=Math.max(270,Math.min(820,outer.offsetHeight+delta*2))+'px'}});
+if(!isDemo)outer.querySelector('.screen').addEventListener('click',function(e){var img=outer.querySelector('img');if(!img||img.style.display==='none'||!img.naturalWidth)return;var rect=img.getBoundingClientRect();var ratio=Math.min(rect.width/img.naturalWidth,rect.height/img.naturalHeight);var w=img.naturalWidth*ratio,h=img.naturalHeight*ratio;var x=e.clientX-rect.left-(rect.width-w)/2,y=e.clientY-rect.top-(rect.height-h)/2;if(x<0||y<0||x>w||y>h)return;send('tap',{serial:id,x:Math.floor(x/ratio),y:Math.floor(y/ratio)})});
+board.appendChild(outer);return outer}
+function renderDemo(){if(!state.demo)return;clearDemo();for(var i=0;i<3;i++)buildPhone('demo'+i,i,true);document.getElementById('empty').style.display='none'}
+function refresh(){send('refresh')}
+function setDevices(devices,available){state.devices=devices||[];var isConnected=!!available;document.getElementById('connection').textContent=available?'● ADB online':'ADB не установлен';
+document.getElementById('connection').className='badge '+(available?'':'muted');
+document.getElementById('device-count').textContent=devices.length;document.getElementById('nav-num').textContent=devices.length;
+document.getElementById('live-status').textContent=devices.length?'онлайн':'нет устройств';
+var rows=document.getElementById('device-rows');rows.innerHTML='';
+if(!devices.length){rows.innerHTML='<tr><td colspan="4" style="color:#9799a7">Нет запущенных Android. Подключи USB-устройство или запусти совместимый AVD.</td></tr>'}
+devices.forEach(function(d,i){var tr=document.createElement('tr');tr.innerHTML='<td><strong></strong><small>Android · ADB</small></td><td>Телефон / AVD</td><td><span class="badge">● Работает</span></td><td><button class="pill small">Открыть экран</button></td>';tr.querySelector('strong').textContent=d;tr.querySelector('button').onclick=function(){page('devices');showPhone(d,i)};rows.appendChild(tr)});
+Object.keys(state.cards).forEach(function(id){if(devices.indexOf(id)<0){state.cards[id].remove();delete state.cards[id]}});
+if(!state.demo){document.getElementById('empty').style.display=devices.length?'none':'block';devices.slice(0,6).forEach(function(d,i){showPhone(d,i)})}}
+function showPhone(serial,i){if(state.demo){state.demo=false;clearDemo()}if(!state.cards[serial])state.cards[serial]=buildPhone(serial,i,false);document.getElementById('empty').style.display='none'}
+function displayScreen(serial,b64){var card=state.cards[serial];if(!card)return;var img=card.querySelector('img');if(!img)return;img.src='data:image/png;base64,'+b64;img.onload=function(){img.style.display='block';card.querySelector('.loading').style.display='none'}}
+function arrange(mode){var arr=Array.prototype.slice.call(board.querySelectorAll('.phone'));if(!arr.length)return;var wrap=document.getElementById('canvaswrap'),cols=mode==='row'?arr.length:Math.max(1,Math.floor((wrap.clientWidth-35)/250));arr.forEach(function(p,i){p.style.left=(24+(i%cols)*250)+'px';p.style.top=(73+Math.floor(i/cols)*490)+'px'})}
+Array.prototype.forEach.call(document.querySelectorAll('[data-page]'),function(e){e.onclick=function(){page(e.getAttribute('data-page'))}});
+Array.prototype.forEach.call(document.querySelectorAll('[data-native]'),function(e){e.onclick=function(){send(e.getAttribute('data-native'))}});
+Array.prototype.forEach.call(document.querySelectorAll('[data-action]'),function(e){e.onclick=function(){var a=e.getAttribute('data-action');if(a==='grid'||a==='row')arrange(a);else if(a==='demo')demoToggle();else if(a==='browser')send('browser',{name:document.getElementById('browser-name').value,url:document.getElementById('browser-url').value});else if(a==='avd')send('avd',{name:document.getElementById('avd-name').value});else send(a)}});
+window.orbit={onNative:function(m){if(m.event==='devices')setDevices(m.devices||[],m.adb);if(m.event==='frame')displayScreen(m.serial,m.data);if(m.event==='toast')toast(m.text)}};
+send('ready');
+})();
+</script></body></html>
