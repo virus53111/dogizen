@@ -6,6 +6,9 @@ on:
   pull_request:
     paths: ['browser/**', '.github/workflows/browser-ci.yml']
   workflow_dispatch:
+concurrency:
+  group: browser-ci-${{ github.ref }}
+  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
