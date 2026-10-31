@@ -40,7 +40,19 @@ jobs:
           mkdir -p android/app/src/main/res/drawable-nodpi
           cp assets/generated/app-icon-512.png android/app/src/main/res/drawable-nodpi/app_icon.png
       - name: Build unsigned-for-production, debug-signed APK
-        run: gradle -p android :app:assembleDebug --no-daemon --stacktrace
+        shell: bash
+        run: |
+          for attempt in 1 2 3; do
+            if gradle -p android :app:assembleDebug --no-daemon --stacktrace --refresh-dependencies; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "Gradle failed after 3 bounded dependency-resolution attempts"
+              exit 1
+            fi
+            echo "Gradle dependency resolution failed; retrying attempt $((attempt+1))"
+            sleep 15
+          done
       - name: Verify APK
         run: |
           test -s android/app/build/outputs/apk/debug/app-debug.apk
