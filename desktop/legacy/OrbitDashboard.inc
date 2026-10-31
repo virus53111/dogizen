@@ -34,7 +34,6 @@
     [events addScriptMessageHandler:self name:@"orbit"];
     configuration.userContentController=events;
     configuration.websiteDataStore=[WKWebsiteDataStore nonPersistentDataStore];
-    configuration.defaultWebpagePreferences.allowsContentJavaScript=YES;
     self.dashboard=[[WKWebView alloc]initWithFrame:self.window.contentView.bounds
                                       configuration:configuration];
     self.dashboard.autoresizingMask=NSViewWidthSizable|NSViewHeightSizable;
