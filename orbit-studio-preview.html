@@ -97,7 +97,7 @@ main{min-width:0;display:flex;flex-direction:column}
 (function(){
 'use strict';
 var state={devices:[],cards:{},demo:false,z:5},board=document.getElementById('board');
-function send(action,data){if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.orbit){window.webkit.messageHandlers.orbit.postMessage({action:action,data:data||{}})}else{if(action==='ready')document.getElementById('connection').textContent='Веб-превью (не программа)';else if(action!=='ready')toast('Это только предпросмотр. Подключение устройств доступно в приложении для Mac.')}}
+function send(action,data){if(window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.orbit){window.webkit.messageHandlers.orbit.postMessage({action:action,data:data||{}})}else{if(action==='ready'){document.getElementById('connection').textContent='DEMO · нет Android';demoToggle()};else if(action!=='ready')toast('Это только предпросмотр. Подключение устройств доступно в приложении для Mac.')}}
 function toast(s){var n=document.getElementById('toast');n.textContent=s;n.style.display='block';setTimeout(function(){n.style.display='none'},4500)}
 function page(name){Array.prototype.forEach.call(document.querySelectorAll('.page'),function(e){e.classList.toggle('on',e.id==='page-'+name)});
 Array.prototype.forEach.call(document.querySelectorAll('.nav'),function(e){e.classList.toggle('active',e.getAttribute('data-page')===name)});
