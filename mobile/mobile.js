@@ -52,6 +52,35 @@
   save();render();modal.close();toast('Профиль сохранён');
  });
  search.addEventListener('input',render);
+ $('import-button').addEventListener('click',()=>$('import-file').click());
+ $('import-file').addEventListener('change',async event=>{
+  const field=event.currentTarget, file=field.files?.[0];
+  if(!file)return;
+  try{
+   if(file.size>1024*1024)throw Error('Файл слишком большой: максимум 1 МБ');
+   const data=JSON.parse(await file.text());
+   if(data?.format!=='murdilimax-mobile-metadata'||data?.version!==1||!Array.isArray(data.profiles))
+    throw Error('Этот файл не является экспортом Murdilimax Mobile v1');
+   if(data.profiles.length>500)throw Error('В файле слишком много профилей');
+   const found=new Set(profiles.map(p=>p.id)), incoming=[], now=new Date().toISOString();
+   for(const row of data.profiles){
+    if(!row||typeof row.name!=='string'||!row.name.trim())throw Error('Повреждённый профиль в файле');
+    const safe=validUrl(typeof row.url==='string'?row.url:'');
+    if(safe===null)throw Error('Недопустимый адрес сайта в импорте');
+    let id=typeof row.id==='string'&&row.id.length<100?row.id:uuid();
+    while(found.has(id))id=uuid();
+    found.add(id);
+    incoming.push({id,name:row.name.trim().slice(0,60),group:typeof row.group==='string'?row.group.slice(0,45):'',
+      notes:typeof row.notes==='string'?row.notes.slice(0,500):'',url:safe,
+      created:typeof row.created==='string'?row.created.slice(0,50):now,updated:now});
+   }
+   if(profiles.length+incoming.length>500)throw Error('Импорт превысит лимит в 500 локальных профилей');
+   if(!incoming.length){toast('В файле нет профилей');return}
+   if(!confirm('Добавить '+incoming.length+' профилей на этот телефон?'))return;
+   profiles=incoming.concat(profiles);save();render();toast('Импортировано профилей: '+incoming.length);
+  }catch(error){toast(error?.message||'Ошибка чтения JSON')}
+  finally{field.value=''}
+ });
  $('export-button').addEventListener('click',()=>{
   if(!profiles.length){toast('Нет профилей для экспорта');return}
   // No secrets or cookies stored in mobile app.
