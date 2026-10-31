@@ -79,6 +79,7 @@ class BrowserUI:
         self.refresh()
         self.root.after(2500, self.refresh_status)
         self.root.after(1500, self.restore_login)
+        self.root.after(300000, self.license_tick)
 
     def button(self, parent, label, command):
         ttk.Button(parent, text=label, command=lambda: self.call(command)).pack(side="left", padx=(0, 7), pady=5)
@@ -165,6 +166,15 @@ class BrowserUI:
                  "Платные подписки отключены до проверки оплаты Stripe. "
                  "Текущая бесплатная бета ограничена тремя профилями.",
                  bg=BG, fg=MUTED, font=("Arial", 10), wraplength=800, justify="left").pack(anchor="w", pady=(12, 0))
+
+    def license_tick(self):
+        """Never keep a paid UI entitlement indefinitely without a fresh server check."""
+        try:
+            if self.authorized:
+                self.check_license()
+        finally:
+            if self.root.winfo_exists():
+                self.root.after(300000, self.license_tick)
 
     def restore_login(self):
         if not self.account.load_token():
