@@ -4,6 +4,8 @@
 // No claim of fingerprint invisibility. Android screens use actual ADB PNG frames.
 #import <Cocoa/Cocoa.h>
 #import <WebKit/WebKit.h>
+#import <CommonCrypto/CommonDigest.h>
+#import <sys/stat.h>
 
 static NSString *OrbitRun(NSString *exe, NSArray<NSString *> *args, NSData **binary) {
     if (!exe || ![[NSFileManager defaultManager] isExecutableFileAtPath:exe]) return @"Missing executable";
@@ -18,6 +20,9 @@ static NSString *OrbitRun(NSString *exe, NSArray<NSString *> *args, NSData **bin
     [task waitUntilExit];
     if(binary) *binary=data;
     return [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding] ?: @"";
+}
+static NSString *OrbitPrivateAdbPath(void) {
+    return [NSHomeDirectory() stringByAppendingPathComponent:@"Library/Application Support/Murdilimax Orbit Legacy/platform-tools/adb"];
 }
 static NSString *OrbitAdb(void) {
     NSString *sdk=NSProcessInfo.processInfo.environment[@"ANDROID_HOME"];
@@ -186,6 +191,16 @@ static NSString *OrbitSavePath(void){
 @property(nonatomic,strong) NSMutableArray<NSString*> *orbitDeviceSerials;
 @property(nonatomic,strong) NSMutableSet<NSString*> *orbitBusySerials;
 @property(nonatomic,assign) BOOL orbitInstallingAdb;
+-(void)openAccount:(id)sender;
+-(void)openHelp:(id)sender;
+-(void)diagnose:(id)sender;
+-(void)newBrowser:(id)sender;
+-(void)startAVD:(id)sender;
+-(void)orbitInstallAdb:(id)sender;
+-(void)orbitSetupDashboard;
+-(void)orbitReloadDevices;
+-(void)orbitRefreshFrames:(id)sender;
+-(void)orbitToast:(NSString*)text;
 @end
 
 @implementation OrbitMain
