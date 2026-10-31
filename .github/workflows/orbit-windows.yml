@@ -63,7 +63,7 @@ jobs:
           @'
           [Setup]
           AppName=Murdilimax Orbit
-          AppVersion=0.3.0
+          AppVersion=0.4.0
           DefaultDirName={autopf}\Murdilimax Orbit
           DefaultGroupName=Murdilimax Orbit
           PrivilegesRequired=lowest
@@ -90,8 +90,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          gh release view v0.3.0-win-beta | Out-Null
+          gh release view v0.4.0-win-beta | Out-Null
           if ($LASTEXITCODE -ne 0) {
-            gh release create v0.3.0-win-beta --prerelease --title 'Murdilimax Orbit Windows Beta 0.3' --notes 'Windows installer with integrated ADB/scrcpy and Android setup wizard. Android SDK system images require an additional download. Google account login requires owner OAuth configuration and account site public access.'
+            gh release create v0.4.0-win-beta --prerelease --title 'Murdilimax Orbit Windows Beta 0.4' --notes 'Windows installer with integrated ADB/scrcpy and Android setup wizard. Android SDK system images require an additional download. Google account login requires owner OAuth configuration and account site public access.'
           }
-          gh release upload v0.3.0-win-beta Murdilimax-Orbit-Windows-Setup.exe --clobber
+          gh release upload v0.4.0-win-beta Murdilimax-Orbit-Windows-Setup.exe --clobber
