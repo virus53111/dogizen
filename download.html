@@ -11,10 +11,22 @@
 <section id="legacy-mac" style="margin:30px 0;padding:24px;border:1px solid #9a85c8;background:linear-gradient(135deg,#36274f,#1e1c36);border-radius:18px">
  <div style="color:#e4c2ff;font-size:11px;font-weight:800;letter-spacing:1.6px">MAC 2012–2014 / INTEL</div>
  <h2 style="font-size:24px;line-height:1.3;margin:12px 0;color:#f3ebff">Murdilimax Orbit Legacy</h2>
- <p style="font-size:13px;color:#c8bedc;line-height:1.8">Отдельное лёгкое приложение для старых Intel Mac с <b>macOS Catalina 10.15 или новее</b>. Не нужно устанавливать Python. Окна Android можно перемещать и менять в размере, а браузерные сессии работают через системный WebKit.</p>
+ <p style="font-size:13px;color:#c8bedc;line-height:1.8">Отдельное лёгкое приложение для старых Intel Mac: <b>Catalina 10.15+</b> (рекомендуемый вариант), ниже есть отдельная сборка для <b>10.13–10.14</b>. Не нужно устанавливать Python. Окна Android можно перемещать и менять в размере, а браузерные сессии работают через системный WebKit.</p>
  <a href="https://github.com/virus53111/dogizen/releases/download/v0.5.0-mac-legacy-beta/Murdilimax-Orbit-Legacy-macOS-10.15-Intel.dmg" style="display:inline-block;text-decoration:none;background:#c9afff;color:#1e1337;padding:15px 20px;border-radius:11px;font-size:13px;font-weight:900;margin:12px 0">↓ Скачать Legacy для Mac 2012–2014 (.dmg)</a>
- <p style="font-size:11px;color:#bdb4cd;line-height:1.8">Важно: WebKit в Legacy — <b>не Camoufox и не антидетект</b>. Android через уже установленный совместимый SDK/ADB. Старые macOS 10.13–10.14 не поддерживаются. Приложение не заверено Apple и пока не проверено на физическом Mac с Catalina.</p>
+ <p style="font-size:11px;color:#bdb4cd;line-height:1.8">Важно: WebKit в Legacy — <b>не Camoufox и не антидетект</b>. Android через уже установленный совместимый SDK/ADB. Для macOS 10.13–10.14 есть отдельная сборка ниже. Приложение не заверено Apple и пока не проверено на физическом Mac с Catalina.</p>
  <a href="https://github.com/virus53111/dogizen/blob/main/docs/ORBIT_LEGACY_MAC_RU.md" target="_blank" rel="noopener" style="font-size:12px;color:#ddc6ff">Пошаговая инструкция на русском ↗</a>
+<aside id="mac-gatekeeper-help" style="margin:22px 0 0;padding:20px;border:1px solid #bd9fef;background:#151629;border-radius:14px">
+  <strong style="display:block;font-size:16px;color:#f4e5ff;margin-bottom:9px">⚠️ Mac пишет «Apple cannot check it for malicious software»?</strong>
+  <p style="font-size:12px;color:#c4bfd6;line-height:1.75;margin:0 0 10px">Эта бета-версия пока не нотариально заверена Apple. Такое предупреждение не означает, что Mac слишком старый. Если ты скачал приложение из нашего GitHub и доверяешь ему, можно разрешить запуск только этого приложения через настройки macOS.</p>
+  <ol style="padding-left:20px;color:#f1e7ff;font-size:12px;line-height:1.9;margin:7px 0 12px">
+    <li>Открой DMG и перетащи <b>Murdilimax Orbit Legacy.app</b> на папку <b>Applications</b> слева. Не запускай приложение прямо из DMG.</li>
+    <li>Открой <b>Finder → Applications</b>, найди Murdilimax Orbit Legacy, нажми <b>Control + клик → Open / Открыть</b>.</li>
+    <li>Если снова будет предупреждение: <b> → System Preferences → Security &amp; Privacy → General → Open Anyway</b>. При появлении запроса подтверди открытие.</li>
+    <li>Не выключай защиту macOS полностью. Если вместо этого появляется «damaged», «requires newer macOS» или окно исчезает после запуска — это другая ошибка, пришли её скриншот.</li>
+  </ol>
+  <p style="font-size:11px;color:#b3abc8;line-height:1.7;margin:0">Установка с неподтверждённым сертификатом несёт риск. Для нормального коммерческого распространения потребуется сертификат Apple Developer ID и нотариальное заверение. <a href="https://support.apple.com/ru-ru/102445" target="_blank" rel="noopener" style="color:#e6ceff">Официальная инструкция Apple ↗</a></p>
+</aside>
+
  <div id="legacy-highsierra" style="display:block;margin-top:18px;border-top:1px solid #685880;padding-top:15px">
    <b style="font-size:13px">У тебя macOS High Sierra 10.13 или Mojave 10.14?</b>
    <p style="font-size:11px;color:#d0c4e8;line-height:1.7">Для этой системы может быть доступна ещё более старая Legacy-сборка. Системный WebKit устарел и небезопасен для чувствительных аккаунтов.</p>
