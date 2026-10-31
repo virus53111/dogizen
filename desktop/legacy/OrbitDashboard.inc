@@ -106,6 +106,8 @@
         [self openAccount:nil];
     }else if([action isEqualToString:@"help"]){
         [self openHelp:nil];
+    }else if([action isEqualToString:@"install_adb"]){
+        [self orbitInstallAdb:nil];
     }else if([action isEqualToString:@"diagnose"]){
         [self diagnose:nil];
     }else if([action isEqualToString:@"browser"]){
