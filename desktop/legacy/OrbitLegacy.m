@@ -87,7 +87,6 @@ static NSString *OrbitSavePath(void){
 @property(nonatomic,strong) NSString *serial;
 @property(nonatomic,strong) NSString *adb;
 @property(nonatomic,assign) BOOL working;
-@property(nonatomic,strong) NSSizeValue *dummy;
 -(instancetype)initWithSerial:(NSString*)serial adb:(NSString*)adb index:(NSUInteger)index;
 -(void)refresh:(id)sender;
 -(void)sendTapX:(NSInteger)x y:(NSInteger)y;
@@ -269,6 +268,7 @@ static NSString *OrbitSavePath(void){
     OrbitAlert(@"Диагностика Murdilimax Orbit Legacy",diag);
 }
 -(void)newBrowser:(id)sender{
+    for(NSString *key in [self.browsers.allKeys copy]) if(!self.browsers[key].isVisible){[self.browsers removeObjectForKey:key];[self.browserStores removeObjectForKey:key];}
     if(self.browsers.count>=2){OrbitAlert(@"Бесплатный тариф",@"Для бесплатного режима доступны две браузерные сессии. Платная лицензия Legacy пока не подключена.");return;}
     NSString *name=[self.browserName.stringValue stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceCharacterSet];
     if(!name.length)name=[NSString stringWithFormat:@"Профиль %lu",(unsigned long)(self.browsers.count+1)];
