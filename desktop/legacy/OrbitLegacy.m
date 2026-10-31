@@ -350,6 +350,7 @@ static NSString *OrbitSavePath(void){
 -(void)rowPhones:(id)sender{[self arrange:NO];}
 @end
 
+static OrbitMain *gOrbitController = nil;
 int main(int argc,const char *argv[]) {
     @autoreleasepool{
         if(argc>=2 && strcmp(argv[1],"--check")==0){
@@ -358,8 +359,8 @@ int main(int argc,const char *argv[]) {
             return 0;
         }
         [NSApplication sharedApplication];
-        OrbitMain *controller=[[OrbitMain alloc]init];
-        NSApp.delegate=controller;
+        gOrbitController=[[OrbitMain alloc]init];
+        NSApp.delegate=gOrbitController;
         [NSApp setActivationPolicy:NSApplicationActivationPolicyRegular];
         [NSApp run];
     }
