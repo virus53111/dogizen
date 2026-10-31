@@ -1,0 +1,387 @@
+"""Murdilimax Browser desktop workspace (Tkinter; Windows/macOS)."""
+from __future__ import annotations
+import argparse
+import os
+import socket
+import subprocess
+import sys
+import tempfile
+import tkinter as tk
+import webbrowser
+from pathlib import Path
+from tkinter import filedialog, messagebox, ttk
+from urllib.parse import urlsplit
+
+from engine import request_stop, run_profile, start_background
+from store import Store
+
+BG = "#101322"
+PANEL = "#1a2034"
+TEXT = "#eef1ff"
+MUTED = "#a7afc9"
+ACCENT = "#76e4d4"
+
+class BrowserUI:
+    def __init__(self):
+        self.store = Store()
+        self.root = tk.Tk()
+        self.root.title("Murdilimax Browser — Profiles")
+        self.root.geometry("1220x750")
+        self.root.minsize(920, 620)
+        self.root.configure(bg=BG)
+        self.search = tk.StringVar()
+        self.state = tk.StringVar(value="Локальная рабочая область · браузерные профили")
+        style = ttk.Style(self.root)
+        style.theme_use("clam")
+        style.configure(".", background=BG, foreground=TEXT, font=("Arial", 10))
+        style.configure("TFrame", background=BG)
+        style.configure("TLabel", background=BG, foreground=TEXT)
+        style.configure("TButton", background=PANEL, foreground=TEXT, padding=(12, 9), borderwidth=0)
+        style.map("TButton", background=[("active", "#344963")])
+        style.configure("Treeview", background=PANEL, foreground=TEXT, fieldbackground=PANEL,
+                        rowheight=36, borderwidth=0)
+        style.map("Treeview", background=[("selected", "#315b72")])
+        style.configure("Treeview.Heading", background="#222a45", foreground=TEXT, padding=11)
+        style.configure("TEntry", fieldbackground=PANEL, foreground=TEXT)
+        style.configure("TCombobox", fieldbackground=PANEL, foreground="#111627")
+        style.configure("TNotebook", background=BG, borderwidth=0)
+        style.configure("TNotebook.Tab", background=PANEL, foreground=TEXT, padding=(20, 12))
+        title = tk.Frame(self.root, bg=BG)
+        title.pack(fill="x", padx=26, pady=(24, 12))
+        tk.Label(title, text="◈ MURDILIMAX", fg=ACCENT, bg=BG,
+                 font=("Arial", 20, "bold")).pack(side="left")
+        tk.Label(title, text="BROWSER  /  LOCAL BETA", fg=MUTED, bg=BG,
+                 font=("Arial", 10)).pack(side="left", padx=22)
+        ttk.Button(title, text="Открыть папку данных", command=self.open_folder).pack(side="right")
+        self.tabs = ttk.Notebook(self.root)
+        self.tabs.pack(fill="both", expand=True, padx=22, pady=8)
+        self.profile_tab = ttk.Frame(self.tabs)
+        self.proxy_tab = ttk.Frame(self.tabs)
+        self.info_tab = ttk.Frame(self.tabs)
+        self.tabs.add(self.profile_tab, text="Профили")
+        self.tabs.add(self.proxy_tab, text="Прокси")
+        self.tabs.add(self.info_tab, text="О программе")
+        self.setup_profiles()
+        self.setup_proxies()
+        self.setup_info()
+        tk.Label(self.root, textvariable=self.state, anchor="w", bg=BG, fg=MUTED, font=("Arial", 10)).pack(fill="x", padx=26, pady=(5, 15))
+        self.refresh()
+        self.root.after(2500, self.refresh_status)
+
+    def button(self, parent, label, command):
+        ttk.Button(parent, text=label, command=lambda: self.call(command)).pack(side="left", padx=(0, 7), pady=5)
+
+    def call(self, action):
+        try:
+            action()
+        except Exception as exc:
+            messagebox.showerror("Murdilimax Browser", str(exc), parent=self.root)
+            self.state.set("Ошибка: " + str(exc)[:150])
+
+    def setup_profiles(self):
+        bar = ttk.Frame(self.profile_tab)
+        bar.pack(fill="x", pady=10, padx=12)
+        self.button(bar, "＋ Профиль", self.new_profile)
+        self.button(bar, "✎ Изменить", self.edit_profile)
+        self.button(bar, "⧉ Дублировать", self.duplicate)
+        self.button(bar, "▶ Запустить", self.start)
+        self.button(bar, "■ Остановить", self.stop)
+        self.button(bar, "✕ Удалить", self.delete)
+        search = ttk.Frame(self.profile_tab)
+        search.pack(fill="x", padx=12, pady=6)
+        ttk.Label(search, text="Поиск (название, группа, теги, заметки)").pack(side="left", padx=(0, 14))
+        e = ttk.Entry(search, textvariable=self.search, width=48)
+        e.pack(side="left", fill="x", expand=True)
+        self.search.trace_add("write", lambda *_: self.refresh_profiles())
+        cols = ("name", "group", "tags", "proxy", "os", "status")
+        self.profile_tree = ttk.Treeview(self.profile_tab, columns=cols, show="headings", selectmode="extended")
+        for key, title, width in [("name", "Название", 230), ("group", "Группа", 130),
+                                  ("tags", "Теги", 180), ("proxy", "Прокси", 140),
+                                  ("os", "ОС отпечатка", 115), ("status", "Статус", 110)]:
+            self.profile_tree.heading(key, text=title)
+            self.profile_tree.column(key, width=width, stretch=True)
+        self.profile_tree.pack(fill="both", expand=True, padx=12, pady=7)
+        self.profile_tree.bind("<Double-1>", lambda _: self.call(self.edit_profile))
+        tools = ttk.Frame(self.profile_tab)
+        tools.pack(fill="x", padx=12, pady=8)
+        self.button(tools, "Экспорт настроек", self.export)
+        self.button(tools, "Импорт настроек", self.import_profiles)
+        self.button(tools, "Открыть журнал", self.open_log)
+        ttk.Label(tools, text="Cookies хранятся локально в каталоге каждого профиля.").pack(side="right", padx=10)
+
+    def setup_proxies(self):
+        bar = ttk.Frame(self.proxy_tab)
+        bar.pack(fill="x", padx=12, pady=10)
+        self.button(bar, "＋ Добавить прокси", self.new_proxy)
+        self.button(bar, "✕ Удалить прокси", self.remove_proxy)
+        self.button(bar, "Проверить TCP-подключение", self.check_proxy)
+        self.proxy_tree = ttk.Treeview(self.proxy_tab, columns=("name", "server", "auth"), show="headings")
+        for k, label, width in [("name", "Название", 200), ("server", "Адрес HTTP/SOCKS5", 460),
+                                ("auth", "Авторизация", 160)]:
+            self.proxy_tree.heading(k, text=label)
+            self.proxy_tree.column(k, width=width)
+        self.proxy_tree.pack(fill="both", expand=True, padx=12, pady=8)
+        ttk.Label(self.proxy_tab,
+                  text="Проверка TCP подтверждает соединение с сервером, но не проверяет выходной IP. Пароли — только в системном хранилище ключей.",
+                  foreground=MUTED, wraplength=1000).pack(anchor="w", padx=14, pady=10)
+
+    def setup_info(self):
+        intro = ("Murdilimax Browser · независимая настольная бета\n\n"
+                 "• Изолированные постоянные каталоги сайтов и cookies\n"
+                 "• Локальные профили, группы, теги, заметки и прокси\n"
+                 "• Camoufox / Firefox: браузер скачивается при первом запуске\n"
+                 "• Данные не синхронизируются с облаком и не отправляются разработчику\n"
+                 "• Экспорт содержит метаданные, но НЕ cookies и пароли\n\n"
+                 "Важно: это не клон Chromium и не гарантия обхода антифрода.\n"
+                 "Совместимость Camoufox с macOS Catalina должна пройти реальное тестирование.")
+        tk.Label(self.info_tab, text=intro, justify="left", fg=TEXT, bg=BG, wraplength=950,
+                 font=("Arial", 12), padx=26, pady=28).pack(anchor="w")
+        ttk.Button(self.info_tab, text="Документация движка", command=lambda: webbrowser.open("https://camoufox.com/python/")).pack(anchor="w", padx=24)
+
+    def selected(self, tree):
+        return list(tree.selection())
+
+    def one(self, tree, what):
+        selected = self.selected(tree)
+        if len(selected) != 1:
+            raise ValueError("Выбери один " + what)
+        return selected[0]
+
+    def running(self, profile_id):
+        path = self.store.root / "profiles" / profile_id / ".lock"
+        if not path.exists():
+            return False
+        try:
+            os.kill(int(path.read_text().strip()), 0)
+            return True
+        except (OSError, ValueError):
+            return False
+
+    def refresh_profiles(self):
+        old = set(self.profile_tree.selection())
+        self.profile_tree.delete(*self.profile_tree.get_children())
+        proxies = {p["id"]: p["name"] for p in self.store.proxies()}
+        query = self.search.get().strip().lower()
+        for p in self.store.profiles():
+            if query and query not in " ".join(str(p.get(k, "")) for k in ("name", "group", "tags", "notes")).lower():
+                continue
+            status = "● Запущен" if self.running(p["id"]) else "○ Остановлен"
+            self.profile_tree.insert("", "end", iid=p["id"], values=(p["name"], p["group"], p["tags"],
+                                    proxies.get(p["proxy_id"], "Без прокси"), p["os"], status))
+        self.profile_tree.selection_set([x for x in old if self.profile_tree.exists(x)])
+
+    def refresh_proxies(self):
+        self.proxy_tree.delete(*self.proxy_tree.get_children())
+        for p in self.store.proxies():
+            self.proxy_tree.insert("", "end", iid=p["id"],
+                                   values=(p["name"], p["server"], "Keychain" if p["username"] else "Нет"))
+
+    def refresh(self):
+        self.refresh_proxies()
+        self.refresh_profiles()
+
+    def refresh_status(self):
+        try:
+            self.refresh_profiles()
+        finally:
+            if self.root.winfo_exists():
+                self.root.after(2500, self.refresh_status)
+
+    def profile_form(self, profile=None):
+        window = tk.Toplevel(self.root)
+        window.title("Настройки браузерного профиля")
+        window.configure(bg=BG)
+        window.geometry("620x545")
+        window.transient(self.root)
+        window.grab_set()
+        fields = {}
+        configs = [
+            ("name", "Название", profile.get("name", "") if profile else ""),
+            ("url", "Стартовая страница", profile.get("url", "https://example.com") if profile else "https://example.com"),
+            ("group", "Группа", profile.get("group", "") if profile else ""),
+            ("tags", "Теги через запятую", profile.get("tags", "") if profile else ""),
+            ("notes", "Заметки", profile.get("notes", "") if profile else ""),
+        ]
+        for i, (key, title, value) in enumerate(configs):
+            ttk.Label(window, text=title).grid(row=i, column=0, sticky="w", padx=24, pady=11)
+            v = tk.StringVar(value=value)
+            ttk.Entry(window, textvariable=v, width=48).grid(row=i, column=1, sticky="ew", padx=22, pady=8)
+            fields[key] = v
+        proxies = self.store.proxies()
+        options = ["Без прокси"] + [p["name"] + " (" + p["id"][:8] + ")" for p in proxies]
+        selected_proxy = 0
+        if profile:
+            for i, p in enumerate(proxies, 1):
+                if p["id"] == profile.get("proxy_id"):
+                    selected_proxy = i
+        proxy_var = tk.StringVar(value=options[selected_proxy])
+        ttk.Label(window, text="Прокси").grid(row=5, column=0, sticky="w", padx=24, pady=11)
+        ttk.Combobox(window, textvariable=proxy_var, values=options, state="readonly", width=45).grid(row=5, column=1, padx=22, pady=8)
+        os_options = ("native", "windows", "macos", "linux")
+        os_var = tk.StringVar(value=profile.get("os", "native") if profile else "native")
+        ttk.Label(window, text="ОС отпечатка").grid(row=6, column=0, sticky="w", padx=24, pady=11)
+        ttk.Combobox(window, textvariable=os_var, values=os_options, state="readonly", width=45).grid(row=6, column=1, padx=22, pady=8)
+        ttk.Label(window, text="native = ОС компьютера. Отпечаток генерирует Camoufox.", foreground=MUTED).grid(row=7, column=0, columnspan=2, padx=24, pady=12)
+        def save():
+            try:
+                index = options.index(proxy_var.get())
+                proxy_id = "" if index == 0 else proxies[index - 1]["id"]
+                values = {k: v.get() for k, v in fields.items()}
+                values.update(proxy_id=proxy_id, os_name=os_var.get())
+                if profile:
+                    values["os"] = values.pop("os_name")
+                    self.store.update_profile(profile["id"], **values)
+                else:
+                    self.store.add_profile(**values)
+                self.refresh()
+                window.destroy()
+                self.state.set("Настройки профиля сохранены")
+            except Exception as exc:
+                messagebox.showerror("Профиль", str(exc), parent=window)
+        ttk.Button(window, text="Сохранить профиль", command=save).grid(row=8, column=1, sticky="e", padx=23, pady=18)
+        window.columnconfigure(1, weight=1)
+
+    def new_profile(self):
+        self.profile_form()
+
+    def edit_profile(self):
+        item = self.store.get_profile(self.one(self.profile_tree, "профиль"))
+        if item and self.running(item["id"]):
+            raise ValueError("Останови профиль перед изменением настроек")
+        self.profile_form(item)
+
+    def duplicate(self):
+        for pid in self.selected(self.profile_tree):
+            self.store.duplicate_profile(pid)
+        self.refresh()
+        self.state.set("Профили продублированы; cookies и сессии не копировались")
+
+    def delete(self):
+        selected = self.selected(self.profile_tree)
+        if not selected:
+            raise ValueError("Выбери профили")
+        if any(self.running(pid) for pid in selected):
+            raise ValueError("Сначала останови запущенные профили")
+        if not messagebox.askyesno("Удаление", "Удалить " + str(len(selected)) + " профилей? Данные будут перемещены в локальный trash."):
+            return
+        for pid in selected:
+            self.store.delete_profile(pid)
+        self.refresh()
+
+    def start(self):
+        selected = self.selected(self.profile_tree)
+        if not selected:
+            raise ValueError("Выбери профили")
+        count = 0
+        for pid in selected:
+            if not self.running(pid):
+                start_background(self.store, pid)
+                count += 1
+        self.state.set("Запуск " + str(count) + " браузеров. Первый запуск загружает Camoufox; смотри журнал.")
+
+    def stop(self):
+        for pid in self.selected(self.profile_tree):
+            request_stop(self.store, pid)
+        self.state.set("Отправлена команда корректного завершения")
+
+    def export(self):
+        path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON", "*.json")])
+        if path:
+            self.store.export_metadata(path)
+            self.state.set("Экспортированы только настройки, без cookies и паролей")
+
+    def import_profiles(self):
+        path = filedialog.askopenfilename(filetypes=[("JSON", "*.json")])
+        if path:
+            if Path(path).stat().st_size > 8_000_000:
+                raise ValueError("Export file is too large")
+            count = self.store.import_metadata(path)
+            self.refresh()
+            self.state.set("Импортировано профилей: " + str(count))
+
+    def new_proxy(self):
+        window = tk.Toplevel(self.root)
+        window.title("Новый прокси")
+        window.configure(bg=BG)
+        window.geometry("650x340")
+        window.transient(self.root)
+        window.grab_set()
+        fields = {}
+        for i, (field, label) in enumerate([
+            ("name", "Название"), ("server", "URL: http://host:port или socks5://host:port"),
+            ("username", "Логин (необязательно)"), ("password", "Пароль (сохраняется в Keychain)")]):
+            ttk.Label(window, text=label).grid(row=i, column=0, padx=12, pady=14, sticky="w")
+            v = tk.StringVar()
+            ttk.Entry(window, textvariable=v, show="*" if field == "password" else "", width=35).grid(row=i, column=1, padx=15)
+            fields[field] = v
+        def save():
+            try:
+                self.store.add_proxy(**{k: v.get() for k, v in fields.items()})
+                window.destroy()
+                self.refresh()
+            except Exception as exc:
+                messagebox.showerror("Прокси", str(exc), parent=window)
+        ttk.Button(window, text="Сохранить", command=save).grid(row=4, column=1, sticky="e", pady=16)
+        window.columnconfigure(1, weight=1)
+
+    def remove_proxy(self):
+        pid = self.one(self.proxy_tree, "прокси")
+        if messagebox.askyesno("Прокси", "Удалить прокси из списка?"):
+            self.store.delete_proxy(pid)
+            self.refresh()
+
+    def check_proxy(self):
+        pid = self.one(self.proxy_tree, "прокси")
+        proxy = next(p for p in self.store.proxies() if p["id"] == pid)
+        u = urlsplit(proxy["server"])
+        with socket.create_connection((u.hostname, u.port), timeout=5):
+            pass
+        messagebox.showinfo("Прокси", "TCP-порт отвечает. Это НЕ проверка авторизации, DNS, утечек или выходного IP.")
+
+    def open_folder(self):
+        p = self.store.root
+        if sys.platform == "win32":
+            os.startfile(str(p))
+        elif sys.platform == "darwin":
+            subprocess.Popen(["open", str(p)])
+        else:
+            subprocess.Popen(["xdg-open", str(p)])
+
+    def open_log(self):
+        pid = self.one(self.profile_tree, "профиль")
+        path = self.store.root / "logs" / (pid + ".log")
+        if path.exists():
+            webbrowser.open(path.as_uri())
+        else:
+            messagebox.showinfo("Журнал", "Лог пока пуст")
+
+    def run(self):
+        self.root.mainloop()
+
+def selftest():
+    with tempfile.TemporaryDirectory() as dirname:
+        store = Store(dirname)
+        p = store.add_profile("Smoke test", "https://example.com")
+        assert store.get_profile(p["id"])["name"] == "Smoke test"
+        store.delete_profile(p["id"])
+        assert not store.profiles()
+    print("Murdilimax Browser smoke test OK")
+
+def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--run-profile", default="")
+    parser.add_argument("--selftest", action="store_true")
+    args = parser.parse_args()
+    if args.selftest:
+        selftest()
+    elif args.run_profile:
+        try:
+            run_profile(args.run_profile)
+        except Exception as exc:
+            print(type(exc).__name__ + ": " + str(exc), file=sys.stderr)
+            sys.exit(2)
+    else:
+        BrowserUI().run()
+
+if __name__ == "__main__":
+    main()
