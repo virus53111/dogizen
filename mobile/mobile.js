@@ -30,7 +30,9 @@
     const u=validUrl(p.url||'');
     if(!u){toast('Укажите адрес https:// в настройках профиля');return}
     // External browser = a regular browser; no fabricated isolation.
-    window.open(u,'_blank','noopener,noreferrer');
+    if(window.MurdilimaxAndroid && typeof window.MurdilimaxAndroid.openExternal==='function')
+     window.MurdilimaxAndroid.openExternal(u);
+    else window.open(u,'_blank','noopener,noreferrer');
    });open.disabled=!p.url;open.title='Откроется обычный браузер телефона без антидетект-изоляции';bar.append(open);card.append(bar);profileList.append(card);
   }
  }
@@ -54,10 +56,16 @@
   if(!profiles.length){toast('Нет профилей для экспорта');return}
   // No secrets or cookies stored in mobile app.
   const json=JSON.stringify({format:'murdilimax-mobile-metadata',version:1,exported:new Date().toISOString(),profiles:profiles.map(({id,name,group,notes,url,created,updated})=>({id,name,group,notes,url,created,updated}))},null,2);
+  if(window.MurdilimaxAndroid && typeof window.MurdilimaxAndroid.saveJson==='function'){
+   window.MurdilimaxAndroid.saveJson(json);
+   toast('Выберите место сохранения через Android');
+   return;
+  }
   const file=new Blob([json],{type:'application/json'});
   const href=URL.createObjectURL(file);const a=document.createElement('a');a.href=href;a.download='murdilimax-mobile-profiles.json';document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(href),1500);toast('Экспорт JSON подготовлен');
  });
  $('theme-info').addEventListener('click',()=>$('info-dialog').showModal());$('close-info').addEventListener('click',()=>$('info-dialog').close());$('info-done').addEventListener('click',()=>$('info-dialog').close());
+ if(window.MurdilimaxAndroid){$('install-app').textContent='✓ Установлено';$('install-app').disabled=true;}
  window.addEventListener('beforeinstallprompt',event=>{event.preventDefault();deferredInstall=event;$('install-app').textContent='↧ Установить на телефон'});
  $('install-app').addEventListener('click',async()=>{
   if(deferredInstall){deferredInstall.prompt();const choice=await deferredInstall.userChoice;deferredInstall=null;if(choice?.outcome==='accepted')toast('Установка запрошена');return}
