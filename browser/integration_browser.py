@@ -28,7 +28,7 @@ def main():
                 page = first.pages[0] if first.pages else first.new_page()
                 page.goto(url)
                 assert page.title() == "Orbit Browser Test"
-                page.evaluate("document.cookie = 'orbit_profile_test=survived; path=/'")
+                page.evaluate("document.cookie = 'orbit_profile_test=survived; Max-Age=3600; SameSite=Lax; Path=/'")
                 assert "orbit_profile_test=survived" in page.evaluate("document.cookie")
             with Camoufox(persistent_context=True, user_data_dir=root,
                           headless=True, os="linux") as second:
