@@ -1,0 +1,98 @@
+name: Build Murdilimax Browser-only preview
+on:
+  push:
+    branches: [feature/orbit-browser-only-2026-10-31]
+    paths: ['browser/**', '.github/workflows/browser-build.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows:
+    name: Windows 10/11 x64 preview
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r browser/requirements.txt pyinstaller
+      - name: Build EXE
+        run: |
+          python -m PyInstaller --noconfirm --clean --windowed --onedir --name "Murdilimax Browser" --collect-all camoufox --collect-all browserforge --collect-all playwright --hidden-import keyring.backends.Windows --paths browser browser/app.py
+      - name: Smoke test packaged executable
+        shell: pwsh
+        run: |
+          & 'dist/Murdilimax Browser/Murdilimax Browser.exe' --selftest
+          if ($LASTEXITCODE -ne 0) { throw "Selftest failed" }
+      - name: Build Setup.exe
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          @'
+          [Setup]
+          AppName=Murdilimax Browser
+          AppVersion=0.1.0
+          DefaultDirName={autopf}\Murdilimax Browser
+          DefaultGroupName=Murdilimax Browser
+          PrivilegesRequired=lowest
+          OutputDir=.
+          OutputBaseFilename=Murdilimax-Browser-Windows-Preview-Setup
+          Compression=lzma
+          SolidCompression=yes
+          [Files]
+          Source: "dist\Murdilimax Browser\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
+          [Icons]
+          Name: "{autoprograms}\Murdilimax Browser"; Filename: "{app}\Murdilimax Browser.exe"
+          [Run]
+          Filename: "{app}\Murdilimax Browser.exe"; Description: "Launch"; Flags: nowait postinstall skipifsilent
+          '@ | Set-Content browser-preview.iss -Encoding UTF8
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' browser-preview.iss
+          if (!(Test-Path 'Murdilimax-Browser-Windows-Preview-Setup.exe')) { throw 'Installer missing' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Murdilimax-Browser-Windows-Preview
+          path: Murdilimax-Browser-Windows-Preview-Setup.exe
+          if-no-files-found: error
+          retention-days: 30
+  mac:
+    name: macOS preview / ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            name: Apple-Silicon
+          - runner: macos-15-intel
+            name: Intel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r browser/requirements.txt pyinstaller
+      - name: Build .app and smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m PyInstaller --noconfirm --clean --windowed --onedir --name 'Murdilimax Browser' --osx-bundle-identifier 'com.murdilimax.browser' --collect-all camoufox --collect-all browserforge --collect-all playwright --hidden-import keyring.backends.macOS --paths browser browser/app.py
+          test -d 'dist/Murdilimax Browser.app'
+          'dist/Murdilimax Browser.app/Contents/MacOS/Murdilimax Browser' --selftest
+          codesign --force --deep --sign - 'dist/Murdilimax Browser.app'
+          codesign --verify --deep 'dist/Murdilimax Browser.app'
+          mkdir -p dmgroot
+          cp -R 'dist/Murdilimax Browser.app' dmgroot/
+          ln -s /Applications dmgroot/Applications
+          hdiutil create -ov -fs HFS+ -volname 'Murdilimax Browser Preview' -srcfolder dmgroot -format UDZO "Murdilimax-Browser-macOS-${{ matrix.name }}-Preview.dmg"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Murdilimax-Browser-macOS-${{ matrix.name }}-Preview
+          path: Murdilimax-Browser-macOS-${{ matrix.name }}-Preview.dmg
+          if-no-files-found: error
+          retention-days: 30
