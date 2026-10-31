@@ -12,7 +12,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from urllib.parse import urlsplit
 
-from engine import request_stop, run_profile, start_background
+from engine import pid_alive, request_stop, run_profile, start_background
 from store import Store
 
 BG = "#101322"
@@ -152,8 +152,7 @@ class BrowserUI:
         if not path.exists():
             return False
         try:
-            os.kill(int(path.read_text().strip()), 0)
-            return True
+            return pid_alive(int(path.read_text().strip()))
         except (OSError, ValueError):
             return False
 
@@ -365,9 +364,16 @@ def selftest():
         assert store.get_profile(p["id"])["name"] == "Smoke test"
         store.delete_profile(p["id"])
         assert not store.profiles()
-    print("Murdilimax Browser smoke test OK")
+    if not getattr(sys, "frozen", False):
+        print("Murdilimax Browser smoke test OK")
 
 def main():
+    if getattr(sys, "frozen", False) and sys.platform == "win32":
+        # PyInstaller windowed programs may have no valid stdout/stderr handles.
+        if sys.stdout is None:
+            sys.stdout = open(os.devnull, "w")
+        if sys.stderr is None:
+            sys.stderr = open(os.devnull, "w")
     parser = argparse.ArgumentParser()
     parser.add_argument("--run-profile", default="")
     parser.add_argument("--selftest", action="store_true")
