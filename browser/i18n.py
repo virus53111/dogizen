@@ -26,6 +26,11 @@ TEXT = {
     "Прокси:": "Proxy:",
     "Сбросить фильтры": "Reset filters",
     "Выбрать видимые": "Select visible",
+    "◉ Cookies": "◉ Cookies",
+    "⇩ Экспорт cookies": "⇩ Export cookies",
+    "✕ Очистить cookies": "✕ Clear cookies",
+    "Только остановленный профиль": "Stopped profile only",
+
     "Изменить группу": "Change group",
     "✎ Изменить": "✎ Edit",
     "⧉ Дублировать": "⧉ Duplicate",

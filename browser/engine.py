@@ -78,6 +78,8 @@ def run_profile(profile_id):
     verify_commercial_access(store, profile_id)
     folder = store.root / "profiles" / profile_id
     folder.mkdir(parents=True, exist_ok=True)
+    if (folder / ".cookie-maintenance").exists():
+        raise RuntimeError("Cookie maintenance is in progress; retry after it finishes")
     stop_file = folder / ".stop"
     stop_file.unlink(missing_ok=True)
     lock = folder / ".lock"
@@ -95,6 +97,8 @@ def run_profile(profile_id):
     with os.fdopen(fd, "w") as writer:
         writer.write(str(os.getpid()))
     try:
+        if (folder / ".cookie-maintenance").exists():
+            raise RuntimeError("Cookie maintenance is in progress; stop and retry")
         # Import only in a child process. A missing engine is a visible launch error.
         from camoufox.sync_api import Camoufox
         ensure_engine_ready()  # Downloads the actual browser to the user cache on first use.
@@ -148,6 +152,8 @@ def start_background(store, profile_id):
     if not profile:
         raise ValueError("Profile not found")
     lock = store.root / "profiles" / profile_id / ".lock"
+    if (lock.parent / ".cookie-maintenance").exists():
+        raise RuntimeError("Cookie maintenance is in progress")
     if lock.exists():
         try:
             pid = int(lock.read_text().strip())
