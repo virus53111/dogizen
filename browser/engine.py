@@ -116,11 +116,11 @@ def run_profile(profile_id):
 
     with os.fdopen(fd, "w") as writer:
         writer.write(str(os.getpid()))
-    # Old stop requests are reset ONLY once this child owns the profile.
-    # A duplicate invocation must never erase a stop request for the owner.
-    stop_file.unlink(missing_ok=True)
-    release_launch(folder, launch_token)
     try:
+        # Stop requests are reset only AFTER this child obtains the lock.
+        # A duplicate invocation must never cancel the owner's stop signal.
+        stop_file.unlink(missing_ok=True)
+        release_launch(folder, launch_token)
         if (folder / ".cookie-maintenance").exists() or (folder / ".addon-maintenance").exists():
             raise RuntimeError("Cookie maintenance is in progress; stop and retry")
         # Import only in a child process. A missing engine is a visible launch error.
@@ -162,6 +162,7 @@ def run_profile(profile_id):
                 except Exception:
                     break
     finally:
+        release_launch(folder, launch_token)
         lock.unlink(missing_ok=True)
         stop_file.unlink(missing_ok=True)
 
