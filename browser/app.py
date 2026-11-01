@@ -17,6 +17,7 @@ from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from auth_client import BrowserAccount
 from engine import pid_alive, request_stop, run_profile, start_background, safe_profile_id
 from network_check import probe_proxy_exit
+from proxy_diagnostics import diagnose_proxy, describe_diagnosis
 from proxy_import import import_proxy_list
 from engine_setup import ensure_engine_ready
 from store import Store
@@ -221,6 +222,7 @@ class BrowserUI:
         self.button(bar, "✕ Удалить прокси", self.remove_proxy)
         self.button(bar, "Проверить TCP-порт", self.check_proxy)
         self.button(bar, "Проверить выходной IP", self.check_proxy_exit)
+        self.button(bar, "◈ Диагностика", self.diagnose_selected_proxy)
         self.proxy_tree = ttk.Treeview(self.proxy_tab, columns=("name", "server", "auth"), show="headings")
         for k, label, width in [("name", "Название", 200), ("server", "Адрес HTTP/SOCKS5", 460),
                                 ("auth", "Авторизация", 160)]:
@@ -623,6 +625,42 @@ class BrowserUI:
         with socket.create_connection((u.hostname, u.port), timeout=5):
             pass
         messagebox.showinfo("Прокси", "TCP-порт отвечает. Это НЕ проверка авторизации, DNS, утечек или выходного IP.")
+
+    def diagnose_selected_proxy(self):
+        """Nonblocking selected proxy diagnosis; display only safe status codes."""
+        proxy_id = self.one(self.proxy_tree, "прокси")
+        language = self.language
+        self.state.set(
+            "Диагностика прокси: проверяем TCP и HTTPS…" if language == "ru" else
+            "Proxy diagnostics: checking TCP and HTTPS…")
+
+        def work():
+            try:
+                # Proxy passwords are retrieved only from the local OS keychain.
+                # Never include proxy_config or exception strings in UI/logs.
+                proxy = self.store.proxy_config(proxy_id)
+                result = diagnose_proxy(proxy)
+                report = describe_diagnosis(result, language)
+                status = (
+                    "Диагностика: TCP и HTTPS проверены" if language == "ru" else
+                    "Diagnostics: TCP and HTTPS checked")
+                self.root.after(0, lambda r=report, t=status: (
+                    self.state.set(t),
+                    messagebox.showinfo("Murdilimax · Proxy diagnostics", r,
+                                        parent=self.root)
+                ))
+            except Exception:
+                message = (
+                    "Не удалось получить параметры прокси из Keychain или начать проверку."
+                    if language == "ru" else
+                    "Could not retrieve proxy settings from Keychain or run the check.")
+                self.root.after(0, lambda m=message: (
+                    self.state.set(m),
+                    messagebox.showerror("Murdilimax · Proxy diagnostics", m,
+                                         parent=self.root)
+                ))
+
+        threading.Thread(target=work, daemon=True).start()
 
     def check_proxy_exit(self):
         """Nonblocking HTTPS request through the saved proxy; don't display credentials."""
