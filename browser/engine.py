@@ -128,7 +128,8 @@ def start_background(store, profile_id):
             raise RuntimeError("Profile is already open")
         lock.unlink(missing_ok=True)
     log_path = store.root / "logs" / (profile_id + ".log")
-    with log_path.open("a", encoding="utf-8") as log:
+    fd = os.open(str(log_path), os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+    with os.fdopen(fd, "a", encoding="utf-8") as log:
         process = subprocess.Popen(launch_command(profile_id), stdin=subprocess.DEVNULL,
                                    stdout=log, stderr=subprocess.STDOUT,
                                    creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
