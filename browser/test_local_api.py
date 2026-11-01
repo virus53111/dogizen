@@ -78,7 +78,7 @@ class ProfileAPITests(unittest.TestCase):
             self.assertNotIn(secret, exposed)
 
     def test_no_anonymous_or_cross_origin_access(self):
-        for token in (None, "x" * 64, "a" * 63):
+        for token in (None, "x" * 64, "a" * 63, "é" * 64):
             with self.subTest(token=token):
                 self.assertEqual(self.call("GET", "/v1/profiles", token=token)[0], 401)
         self.assertEqual(self.call(
@@ -130,6 +130,7 @@ class ProfileAPITests(unittest.TestCase):
             self.call("GET", "/v1/profiles?token=bad")[0], 400)
 
     def test_configuration_rejects_external_binding_and_invalid_tokens(self):
+        self.assertEqual(self.server.server_address[0], "127.0.0.1")
         for token in ("", "x" * 64, "ab" * 31, None):
             with self.subTest(token=token), self.assertRaises(ValueError):
                 make_server(self.store, token, port=0)
