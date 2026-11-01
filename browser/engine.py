@@ -53,8 +53,21 @@ def verify_commercial_access(store, profile_id, account=None, required=None):
     on the API server, signed binaries, and a threat-model review.
     """
     safe_profile_id(profile_id)
-    mandatory = (os.environ.get("MURDILIMAX_REQUIRE_LOGIN") == "1"
-                 if required is None else required)
+    # Free use: the first three local profiles work without registering.
+    # Any profile beyond the Free allowance MUST have a live server-issued
+    # entitlement, even when the opt-in strict QA flag is absent. This
+    # prevents importing/editing profiles.json to silently bypass paid
+    # capacity without forcing free users to sign in.
+    if required is None:
+        strict = os.environ.get("MURDILIMAX_REQUIRE_LOGIN") == "1"
+        position = next(
+            (i for i, item in enumerate(store.profiles())
+             if item.get("id") == profile_id), None)
+        if position is None:
+            raise ValueError("Profile not found")
+        mandatory = strict or position >= 3
+    else:
+        mandatory = required
     if not mandatory:
         return None
     if account is None:
