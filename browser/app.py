@@ -18,7 +18,8 @@ from auth_client import BrowserAccount
 from engine import pid_alive, request_stop, run_profile, start_background, safe_profile_id
 from network_check import probe_proxy_exit
 from proxy_diagnostics import diagnose_proxy, describe_diagnosis
-from profile_view import ALL, RUNNING, STOPPED, filter_profiles, distinct_groups, bulk_update_groups
+from profile_view import (ALL, RUNNING, STOPPED, filter_profiles,
+                          distinct_groups, bulk_update_groups, plan_profile_launches)
 from profile_table import reconcile_profile_tree
 from cookie_manager import (cookie_inventory, export_cookies, clear_cookies,
                             list_cookie_backups, restore_cookie_backup)
@@ -882,16 +883,18 @@ class BrowserUI:
         selected = self.selected(self.profile_tree)
         if not selected:
             raise ValueError("Выбери профили")
+        # Validate all IDs and the entire subscription selection BEFORE any
+        # background subprocess is launched; one store read, no N² lookups.
+        planned = plan_profile_launches(
+            self.store.profiles(), selected, self.entitlement_limit, self.running)
         count = 0
-        for pid in selected:
-            if not self.running(pid):
-                profile = self.store.get_profile(pid)
-                allowed = self.store.profiles()[:self.entitlement_limit]
-                if profile not in allowed:
-                    raise ValueError("Профиль выходит за пределы вашего лимита")
-                start_background(self.store, pid)
-                count += 1
-        self.state.set("Запуск " + str(count) + " браузеров. Первый запуск загружает Camoufox; смотри журнал.")
+        for pid in planned:
+            start_background(self.store, pid)
+            count += 1
+        if self.language == "en":
+            self.state.set(f"Starting {count} browsers. First launch may download Camoufox; check logs.")
+        else:
+            self.state.set(f"Запуск {count} браузеров. Первый запуск может загрузить Camoufox; смотри журнал.")
 
     def stop(self):
         for pid in self.selected(self.profile_tree):
