@@ -13,7 +13,7 @@ import zipfile
 
 from addon_manager import enabled_addon_paths, install_addon, set_addon_enabled
 from store import Store
-from identity import get_identity
+from identity import get_identity, host_os
 
 
 class LocalPage(BaseHTTPRequestHandler):
@@ -82,8 +82,8 @@ def main():
                 "headless": True,
                 "persistent_context": True,
                 "user_data_dir": str(profile_folder / "data"),
-                "os": "linux",
-                "fingerprint": get_identity(profile_folder, "linux"),
+                "os": host_os(),
+                "fingerprint": get_identity(profile_folder, host_os()),
                 "addons": enabled_addon_paths(store, primary),
             }
             visit(opts, url, True)
@@ -91,8 +91,8 @@ def main():
             other = {
                 "headless": True, "persistent_context": True,
                 "user_data_dir": str(other_folder / "data"),
-                "os": "linux",
-                "fingerprint": get_identity(other_folder, "linux"),
+                "os": host_os(),
+                "fingerprint": get_identity(other_folder, host_os()),
                 "addons": enabled_addon_paths(store, isolated),
             }
             visit(other, url, False)
