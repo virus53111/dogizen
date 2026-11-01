@@ -19,6 +19,7 @@ from engine import pid_alive, request_stop, run_profile, start_background, safe_
 from network_check import probe_proxy_exit
 from proxy_diagnostics import diagnose_proxy, describe_diagnosis
 from profile_view import ALL, RUNNING, STOPPED, filter_profiles, distinct_groups, bulk_update_groups
+from cookie_manager import cookie_inventory, export_cookies, clear_cookies
 from proxy_import import import_proxy_list
 from engine_setup import ensure_engine_ready
 from store import Store
@@ -248,7 +249,15 @@ class BrowserUI:
         self.button(tools, "Экспорт настроек", self.export)
         self.button(tools, "Импорт настроек", self.import_profiles)
         self.button(tools, "Открыть журнал", self.open_log)
-        ttk.Label(tools, text="Cookies хранятся локально в каталоге каждого профиля.").pack(side="right", padx=10)
+        cookie_bar = ttk.Frame(self.profile_tab)
+        cookie_bar.pack(fill="x", padx=12, pady=(0, 6))
+        ttk.Label(cookie_bar, text="COOKIES / LOCAL", foreground=CYAN).pack(
+            side="left", padx=(0, 12))
+        self.button(cookie_bar, "◉ Cookies", self.show_cookie_inventory)
+        self.button(cookie_bar, "⇩ Экспорт cookies", self.export_profile_cookies)
+        self.button(cookie_bar, "✕ Очистить cookies", self.clear_profile_cookies)
+        ttk.Label(cookie_bar, text="Только остановленный профиль",
+                  foreground=MUTED).pack(side="right", padx=8)
 
     def setup_proxies(self):
         bar = ttk.Frame(self.proxy_tab)
