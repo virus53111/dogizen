@@ -30,10 +30,11 @@ def valid_proxy(server):
 class Store:
     def __init__(self, root=None):
         self.root = Path(root) if root is not None else data_root()
-        self.root.mkdir(parents=True, exist_ok=True)
-        (self.root / "profiles").mkdir(exist_ok=True)
-        (self.root / "trash").mkdir(exist_ok=True)
-        (self.root / "logs").mkdir(exist_ok=True)
+        self.root.mkdir(parents=True, exist_ok=True, mode=0o700)
+        for folder in (self.root, self.root / "profiles", self.root / "trash", self.root / "logs"):
+            folder.mkdir(exist_ok=True, mode=0o700)
+            if os.name != "nt":
+                folder.chmod(0o700)  # No cross-user profile/cache/log access on POSIX.
 
     def _path(self, name):
         return self.root / (name + ".json")
@@ -51,7 +52,8 @@ class Store:
         path = self._path(name)
         pending = self.root / (name + "." + uuid.uuid4().hex + ".tmp")
         try:
-            with pending.open("x", encoding="utf-8") as f:
+            fd = os.open(str(pending), os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            with os.fdopen(fd, "w", encoding="utf-8") as f:
                 json.dump(items, f, indent=2, ensure_ascii=False)
                 f.flush()
                 os.fsync(f.fileno())
