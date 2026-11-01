@@ -16,7 +16,7 @@ from store import Store
 class FakeBrowserContext:
     def __init__(self, **kwargs):
         self.kwargs = kwargs
-        self.cookies = None
+        self.loaded = None
 
     def __enter__(self):
         return self
@@ -24,8 +24,19 @@ class FakeBrowserContext:
     def __exit__(self, *_args):
         return False
 
+    def new_page(self):
+        class Page:
+            def goto(self, url):
+                assert url == "about:blank"
+            def wait_for_timeout(self, duration):
+                assert duration >= 0
+        return Page()
+
     def add_cookies(self, cookies):
-        self.cookies = list(cookies)
+        self.loaded = list(cookies)
+
+    def cookies(self):
+        return list(self.loaded or [])
 
 
 def sample(host=".example.org", name="login"):
@@ -143,7 +154,7 @@ class CookieImportTests(unittest.TestCase):
                 check_engine=lambda: None)
         self.assertEqual(count, 1)
         self.assertTrue(backup.is_file())
-        self.assertEqual(ctx.cookies[0]["name"], "login")
+        self.assertEqual(ctx.loaded[0]["name"], "login")
         self.assertEqual(ctx.kwargs["user_data_dir"],
                          str(self.store.root / "profiles" / self.profile / "data"))
         self.assertFalse(ctx.kwargs["geoip"])
@@ -188,7 +199,7 @@ class CookieImportTests(unittest.TestCase):
                 context_factory=lambda **k: _capture(ctx, k), check_engine=lambda: None)
         self.assertEqual(count, 1)
         self.assertIsNone(backup)
-        self.assertIsNotNone(ctx.cookies)
+        self.assertIsNotNone(ctx.loaded)
 
 
 if __name__ == "__main__":
