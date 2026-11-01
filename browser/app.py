@@ -92,6 +92,72 @@ class BrowserUI:
         self.root.after(1500, self.restore_login)
         self.root.after(300000, self.license_tick)
 
+    def _status_changed(self, variable):
+        if self._localizing:
+            return
+        source = variable.get()
+        self._status_original[id(variable)] = source
+        result = translate(source, self.language)
+        if result != source:
+            self._localizing = True
+            try:
+                variable.set(result)
+            finally:
+                self._localizing = False
+
+    def set_language(self, language):
+        if language not in ("ru", "en") or language == self.language:
+            return
+        try:
+            save_language(self.store.root, language)
+        except OSError as exc:
+            messagebox.showerror("Murdilimax", str(exc), parent=self.root)
+            return
+        self.language = language
+        self.apply_language(self.root)
+        self._localizing = True
+        try:
+            for variable in (self.state, self.account_message, self.account_code):
+                source = self._status_original.get(id(variable), variable.get())
+                variable.set(translate(source, language))
+        finally:
+            self._localizing = False
+        self.refresh_profiles()
+
+    def apply_language(self, widget):
+        # Translate only authored UI strings, not profile names, notes,
+        # proxy credentials, URLs, or other user data.
+        for item in [widget] + list(self._descendants(widget)):
+            if isinstance(item, (ttk.Label, ttk.Button, tk.Label, tk.Button)):
+                try:
+                    value = item.cget("text")
+                    localized = translate(value, self.language)
+                    if localized != value:
+                        item.configure(text=localized)
+                except tk.TclError:
+                    pass
+            if isinstance(item, ttk.Notebook):
+                for tab in item.tabs():
+                    value = item.tab(tab, "text")
+                    localized = translate(value, self.language)
+                    if localized != value:
+                        item.tab(tab, text=localized)
+            if isinstance(item, ttk.Treeview):
+                for column in item["columns"]:
+                    value = item.heading(column, "text")
+                    localized = translate(value, self.language)
+                    if localized != value:
+                        item.heading(column, text=localized)
+        if widget is not self.root and isinstance(widget, tk.Toplevel):
+            widget.title(translate(widget.title(), self.language))
+        for lang, button in self.language_buttons.items():
+            button.configure(style="Neon.TButton" if lang == self.language else "TButton")
+
+    def _descendants(self, widget):
+        for child in widget.winfo_children():
+            yield child
+            yield from self._descendants(child)
+
     def button(self, parent, label, command):
         style = "Neon.TButton" if label.startswith(("＋", "▶", "↗")) else "TButton"
         ttk.Button(parent, text=label, style=style, command=lambda: self.call(command)).pack(side="left", padx=(0, 7), pady=5)
