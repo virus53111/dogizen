@@ -93,3 +93,37 @@ Orphan reservations older than three minutes are recoverable on the next launch 
 This is defensive local-process coordination, not a security boundary against malicious programs sharing the user's OS account. The app does not kill arbitrary PIDs to solve stale locks. The feature is source-beta only pending physical Windows/macOS testing and release promotion.
 
 Regression QA: python -m unittest discover -s browser -p 'test_launch_guard.py' -v. Tests cover simulated browser-child handoff, rapid double-clicks, marker recovery, stop-signal protection, cookie/addon interlocks and spawn failure.
+
+
+## Controlled local cookie import — development branch (not in v0.2.0)
+
+The Profiles toolbar adds **Import cookies / Импорт cookies** for the selected
+**stopped** profile. Users must choose their own local UTF-8 file and explicitly
+approve sensitive-token import. Supported formats are Murdilimax cookie export
+JSON, Playwright cookie storage-state JSON and Netscape cookies.txt. Files are
+limited to 5 MB and 5,000 cookies and undergo full validation before anything
+in the profile is changed.
+
+BrowserContext.add_cookies applies the cookies using the actual persistent
+Camoufox/Firefox engine, avoiding unsupported raw writes into Firefox's
+version-dependent SQLite schema. No web pages are visited and no cookie data
+is sent to the server by the importer. This is a merge, not a blanket
+replacement. A private, profile-specific SQLite backup of the current state
+is saved **before** importing if a previous cookie database exists. Other
+profiles remain untouched. The import rejects invalid domains, malformed
+session values, duplicate keys, unsafe prefixes, unsupported container /
+partitioned cookies, symlinked paths and active profile locks. Do not import
+cookies from unknown publishers or other people's accounts.
+
+Limitations: the Camoufox engine must already be installed or installed using
+the Engine page first. Import may take time while headless Firefox starts.
+Restoring from a backup is a separate feature; the import does not restore
+localStorage, sessionStorage, service worker state or extensions. Cookies may
+be rejected by Firefox for site-specific or security reasons. Imported
+cookies may expire, sign a site in or change existing logins.
+
+**Release:** This feature is in a development branch only. It is NOT part of
+the already-published v0.2.0 installers. Native Windows/Mac/Linux testing and
+an updated release are required before advertising it as downloadable.
+
+Offline security tests: python -m unittest discover -s browser -p 'test_cookie_import.py' -v.
