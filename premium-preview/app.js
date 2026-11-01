@@ -144,7 +144,7 @@
     const target=['home','pricing','workspace'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home';
     document.querySelectorAll('[data-page]').forEach(section=>{section.hidden=section.dataset.page!==target;});
     document.querySelectorAll('[data-nav]').forEach(a=>{a.classList.toggle('active',a.dataset.nav===target);if(a.dataset.nav===target)a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');});
-    window.scrollTo({top:0,behavior:'instant'});
+    window.scrollTo({top:0,behavior:'auto'});
   }
   window.addEventListener('hashchange',route);
 
