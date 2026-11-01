@@ -15,11 +15,10 @@ import math
 import os
 import re
 import sqlite3
+import time
 import uuid
 
 from cookie_manager import _maintenance, _columns, _backup_directory
-from identity import get_identity, resolved_os
-from engine_setup import ensure_engine_ready
 
 MAX_FILE = 5 * 1024 * 1024
 MAX_ROWS = 5000
@@ -188,68 +187,95 @@ def inspect_cookie_file(source):
 
 def import_cookies(store, profile_id, source, *, context_factory=None,
                    check_engine=None):
-    """Merge cookies with the real Firefox API; never visit a URL or upload data."""
+    """Import persistent cookies into an inactive Firefox profile atomically.
+
+    Camoufox/Playwright 0.5.x silently drops imported cookies added to a
+    non-navigated headless persistent context on some builds. Use Firefox's
+    existing versioned moz_cookies database instead. Explicitly handle the
+    Firefox 142+ seconds -> milliseconds expiry migration (schema >=16).
+    Never touch a live profile or a database with unknown schema.
+    """
     preview, cookies = read_cookie_file(source)
+    if any("expires" not in cookie for cookie in cookies):
+        raise ValueError("Session-only cookies cannot be imported persistently")
+    if any(cookie["expires"] <= time.time() for cookie in cookies):
+        raise ValueError("Expired cookies cannot be imported")
     with _maintenance(store, profile_id) as db:
+        if not db.exists():
+            raise ValueError(
+                "Launch and close this browser profile once before importing cookies")
         rollback = None
-        if db.exists():
-            backup_dir = _backup_directory(store, create=True)
-            rollback = backup_dir / (profile_id + "-" + uuid.uuid4().hex[:12] + ".sqlite")
-            fd = os.open(rollback, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-            os.close(fd)
-            try:
-                with closing(sqlite3.connect(db, timeout=5)) as source_db:
-                    _columns(source_db)
-                    with closing(sqlite3.connect(rollback, timeout=5)) as backup_db:
-                        source_db.backup(backup_db)
-            except (sqlite3.Error, ValueError):
-                if rollback.stat().st_size == 0:
-                    rollback.unlink(missing_ok=True)
-                raise ValueError("Could not back up existing cookies; import cancelled") from None
-        folder = db.parent.parent
-        profile = store.get_profile(profile_id)
-        (check_engine or ensure_engine_ready)()
-        fingerprint = get_identity(folder, profile.get("os", "native"))
-        if context_factory is None:
-            from camoufox.sync_api import Camoufox
-            context_factory = Camoufox
         try:
-            with context_factory(
-                    headless=True, persistent_context=True,
-                    user_data_dir=str(folder / "data"),
-                    os=resolved_os(profile.get("os", "native")),
-                    fingerprint=fingerprint, geoip=False) as context:
-                # Initializing one about:blank page warms Firefox's persistent
-                # cookie service without visiting ANY external website.
-                page = context.new_page()
-                page.goto("about:blank")
-                # Camoufox/Playwright Firefox requires a URL origin for
-                # host-only cookies: supplying an explicit IP host domain can
-                # silently leave the old cookie jar unchanged on some builds.
-                # This URL is metadata for add_cookies, NOT a navigation.
-                browser_rows = []
-                for cookie in cookies:
-                    row = dict(cookie)
-                    if not row["domain"].startswith("."):
-                        host = row.pop("domain")
-                        path = row["path"]
-                        scheme = "https" if row["secure"] else "http"
-                        row["url"] = scheme + "://" + host + path
-                    browser_rows.append(row)
-                context.add_cookies(browser_rows)
-                # Firefox may silently decline invalid cookies. Refuse to
-                # report success unless its live cookie jar contains them.
-                installed = {(r["domain"], r["path"], r["name"])
-                             for r in context.cookies()}
-                expected = {(r["domain"], r["path"], r["name"])
-                            for r in cookies}
-                if not expected.issubset(installed):
-                    raise ValueError("Firefox cookie jar mismatch: expected=" + repr(sorted(expected)) + " got=" + repr(sorted(installed)))
-                page.wait_for_timeout(1000)
-        except Exception as exc:
-            # Safe diagnostic: only names/domain/path from our own synthetic
-            # acceptance data. Never include cookie values or Playwright dumps.
-            diagnostic = str(exc) if isinstance(exc, ValueError) and str(exc).startswith(
-                "Firefox cookie jar mismatch:") else type(exc).__name__
-            raise ValueError("Cookie import failed: " + diagnostic) from None
+            with closing(sqlite3.connect(db, timeout=5)) as current:
+                columns = _columns(current)
+                schema = current.execute("PRAGMA user_version").fetchone()[0]
+                if schema not in (15, 16, 17):
+                    raise ValueError("Unsupported Firefox cookie database version")
+                required = {"name", "value", "host", "path", "expiry",
+                            "lastAccessed", "creationTime", "isSecure",
+                            "isHttpOnly", "originAttributes"}
+                if not required.issubset(columns):
+                    raise ValueError("Firefox cookie schema is incomplete")
+                # A new, unknown NOT NULL field without a default would make
+                # inserts inconsistent. Fail closed instead of guessing.
+                provided = required | {"sameSite", "rawSameSite"}
+                for column in current.execute("PRAGMA table_info(moz_cookies)"):
+                    _i, name, _type, notnull, default, is_pk = column
+                    if notnull and default is None and not is_pk and name not in provided:
+                        raise ValueError("Unsupported required Firefox cookie field")
+                if current.execute("PRAGMA quick_check").fetchone() != ("ok",):
+                    raise ValueError("Firefox cookie database failed integrity check")
+                directory = _backup_directory(store, create=True)
+                rollback = directory / (profile_id + "-" + uuid.uuid4().hex[:12] + ".sqlite")
+                fd = os.open(rollback, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+                os.close(fd)
+                try:
+                    with closing(sqlite3.connect(rollback, timeout=5)) as snapshot:
+                        current.backup(snapshot)
+                except sqlite3.Error:
+                    if rollback.stat().st_size == 0:
+                        rollback.unlink(missing_ok=True)
+                    raise ValueError("Cannot back up cookies; import cancelled") from None
+
+                fields = ["originAttributes", "name", "value", "host", "path",
+                          "expiry", "lastAccessed", "creationTime", "isSecure",
+                          "isHttpOnly"]
+                if "sameSite" in columns:
+                    fields.append("sameSite")
+                if "rawSameSite" in columns:
+                    fields.append("rawSameSite")
+                names = ",".join('"' + field + '"' for field in fields)
+                placeholders = ",".join("?" for _ in fields)
+                sql = "INSERT OR REPLACE INTO moz_cookies (" + names + ") VALUES (" + placeholders + ")"
+                micros = int(time.time() * 1_000_000)
+                same_sites = {None: -1, "None": 0, "Lax": 1, "Strict": 2}
+                current.execute("BEGIN IMMEDIATE")
+                try:
+                    for cookie in cookies:
+                        same = same_sites[cookie.get("sameSite")]
+                        exp = int(cookie["expires"] * (1000 if schema >= 16 else 1))
+                        row = {
+                            "originAttributes": "", "name": cookie["name"],
+                            "value": cookie["value"], "host": cookie["domain"],
+                            "path": cookie["path"], "expiry": exp,
+                            "lastAccessed": micros, "creationTime": micros,
+                            "isSecure": int(cookie["secure"]),
+                            "isHttpOnly": int(cookie["httpOnly"]),
+                            "sameSite": same, "rawSameSite": same,
+                        }
+                        current.execute(sql, tuple(row[field] for field in fields))
+                    for cookie in cookies:
+                        found = current.execute(
+                            "SELECT 1 FROM moz_cookies WHERE originAttributes='' AND "
+                            "name=? AND host=? AND path=?",
+                            (cookie["name"], cookie["domain"], cookie["path"])
+                        ).fetchone()
+                        if not found:
+                            raise ValueError("Cookie could not be saved in Firefox database")
+                    current.commit()
+                except Exception:
+                    current.rollback()
+                    raise
+        except sqlite3.Error:
+            raise ValueError("Firefox cookie import failed; backup retained") from None
         return preview.count, rollback
