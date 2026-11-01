@@ -12,6 +12,7 @@ import os
 import sys
 import uuid
 from pathlib import Path
+from fingerprint_options import validate_screen_limit, fingerprint_generation_options
 
 FILENAME = "fingerprint-v1.json"
 VERSION = 1
@@ -36,7 +37,7 @@ def _load(path):
         raise ValueError("Incomplete fingerprint identity")
     return obj
 
-def get_identity(profile_dir, configured_os, generator=None):
+def get_identity(profile_dir, configured_os, generator=None, *, screen_limit="auto"):
     """Load one immutable identity or atomically generate it for a new profile.
 
     No directory traversal and no identity in exported profile metadata. On OS
@@ -44,6 +45,7 @@ def get_identity(profile_dir, configured_os, generator=None):
     """
     directory = Path(profile_dir)
     os_name = resolved_os(configured_os)
+    screen_limit = validate_screen_limit(screen_limit)
     directory.mkdir(parents=True, exist_ok=True)
     path = directory / FILENAME
     if path.exists():
@@ -53,15 +55,17 @@ def get_identity(profile_dir, configured_os, generator=None):
                 "Existing browser identity uses " + saved["os"] +
                 "; duplicate the profile to use a new OS instead of silently changing identity"
             )
+        if validate_screen_limit(saved.get("screen_limit", "auto")) != screen_limit:
+            raise ValueError("Screen bound is fixed after first launch; duplicate the profile instead")
         return saved["fingerprint"]
 
     if generator is None:
         from camoufox.fingerprints import generate_fingerprint
         generator = generate_fingerprint
-    fingerprint = generator(os=os_name)
+    fingerprint = generator(os=os_name, **fingerprint_generation_options(screen_limit))
     if not isinstance(fingerprint, dict) or not fingerprint.get("navigator"):
         raise RuntimeError("Camoufox did not produce a complete Firefox fingerprint")
-    data = {"version": VERSION, "os": os_name, "fingerprint": fingerprint}
+    data = {"version": VERSION, "os": os_name, "screen_limit": screen_limit, "fingerprint": fingerprint}
     encoded = json.dumps(data, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
     if len(encoded) > 2_000_000:
         raise ValueError("Fingerprint payload exceeds safe limit")
