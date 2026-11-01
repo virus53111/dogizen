@@ -11,17 +11,18 @@ import time
 import tkinter as tk
 import webbrowser
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 from auth_client import BrowserAccount
 from engine import pid_alive, request_stop, run_profile, start_background, safe_profile_id
 from network_check import probe_proxy_exit
 from proxy_diagnostics import diagnose_proxy, describe_diagnosis
+from profile_view import ALL, RUNNING, STOPPED, filter_profiles, distinct_groups, bulk_update_groups
 from proxy_import import import_proxy_list
 from engine_setup import ensure_engine_ready
 from store import Store
-from neon_theme import BG, PANEL, TEXT, MUTED, ACCENT, apply_neon_theme, NeonHeader
+from neon_theme import BG, PANEL, TEXT, MUTED, ACCENT, CYAN, apply_neon_theme, NeonHeader
 from i18n import load_language, save_language, translate
 
 class BrowserUI:
@@ -49,6 +50,10 @@ class BrowserUI:
         self.root.minsize(920, 620)
         self.root.configure(bg=BG)
         self.search = tk.StringVar()
+        self.group_filter_key = None
+        self.status_filter_key = ALL
+        self.proxy_filter_key = None
+        self._filter_signature = None
         self.state = tk.StringVar(value="Локальная рабочая область · браузерные профили")
         apply_neon_theme(self.root)
         self.header = NeonHeader(self.root, self.open_folder)
@@ -124,7 +129,7 @@ class BrowserUI:
                 variable.set(translate(source, language))
         finally:
             self._localizing = False
-        self.refresh_profiles()
+        self.update_filter_labels()
 
     def apply_language(self, widget):
         # Translate only authored UI strings, not profile names, notes,
@@ -197,6 +202,31 @@ class BrowserUI:
         e = ttk.Entry(search, textvariable=self.search, width=48)
         e.pack(side="left", fill="x", expand=True)
         self.search.trace_add("write", lambda *_: self.refresh_profiles())
+        filters = ttk.Frame(self.profile_tab)
+        filters.pack(fill="x", padx=12, pady=(1, 7))
+        self.group_filter_label = ttk.Label(filters, text="Группа:")
+        self.group_filter_label.pack(side="left", padx=(0, 6))
+        self.group_filter_var = tk.StringVar()
+        self.group_filter_combo = ttk.Combobox(filters, textvariable=self.group_filter_var,
+                                               state="readonly", width=20)
+        self.group_filter_combo.pack(side="left", padx=(0, 13))
+        self.group_filter_combo.bind("<<ComboboxSelected>>", self.on_group_filter)
+        self.status_filter_label = ttk.Label(filters, text="Статус:")
+        self.status_filter_label.pack(side="left", padx=(0, 6))
+        self.status_filter_var = tk.StringVar()
+        self.status_filter_combo = ttk.Combobox(filters, textvariable=self.status_filter_var,
+                                                state="readonly", width=14)
+        self.status_filter_combo.pack(side="left", padx=(0, 13))
+        self.status_filter_combo.bind("<<ComboboxSelected>>", self.on_status_filter)
+        self.proxy_filter_label = ttk.Label(filters, text="Прокси:")
+        self.proxy_filter_label.pack(side="left", padx=(0, 6))
+        self.proxy_filter_var = tk.StringVar()
+        self.proxy_filter_combo = ttk.Combobox(filters, textvariable=self.proxy_filter_var,
+                                               state="readonly", width=23)
+        self.proxy_filter_combo.pack(side="left", padx=(0, 9))
+        self.proxy_filter_combo.bind("<<ComboboxSelected>>", self.on_proxy_filter)
+        ttk.Button(filters, text="Сбросить фильтры",
+                   command=self.reset_profile_filters).pack(side="left")
         cols = ("name", "group", "tags", "proxy", "os", "status")
         self.profile_tree = ttk.Treeview(self.profile_tab, columns=cols, show="headings", selectmode="extended")
         for key, title, width in [("name", "Название", 230), ("group", "Группа", 130),
@@ -206,6 +236,13 @@ class BrowserUI:
             self.profile_tree.column(key, width=width, stretch=True)
         self.profile_tree.pack(fill="both", expand=True, padx=12, pady=7)
         self.profile_tree.bind("<Double-1>", lambda _: self.call(self.edit_profile))
+        bulk = ttk.Frame(self.profile_tab)
+        bulk.pack(fill="x", padx=12, pady=(3, 3))
+        self.button(bulk, "Выбрать видимые", self.select_visible_profiles)
+        self.button(bulk, "Изменить группу", self.change_selected_groups)
+        self.profile_stats = tk.StringVar(value="")
+        ttk.Label(bulk, textvariable=self.profile_stats,
+                  foreground=CYAN).pack(side="right", padx=(8, 4))
         tools = ttk.Frame(self.profile_tab)
         tools.pack(fill="x", padx=12, pady=8)
         self.button(tools, "Экспорт настроек", self.export)
