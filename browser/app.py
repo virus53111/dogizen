@@ -1340,6 +1340,40 @@ class BrowserUI:
     def run(self):
         self.root.mainloop()
 
+def display_api_token(token):
+    """Show an explicitly requested API token in a local, one-time dialog.
+
+    Windows PyInstaller --windowed executables have no readable console:
+    printing the token would silently discard it. Never write it to logs.
+    """
+    window = tk.Tk()
+    window.title("Murdilimax · Local API token")
+    window.resizable(False, False)
+    window.configure(bg=BG)
+    tk.Label(window, text="Локальный ключ API — сохраните в надёжном месте",
+             bg=BG, fg=TEXT, font=("Arial", 12, "bold")).pack(padx=22, pady=(20, 10))
+    tk.Label(window, text="Ключ показывается один раз. Не передавайте его другим.",
+             bg=BG, fg=MUTED).pack(padx=22, pady=(0, 12))
+    field = tk.Entry(window, width=72, show="•", font=("Consolas", 11))
+    field.insert(0, token)
+    field.configure(state="readonly")
+    field.pack(padx=22, pady=(0, 12))
+    show = tk.BooleanVar(value=False)
+    def toggle():
+        field.configure(show="" if show.get() else "•")
+    tk.Checkbutton(window, text="Показать", variable=show, command=toggle,
+                   bg=BG, fg=TEXT, selectcolor=PANEL).pack(pady=(0, 8))
+    def copy_token():
+        window.clipboard_clear()
+        window.clipboard_append(token)
+        window.update()
+        messagebox.showinfo("Murdilimax", "Ключ скопирован. Очистите буфер обмена после сохранения.",
+                            parent=window)
+    ttk.Button(window, text="Скопировать ключ", command=copy_token).pack(pady=(0, 12))
+    ttk.Button(window, text="Закрыть", command=window.destroy).pack(pady=(0, 20))
+    window.mainloop()
+
+
 def selftest():
     if getattr(sys, "frozen", False):
         # A clean machine cannot write a model into the read-only app bundle.
@@ -1377,7 +1411,11 @@ def main():
         selftest()
     elif args.api_rotate_token:
         from local_api import rotate_token
-        print("Local API token (keep private; shown once): " + rotate_token())
+        token = rotate_token()
+        if getattr(sys, "frozen", False) and sys.platform == "win32":
+            display_api_token(token)
+        else:
+            print("Local API token (keep private; shown once): " + token)
     elif args.api_server:
         from local_api import serve_api
         serve_api(port=args.api_port)
