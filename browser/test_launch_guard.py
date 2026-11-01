@@ -13,7 +13,7 @@ from unittest.mock import patch
 
 from addon_manager import list_addons, set_addon_enabled
 from cookie_manager import cookie_inventory
-from engine import run_profile, start_background
+from engine import request_stop, run_profile, start_background
 from launch_guard import (
     LAUNCH_MARKER, LAUNCH_TOKEN_ENV, STALE_AFTER_SECONDS,
     launch_pending, release_launch, reserve_launch,
@@ -103,6 +103,21 @@ class AtomicProfileLaunchTests(unittest.TestCase):
         self.assertEqual(list_addons(self.store, self.pid), [])
         with self.assertRaisesRegex(ValueError, "Stop"):
             set_addon_enabled(self.store, self.pid, "0" * 32, False)
+        self.assertTrue(release_launch(self.folder, token))
+
+    def test_stop_reports_pending_launch_instead_of_claiming_success(self):
+        token = reserve_launch(self.folder)
+        with self.assertRaisesRegex(RuntimeError, "still starting"):
+            request_stop(self.store, self.pid)
+        self.assertFalse((self.folder / ".stop").exists())
+        self.assertTrue(release_launch(self.folder, token))
+
+    def test_orphan_launch_is_not_permanently_busy_in_ui(self):
+        token = reserve_launch(self.folder)
+        flag = self.folder / LAUNCH_MARKER
+        old = time.time() - STALE_AFTER_SECONDS - 5
+        os.utime(flag, (old, old))
+        self.assertFalse(launch_pending(self.folder))
         self.assertTrue(release_launch(self.folder, token))
 
     @unittest.skipIf(os.name == "nt", "Creating symlinks on Windows needs developer mode")
