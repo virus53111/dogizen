@@ -37,3 +37,5 @@ jobs:
         run: python browser/integration_addon.py
       - name: Verify actual browser cookie backup and restoration
         run: python browser/integration_cookie_restore.py
+      - name: Verify real browser HTTP routing via a local synthetic proxy
+        run: python browser/integration_proxy.py
