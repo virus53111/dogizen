@@ -88,7 +88,10 @@ class Store:
         items = self.profiles()
         items.append(profile)
         self._write("profiles", items)
-        (self.root / "profiles" / profile["id"]).mkdir(exist_ok=True)
+        folder = self.root / "profiles" / profile["id"]
+        folder.mkdir(exist_ok=True, mode=0o700)
+        if os.name != "nt":
+            folder.chmod(0o700)
         return profile
 
     def update_profile(self, profile_id, **changes):
