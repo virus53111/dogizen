@@ -61,7 +61,8 @@ def _maintenance(store, profile_id):
     except FileExistsError:
         raise ValueError("Cookie maintenance is already in progress") from None
     try:
-        if (folder / ".lock").exists() or (folder / ".launching").exists():
+        if ((folder / ".lock").exists() or (folder / ".launching").exists()
+                or (folder / ".addon-maintenance").exists()):
             raise ValueError("Stop the profile before managing cookies")
         yield db
     finally:
