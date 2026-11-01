@@ -38,6 +38,7 @@ TEXT = {
     "Важно: сторонние расширения могут читать страницы, cookies и данные аккаунтов. Устанавливайте только дополнения, которым доверяете. XPI не проверяется на вредоносный код. Пока поддерживаются локальные архивы Firefox, а не Chrome CRX.": "Warning: third-party extensions may read pages, cookies and account data. Only install trusted extensions. XPI files are not malware-scanned. Local Firefox archives are supported; Chrome CRX is not.",
 
     "⇩ Экспорт cookies": "⇩ Export cookies",
+    "⇧ Импорт cookies": "⇧ Import cookies",
     "✕ Очистить cookies": "✕ Clear cookies",
     "↶ Восстановить cookies": "↶ Restore cookies",
     "Только остановленный профиль": "Stopped profile only",

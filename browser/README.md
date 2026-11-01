@@ -93,3 +93,41 @@ Orphan reservations older than three minutes are recoverable on the next launch 
 This is defensive local-process coordination, not a security boundary against malicious programs sharing the user's OS account. The app does not kill arbitrary PIDs to solve stale locks. The feature is source-beta only pending physical Windows/macOS testing and release promotion.
 
 Regression QA: python -m unittest discover -s browser -p 'test_launch_guard.py' -v. Tests cover simulated browser-child handoff, rapid double-clicks, marker recovery, stop-signal protection, cookie/addon interlocks and spawn failure.
+
+
+## Controlled local cookie import — development branch (not in v0.2.0)
+
+The Profiles toolbar adds **Import cookies / Импорт cookies** for the selected
+**stopped** profile. Users must choose their own local UTF-8 file and explicitly
+approve sensitive-token import. Supported formats are Murdilimax cookie export
+JSON, Playwright cookie storage-state JSON and Netscape cookies.txt. Files are
+limited to 5 MB and 5,000 cookies and undergo full validation before anything
+in the profile is changed.
+
+The importer writes through an atomic transaction into a STOPPED profile's
+native Firefox `moz_cookies` SQLite table after verifying the schema
+(version 15–17), using seconds for schema 15 and milliseconds for 16–17.
+Camoufox/Playwright's headless `add_cookies` call did not persist cookie
+values reliably in actual Windows/Mac/Linux tests, so it is not used.
+No web pages are visited and no cookie data is sent to any server by
+the importer. Existing persistent cookies are retained; a matching
+name/domain/path is replaced. A private, profile-specific SQLite backup of the current state
+is saved **before** importing if a previous cookie database exists. Other
+profiles remain untouched. The import rejects invalid domains, malformed
+session values, duplicate keys, unsafe prefixes, unsupported container /
+partitioned cookies, symlinked paths and active profile locks. Do not import
+cookies from unknown publishers or other people's accounts.
+
+Limitations: a profile must have been launched and closed at least once
+so Firefox has created its native cookie database. Session-only and expired
+cookies are rejected rather than reported as imported (SQLite persistence
+cannot preserve a session cookie's lifetime across browser restarts).
+A backup is saved locally before a successful import. Import does not
+restore localStorage, sessionStorage, service worker state or extensions.
+Imported persistent cookies may authenticate or change site sessions.
+
+**Release:** This feature is in a development branch only. It is NOT part of
+the already-published v0.2.0 installers. Native Windows/Mac/Linux testing and
+an updated release are required before advertising it as downloadable.
+
+Offline security tests: python -m unittest discover -s browser -p 'test_cookie_import.py' -v.
