@@ -12,7 +12,7 @@ import tkinter as tk
 import webbrowser
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 from auth_client import BrowserAccount
 from engine import pid_alive, request_stop, run_profile, start_background, safe_profile_id
@@ -20,10 +20,14 @@ from network_check import probe_proxy_exit
 from engine_setup import ensure_engine_ready
 from store import Store
 from neon_theme import BG, PANEL, TEXT, MUTED, ACCENT, apply_neon_theme, NeonHeader
+from i18n import load_language, save_language, translate
 
 class BrowserUI:
     def __init__(self):
         self.store = Store()
+        self.language = load_language(self.store.root)
+        self._status_original = {}
+        self._localizing = False
         self.account = BrowserAccount()
         self.authorized = False
         self.plan = 'free'
@@ -46,6 +50,15 @@ class BrowserUI:
         self.state = tk.StringVar(value="Локальная рабочая область · браузерные профили")
         apply_neon_theme(self.root)
         self.header = NeonHeader(self.root, self.open_folder)
+        language_bar = ttk.Frame(self.root)
+        language_bar.pack(fill="x", padx=28, pady=(0, 2))
+        ttk.Label(language_bar, text="LANGUAGE / ЯЗЫК", foreground=ACCENT).pack(side="left", padx=(1, 13))
+        self.language_buttons = {}
+        for lang in ("ru", "en"):
+            button = ttk.Button(language_bar, text=lang.upper(),
+                                command=lambda choice=lang: self.set_language(choice))
+            button.pack(side="left", padx=3, pady=3)
+            self.language_buttons[lang] = button
         self.tabs = ttk.Notebook(self.root)
         self.tabs.pack(fill="both", expand=True, padx=22, pady=8)
         self.profile_tab = ttk.Frame(self.tabs)
@@ -70,10 +83,91 @@ class BrowserUI:
                                                    pady=11)
         tk.Label(status_frame, text="NEON  /  BETA", bg="#192140",
                  fg=ACCENT, font=("Arial", 9, "bold")).pack(side="right", padx=15)
+        for variable in (self.state, self.account_message, self.account_code):
+            self._status_original[id(variable)] = variable.get()
+            variable.trace_add("write", lambda *_args, var=variable: self._status_changed(var))
+        self.apply_language(self.root)
         self.refresh()
         self.root.after(2500, self.refresh_status)
         self.root.after(1500, self.restore_login)
         self.root.after(300000, self.license_tick)
+
+    def _status_changed(self, variable):
+        if self._localizing:
+            return
+        source = variable.get()
+        self._status_original[id(variable)] = source
+        result = translate(source, self.language)
+        if result != source:
+            self._localizing = True
+            try:
+                variable.set(result)
+            finally:
+                self._localizing = False
+
+    def set_language(self, language):
+        if language not in ("ru", "en") or language == self.language:
+            return
+        try:
+            save_language(self.store.root, language)
+        except OSError as exc:
+            messagebox.showerror("Murdilimax", str(exc), parent=self.root)
+            return
+        self.language = language
+        self.apply_language(self.root)
+        self._localizing = True
+        try:
+            for variable in (self.state, self.account_message, self.account_code):
+                source = self._status_original.get(id(variable), variable.get())
+                variable.set(translate(source, language))
+        finally:
+            self._localizing = False
+        self.refresh_profiles()
+
+    def apply_language(self, widget):
+        # Translate only authored UI strings, not profile names, notes,
+        # proxy credentials, URLs, or other user data.
+        for item in [widget] + list(self._descendants(widget)):
+            if isinstance(item, (ttk.Label, ttk.Button, tk.Label, tk.Button)):
+                try:
+                    value = item.cget("text")
+                    localized = translate(value, self.language)
+                    if localized != value:
+                        item.configure(text=localized)
+                except tk.TclError:
+                    pass
+            if isinstance(item, ttk.Notebook):
+                for tab in item.tabs():
+                    value = item.tab(tab, "text")
+                    localized = translate(value, self.language)
+                    if localized != value:
+                        item.tab(tab, text=localized)
+            if isinstance(item, ttk.Treeview):
+                for column in item["columns"]:
+                    value = item.heading(column, "text")
+                    localized = translate(value, self.language)
+                    if localized != value:
+                        item.heading(column, text=localized)
+        if widget is not self.root and isinstance(widget, tk.Toplevel):
+            widget.title(translate(widget.title(), self.language))
+        for lang, button in self.language_buttons.items():
+            button.configure(style="Neon.TButton" if lang == self.language else "TButton")
+
+    def _descendants(self, widget):
+        for child in widget.winfo_children():
+            yield child
+            yield from self._descendants(child)
+
+    def account_url(self, url):
+        """Carry UI language into secure account pages without changing auth."""
+        parsed = urlsplit(url)
+        if parsed.scheme != "https" or parsed.hostname != "murdilimax-browser.hatchable.site":
+            return url
+        params = [(key, value) for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+                  if key != "lang"]
+        params.append(("lang", self.language))
+        return urlunsplit((parsed.scheme, parsed.netloc, parsed.path,
+                           urlencode(params), parsed.fragment))
 
     def button(self, parent, label, command):
         style = "Neon.TButton" if label.startswith(("＋", "▶", "↗")) else "TButton"
@@ -155,7 +249,7 @@ class BrowserUI:
         bar.pack(anchor="w", pady=(7, 15))
         self.button(bar, "↗ Подключить аккаунт", self.begin_login)
         self.button(bar, "◈ Открыть личный кабинет",
-                    lambda: webbrowser.open("https://murdilimax-browser.hatchable.site/account.html"))
+                    lambda: webbrowser.open(self.account_url("https://murdilimax-browser.hatchable.site/account.html")))
         self.button(bar, "↻ Проверить лицензию", self.check_license)
         self.button(bar, "Выйти", self.logout)
         tk.Label(outer, text="Бета-версия: лицензия проверяется через личный кабинет. "
@@ -214,7 +308,7 @@ class BrowserUI:
                 self.pairing = (code,secret)
                 self.root.after(0, lambda: self.account_code.set("КОД: " + code))
                 self.root.after(0, lambda: self.account_message.set("Подтвердите этот код в открывшемся браузере"))
-                webbrowser.open(data["verification_uri"])
+                webbrowser.open(self.account_url(data["verification_uri"]))
                 expires = time.monotonic() + min(600,int(data.get("expires_in",600)))
                 while time.monotonic() < expires and self.pairing == (code,secret):
                     time.sleep(max(3,int(data.get("interval",3))))
@@ -299,7 +393,7 @@ class BrowserUI:
         for p in self.store.profiles():
             if query and query not in " ".join(str(p.get(k, "")) for k in ("name", "group", "tags", "notes")).lower():
                 continue
-            status = "● Запущен" if self.running(p["id"]) else "○ Остановлен"
+            status = translate("● Запущен" if self.running(p["id"]) else "○ Остановлен", self.language)
             self.profile_tree.insert("", "end", iid=p["id"], values=(p["name"], p["group"], p["tags"],
                                     proxies.get(p["proxy_id"], "Без прокси"), p["os"], status))
         self.profile_tree.selection_set([x for x in old if self.profile_tree.exists(x)])
@@ -374,6 +468,7 @@ class BrowserUI:
                 messagebox.showerror("Профиль", str(exc), parent=window)
         ttk.Button(window, text="Сохранить профиль", command=save).grid(row=8, column=1, sticky="e", padx=23, pady=18)
         window.columnconfigure(1, weight=1)
+        self.apply_language(window)
 
     def new_profile(self):
         if len(self.store.profiles()) >= self.entitlement_limit:
@@ -486,6 +581,7 @@ class BrowserUI:
             ttk.Label(window, text="Оставь пароль пустым, чтобы сохранить прежний.", foreground=MUTED).grid(row=5, column=0, columnspan=2, padx=15)
         ttk.Button(window, text="Сохранить", command=save).grid(row=4, column=1, sticky="e", pady=16)
         window.columnconfigure(1, weight=1)
+        self.apply_language(window)
 
     def remove_proxy(self):
         pid = self.one(self.proxy_tree, "прокси")
