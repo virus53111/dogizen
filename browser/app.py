@@ -19,6 +19,7 @@ from engine import pid_alive, request_stop, run_profile, start_background, safe_
 from network_check import probe_proxy_exit
 from proxy_diagnostics import diagnose_proxy, describe_diagnosis
 from profile_view import ALL, RUNNING, STOPPED, filter_profiles, distinct_groups, bulk_update_groups
+from profile_table import reconcile_profile_tree
 from cookie_manager import (cookie_inventory, export_cookies, clear_cookies,
                             list_cookie_backups, restore_cookie_backup)
 from addon_manager import list_addons, inspect_archive, install_addon, set_addon_enabled, remove_addon
@@ -53,6 +54,7 @@ class BrowserUI:
         self.root.minsize(920, 620)
         self.root.configure(bg=BG)
         self.search = tk.StringVar()
+        self._search_after_id = None
         self.group_filter_key = None
         self.status_filter_key = ALL
         self.proxy_filter_key = None
@@ -209,7 +211,7 @@ class BrowserUI:
         ttk.Label(search, text="Поиск (название, группа, теги, заметки)").pack(side="left", padx=(0, 14))
         e = ttk.Entry(search, textvariable=self.search, width=48)
         e.pack(side="left", fill="x", expand=True)
-        self.search.trace_add("write", lambda *_: self.refresh_profiles())
+        self.search.trace_add("write", self.schedule_profile_search)
         filters = ttk.Frame(self.profile_tab)
         filters.pack(fill="x", padx=12, pady=(1, 7))
         self.group_filter_label = ttk.Label(filters, text="Группа:")
@@ -678,6 +680,16 @@ class BrowserUI:
             variable.set(next(label for label, key in mapping.items()
                               if key == current))
 
+    def schedule_profile_search(self, *_):
+        """Debounce keystrokes: avoid scanning large tables on every character."""
+        if self._search_after_id is not None:
+            self.root.after_cancel(self._search_after_id)
+        self._search_after_id = self.root.after(180, self._apply_scheduled_search)
+
+    def _apply_scheduled_search(self):
+        self._search_after_id = None
+        self.refresh_profiles()
+
     def on_group_filter(self, _event=None):
         self.group_filter_key = self.group_filter_map.get(
             self.group_filter_var.get())
@@ -731,7 +743,6 @@ class BrowserUI:
              f"Updated groups for {count} profiles"))
 
     def refresh_profiles(self):
-        old = set(self.profile_tree.selection())
         profiles = self.store.profiles()
         proxy_list = self.store.proxies()
         self._refresh_profile_filter_options(profiles, proxy_list)
@@ -741,17 +752,19 @@ class BrowserUI:
             status=self.status_filter_key, proxy_id=self.proxy_filter_key,
             running=self.running,
         )
-        self.profile_tree.delete(*self.profile_tree.get_children())
+        # Incremental rendering: a periodic refresh with unchanged profiles
+        # now performs zero Tk row writes, preserving multi-selection,
+        # focus and scroll position even with hundreds of local profiles.
+        rows = []
         for p, live in visible:
             status = translate("● Запущен" if live else "○ Остановлен", self.language)
-            self.profile_tree.insert(
-                "", "end", iid=p["id"],
-                values=(p["name"], p.get("group", ""), p.get("tags", ""),
-                        proxies.get(p.get("proxy_id", ""),
-                                    translate("Без прокси", self.language)),
-                        p.get("os", "native"), status))
-        self.profile_tree.selection_set(
-            [pid for pid in old if self.profile_tree.exists(pid)])
+            rows.append((
+                p["id"],
+                (p["name"], p.get("group", ""), p.get("tags", ""),
+                 proxies.get(p.get("proxy_id", ""),
+                             translate("Без прокси", self.language)),
+                 p.get("os", "native"), status)))
+        reconcile_profile_tree(self.profile_tree, rows)
         if self.language == "en":
             label = f"Profiles: {len(profiles)}  ·  Running: {active}  ·  Visible: {len(visible)}"
         else:
