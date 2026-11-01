@@ -1,0 +1,33 @@
+name: Validate local cookie import and browser state
+on:
+  push:
+    branches: [feature/validated-cookie-import-20261101]
+  pull_request:
+    paths:
+      - 'browser/**'
+      - '.github/workflows/cookie-import-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  import-validation:
+    name: Cookie import, backup, isolation / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Check Python code
+        run: python -m compileall -q browser
+      - name: Test untrusted JSON/Netscape input and isolation
+        run: python -m unittest discover -s browser -p 'test_cookie_import.py' -v
+      - name: Existing cookie manager, restore and startup guard tests
+        run: |
+          python -m unittest discover -s browser -p 'test_cookie_manager.py' -v
+          python -m unittest discover -s browser -p 'test_cookie_restore.py' -v
+          python -m unittest discover -s browser -p 'test_launch_guard.py' -v

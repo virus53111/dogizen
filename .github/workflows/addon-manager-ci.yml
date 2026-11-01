@@ -1,0 +1,29 @@
+name: Verify Firefox Addon Manager
+on:
+  push:
+    branches: [feature/firefox-addon-manager-20261101]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  addons:
+    name: Offline XPI security / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Compile desktop source
+        run: python -m compileall -q browser
+      - name: Test XPI archives and profile isolation
+        run: python -m unittest discover -s browser -p 'test_addon_manager.py' -v
+      - name: Existing cookies and profile tests
+        run: |
+          python -m unittest discover -s browser -p 'test_cookie_manager.py' -v
+          python -m unittest discover -s browser -p 'test_profile_view.py' -v
+          python -m unittest discover -s browser -p 'test_i18n.py' -v

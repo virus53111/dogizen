@@ -1,0 +1,31 @@
+name: Opt-in local profile API security and platform QA
+on:
+  push:
+    branches: [feature/loopback-profile-api-20261101]
+    paths: ['browser/local_api.py', 'browser/test_local_api.py', 'browser/app.py', '.github/workflows/local-profile-api-ci.yml']
+  pull_request:
+    paths: ['browser/local_api.py', 'browser/test_local_api.py', 'browser/app.py', '.github/workflows/local-profile-api-ci.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  local-api:
+    name: Local API / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15-intel]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify Python syntax
+        run: python -m compileall -q browser
+      - name: Verify API security and operations without payments
+        run: python -m unittest discover -s browser -p 'test_local_api.py' -v
+      - name: Recheck license guard and atomic launch
+        run: |
+          python -m unittest discover -s browser -p 'test_paid_profile_launch.py' -v
+          python -m unittest discover -s browser -p 'test_launch_guard.py' -v
