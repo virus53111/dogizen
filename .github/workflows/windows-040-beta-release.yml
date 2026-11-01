@@ -10,7 +10,7 @@ permissions:
   contents: write
 concurrency:
   group: windows-browser-v040-beta-publish
-  cancel-in-progress: false
+  cancel-in-progress: true
 jobs:
   build-and-publish:
     name: Verify, build, install and publish Windows x64 beta
