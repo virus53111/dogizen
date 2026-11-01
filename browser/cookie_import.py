@@ -234,9 +234,9 @@ def import_cookies(store, profile_id, source, *, context_factory=None,
                     raise ValueError("Firefox cookie jar mismatch: expected=" + repr(sorted(expected)) + " got=" + repr(sorted(installed)))
                 page.wait_for_timeout(1000)
         except Exception as exc:
-            # Do not expose token values or browser exception messages to
-            # logs. The exception CLASS helps diagnose engine compatibility.
-            raise ValueError(
-                "Cookie import failed (" + type(exc).__name__ +
-                "). Check the local backup before retrying.") from None
+            # Safe diagnostic: only names/domain/path from our own synthetic
+            # acceptance data. Never include cookie values or Playwright dumps.
+            diagnostic = str(exc) if isinstance(exc, ValueError) and str(exc).startswith(
+                "Firefox cookie jar mismatch:") else type(exc).__name__
+            raise ValueError("Cookie import failed: " + diagnostic) from None
         return preview.count, rollback
