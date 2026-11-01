@@ -265,6 +265,7 @@ class BrowserUI:
         tools.pack(fill="x", padx=12, pady=8)
         self.button(tools, "Экспорт настроек", self.export)
         self.button(tools, "Импорт настроек", self.import_profiles)
+        self.button(tools, "Стартовые вкладки", self.edit_startup_tabs)
         self.button(tools, "Открыть журнал", self.open_log)
         cookie_bar = ttk.Frame(self.profile_tab)
         cookie_bar.pack(fill="x", padx=12, pady=(0, 6))
@@ -894,6 +895,54 @@ class BrowserUI:
         if item and self.running(item["id"]):
             raise ValueError("Останови профиль перед изменением настроек")
         self.profile_form(item)
+
+    def edit_startup_tabs(self):
+        """Edit additional pages for one STOPPED profile without changing the theme."""
+        pid = self.one(self.profile_tree, "профиль")
+        profile = self.store.get_profile(pid)
+        if not profile:
+            raise ValueError("Профиль не найден")
+        if self.running(pid) or launch_pending(self.store.root / "profiles" / pid):
+            raise ValueError("Сначала останови профиль")
+        en = self.language == "en"
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Startup tabs" if en else "Стартовые вкладки")
+        dialog.configure(bg=BG)
+        dialog.geometry("710x405")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        tk.Label(dialog, text="Additional tabs (one URL per line)" if en else
+                 "Дополнительные вкладки (один адрес в строке)",
+                 bg=BG, fg=TEXT, font=("Arial", 12, "bold")).pack(
+                     anchor="w", padx=22, pady=(20, 8))
+        main_url = str(profile.get("url", "about:blank"))
+        tk.Label(dialog, text=("Main page: " if en else "Главная страница: ") +
+                 main_url[:100], bg=BG, fg=CYAN, wraplength=655,
+                 justify="left").pack(anchor="w", padx=22, pady=(0, 8))
+        tk.Label(dialog, text="Up to seven HTTP/HTTPS tabs. Data stays local." if en else
+                 "До семи дополнительных страниц HTTP/HTTPS. Данные локальные.",
+                 bg=BG, fg=MUTED).pack(anchor="w", padx=22, pady=(0, 8))
+        editor = tk.Text(dialog, height=9, width=74, wrap="none",
+                         bg=PANEL, fg=TEXT, insertbackground=TEXT)
+        editor.insert("1.0", "\n".join(profile.get("startup_urls", [])))
+        editor.pack(fill="both", expand=True, padx=22, pady=(0, 12))
+        footer = ttk.Frame(dialog)
+        footer.pack(fill="x", padx=22, pady=(0, 18))
+        def save():
+            try:
+                lines = [line.strip() for line in
+                         editor.get("1.0", "end-1c").splitlines() if line.strip()]
+                self.store.update_profile(pid, startup_urls=lines)
+                dialog.destroy()
+                self.state.set("Startup tabs saved" if en else
+                               "Дополнительные вкладки сохранены")
+            except ValueError as exc:
+                messagebox.showerror("Startup tabs" if en else "Стартовые вкладки",
+                                     str(exc), parent=dialog)
+        ttk.Button(footer, text="Save" if en else "Сохранить",
+                   command=save).pack(side="right", padx=5)
+        ttk.Button(footer, text="Cancel" if en else "Отмена",
+                   command=dialog.destroy).pack(side="right", padx=5)
 
     def duplicate(self):
         selected = self.selected(self.profile_tree)
