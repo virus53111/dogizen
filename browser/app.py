@@ -987,6 +987,89 @@ class BrowserUI:
                 parent=self.root)
         self._cookie_action(lambda: clear_cookies(self.store, pid), success)
 
+    def show_cookie_restore(self):
+        """Choose a Murdilimax backup from the selected stopped profile."""
+        profile_id = self.one(self.profile_tree, "профиль")
+        english = self.language == "en"
+
+        def show(backups):
+            if not backups:
+                messagebox.showinfo(
+                    "Murdilimax Cookies",
+                    "No local backups for this profile." if english else
+                    "Для этого профиля пока нет локальных резервных копий.",
+                    parent=self.root)
+                return
+            dialog = tk.Toplevel(self.root)
+            dialog.title("Restore cookies" if english else "Восстановление cookies")
+            dialog.configure(bg=BG)
+            dialog.geometry("720x375")
+            dialog.transient(self.root)
+            dialog.grab_set()
+            ttk.Label(
+                dialog, foreground=ACCENT, wraplength=650,
+                text=("Only local backups of this STOPPED profile are shown. "
+                      "Backups contain session secrets." if english else
+                      "Показаны только локальные копии ОСТАНОВЛЕННОГО профиля. "
+                      "Они содержат секреты сеансов.")
+            ).pack(fill="x", padx=20, pady=(20, 12))
+            table = ttk.Treeview(dialog, columns=("created", "size"),
+                                 show="headings", selectmode="browse")
+            table.heading("created", text="UTC / " + ("Created" if english else "Создана"))
+            table.heading("size", text="KB / " + ("Size" if english else "Размер"))
+            table.column("created", width=330)
+            table.column("size", width=130)
+            for row in backups:
+                table.insert("", "end", iid=row.filename,
+                             values=(row.modified_at, f"{row.size_bytes / 1024:.1f} KB"))
+            table.pack(fill="both", expand=True, padx=20, pady=8)
+            table.selection_set(backups[0].filename)
+            controls = ttk.Frame(dialog)
+            controls.pack(fill="x", padx=20, pady=(5, 18))
+
+            def confirm():
+                selected = list(table.selection())
+                if not selected:
+                    return
+                warning = (
+                    "Restore this backup? Current cookies will be backed up "
+                    "first; website sign-ins may change. Only the selected "
+                    "STOPPED profile is affected." if english else
+                    "Восстановить эту копию? Текущие cookies сначала будут "
+                    "сохранены; вход на сайты может измениться. Изменится только "
+                    "выбранный ОСТАНОВЛЕННЫЙ профиль.")
+                if not messagebox.askyesno(
+                        "Murdilimax Cookies", warning, parent=dialog):
+                    return
+                filename = selected[0]
+                dialog.destroy()
+
+                def completed(result):
+                    count, previous = result
+                    text = (
+                        f"Restored cookies: {count}\n"
+                        f"Previous-state backup: {previous or 'none'}"
+                        if english else
+                        f"Восстановлено cookies: {count}\n"
+                        f"Копия прежнего состояния: {previous or 'нет'}")
+                    messagebox.showinfo("Murdilimax Cookies", text,
+                                        parent=self.root)
+                self._cookie_action(
+                    lambda: restore_cookie_backup(
+                        self.store, profile_id, filename), completed)
+
+            ttk.Button(
+                controls,
+                text="Restore selected backup" if english else
+                     "Восстановить выбранную копию",
+                command=confirm).pack(side="left", padx=(0, 10))
+            ttk.Button(
+                controls, text="Cancel" if english else "Отмена",
+                command=dialog.destroy).pack(side="left")
+
+        self._cookie_action(
+            lambda: list_cookie_backups(self.store, profile_id), show)
+
     def import_proxies_txt(self):
         """Import proxy endpoints without copying passwords in plaintext."""
         path = filedialog.askopenfilename(
