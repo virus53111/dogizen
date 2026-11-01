@@ -841,7 +841,7 @@ class BrowserUI:
         def worker():
             try:
                 from update_check import check_windows_updates
-                release = check_windows_updates(installed=(0, 6, 0))
+                release = check_windows_updates()
             except Exception:
                 self.root.after(0, lambda: messagebox.showwarning(
                     "Murdilimax", "Не удалось проверить обновления. Проверьте интернет "
