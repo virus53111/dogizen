@@ -12,7 +12,7 @@ import tkinter as tk
 import webbrowser
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 from auth_client import BrowserAccount
 from engine import pid_alive, request_stop, run_profile, start_background, safe_profile_id
@@ -158,6 +158,17 @@ class BrowserUI:
             yield child
             yield from self._descendants(child)
 
+    def account_url(self, url):
+        """Carry UI language into secure account pages without changing auth."""
+        parsed = urlsplit(url)
+        if parsed.scheme != "https" or parsed.hostname != "murdilimax-browser.hatchable.site":
+            return url
+        params = [(key, value) for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+                  if key != "lang"]
+        params.append(("lang", self.language))
+        return urlunsplit((parsed.scheme, parsed.netloc, parsed.path,
+                           urlencode(params), parsed.fragment))
+
     def button(self, parent, label, command):
         style = "Neon.TButton" if label.startswith(("＋", "▶", "↗")) else "TButton"
         ttk.Button(parent, text=label, style=style, command=lambda: self.call(command)).pack(side="left", padx=(0, 7), pady=5)
@@ -238,7 +249,7 @@ class BrowserUI:
         bar.pack(anchor="w", pady=(7, 15))
         self.button(bar, "↗ Подключить аккаунт", self.begin_login)
         self.button(bar, "◈ Открыть личный кабинет",
-                    lambda: webbrowser.open("https://murdilimax-browser.hatchable.site/account.html"))
+                    lambda: webbrowser.open(self.account_url("https://murdilimax-browser.hatchable.site/account.html")))
         self.button(bar, "↻ Проверить лицензию", self.check_license)
         self.button(bar, "Выйти", self.logout)
         tk.Label(outer, text="Бета-версия: лицензия проверяется через личный кабинет. "
@@ -297,7 +308,7 @@ class BrowserUI:
                 self.pairing = (code,secret)
                 self.root.after(0, lambda: self.account_code.set("КОД: " + code))
                 self.root.after(0, lambda: self.account_message.set("Подтвердите этот код в открывшемся браузере"))
-                webbrowser.open(data["verification_uri"])
+                webbrowser.open(self.account_url(data["verification_uri"]))
                 expires = time.monotonic() + min(600,int(data.get("expires_in",600)))
                 while time.monotonic() < expires and self.pairing == (code,secret):
                     time.sleep(max(3,int(data.get("interval",3))))
