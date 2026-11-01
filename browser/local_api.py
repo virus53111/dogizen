@@ -25,7 +25,7 @@ KEYRING_ACCOUNT = "access-token-v1"
 DEFAULT_PORT = 18765
 _TOKEN_PATTERN = re.compile(r"[0-9a-f]{64}\Z")
 _ACTION_PATTERN = re.compile(r"/v1/profiles/([0-9a-f]{32})/(start|stop|duplicate)\Z")
-_PROFILE_PATTERN = re.compile(r"/v1/profiles/([0-9a-f]{32})\\Z")
+_PROFILE_PATTERN = re.compile(r"/v1/profiles/([0-9a-f]{32})\Z")
 MAX_JSON_BODY = 4096
 
 
