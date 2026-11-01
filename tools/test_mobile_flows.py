@@ -52,6 +52,14 @@ def test_pricing(page,width):
     check_overflow(page,width,"pricing")
     within_viewport(page,'.pricing-grid',width)
     within_viewport(page,'.page-pricing .page-lead h1',width)
+    note=page.locator('.beta-purchase-warning')
+    assert note.is_visible(), "Missing paid beta disclosure"
+    within_viewport(page,'.beta-purchase-warning',width)
+    assert "обязательное применение" in note.inner_text()
+    page.locator('[data-lang="en"]').click()
+    assert "not enabled by default" in note.inner_text()
+    page.locator('[data-lang="ru"]').click()
+    assert "обязательное применение" in note.inner_text()
     for cta in page.locator('.page-pricing .price-button').all():
         rect=cta.bounding_box()
         assert rect and rect["x"]>=-2 and rect["x"]+rect["width"]<=width+2,("pricing CTA",width,rect)
