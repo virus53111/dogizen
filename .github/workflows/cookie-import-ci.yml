@@ -2,6 +2,10 @@ name: Validate local cookie import and browser state
 on:
   push:
     branches: [feature/validated-cookie-import-20261101]
+  pull_request:
+    paths:
+      - 'browser/**'
+      - '.github/workflows/cookie-import-ci.yml'
   workflow_dispatch:
 permissions:
   contents: read

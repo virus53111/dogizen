@@ -962,7 +962,7 @@ class BrowserUI:
         if path:
             if Path(path).stat().st_size > 8_000_000:
                 raise ValueError("Export file is too large")
-            count = self.store.import_metadata(path)
+            count = self.store.import_metadata(path, max_profiles=self.entitlement_limit)
             self.refresh()
             self.state.set("Импортировано профилей: " + str(count))
 

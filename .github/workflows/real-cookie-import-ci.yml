@@ -6,6 +6,14 @@ on:
       - 'browser/cookie_import.py'
       - 'browser/integration_cookie_import.py'
       - '.github/workflows/real-cookie-import-ci.yml'
+  pull_request:
+    paths:
+      - 'browser/cookie_import.py'
+      - 'browser/cookie_manager.py'
+      - 'browser/store.py'
+      - 'browser/engine.py'
+      - 'browser/integration_cookie_import.py'
+      - '.github/workflows/real-cookie-import-ci.yml'
   workflow_dispatch:
 permissions:
   contents: read
