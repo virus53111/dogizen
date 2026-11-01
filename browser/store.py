@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 from identity import FILENAME, resolved_os
+from startup_tabs import normalize_extra_urls
 
 def now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -71,19 +72,20 @@ class Store:
     def get_profile(self, profile_id):
         return next((p for p in self.profiles() if p["id"] == profile_id), None)
 
-    def add_profile(self, name, url="about:blank", group="", tags="", notes="", proxy_id="", os_name="native"):
+    def add_profile(self, name, url="about:blank", group="", tags="", notes="", proxy_id="", os_name="native", startup_urls=None):
         if not name.strip():
             raise ValueError("Profile name is required")
         if not valid_url(url):
             raise ValueError("Use an http:// or https:// start URL")
         if os_name not in ("native", "windows", "macos", "linux"):
             raise ValueError("Invalid OS choice")
+        extra_urls = normalize_extra_urls(startup_urls if startup_urls is not None else [], primary=url or "about:blank")
         if proxy_id and not any(p["id"] == proxy_id for p in self.proxies()):
             raise ValueError("Proxy not found")
         profile = {
             "id": uuid.uuid4().hex, "name": name.strip()[:100], "url": url or "about:blank",
             "group": group.strip()[:80], "tags": tags.strip()[:200], "notes": notes.strip()[:2000],
-            "proxy_id": proxy_id, "os": os_name,
+            "proxy_id": proxy_id, "os": os_name, "startup_urls": extra_urls,
             "created_at": now(), "updated_at": now(),
         }
         items = self.profiles()
@@ -96,7 +98,7 @@ class Store:
         return profile
 
     def update_profile(self, profile_id, **changes):
-        allowed = {"name", "url", "group", "tags", "notes", "proxy_id", "os"}
+        allowed = {"name", "url", "group", "tags", "notes", "proxy_id", "os", "startup_urls"}
         if set(changes) - allowed:
             raise ValueError("Unsupported fields")
         items = self.profiles()
@@ -107,6 +109,8 @@ class Store:
                     raise ValueError("Invalid name or start URL")
                 if merged["os"] not in ("native", "windows", "macos", "linux"):
                     raise ValueError("Invalid OS")
+                merged["startup_urls"] = normalize_extra_urls(
+                    merged.get("startup_urls", []), primary=merged["url"] or "about:blank")
                 if (self.root / "profiles" / profile_id / FILENAME).exists() and (
                     resolved_os(merged["os"]) != resolved_os(p.get("os", "native"))
                 ):
@@ -128,7 +132,7 @@ class Store:
         p = self.get_profile(profile_id)
         if not p:
             raise ValueError("Profile not found")
-        return self.add_profile(p["name"] + " (copy)", p["url"], p["group"], p["tags"], p["notes"], p["proxy_id"], p["os"])
+        return self.add_profile(p["name"] + " (copy)", p["url"], p["group"], p["tags"], p["notes"], p["proxy_id"], p["os"], startup_urls=p.get("startup_urls", []))
 
     def delete_profile(self, profile_id):
         items = self.profiles()
@@ -252,10 +256,11 @@ class Store:
                 if not isinstance(value, str):
                     raise ValueError("Invalid profile " + field)
                 fields[field] = value.strip()[:size]
+            extra_urls = normalize_extra_urls(record.get("startup_urls", []), primary=url or "about:blank")
             prepared.append({
                 "id": uuid.uuid4().hex, "name": name.strip()[:100],
                 "url": url or "about:blank", **fields,
-                "proxy_id": "", "os": os_name,
+                "proxy_id": "", "os": os_name, "startup_urls": extra_urls,
                 "created_at": timestamp, "updated_at": timestamp,
             })
         if not prepared:
