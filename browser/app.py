@@ -25,6 +25,7 @@ from profile_view import (ALL, RUNNING, STOPPED, filter_profiles,
 from profile_table import reconcile_profile_tree
 from cookie_manager import (cookie_inventory, export_cookies, clear_cookies,
                             list_cookie_backups, restore_cookie_backup)
+from cookie_import import inspect_cookie_file, import_cookies
 from addon_manager import list_addons, inspect_archive, install_addon, set_addon_enabled, remove_addon
 from proxy_import import import_proxy_list
 from engine_setup import ensure_engine_ready
@@ -271,6 +272,7 @@ class BrowserUI:
             side="left", padx=(0, 12))
         self.button(cookie_bar, "◉ Cookies", self.show_cookie_inventory)
         self.button(cookie_bar, "⇩ Экспорт cookies", self.export_profile_cookies)
+        self.button(cookie_bar, "⇧ Импорт cookies", self.import_profile_cookies)
         self.button(cookie_bar, "✕ Очистить cookies", self.clear_profile_cookies)
         self.button(cookie_bar, "↶ Восстановить cookies", self.show_cookie_restore)
         ttk.Label(cookie_bar, text="Только остановленный профиль",
@@ -1028,6 +1030,46 @@ class BrowserUI:
                  f"Экспортировано cookies: {count}. Секретный файл:\n{path}"),
                 parent=self.root)
         self._cookie_action(lambda: export_cookies(self.store, pid, path), success)
+
+    def import_profile_cookies(self):
+        """Import only an explicitly approved local cookie file into a stopped profile."""
+        pid = self.one(self.profile_tree, "профиль")
+        en = self.language == "en"
+        path = filedialog.askopenfilename(
+            title="Select your own local cookies" if en else "Выберите свои локальные cookies",
+            filetypes=[("Cookies JSON / Netscape TXT", "*.json *.txt"),
+                       ("All files", "*.*")])
+        if not path:
+            return
+        info = inspect_cookie_file(path)
+        details = (
+            f"Import {info.count} cookies from {info.domains} domains "
+            f"({info.format}) into this STOPPED profile?\n\n"
+            "Cookies can give access to logged-in accounts. Import only "
+            "files that belong to you. Existing cookie data will be backed up "
+            "before merging. Other profiles will not be changed."
+            if en else
+            f"Импортировать {info.count} cookies для {info.domains} доменов "
+            f"({info.format}) в этот ОСТАНОВЛЕННЫЙ профиль?\n\n"
+            "Cookies могут давать доступ к аккаунтам сайтов. Загружайте только "
+            "собственные файлы. Перед объединением текущие cookies будут "
+            "сохранены в локальную резервную копию. Другие профили не затрагиваются."
+        )
+        if not messagebox.askyesno("Murdilimax Cookies", details, parent=self.root):
+            return
+
+        def completed(result):
+            count, backup = result
+            text = (
+                f"Imported {count} cookies. Restart the profile to use them.\n"
+                f"Previous-state backup: {backup or 'none (new database)'}"
+                if en else
+                f"Импортировано cookies: {count}. Запустите профиль заново.\n"
+                f"Копия прежних данных: {backup or 'нет (новая база)'}"
+            )
+            messagebox.showinfo("Murdilimax Cookies", text, parent=self.root)
+
+        self._cookie_action(lambda: import_cookies(self.store, pid, path), completed)
 
     def clear_profile_cookies(self):
         pid = self.one(self.profile_tree, "профиль")
