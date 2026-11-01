@@ -1,0 +1,39 @@
+name: Real desktop browser engine cross-platform acceptance
+on:
+  push:
+    branches: [qa/desktop-runtime-crossplatform-20261101]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  engine:
+    name: Camoufox launch / ${{ matrix.label }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-2025
+            label: Windows-x64
+          - os: macos-15-intel
+            label: macOS-Intel
+          - os: macos-15
+            label: macOS-Apple-Silicon
+          - os: ubuntu-24.04
+            label: Linux-control
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install browser integration requirements
+        run: python -m pip install -r browser/requirements.txt
+      - name: Download actual Camoufox browser for this OS
+        run: python -m camoufox fetch
+      - name: Verify persistent profiles and stable fingerprint in real browser
+        run: python browser/integration_browser.py
+      - name: Verify real Firefox add-on, disable and profile isolation
+        run: python browser/integration_addon.py
+      - name: Verify actual browser cookie backup and restoration
+        run: python browser/integration_cookie_restore.py
