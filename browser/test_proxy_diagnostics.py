@@ -80,7 +80,6 @@ class ProxyDiagnosticsTests(unittest.TestCase):
             self.assertNotIn("sensitive-password", message)
             self.assertNotIn("sensitive-user", message)
             self.assertNotIn("host:8080", message)
-            self.assertIn("8080", message) if False else None
         self.assertIn("closed", actions)
 
     def test_connection_refused(self):
