@@ -155,6 +155,23 @@
   const ruDynamic = {planCta:'Выбрать тариф',running:'Активен',stopped:'Остановлен',run:'Запустить',stop:'Остановить',delete:'Удалить',noProfiles:'Профили не найдены',shown:'Показано',profiles:'профилей',cryptoUnavailable:'Криптооплата скоро',confirmDelete:'Удалить этот демо-профиль?',confirmReset:'Сбросить демонстрационные профили?',enterName:'Введите название профиля.'};
   const enDynamic = {run:'Launch',stop:'Stop',delete:'Delete',noProfiles:'No profiles found',shown:'Showing',profiles:'profiles',cryptoUnavailable:'Crypto coming soon',confirmDelete:'Delete this demo profile?',confirmReset:'Reset demo profiles?',enterName:'Enter a profile name.'};
   function d(key){return (lang==='en'?enDynamic:ruDynamic)[key]||key;}
+  // Carry RU/EN selection across the separate account/Stripe domain.
+  function syncAccountLanguageLinks() {
+    for (const link of document.querySelectorAll('a[href], a[data-mx-base-href]')) {
+      const originalUrl = link.dataset.mxBaseHref || link.getAttribute('href');
+      if (!originalUrl || !originalUrl.startsWith('https://murdilimax-browser.hatchable.site/')) continue;
+      link.dataset.mxBaseHref = originalUrl;
+      const url = new URL(originalUrl);
+      url.searchParams.set('lang', lang);
+      const localized = url.toString();
+      if (link.classList.contains('pay-link')) {
+        link.dataset.cardHref = localized;
+        if (paymentMethod === 'card') link.href = localized;
+      } else {
+        link.href = localized;
+      }
+    }
+  }
   function setLanguage(next) {
     if(!languages.includes(next))return;
     lang=next;document.documentElement.lang=next;
@@ -165,7 +182,8 @@
     });
     document.querySelectorAll('[data-ph]').forEach(node => node.placeholder=next==='en' ? (en[node.dataset.ph] || node.placeholder) : initialPlaceholders.get(node));
     document.querySelectorAll('[data-lang]').forEach(b=>{const selected=b.dataset.lang===next;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected));});
-    document.title=next==='en'?'Murdilimax Browser — Premium Preview':'Murdilimax Browser — Новый дизайн';
+    document.title=next==='en'?'Murdilimax Browser — Neon Edition':'Murdilimax Browser — Неоновая версия';
+    syncAccountLanguageLinks();
     updatePaymentButtons();
     renderProfiles();
   }
