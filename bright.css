@@ -271,3 +271,24 @@ body.murdilimax-returning .mobile-register{display:none!important}
   }
   body.murdilimax-returning .nav-login:hover{color:#fff}
 }
+
+
+/* Explicitly opt-in, anonymous visits; no tracking without consent. */
+.murdilimax-consent-banner{
+  position:fixed;left:16px;right:16px;bottom:16px;z-index:900;
+  margin:auto;max-width:660px;padding:17px 20px;
+  border:1px solid #ddd6fa;border-radius:18px;
+  background:#fff;box-shadow:0 18px 58px #21104d39;
+  display:flex;align-items:center;gap:16px;
+}
+.murdilimax-consent-banner p{margin:0;flex:1;color:#504760;font-size:12px;line-height:1.65}
+.murdilimax-consent-banner>div{display:flex;gap:7px}
+.murdilimax-consent-banner button{
+  padding:11px 13px;border-radius:10px;border:1px solid #ddd3f4;
+  font-size:12px;font-weight:800;background:#f5f1ff;color:#6040c6;white-space:nowrap;
+}
+.murdilimax-consent-banner button:first-child{background:#7150f6;color:#fff;border-color:#7150f6}
+@media(max-width:600px){
+ .murdilimax-consent-banner{flex-direction:column;align-items:stretch;gap:12px;padding:15px}
+ .murdilimax-consent-banner>div{justify-content:flex-end}
+}
