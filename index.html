@@ -2,154 +2,161 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f9f8ff">
-  <meta name="color-scheme" content="light">
-  <meta name="description" content="Murdilimax Browser — антидетект-браузер на Camoufox в бета-разработке: изолированные профили, прокси HTTP/SOCKS5 и рабочие пространства для Windows и macOS.">
-  <meta property="og:title" content="Murdilimax Browser — управляйте браузерами по-новому">
-  <meta property="og:description" content="Новый уровень работы с браузерными профилями. Красивый интерфейс, прокси и изолированные сессии.">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#080b16">
+  <meta name="robots" content="index,follow,max-image-preview:large">
+  <link rel="canonical" href="https://murdilimax.com/">
+  <meta property="og:site_name" content="Murdilimax Browser">
   <meta property="og:type" content="website">
+  <meta property="og:locale" content="ru_RU">
+  <meta property="og:title" content="Murdilimax Browser — современный антидетект-браузер">
+  <meta property="og:description" content="Изолированные браузерные профили, прокси, группы и управление в едином рабочем пространстве. Бета-версия для Windows и macOS.">
   <meta property="og:url" content="https://murdilimax.com/">
-  <title>Murdilimax Browser — антидетект-браузер и профили для Windows/Mac (бета)</title>
-  <link rel="icon" href="/favicon.svg">
+  <meta property="og:image" content="https://murdilimax.com/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="color-scheme" content="dark">
+  <meta name="description" content="Murdilimax Browser — антидетект-браузер в бета-разработке: изолированные профили на Camoufox, HTTP/SOCKS5 прокси, группы, рабочее пространство и тарифы от $7. Русский и английский интерфейс.">
+  <title>Murdilimax Browser — антидетект-браузер, управление профилями и прокси</title>
+  <link rel="icon" href="/premium-preview/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/bright.css?v=8">
-  <script defer src="/bright.js?v=8"></script>
-<meta name="robots" content="index,follow,max-image-preview:large">
-<link rel="canonical" href="https://murdilimax.com/">
-<meta property="og:site_name" content="Murdilimax Browser">
-<meta property="og:locale" content="ru_RU">
-<meta property="og:image" content="https://murdilimax.com/og-image.png">
-<meta property="og:image:width" content="1200">
-<meta property="og:image:height" content="630">
-<meta name="twitter:card" content="summary_large_image">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
-<link rel="icon" type="image/svg+xml" href="/assets/murdilimax-icon.svg">
-<script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://murdilimax.com/#organization","name":"Murdilimax Browser","url":"https://murdilimax.com/","logo":{"@type":"ImageObject","url":"https://murdilimax.com/assets/murdilimax-icon.svg"},"sameAs":["https://github.com/virus53111/dogizen"]},{"@type":"WebSite","@id":"https://murdilimax.com/#website","url":"https://murdilimax.com/","name":"Murdilimax Browser","inLanguage":"ru","publisher":{"@id":"https://murdilimax.com/#organization"}},{"@type":"SoftwareApplication","@id":"https://murdilimax.com/#software","name":"Murdilimax Browser","applicationCategory":"BrowserApplication","operatingSystem":"Windows 10, Windows 11, macOS","url":"https://murdilimax.com/","description":"Менеджер изолированных локальных браузерных профилей с прокси и рабочими пространствами. Платные подписки раннего доступа через Stripe. Браузер в стадии бета-тестирования; функциональность и совместимость ограничены.","softwareVersion":"0.1.0-beta","publisher":{"@id":"https://murdilimax.com/#organization"}}]}</script>
+  <link href="/premium-preview/theme.css?v=3" rel="stylesheet">
+  <script src="/premium-preview/app.js?v=3" defer></script>
+  <script src="/premium-preview/consent.js?v=1" defer></script>
+  <script type="application/ld+json">{"@context":"https://schema.org","@graph":[{"@type":"Organization","@id":"https://murdilimax.com/#organization","name":"Murdilimax Browser","url":"https://murdilimax.com/","logo":{"@type":"ImageObject","url":"https://murdilimax.com/assets/murdilimax-icon.svg"},"sameAs":["https://github.com/virus53111/dogizen"]},{"@type":"WebSite","@id":"https://murdilimax.com/#website","url":"https://murdilimax.com/","name":"Murdilimax Browser","inLanguage":"ru","publisher":{"@id":"https://murdilimax.com/#organization"}},{"@type":"SoftwareApplication","@id":"https://murdilimax.com/#software","name":"Murdilimax Browser","applicationCategory":"BrowserApplication","operatingSystem":"Windows 10, Windows 11, macOS","url":"https://murdilimax.com/","description":"Менеджер изолированных локальных браузерных профилей с прокси и рабочими пространствами. Платные подписки раннего доступа через Stripe. Браузер в стадии бета-тестирования; функциональность и совместимость ограничены.","softwareVersion":"0.1.0-beta","publisher":{"@id":"https://murdilimax.com/#organization"}}]}</script>
 </head>
 <body>
-  <svg class="svg-sprite" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <symbol id="ic-logo" viewBox="0 0 44 44"><rect width="44" height="44" rx="14" fill="currentColor"/><path d="M22 7.5 35.5 22 22 36.5 8.5 22 22 7.5Z" stroke="white" stroke-width="2.5" fill="none"/><circle cx="22" cy="22" r="5" fill="white"/></symbol>
-    <symbol id="ic-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="ic-play" viewBox="0 0 24 24"><path d="m9 6 9 6-9 6V6Z" fill="currentColor"/></symbol>
-    <symbol id="ic-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5Zm-9 9 9 5 9-5M3 16l9 5 9-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="ic-shield" viewBox="0 0 24 24"><path d="M12 2 20 6v6c0 5-3.7 8.5-8 10-4.3-1.5-8-5-8-10V6l8-4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="m8 12 3 3 5-6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
-    <symbol id="ic-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M3 12h18M12 3c-5 5-5 13 0 18m0-18c5 5 5 13 0 18" fill="none" stroke="currentColor" stroke-width="1.7"/></symbol>
-    <symbol id="ic-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m15.5 15.5 5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-    <symbol id="ic-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="3" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="3" y="13" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13" y="13" width="8" height="8" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
-    <symbol id="ic-settings" viewBox="0 0 24 24"><path d="M4 7h16M4 17h16M9 4v6m6 4v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
-    <symbol id="ic-check" viewBox="0 0 24 24"><path d="m5 12 4.5 4.5L19 7" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></symbol>
-    <symbol id="ic-cloud" viewBox="0 0 24 24"><path d="M6 18h12a4 4 0 0 0 0-8h-1a6 6 0 0 0-11.8 1.3A3.5 3.5 0 0 0 6 18Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></symbol>
-    <symbol id="ic-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8 11V7a4 4 0 0 1 8 0v4m-4 4v3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></symbol>
-    <symbol id="ic-windows" viewBox="0 0 24 24"><path d="M2 5.5 11 4v8H2V5.5Zm11-1.8L22 2v10h-9V3.7ZM2 14h9v8l-9-1.6V14Zm11 0h9v10l-9-1.7V14Z" fill="currentColor"/></symbol>
-    <symbol id="ic-apple" viewBox="0 0 24 24"><path d="M16 4c.3-1.7 1.8-3.1 3.6-3-0 1.8-1 3.2-3 3.7ZM12 5.5c2-1.5 4.3-.9 5.6-.2 1.1.6 2.6 1 4 1.2-1.3 1-2.1 2.3-2.1 4 0 2.1 1.4 3.3 2.6 3.9-.6 2.4-2.1 6-4.7 6-1.2 0-2-1-3.4-1s-2.3 1-3.7 1C5.3 21.4 2 15 2 10.8c0-3.6 2.4-6 5.3-6 2.1 0 3.6 1.6 4.7.7Z" fill="currentColor"/></symbol>
-  </svg>
-
-  <div class="announce"><span class="announce-pill">НОВАЯ ЭПОХА</span> Murdilimax Browser развивается — взгляните на нашу новую платформу <a href="#features">Узнать больше <svg><use href="#ic-arrow"/></svg></a></div>
-  <header class="header" id="top">
-    <div class="container nav-inner">
-      <a class="brand" href="/" aria-label="Murdilimax Browser — главная"><svg class="brand-icon"><use href="#ic-logo"/></svg><span>MURDILIMAX<small>BROWSER STUDIO</small></span></a>
-      <nav class="nav-links" id="primary-nav" aria-label="Основная навигация">
-        <a href="https://murdilimax-browser.hatchable.site/account.html" class="nav-register">Регистрация бесплатно</a><a href="#features">Возможности</a><a href="/mobile-app.html">На телефон</a><a href="#workspace">Интерфейс</a><a href="#security">Безопасность</a><a href="#pricing">Тарифы</a><a href="#downloads">Скачать</a>
-      </nav>
-      <div class="nav-actions"><a class="nav-login" href="https://murdilimax-browser.hatchable.site/account.html" title="Войти или открыть свой кабинет Murdilimax">Мой кабинет</a><a class="btn btn-primary btn-header" href="https://murdilimax-browser.hatchable.site/account.html">Регистрация <svg><use href="#ic-arrow"/></svg></a><a class="mobile-register" href="https://murdilimax-browser.hatchable.site/account.html">Регистрация</a><button class="menu-toggle" type="button" aria-controls="primary-nav" aria-expanded="false" aria-label="Открыть меню"><span></span><span></span><span></span></button></div>
-    </div>
-  </header>
-  <main>
-    <section class="hero" aria-labelledby="hero-title">
-      <div class="hero-orb hero-orb-a" aria-hidden="true"></div><div class="hero-orb hero-orb-b" aria-hidden="true"></div><div class="hero-noise" aria-hidden="true"></div>
-      <div class="container hero-copy">
-        <div class="hero-kicker"><span class="live-dot"></span> BROWSER PROFILE MANAGER <span class="hero-divider"></span> WINDOWS & MACOS</div>
-        <h1 id="hero-title">Все ваши браузеры.<br><span class="gradient-text">Один уровень выше.</span></h1>
-        <p class="hero-subtitle">Управляйте отдельными профилями, прокси и рабочими сессиями в одной программе. Меньше рутины. Больше порядка. Программа, в которой приятно работать.</p>
-        <div class="hero-buttons"><a class="btn btn-primary btn-xl" href="https://murdilimax-browser.hatchable.site/account.html">Зарегистрироваться бесплатно <svg><use href="#ic-arrow"/></svg></a><a class="btn btn-white btn-xl" href="/download.html">Скачать для компьютера <svg><use href="#ic-arrow"/></svg></a></div>
-        <div class="hero-meta"><span><svg><use href="#ic-check"/></svg> Реальный браузерный движок</span><span><svg><use href="#ic-check"/></svg> Локальные профили</span><span><svg><use href="#ic-check"/></svg> Бета-разработка</span></div>
+<a class="skip-link" href="#main" data-i="skip">Перейти к содержимому</a>
+<div class="ambient ambient-a" aria-hidden="true"></div><div class="ambient ambient-b" aria-hidden="true"></div>
+<div class="announcement"><span class="sparkle">✦</span> <span data-i="announcement">Murdilimax Browser — новое рабочее пространство</span><span class="announcement-tag">BETA 2026</span></div>
+<header class="site-header">
+  <div class="container header-inner">
+    <a class="brand" href="#home" aria-label="Murdilimax Browser — Home">
+      <span class="brand-mark"><span class="brand-diamond"></span></span>
+      <span class="brand-text">murdilimax<span class="brand-sub">BROWSER STUDIO</span></span>
+    </a>
+    <nav class="main-nav" aria-label="Main navigation">
+      <a href="#home" data-nav="home" data-i="navProduct">Продукт</a>
+      <a href="#pricing" data-nav="pricing" data-i="navPricing">Тарифы</a>
+      <a href="#workspace" data-nav="workspace" data-i="navWorkspace">Рабочая панель</a>
+    </nav>
+    <div class="header-actions">
+      <div class="lang-picker" role="group" aria-label="Language">
+        <button data-lang="ru" class="lang active" type="button" aria-pressed="true">RU</button>
+        <button data-lang="en" class="lang" type="button" aria-pressed="false">EN</button>
       </div>
-      <div class="hero-visual container">
-        <div class="visual-glow visual-glow-a" aria-hidden="true"></div><div class="visual-glow visual-glow-b" aria-hidden="true"></div>
-        <figure class="dashboard-figure">
-          <div class="dashboard-frame">
-            <div class="dashboard">
-              <aside class="dash-sidebar" aria-label="Концепт бокового меню">
-                <div class="dash-brand"><svg><use href="#ic-logo"/></svg><strong>murdilimax<span>·</span></strong></div>
-                <p class="dash-kicker">WORKSPACE</p>
-                <div class="dash-nav active"><svg><use href="#ic-grid"/></svg>Профили<span>12</span></div>
-                <div class="dash-nav"><svg><use href="#ic-globe"/></svg>Прокси</div>
-                <div class="dash-nav"><svg><use href="#ic-layers"/></svg>Группы</div>
-                <div class="dash-nav"><svg><use href="#ic-settings"/></svg>Настройки</div>
-                <div class="dash-nav-spacer"></div>
-                <div class="dash-account"><div class="account-avatar">M</div><div><strong>My Workspace</strong><small>Free · локально</small></div><span class="account-arrow">⌄</span></div>
-              </aside>
-              <div class="dash-main">
-                <div class="dash-topbar"><div class="dash-breadcrumb">Пространство <span>/</span> <b>Все профили</b></div><div class="dash-top-actions"><span class="dash-top-search"><svg><use href="#ic-search"/></svg> Найти профиль... <kbd>⌘ K</kbd></span><span class="dash-bell">♧</span><span class="dash-avatar">ML</span></div></div>
-                <div class="dash-body">
-                  <div class="dash-title-line"><div><div class="dash-eyebrow">MANAGE YOUR WORKSPACE</div><h2>Ваши профили <span class="count-chip">12</span></h2><p>Все рабочие сессии в одном месте</p></div><span class="dash-add"><b>＋</b> Создать профиль</span></div>
-                  <div class="dash-stat-row"><div class="dash-stat"><span class="dash-stat-icon purple">◈</span><div><strong>12</strong><small>Всего профилей</small></div></div><div class="dash-stat"><span class="dash-stat-icon green">↗</span><div><strong>04</strong><small>Запущено</small></div></div><div class="dash-stat"><span class="dash-stat-icon pink">⌁</span><div><strong>08</strong><small>Прокси</small></div></div></div>
-                  <div class="dash-table-shell"><div class="dash-table-toolbar"><div class="dash-filters"><span class="filter-active">Все профили</span><span>Активные</span><span>Избранное</span></div><span class="dash-filter-action">☷ &nbsp; Фильтр</span></div>
-                  <div class="dash-table-scroll"><table class="dash-table"><thead><tr><th><span class="checkbox"></span> Профиль</th><th>Группа</th><th>Прокси</th><th>Статус</th><th>Действия</th></tr></thead>
-                  <tbody>
-                    <tr><td><div class="profile-person"><span class="profile-avatar avatar-v">A</span><div><strong>Atlas Studio</strong><small>Изолированный профиль</small></div></div></td><td><span class="dash-tag tag-v">Marketing</span></td><td><span class="flag">🇳🇱</span> Netherlands</td><td><span class="dash-status live">● Запущен</span></td><td><span class="dash-play stop">■</span></td></tr>
-                    <tr><td><div class="profile-person"><span class="profile-avatar avatar-o">N</span><div><strong>Nova Commerce</strong><small>Изолированный профиль</small></div></div></td><td><span class="dash-tag tag-o">Commerce</span></td><td><span class="flag">🇩🇪</span> Germany</td><td><span class="dash-status idle">● Готов</span></td><td><span class="dash-play"><svg><use href="#ic-play"/></svg></span></td></tr>
-                    <tr><td><div class="profile-person"><span class="profile-avatar avatar-c">O</span><div><strong>Orbit Research</strong><small>Изолированный профиль</small></div></div></td><td><span class="dash-tag tag-c">Research</span></td><td><span class="flag">🇫🇷</span> France</td><td><span class="dash-status live">● Запущен</span></td><td><span class="dash-play stop">■</span></td></tr>
-                    <tr><td><div class="profile-person"><span class="profile-avatar avatar-p">P</span><div><strong>Pixel Projects</strong><small>Изолированный профиль</small></div></div></td><td><span class="dash-tag tag-v">Marketing</span></td><td><span class="flag">🇺🇸</span> United States</td><td><span class="dash-status idle">● Готов</span></td><td><span class="dash-play"><svg><use href="#ic-play"/></svg></span></td></tr>
-                  </tbody></table></div><div class="dash-table-footer">Показано 4 из 12 профилей <span>01 — 04　 ›</span></div></div>
-                </div>
-              </div>
+      <a class="header-login" href="https://murdilimax-browser.hatchable.site/account.html" data-i="account">Личный кабинет</a>
+      <a class="btn btn-primary btn-small header-download" href="https://murdilimax.com/download.html"><span data-i="download">Скачать</span><span aria-hidden="true">↗</span></a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  <section class="page page-home" data-page="home">
+    <div class="container">
+      <section class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="tiny-led"></span><span data-i="heroEyebrow">НОВОЕ ПОКОЛЕНИЕ РАБОЧЕГО ПРОСТРАНСТВА</span></div>
+          <h1 data-i="heroTitle">Все браузерные профили. <em>Под вашим контролем.</em></h1>
+          <p class="hero-description" data-i="heroDesc">Отдельные сессии, прокси и удобное управление в едином рабочем пространстве. Меньше рутины. Больше свободы.</p>
+          <div class="hero-ctas">
+            <a class="btn btn-primary btn-large" href="https://murdilimax.com/download.html"><span data-i="heroCta">Скачать бесплатную бета-версию</span><span aria-hidden="true">↗</span></a>
+            <a class="btn btn-glass btn-large" href="#workspace"><span class="play-icon">▶</span><span data-i="heroDemo">Посмотреть интерфейс</span></a>
+          </div>
+          <div class="hero-trust"><span class="trust-circles"><i>M</i><i>W</i><i>F</i></span><span data-i="heroTrust">Windows и macOS · Локальное хранение · Ранний доступ</span></div>
+        </div>
+        <div class="hero-visual" aria-label="Browser dashboard visual concept">
+          <div class="visual-orbit orbit-one"></div><div class="visual-orbit orbit-two"></div>
+          <div class="float-chip chip-top"><span class="chip-symbol">◈</span><span><b>LOCAL</b><small data-i="floatSecure">Отдельные сессии</small></span></div>
+          <div class="product-shot">
+            <div class="shot-sidebar">
+              <div class="shot-logo">◈</div><span class="shot-side active">▦</span><span class="shot-side">◉</span><span class="shot-side">⛓</span><span class="shot-side">⚙</span>
+              <span class="shot-bottom">M</span>
+            </div>
+            <div class="shot-main">
+              <div class="shot-topline"><span>MURDILIMAX <span class="shot-muted">/ WORKSPACE</span></span><span class="shot-top-right"><span class="shot-green"></span> <span data-i="shotReady">Готово к работе</span></span></div>
+              <div class="shot-greet"><div><small data-i="shotOverview">ОБЗОР</small><h3 data-i="shotHeading">Мои профили</h3></div><span class="shot-add">+ <span data-i="shotCreate">Новый профиль</span></span></div>
+              <div class="shot-stats"><div><small data-i="statProfiles">Профили</small><b>12</b><span>↗ 02 <span data-i="statNew">новых</span></span></div><div><small data-i="statActive">Активные</small><b>04</b><span class="green-text">● <span data-i="shotOnline">В сети</span></span></div><div><small data-i="statProxies">Прокси</small><b>08</b><span class="purple-text">◈ SOCKS5</span></div></div>
+              <div class="shot-thead"><span data-i="tableProfile">ПРОФИЛЬ</span><span data-i="tableGroup">ГРУППА</span><span data-i="tableProxy">ПРОКСИ</span><span data-i="tableStatus">СТАТУС</span></div>
+              <div class="shot-table-row"><span><i class="avatar avatar-purple">A</i><b>Atlas Studio<small>atlas-01</small></b></span><span>Marketing</span><span>🇳🇱 NL</span><span><i class="status-dot"></i><span data-i="running">Активен</span></span></div>
+              <div class="shot-table-row"><span><i class="avatar avatar-blue">N</i><b>Nova Commerce<small>nova-02</small></b></span><span>Commerce</span><span>🇩🇪 DE</span><span><i class="status-dot off"></i><span data-i="stopped">Остановлен</span></span></div>
+              <div class="shot-table-row"><span><i class="avatar avatar-peach">O</i><b>Orbit Research<small>orbit-03</small></b></span><span>Research</span><span>🇫🇷 FR</span><span><i class="status-dot"></i><span data-i="running">Активен</span></span></div>
+              <div class="shot-footer"><span data-i="shotLocal">Защищённое локальное пространство</span><span>01 / 03 →</span></div>
             </div>
           </div>
-          <figcaption>Концепт нового интерфейса. Реальный менеджер профилей существует в бета-версии, но пока выглядит иначе.</figcaption>
-        </figure>
-        <div class="floating-stat float-left" aria-hidden="true"><div class="floating-icon"><svg><use href="#ic-shield"/></svg></div><div><strong>Раздельные сессии</strong><span>У каждого профиля свои данные</span></div><span class="float-check">✓</span></div>
-        <div class="floating-stat float-right" aria-hidden="true"><div class="float-dot"></div><div><strong>Рабочее пространство</strong><span>Все профили под контролем</span></div></div>
+          <div class="float-chip chip-bottom"><span class="chip-symbol chip-check">✓</span><span><b data-i="chipIsolated">Раздельные сессии</b><small data-i="chipLocal">Данные профилей хранятся локально</small></span></div>
+        </div>
+      </section>
+
+      <div class="trusted-row"><span data-i="platformCaption">ПРОДУКТ ДЛЯ РАБОТЫ НА</span><strong><span class="platform-icon">⊞</span> WINDOWS</strong><strong><span class="platform-icon">●</span> macOS</strong><span class="trusted-sep"></span><span data-i="engineCaption">ДВИЖОК</span><strong>CAMOUFOX / FIREFOX</strong><span class="beta-pill">BETA</span></div>
+
+      <section class="section-heading centered"><span class="kicker" data-i="featureKicker">ВОЗМОЖНОСТИ</span><h2 data-i="featureTitle">Всё важное — <em>в одном месте.</em></h2><p data-i="featureSubtitle">Продуманное пространство для управления локальными браузерными профилями. Уже работающие возможности и честно обозначенный план развития.</p></section>
+      <div class="bento">
+        <article class="feature-card feature-wide">
+          <div class="feature-text"><div class="feature-icon purple">▦</div><span class="feature-state" data-i="featureAvailable">ДОСТУПНО В БЕТЕ</span><h3 data-i="featureProfilesTitle">Профили без хаоса</h3><p data-i="featureProfilesDesc">Создавайте, ищите, группируйте и запускайте отдельные браузерные пространства. Cookies и данные сайтов разделены.</p><a href="#workspace" class="text-link"><span data-i="featureExplore">Посмотреть панель</span> ↗</a></div>
+          <div class="mini-stack" aria-hidden="true"><div><i class="avatar avatar-purple">A</i><span><b>Atlas Studio</b><small>Marketing · NL</small></span><span class="mini-check">✓</span></div><div><i class="avatar avatar-blue">N</i><span><b>Nova Commerce</b><small>Commerce · DE</small></span><span class="mini-check">✓</span></div><div><i class="avatar avatar-peach">O</i><span><b>Orbit Research</b><small>Research · FR</small></span><span class="mini-check">✓</span></div></div>
+        </article>
+        <article class="feature-card"><div class="feature-icon cyan">⌁</div><span class="feature-state" data-i="featureAvailable">ДОСТУПНО В БЕТЕ</span><h3 data-i="featureProxyTitle">Прокси под контролем</h3><p data-i="featureProxyDesc">HTTP, HTTPS и SOCKS5 с назначением к профилям. Базовые проверки соединения уже есть.</p><div class="proxy-preview"><span class="proxy-pulse"></span> SOCKS5 <span>192.0.2.12</span><b>DEMO</b></div></article>
+        <article class="feature-card"><div class="feature-icon amber">✧</div><span class="feature-state future" data-i="featureInProgress">В ПЛАНАХ</span><h3 data-i="featureSyncTitle">Команды и облако</h3><p data-i="featureSyncDesc">Синхронизация, доступы команды, шаблоны и автоматизация войдут в следующие версии.</p><div class="future-preview"><span>◈</span><span>◈</span><span>◈</span><i></i></div></article>
       </div>
-      <div class="hero-bottom-fade" aria-hidden="true"></div>
-    </section>
+      <div class="disclaimer"><span>ⓘ</span><span data-i="previewDisclaimer">Иллюстрации показывают целевой дизайн, а не текущий интерфейс установленной программы. Продукт в бета-разработке, совместимость проверяется.</span></div>
+      <section class="cta-band"><div><span class="kicker" data-i="ctaKicker">НАЧНИТЕ СЕГОДНЯ</span><h2 data-i="ctaTitle">Ваша новая рабочая среда начинается здесь.</h2><p data-i="ctaDesc">3 бесплатных профиля. Платные тарифы от $7/месяц. Тестовые сборки Windows и Mac.</p></div><div class="cta-right"><a class="btn btn-white btn-large" href="https://murdilimax.com/download.html"><span data-i="ctaDownload">Скачать Murdilimax</span> ↗</a><a href="#pricing" class="cta-link"><span data-i="ctaCompare">Сравнить тарифы</span> →</a></div></section>
+    </div>
+  </section>
 
-    <section class="trusted-strip"><div class="container strip-inner"><div class="strip-label">ПРОДУКТ, КОТОРЫЙ МЫ СТРОИМ</div><div class="strip-items"><span><svg><use href="#ic-layers"/></svg> Независимые профили</span><span><svg><use href="#ic-globe"/></svg> HTTP / SOCKS5</span><span><svg><use href="#ic-shield"/></svg> Защита аккаунта</span><span><svg><use href="#ic-lock"/></svg> Локальные данные</span></div></div></section>
-
-    <section class="section features-section" id="features">
-      <div class="container"><div class="section-head"><span class="section-eyebrow">ВОЗМОЖНОСТИ</span><h2>Сложные задачи.<br><span class="gradient-text">Простые действия.</span></h2><p>Не нужно разбираться в десятках окон. Держите свои рабочие профили, заметки и сетевые подключения в понятной системе.</p></div>
-      <div class="features-grid">
-        <article class="feature-card feature-main"><div class="feature-text"><span class="feature-index">01 / PROFILE MANAGEMENT</span><h3>Место, где всё<br>на своих местах</h3><p>Создавайте профили, назначайте группы, добавляйте теги и быстро находите нужное. Изменения не затрагивают данные соседних профилей.</p><span class="feature-availability"><span></span> Реализовано в локальной бете</span></div><div class="feature-preview"><div class="small-profile sp1"><span class="profile-avatar avatar-v">A</span><div><strong>Atlas Studio</strong><small>Marketing · Europe</small></div><span class="small-profile-status green-text">Active</span></div><div class="small-profile sp2"><span class="profile-avatar avatar-p">P</span><div><strong>Pixel Projects</strong><small>Research · US</small></div><span class="small-profile-status">Ready</span></div><div class="small-profile sp3"><span class="profile-avatar avatar-c">N</span><div><strong>Nova Commerce</strong><small>Commerce · EU</small></div><span class="small-profile-status">Ready</span></div></div></article>
-        <article class="feature-card feature-proxy"><span class="feature-index">02 / CONNECTIVITY</span><div class="feature-icon violet-icon"><svg><use href="#ic-globe"/></svg></div><h3>Прокси под рукой</h3><p>Сохраняйте HTTP, HTTPS и SOCKS5 подключения и назначайте их профилям.</p><div class="proxy-visual"><span class="proxy-purple">SOCKS5</span><span class="proxy-join"></span><span class="proxy-flag">🌐</span><span class="proxy-tick">✓</span></div><span class="feature-availability"><span></span> Базовые функции в бете</span></article>
-        <article class="feature-card feature-secure"><span class="feature-index">03 / PRIVATE STORAGE</span><div class="feature-icon pink-icon"><svg><use href="#ic-shield"/></svg></div><h3>Сессии отдельно</h3><p>У каждого профиля свой каталог cookies, кэша и данных сайтов.</p><div class="secure-rings"><span class="secure-ring r1"></span><span class="secure-ring r2"></span><span class="secure-ring r3"><svg><use href="#ic-lock"/></svg></span></div><span class="feature-availability"><span></span> Проверено на Linux</span></article>
+  <section class="page page-pricing" data-page="pricing" hidden>
+    <div class="container">
+      <div class="page-lead"><div class="eyebrow"><span class="tiny-led"></span><span data-i="priceEyebrow">ПРОЗРАЧНЫЕ ТАРИФЫ · БЕЗ ЛИШНИХ РАСХОДОВ</span></div><h1 data-i="priceHeading">Профессиональные инструменты. <em>Честные цены.</em></h1><p data-i="priceIntro">Начните бесплатно и выберите нужное количество профилей. Оплата картой через Stripe. Все платные тарифы — ранний доступ к бета-версии.</p></div>
+      <div class="billing-top"><div class="billing-term"><span data-i="monthly">Ежемесячно</span><span class="term-badge" data-i="earlyAccess">Ранний доступ</span></div><div class="method-selector"><span data-i="payWith">Способ оплаты</span><button type="button" class="method active" data-method="card">▣ <span data-i="cardMethod">Карта / Stripe</span></button><button type="button" class="method" data-method="crypto">◇ <span data-i="cryptoMethod">Криптовалюта</span><span class="coming" data-i="soon">Скоро</span></button></div></div>
+      <div class="pricing-grid">
+        <article class="pricing-card"><span class="price-tier">FREE</span><h2 data-i="freeName">Начало работы</h2><p data-i="freeDesc">Знакомство с рабочим пространством.</p><div class="price-line"><strong>$0</strong><span data-i="perMonth">/ месяц</span></div><a class="btn btn-outline price-button" href="https://murdilimax.com/download.html" data-i="freeCta">Скачать бесплатно</a><div class="price-divider"></div><p class="included" data-i="included">Включено:</p><ul><li data-i="freeF1">3 локальных профиля</li><li data-i="freeF2">HTTP / SOCKS5-прокси</li><li data-i="freeF3">Локальное хранение данных</li><li data-i="freeF4">1 компьютер</li></ul></article>
+        <article class="pricing-card"><span class="price-tier">START</span><h2 data-i="startName">Для личных задач</h2><p data-i="startDesc">Больше свободы для ежедневной работы.</p><div class="price-line"><strong>$7</strong><span data-i="perMonth">/ месяц</span></div><a class="btn btn-outline price-button pay-link" data-plan="start" href="https://murdilimax-browser.hatchable.site/subscribe.html?plan=start" data-i="planCta">Выбрать тариф</a><div class="price-divider"></div><p class="included" data-i="included">Включено:</p><ul><li data-i="startF1">20 локальных профилей</li><li data-i="startF2">Группы и теги</li><li data-i="startF3">Прокси и массовые действия</li><li data-i="freeF4">1 компьютер</li></ul></article>
+        <article class="pricing-card featured"><span class="popular"><span>✦</span> <span data-i="popular">ПОПУЛЯРНЫЙ</span></span><span class="price-tier">PRO</span><h2 data-i="proName">Для профессионалов</h2><p data-i="proDesc">Масштабируйтесь без лишних затрат.</p><div class="price-line"><strong>$19</strong><span data-i="perMonth">/ месяц</span></div><a class="btn btn-primary price-button pay-link" data-plan="pro" href="https://murdilimax-browser.hatchable.site/subscribe.html?plan=pro" data-i="planCta">Выбрать тариф</a><div class="price-divider"></div><p class="included" data-i="included">Включено:</p><ul><li data-i="proF1">100 локальных профилей</li><li data-i="startF2">Группы и теги</li><li data-i="proF3">Массовые операции</li><li data-i="freeF4">1 компьютер</li></ul></article>
+        <article class="pricing-card"><span class="price-tier">BUSINESS</span><h2 data-i="businessName">Для больших проектов</h2><p data-i="businessDesc">Больше профилей на одном устройстве.</p><div class="price-line"><strong>$49</strong><span data-i="perMonth">/ месяц</span></div><a class="btn btn-outline price-button pay-link" data-plan="business" href="https://murdilimax-browser.hatchable.site/subscribe.html?plan=business" data-i="planCta">Выбрать тариф</a><div class="price-divider"></div><p class="included" data-i="included">Включено:</p><ul><li data-i="businessF1">300 локальных профилей</li><li data-i="startF2">Группы и теги</li><li data-i="proF3">Массовые операции</li><li data-i="businessF4">Командные функции в разработке</li></ul></article>
       </div>
+      <div class="payment-message" role="status"><span class="payment-icon">ⓘ</span><div><strong data-i="paymentNoticeTitle">Безопасная оплата и честные ограничения</strong><p data-i="paymentNotice">Карты обрабатывает Stripe на отдельной странице. Криптооплата пока не подключена — мы не принимаем переводы вручную. Платные планы автоматически продлеваются ежемесячно; отмена доступна через кабинет. Cloud Sync, команды и AI пока не входят в оплачиваемые функции.</p></div></div>
+      <section class="faq"><div class="section-heading centered"><span class="kicker">FAQ</span><h2 data-i="faqTitle">Всё прозрачно.</h2></div>
+        <details><summary data-i="faqQ1">Когда начнётся оплата?</summary><p data-i="faqA1">Существующие подписки Stripe доступны в личном кабинете, если сервис разрешает продажу. Перед оплатой проверьте совместимость системы и бета-ограничения.</p></details>
+        <details><summary data-i="faqQ2">Можно ли оплачивать USDT или USDC?</summary><p data-i="faqA2">Сейчас нет. Мы готовим платёжный шлюз с подтверждением транзакций и автоматической выдачей лицензий. Пока никаких кошельков для оплаты не публикуем.</p></details>
+        <details><summary data-i="faqQ3">Можно отменить подписку?</summary><p data-i="faqA3">Да, платной подпиской можно управлять через клиентский портал Stripe в личном кабинете.</p></details>
+      </section>
+    </div>
+  </section>
+
+  <section class="page page-workspace" data-page="workspace" hidden>
+    <div class="container">
+      <div class="workspace-intro"><div><span class="kicker" data-i="workspacePreview">ИНТЕРАКТИВНЫЙ ПРЕДПРОСМОТР ИНТЕРФЕЙСА</span><h1 data-i="workspaceTitle">Рабочая панель. <em>Без лишнего.</em></h1><p data-i="workspaceDesc">Попробуйте поиск, фильтры и создание демо-профилей. Эти данные остаются только в вашем браузере и не связаны с реальным аккаунтом.</p></div><a href="https://murdilimax-browser.hatchable.site/account.html" class="btn btn-glass" data-i="realAccount">Открыть реальный кабинет ↗</a></div>
+      <div class="demo-notice"><span>◈</span><span data-i="demoNotice">ДЕМОНСТРАЦИЯ ДИЗАЙНА — это не действующий браузерный менеджер. Настоящие профили создаются в настольном приложении Murdilimax.</span></div>
+      <div class="workspace-shell">
+        <aside class="dash-sidebar">
+          <div class="dash-logo"><span class="brand-mark mini-mark"><span class="brand-diamond"></span></span><b>murdilimax<small>WORKSPACE</small></b></div>
+          <div class="dash-nav-title" data-i="navigation">НАВИГАЦИЯ</div>
+          <div class="dash-nav-item selected"><span>▦</span><span data-i="dashProfiles">Профили</span><i id="nav-count">4</i></div>
+          <div class="dash-nav-item"><span>⌁</span><span data-i="dashProxies">Прокси</span></div>
+          <div class="dash-nav-item"><span>▧</span><span data-i="dashGroups">Группы</span></div>
+          <div class="dash-nav-item"><span>◷</span><span data-i="dashActivity">Активность</span></div>
+          <div class="dash-separator"></div><div class="dash-nav-title" data-i="workspaceLabel">РАБОЧЕЕ ПРОСТРАНСТВО</div>
+          <div class="dash-workspace"><span>◎</span><span><b data-i="myWorkspace">Моё пространство</b><small>DEMO MODE</small></span></div>
+          <div class="dash-sidebar-footer"><span class="dash-avatar">M</span><span><b data-i="demoAccount">Демо-аккаунт</b><small data-i="localPreview">Локальный предпросмотр</small></span><span>⌄</span></div>
+        </aside>
+        <div class="dash-content">
+          <div class="dash-toolbar"><div class="dash-breadcrumb"><span data-i="workspaceLabel">Рабочее пространство</span><span>/</span><b data-i="dashProfiles">Профили</b></div><div class="dash-tools"><span>⌘ K</span><span class="tool-dot">◉</span><span class="tool-initial">M</span></div></div>
+          <div class="dash-head"><div><span class="dash-subtitle" data-i="dashSubtitle">УПРАВЛЕНИЕ ПРОФИЛЯМИ</span><h2 data-i="dashTitle">Все профили <span id="profile-total">04</span></h2><p data-i="dashDesc">Организуйте все рабочие пространства в одном месте.</p></div><button class="btn btn-primary" id="open-create" type="button">＋ <span data-i="newProfile">Создать профиль</span></button></div>
+          <div class="dash-metrics"><div><span data-i="statProfiles">Профили</span><strong id="metric-total">4</strong><small data-i="metricTotalDesc">В вашем пространстве</small><i>▦</i></div><div><span data-i="statActive">Активные</span><strong id="metric-active">2</strong><small><span class="tiny-led"></span><span data-i="metricActiveDesc">В демо-режиме</span></small><i>↗</i></div><div><span data-i="statProxies">Прокси</span><strong id="metric-proxy">4</strong><small data-i="metricProxyDesc">Назначено профилям</small><i>⌁</i></div></div>
+          <div class="dash-table-card">
+            <div class="table-controls"><div class="filter-tabs" role="group" aria-label="Profile filters"><button type="button" data-filter="all" class="filter active" data-i="filterAll">Все профили</button><button type="button" data-filter="running" class="filter" data-i="filterActive">Активные</button><button type="button" data-filter="stopped" class="filter" data-i="filterStopped">Остановлены</button></div><label class="search-box"><span aria-hidden="true">⌕</span><input id="profile-search" type="search" data-ph="searchPlaceholder" placeholder="Поиск профиля..." autocomplete="off"></label></div>
+            <div class="table-scroll"><table class="profile-table"><thead><tr><th data-i="tableProfile">ПРОФИЛЬ</th><th data-i="tableGroup">ГРУППА</th><th data-i="tableProxy">ПРОКСИ</th><th data-i="tableStatus">СТАТУС</th><th data-i="tableActions">ДЕЙСТВИЯ</th></tr></thead><tbody id="demo-rows"></tbody></table></div>
+            <div class="table-footer"><span id="table-count">4 profiles</span><button type="button" class="text-button" id="reset-demo"><span data-i="resetDemo">Сбросить демо</span> ↺</button></div>
+          </div>
+          <div class="dash-bottom"><span>◈ <span data-i="workspaceFooter">Собрано с вниманием к деталям. Реальный браузер работает отдельно.</span></span><span>PREVIEW · 0.1</span></div>
+        </div>
       </div>
-    </section>
+    </div>
+  </section>
+</main>
 
-    <section class="section workspace-section" id="workspace">
-      <div class="container workspace-layout">
-        <div class="workspace-description"><span class="section-eyebrow">НОВЫЙ УРОВЕНЬ UX</span><h2>Интерфейс,<br>который <span class="gradient-text">вдохновляет.</span></h2><p>Мы переосмысляем настольную программу как полноценное рабочее пространство: крупные действия, чёткие статусы, приятная навигация и максимум внимания к деталям.</p><div class="workspace-points"><div><span class="point-icon"><svg><use href="#ic-grid"/></svg></span><div><strong>Быстрый доступ</strong><small>Важные действия всегда на виду</small></div></div><div><span class="point-icon"><svg><use href="#ic-layers"/></svg></span><div><strong>Группы и порядок</strong><small>Профили, фильтры и статусы</small></div></div><div><span class="point-icon"><svg><use href="#ic-settings"/></svg></span><div><strong>Гибкие настройки</strong><small>Прокси, метаданные, запуск сессий</small></div></div></div><a class="text-link" href="/download.html">Посмотреть текущие сборки <svg><use href="#ic-arrow"/></svg></a></div>
-        <div class="workspace-visual"><div class="workspace-card"><div class="workspace-card-top"><span class="workspace-brand-mini"><svg><use href="#ic-logo"/></svg> murdilimax.</span><span class="badge-soft">WORKSPACE PREVIEW</span></div><h3>Профиль под контролем</h3><div class="workspace-form"><div class="workspace-form-row"><label>Название профиля</label><span>Atlas Commerce <span>✎</span></span></div><div class="workspace-form-row"><label>Прокси-сервер</label><span><span class="status-green"></span> SOCKS5 / EU <span>⌄</span></span></div><div class="workspace-form-row"><label>Группа</label><span>Marketing Team <span>⌄</span></span></div></div><div class="workspace-card-bottom"><div class="workspace-avatars"><span>A</span><span>N</span><span>P</span></div><span>Профили в одной системе</span><div class="fake-save">Готово ✓</div></div></div><div class="workspace-bubble bubble-one">✦ ИНТУИТИВНО</div><div class="workspace-bubble bubble-two">✧ СОЗДАНО ДЛЯ РАБОТЫ</div></div>
-      </div>
-    </section>
+<footer class="site-footer"><div class="container footer-grid"><div><a class="brand footer-brand" href="#home"><span class="brand-mark"><span class="brand-diamond"></span></span><span class="brand-text">murdilimax<span class="brand-sub">BROWSER STUDIO</span></span></a><p data-i="footerDesc">Создаём более простое, мощное и доступное рабочее пространство для браузерных профилей.</p></div><div class="footer-links"><a href="#home" data-i="navProduct">Продукт</a><a href="#pricing" data-i="navPricing">Тарифы</a><a href="#workspace" data-i="navWorkspace">Рабочая панель</a><a href="https://murdilimax.com/download.html" data-i="download">Скачать</a><a href="/mobile-app.html" data-i="mobileApp">Телефон</a></div><div class="footer-links"><a href="https://murdilimax-browser.hatchable.site/account.html" data-i="account">Личный кабинет</a><a href="https://murdilimax.com/privacy/" data-i="privacy">Конфиденциальность</a><a href="https://murdilimax.com/guides/" data-i="guides">Руководства</a></div></div><div class="container footer-bottom"><span>© 2026 Murdilimax Browser. <span data-i="allRights">Все права защищены.</span></span><span data-i="footerNote">Murdilimax Browser · Ранняя бета-версия</span></div></footer>
 
-    <section class="section how-section"><div class="container"><div class="section-head centered"><span class="section-eyebrow">САМЫЙ ПРОСТОЙ ПУТЬ</span><h2>Начать — <span class="gradient-text">проще простого.</span></h2><p>Наш целевой сценарий коммерческой версии: без Python, терминалов и ручной настройки движка.</p></div><div class="steps-grid"><article class="step-card"><div class="step-number">01</div><div class="step-illustration step-illustration-one"><div class="step-icon"><svg><use href="#ic-windows"/></svg></div><div class="step-arrow">↓</div><div class="step-download">↧ &nbsp; Скачать установщик</div></div><h3>Скачайте</h3><p>Выберите Windows или Mac. Совместимые подписанные установщики появятся после QA.</p></article><article class="step-card"><div class="step-number">02</div><div class="step-illustration step-illustration-two"><div class="step-user"><span>@</span><div><strong>Ваш email</strong><small>Одна учётная запись</small></div><span class="step-check">✓</span></div></div><h3>Войдите</h3><p>Подтвердите вход через email, passkey или Google после подключения OAuth.</p></article><article class="step-card"><div class="step-number">03</div><div class="step-illustration step-illustration-three"><span class="step-window win-one">◈</span><span class="step-window win-two">◈</span><span class="step-window win-three">◈</span></div><h3>Работайте</h3><p>Создавайте независимые профили, назначайте прокси и открывайте сессии.</p></article></div></div></section>
-
-    <section class="section security-section" id="security"><div class="container security-layout"><div class="security-copy"><span class="section-eyebrow light-eyebrow">ЗАЩИТА И ДОСТУП</span><h2>Ваше пространство.<br><span>Ваш контроль.</span></h2><p>Защита подписки должна работать на сервере, а не только в интерфейсе. Мы создаём привязку устройства, управление сессиями и безопасный вход без передачи пароля настольной программе.</p><div class="security-points"><div><svg><use href="#ic-check"/></svg> Одна активная установка на аккаунт</div><div><svg><use href="#ic-check"/></svg> Контроль активной сети и переноса устройства</div><div><svg><use href="#ic-check"/></svg> Защищённые токены и системный Keychain</div></div><p class="security-disclaimer">Система аккаунтов находится на закрытом тестировании. IP-адрес не является доказательством личности, поэтому для смены сети предусмотрено подтверждение.</p></div><div class="security-art"><div class="security-orbit orbit-outer"></div><div class="security-orbit orbit-middle"></div><div class="security-orbit orbit-inner"></div><div class="security-center"><svg><use href="#ic-shield"/></svg></div><span class="security-chip chip-left">✓ &nbsp; Device bound</span><span class="security-chip chip-right">◈ &nbsp; Token secured</span><div class="security-lock-mini"><svg><use href="#ic-lock"/></svg></div></div></div></section>
-
-    <section class="section pricing-section" id="pricing"><div class="container"><div class="section-head centered"><span class="section-eyebrow">ПРОЗРАЧНЫЕ ЦЕНЫ</span><h2>Большие возможности.<br><span class="gradient-text">Без большой цены.</span></h2><p>Подписки раннего доступа через Stripe. Браузер остаётся бета-версией: не все платформы и возможности готовы. Проверьте совместимость перед оплатой.</p></div><div class="pricing-grid">
-      <article class="price-card"><span class="price-label">FREE</span><h3>Начните бесплатно</h3><div class="price-line"><strong>$0</strong><span>/ месяц</span></div><p>Изучите систему и попробуйте локальные профили.</p><div class="price-divider"></div><ul><li><svg><use href="#ic-check"/></svg> 3 браузерных профиля</li><li><svg><use href="#ic-check"/></svg> Локальное хранение</li><li><svg><use href="#ic-check"/></svg> Базовые прокси</li><li><svg><use href="#ic-check"/></svg> 1 компьютер</li></ul><a class="btn price-btn secondary" href="/download.html">Посмотреть бета-версию <svg><use href="#ic-arrow"/></svg></a></article>
-      <article class="price-card"><span class="price-label">START</span><h3>Для своих проектов</h3><div class="price-line"><strong>$7</strong><span>/ месяц</span></div><p>Комфортный старт для регулярной работы.</p><div class="price-divider"></div><ul><li><svg><use href="#ic-check"/></svg> До 20 профилей</li><li><svg><use href="#ic-check"/></svg> Группы и теги</li><li><svg><use href="#ic-check"/></svg> Работа с прокси</li><li><svg><use href="#ic-check"/></svg> 1 компьютер</li></ul><a class="btn price-btn secondary" href="https://murdilimax-browser.hatchable.site/subscribe.html?plan=start">Оформить Start <svg><use href="#ic-arrow"/></svg></a></article>
-      <article class="price-card featured"><div class="popular">✦ &nbsp; ПОПУЛЯРНЫЙ ВЫБОР</div><span class="price-label">PRO</span><h3>Для профессионалов</h3><div class="price-line"><strong>$19</strong><span>/ месяц</span></div><p>Больше профилей для масштабирования.</p><div class="price-divider"></div><ul><li><svg><use href="#ic-check"/></svg> До 100 профилей</li><li><svg><use href="#ic-check"/></svg> Шаблоны профилей*</li><li><svg><use href="#ic-check"/></svg> Массовые операции</li><li><svg><use href="#ic-check"/></svg> Автоматизация*</li></ul><a class="btn price-btn primary" href="https://murdilimax-browser.hatchable.site/subscribe.html?plan=pro">Оформить Pro <svg><use href="#ic-arrow"/></svg></a></article>
-      <article class="price-card"><span class="price-label">BUSINESS</span><h3>Для команд</h3><div class="price-line"><strong>$49</strong><span>/ месяц</span></div><p>Будущая тарифная линейка для небольших команд.</p><div class="price-divider"></div><ul><li><svg><use href="#ic-check"/></svg> До 300 профилей</li><li><svg><use href="#ic-check"/></svg> Командные роли*</li><li><svg><use href="#ic-check"/></svg> Синхронизация*</li><li><svg><use href="#ic-check"/></svg> Управление доступом*</li></ul><a class="btn price-btn secondary" href="https://murdilimax-browser.hatchable.site/subscribe.html?plan=business">Оформить Business <svg><use href="#ic-arrow"/></svg></a></article>
-    </div><p class="pricing-note">* Возможности со звёздочкой запланированы и не входят в текущий платный бета-доступ. Подписки списываются ежемесячно и продлеваются автоматически, отмена — через кабинет Stripe. Приложение для macOS Catalina 10.15 не работает, Android не поддерживается как настольный браузер. <a href="/terms-billing.html">Условия бета-подписки</a>.</p></div></section>
-
-    <section class="section download-section" id="downloads"><div class="container"><div class="section-head centered"><span class="section-eyebrow">ВАШЕ УСТРОЙСТВО — ВАШ ВЫБОР</span><h2>Настоящая программа.<br><span class="gradient-text">Для Windows и Mac.</span></h2><p>Инженерные установщики уже собираются. Прямые публичные загрузки будут открыты после проверки движка, лицензий и цифровых подписей.</p></div>
-    <div class="os-grid"><a class="os-card" href="/download.html"><span class="os-icon windows"><svg><use href="#ic-windows"/></svg></span><span><strong>Windows 10 / 11</strong><small>64-bit · тестовый Setup.exe</small></span><span class="os-arrow">↗</span></a><a class="os-card" href="/download.html"><span class="os-icon apple"><svg><use href="#ic-apple"/></svg></span><span><strong>Mac Apple Silicon</strong><small>М-чипы · тестовый DMG</small></span><span class="os-arrow">↗</span></a><a class="os-card" href="/download.html"><span class="os-icon intel">i</span><span><strong>Mac Intel</strong><small>Тестовый DMG · QA впереди</small></span><span class="os-arrow">↗</span></a></div>
-    <p class="download-note">macOS Catalina 10.15 — отдельная проверка совместимости. Android-версия не выпущена. <a href="/download.html">Подробнее о поддержке платформ →</a></p></div></section>
-
-    <section class="section faq-section" id="faq"><div class="container faq-layout"><div><span class="section-eyebrow">ЕСТЬ ВОПРОСЫ?</span><h2>Мы отвечаем<br><span class="gradient-text">без сложностей.</span></h2><p>Ничего не скрываем: это развивающийся продукт, и у него есть чёткие этапы до коммерческого релиза.</p></div><div class="faq-list">
-      <details><summary>Можно ли уже скачать программу? <span>+</span></summary><p>Тестовые сборки Windows и macOS доступны через GitHub Actions. Это пока не коммерческий релиз: полноценный запуск Camoufox и установку на реальных устройствах ещё проверяем.</p></details>
-      <details><summary>У меня будет один аккаунт на сайте и в программе? <span>+</span></summary><p>Это целевая архитектура. Подтверждение email-кодом и passkey уже предусмотрено; Google-вход заработает после настройки домена и OAuth. Настольная программа подключается одноразовым кодом.</p></details>
-      <details><summary>В чём отличие от Dolphin Anty? <span>+</span></summary><p>Murdilimax — независимая разработка со своим брендом и движком Camoufox (Firefox). Мы ориентируемся на профессиональный опыт управления профилями, но не обещаем идентичную функциональность или гарантированный обход обнаружения.</p></details>
-      <details><summary>Когда можно будет оплатить подписку? <span>+</span></summary><p>Оформление подписок Start, Pro и Business проходит на защищённой странице Stripe. Это платный ранний доступ к бета-версии; до покупки проверьте совместимость Windows/macOS, изучите ограничения и <a href="/terms-billing.html">условия подписки</a>.</p></details>
-      <details><summary>Будет версия для Android и старого Mac? <span>+</span></summary><p>Для macOS Catalina нужна отдельная проверка совместимости браузерного движка. Мобильный менеджер доступен как устанавливаемое веб-приложение для Android и iPhone, но полноценный мобильный антидетект пока не создан. <a href="/mobile-app.html">Как установить на телефон →</a></p></details>
-    </div></div></section>
-
-    <section class="final-cta"><div class="container cta-inner"><div class="cta-decoration one"></div><div class="cta-decoration two"></div><div class="cta-content"><span class="cta-kicker">MURDILIMAX BROWSER STUDIO</span><h2>Работайте по-новому.<br>Всё начинается здесь.</h2><p>Красивое управление профилями. Понятный интерфейс. Контроль над собственными сессиями.</p><a class="btn btn-white btn-xl" href="/download.html">Посмотреть тестовые сборки <svg><use href="#ic-arrow"/></svg></a></div><div class="cta-shape"><span class="cta-logo-shape"><svg><use href="#ic-logo"/></svg></span></div></div></section>
-  </main>
-  <footer class="footer"><div class="container"><div class="footer-top"><div><a class="brand" href="/"><svg class="brand-icon"><use href="#ic-logo"/></svg><span>MURDILIMAX<small>BROWSER STUDIO</small></span></a><p>Пространство для ваших браузеров.<br>Развиваем продукт с вниманием к каждой детали.</p></div><div class="footer-links"><div><strong>Продукт</strong><a href="#features">Возможности</a><a href="#pricing">Тарифы</a><a href="/download.html">Скачать</a><a href="/mobile-app.html">Для телефона</a><a href="/guides/">Руководства</a></div><div><strong>Аккаунт и приложение</strong><a href="https://murdilimax-browser.hatchable.site/account.html">Мой кабинет</a><a href="/download.html">Скачать для Windows и Mac</a><a href="/mobile-app.html">Установить на телефон</a></div><div><strong>Информация</strong><a href="/privacy/">Конфиденциальность</a><a href="#faq">Вопросы</a><a href="/download.html">Поддержка платформ</a></div></div></div><div class="footer-bottom"><span>© 2026 Murdilimax Browser. Все права защищены.</span><span>Создано с вниманием к деталям. <span class="footer-heart">✦</span> Early beta.</span></div></div></footer>
+<dialog id="profile-dialog" class="profile-dialog" aria-labelledby="dialog-title"><form method="dialog" id="profile-form"><div class="dialog-top"><div><span class="kicker">DEMO MODE</span><h2 id="dialog-title" data-i="dialogTitle">Новый демо-профиль</h2></div><button type="button" class="close-dialog" id="close-dialog" aria-label="Close">×</button></div><label><span data-i="profileName">Название профиля</span><input id="new-name" name="name" required maxlength="48" data-ph="namePlaceholder" placeholder="Например, Atlas Studio"></label><label><span data-i="profileGroup">Группа</span><select id="new-group"><option>Marketing</option><option>Commerce</option><option>Research</option><option>General</option></select></label><label><span data-i="profileLocation">Демо-прокси</span><select id="new-country"><option value="NL">🇳🇱 Netherlands</option><option value="DE">🇩🇪 Germany</option><option value="US">🇺🇸 United States</option><option value="FR">🇫🇷 France</option></select></label><div class="dialog-actions"><button type="button" class="btn btn-outline" id="cancel-dialog" data-i="cancel">Отмена</button><button type="submit" class="btn btn-primary" data-i="addProfile">Добавить профиль</button></div></form></dialog>
 </body></html>
