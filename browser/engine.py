@@ -94,32 +94,36 @@ def run_profile(profile_id):
     # One child can own the profile. Stale lock recovery is bounded; no
     # recursive launches or clearing another active browser's stop request.
     fd = None
-    for _ in range(3):
-        try:
-            fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-            break
-        except FileExistsError:
+    try:
+        for _ in range(3):
             try:
-                previous = lock.lstat()
+                fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+                break
+            except FileExistsError:
+                try:
+                    previous = lock.lstat()
+                except FileNotFoundError:
+                    continue
                 if lock.is_symlink() or not lock.is_file():
                     raise RuntimeError("Unsafe profile lock")
-                pid = int(lock.read_text().strip())
-            except FileNotFoundError:
-                continue
-            except (ValueError, OSError):
-                pid = -1
-            if pid_alive(pid):
-                release_launch(folder, launch_token)
-                raise RuntimeError("The profile is already running")
-            # Remove only the exact stale file we inspected; do not delete
-            # another process's newly acquired live lock during a race.
-            try:
-                current = lock.lstat()
-                if (previous.st_ino, previous.st_mtime_ns) == (
-                        current.st_ino, current.st_mtime_ns):
-                    lock.unlink()
-            except FileNotFoundError:
-                pass
+                try:
+                    pid = int(lock.read_text().strip())
+                except (ValueError, OSError):
+                    pid = -1
+                if pid_alive(pid):
+                    raise RuntimeError("The profile is already running")
+                # The old file may have been replaced between our checks.
+                # Delete only the exact stale inode we inspected.
+                try:
+                    current = lock.lstat()
+                    if (previous.st_ino, previous.st_mtime_ns) == (
+                            current.st_ino, current.st_mtime_ns):
+                        lock.unlink()
+                except FileNotFoundError:
+                    pass
+    except Exception:
+        release_launch(folder, launch_token)
+        raise
     if fd is None:
         release_launch(folder, launch_token)
         raise RuntimeError("Cannot safely acquire profile lock; retry")
