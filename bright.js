@@ -50,6 +50,62 @@
   window.addEventListener('focus', paintAccountNavigation);
   paintAccountNavigation();
 
+  // Opt-in, anonymous, session-scoped website analytics.
+  // No identifiers travel before explicit consent. No IP, geolocation,
+  // email or fingerprint is transmitted to the stats endpoint.
+  function visitorAnalytics() {
+    if (navigator.globalPrivacyControl === true || navigator.doNotTrack === '1') return;
+    const consentKey = 'murdilimax-anon-stats-consent-v1';
+    let choice = '';
+    try { choice = localStorage.getItem(consentKey) || ''; } catch (_) {}
+    function source() {
+      let referer = '';
+      try { referer = new URL(document.referrer).hostname.toLowerCase(); } catch (_) {}
+      if (!referer || referer.endsWith('murdilimax.com')) return 'direct';
+      if (/google|bing|yahoo|yandex|duckduckgo|ecosia|baidu/.test(referer)) return 'search';
+      if (/facebook|instagram|tiktok|youtube|reddit|linkedin|twitter|x.com|vk.com|t.me/.test(referer)) return 'social';
+      return 'referral';
+    }
+    function send() {
+      let sid = '';
+      try {
+        sid = sessionStorage.getItem('murdilimax-anon-visit-v1') || '';
+        if (!/^[a-f0-9]{32}$/.test(sid)) {
+          if (!window.crypto?.getRandomValues) return;
+          const bytes = new Uint8Array(16);
+          crypto.getRandomValues(bytes);
+          sid = Array.from(bytes, b => b.toString(16).padStart(2,'0')).join('');
+          sessionStorage.setItem('murdilimax-anon-visit-v1', sid);
+          sessionStorage.setItem('murdilimax-anon-source-v1', source());
+        }
+        const first = sessionStorage.getItem('murdilimax-anon-source-v1') || source();
+        const src = ['direct','search','social','referral','other'].includes(first) ? first : 'other';
+        const endpoint = 'https://murdilimax-browser.hatchable.site/api/site/visit?sid=' +
+          encodeURIComponent(sid) + '&source=' + src;
+        fetch(endpoint,{method:'GET',mode:'no-cors',credentials:'omit',cache:'no-store',keepalive:true}).catch(()=>{});
+      } catch (_) { /* Browser storage can be restricted. */ }
+    }
+    if (choice === 'yes') { send(); return; }
+    if (choice === 'no') return;
+    const notice = document.createElement('section');
+    notice.className = 'murdilimax-consent-banner';
+    notice.setAttribute('aria-label','Согласие на анонимную статистику');
+    const label = document.createElement('p');
+    label.textContent = 'Разрешить анонимный подсчёт посещений? Без IP, геолокации и почты. Считается только эта вкладка и источник перехода.';
+    const controls = document.createElement('div');
+    const yes = document.createElement('button');yes.type='button';yes.textContent='Разрешить';
+    const no = document.createElement('button');no.type='button';no.textContent='Нет';
+    controls.append(yes,no);notice.append(label,controls);document.body.append(notice);
+    function decide(value) {
+      try {localStorage.setItem(consentKey,value)} catch (_) {}
+      notice.remove();
+      if (value === 'yes') send();
+    }
+    yes.addEventListener('click',()=>decide('yes'));
+    no.addEventListener('click',()=>decide('no'));
+  }
+  visitorAnalytics();
+
   const menu = document.querySelector('.menu-toggle');
   const nav = document.querySelector('.nav-links');
   if (menu && nav) {
