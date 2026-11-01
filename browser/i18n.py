@@ -88,6 +88,7 @@ TEXT = {
     "Логин (необязательно)": "Username (optional)",
     "Пароль (сохраняется в Keychain)": "Password (saved in OS keychain)",
     "● Запущен": "● Running",
+    "◌ Запускается": "◌ Starting",
     "○ Остановлен": "○ Stopped",
     "Изменить прокси": "Edit proxy",
     "Новый прокси": "New proxy",
