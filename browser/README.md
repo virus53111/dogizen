@@ -82,3 +82,14 @@ Select a stopped profile in **Profiles**, click **↶ Restore cookies**, choose 
 Technical: SQLite `quick_check` and the `moz_cookies` schema are validated before restoring. SQLite's backup API is used to handle databases with WAL safely. Running profiles, symlinked files and concurrent cookie maintenance are refused. This UI has **no third-party cookie import** and does not transfer cookies to the cloud. Real Windows/macOS launch and rollback QA is still a release requirement.
 
 Developer QA: `python -m unittest discover -s browser -p 'test_cookie_restore.py' -v` using synthetic Firefox SQLite databases.
+
+
+## Reliable browser startup — source beta
+
+The desktop manager now uses an owner-token .launching reservation before spawning a browser process. The actual Camoufox child releases only its own token once it has acquired the per-profile .lock, preventing duplicate subprocess launches on rapid repeated clicks. While the handoff is pending, the UI shows Starting / Запускается; profile grouping, cookie maintenance and add-on changes are blocked. A Stop request made before the child has acquired its lock is rejected instead of reporting a misleading success.
+
+Orphan reservations older than three minutes are recoverable on the next launch attempt, provided no browser lock or maintenance operation is present. Untrusted/symlinked launch markers are never followed. A failed Popen releases the reservation immediately; existing live stop requests are not cleared by duplicate launches. Only a child that owns the exclusive profile lock may reset a stale stop file.
+
+This is defensive local-process coordination, not a security boundary against malicious programs sharing the user's OS account. The app does not kill arbitrary PIDs to solve stale locks. The feature is source-beta only pending physical Windows/macOS testing and release promotion.
+
+Regression QA: python -m unittest discover -s browser -p 'test_launch_guard.py' -v. Tests cover simulated browser-child handoff, rapid double-clicks, marker recovery, stop-signal protection, cookie/addon interlocks and spawn failure.

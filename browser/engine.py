@@ -11,6 +11,8 @@ from urllib.parse import urlsplit
 from store import Store
 from identity import get_identity, resolved_os
 from engine_setup import ensure_engine_ready
+from launch_guard import (LAUNCH_TOKEN_ENV, launch_pending,
+                          reserve_launch, release_launch)
 
 def pid_alive(pid):
     """Non-destructive cross-platform process status probe."""
@@ -72,31 +74,67 @@ def verify_commercial_access(store, profile_id, account=None, required=None):
 def run_profile(profile_id):
     safe_profile_id(profile_id)
     store = Store()
+    folder = store.root / "profiles" / profile_id
+    launch_token = os.environ.get(LAUNCH_TOKEN_ENV)
     profile = store.get_profile(profile_id)
     if not profile:
+        release_launch(folder, launch_token)
         raise ValueError("Unknown profile")
-    verify_commercial_access(store, profile_id)
-    folder = store.root / "profiles" / profile_id
-    folder.mkdir(parents=True, exist_ok=True)
-    if (folder / ".cookie-maintenance").exists() or (folder / ".addon-maintenance").exists():
-        raise RuntimeError("Cookie maintenance is in progress; retry after it finishes")
-    stop_file = folder / ".stop"
-    stop_file.unlink(missing_ok=True)
-    lock = folder / ".lock"
     try:
-        fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
-    except FileExistsError:
-        try:
-            pid = int(lock.read_text().strip())
-        except (ValueError, OSError):
-            pid = -1
-        if pid_alive(pid):
-            raise RuntimeError("The profile is already running")
-        lock.unlink(missing_ok=True)
-        return run_profile(profile_id)
+        verify_commercial_access(store, profile_id)
+        folder.mkdir(parents=True, exist_ok=True)
+        if (folder / ".cookie-maintenance").exists() or (folder / ".addon-maintenance").exists():
+            raise RuntimeError("Profile maintenance is in progress; retry later")
+    except Exception:
+        release_launch(folder, launch_token)
+        raise
+
+    stop_file = folder / ".stop"
+    lock = folder / ".lock"
+    # One child can own the profile. Stale lock recovery is bounded; no
+    # recursive launches or clearing another active browser's stop request.
+    fd = None
+    try:
+        for _ in range(3):
+            try:
+                fd = os.open(str(lock), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+                break
+            except FileExistsError:
+                try:
+                    previous = lock.lstat()
+                except FileNotFoundError:
+                    continue
+                if lock.is_symlink() or not lock.is_file():
+                    raise RuntimeError("Unsafe profile lock")
+                try:
+                    pid = int(lock.read_text().strip())
+                except (ValueError, OSError):
+                    pid = -1
+                if pid_alive(pid):
+                    raise RuntimeError("The profile is already running")
+                # The old file may have been replaced between our checks.
+                # Delete only the exact stale inode we inspected.
+                try:
+                    current = lock.lstat()
+                    if (previous.st_ino, previous.st_mtime_ns) == (
+                            current.st_ino, current.st_mtime_ns):
+                        lock.unlink()
+                except FileNotFoundError:
+                    pass
+    except Exception:
+        release_launch(folder, launch_token)
+        raise
+    if fd is None:
+        release_launch(folder, launch_token)
+        raise RuntimeError("Cannot safely acquire profile lock; retry")
+
     with os.fdopen(fd, "w") as writer:
         writer.write(str(os.getpid()))
     try:
+        # Stop requests are reset only AFTER this child obtains the lock.
+        # A duplicate invocation must never cancel the owner's stop signal.
+        stop_file.unlink(missing_ok=True)
+        release_launch(folder, launch_token)
         if (folder / ".cookie-maintenance").exists() or (folder / ".addon-maintenance").exists():
             raise RuntimeError("Cookie maintenance is in progress; stop and retry")
         # Import only in a child process. A missing engine is a visible launch error.
@@ -138,6 +176,7 @@ def run_profile(profile_id):
                 except Exception:
                     break
     finally:
+        release_launch(folder, launch_token)
         lock.unlink(missing_ok=True)
         stop_file.unlink(missing_ok=True)
 
@@ -149,6 +188,8 @@ def request_stop(store, profile_id):
     folder = store.root / "profiles" / profile_id
     if (folder / ".lock").exists():
         (folder / ".stop").touch()
+    elif launch_pending(folder):
+        raise RuntimeError("Profile is still starting; retry Stop after launch finishes")
 
 def start_background(store, profile_id):
     safe_profile_id(profile_id)
@@ -156,8 +197,10 @@ def start_background(store, profile_id):
     if not profile:
         raise ValueError("Profile not found")
     lock = store.root / "profiles" / profile_id / ".lock"
-    if (lock.parent / ".cookie-maintenance").exists() or (lock.parent / ".addon-maintenance").exists():
-        raise RuntimeError("Cookie maintenance is in progress")
+    folder = lock.parent
+    if any((folder / suffix).exists() for suffix in (
+            ".cookie-maintenance", ".addon-maintenance")):
+        raise RuntimeError("Profile maintenance is in progress")
     if lock.exists():
         try:
             pid = int(lock.read_text().strip())
@@ -165,11 +208,32 @@ def start_background(store, profile_id):
             pid = -1
         if pid_alive(pid):
             raise RuntimeError("Profile is already open")
-        lock.unlink(missing_ok=True)
-    log_path = store.root / "logs" / (profile_id + ".log")
-    fd = os.open(str(log_path), os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
-    with os.fdopen(fd, "a", encoding="utf-8") as log:
-        process = subprocess.Popen(launch_command(profile_id), stdin=subprocess.DEVNULL,
-                                   stdout=log, stderr=subprocess.STDOUT,
-                                   creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-    return process.pid
+        # Leave any stale browser lock for the child to re-check and remove,
+        # preventing this UI thread from deleting a newly acquired live lock.
+
+    token = reserve_launch(folder)
+    try:
+        if any((folder / suffix).exists() for suffix in (
+                ".cookie-maintenance", ".addon-maintenance")):
+            raise RuntimeError("Profile maintenance is in progress")
+        if lock.exists():
+            try:
+                pid = int(lock.read_text().strip())
+            except (OSError, ValueError):
+                pid = -1
+            if pid_alive(pid):
+                raise RuntimeError("Profile is already open")
+        log_path = store.root / "logs" / (profile_id + ".log")
+        fd = os.open(str(log_path), os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+        with os.fdopen(fd, "a", encoding="utf-8") as log:
+            child_env = dict(os.environ)
+            child_env[LAUNCH_TOKEN_ENV] = token
+            process = subprocess.Popen(
+                launch_command(profile_id), stdin=subprocess.DEVNULL,
+                stdout=log, stderr=subprocess.STDOUT, env=child_env,
+                creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        # The child removes its own reservation only after getting .lock.
+        return process.pid
+    except Exception:
+        release_launch(folder, token)
+        raise

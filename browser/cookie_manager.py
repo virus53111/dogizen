@@ -44,7 +44,7 @@ def _database(store, profile_id):
             raise ValueError("Unsafe cookie database auxiliary path")
     if not folder.is_dir():
         raise ValueError("Profile directory missing")
-    if (folder / ".lock").exists():
+    if (folder / ".lock").exists() or (folder / ".launching").exists():
         raise ValueError("Stop the profile before managing cookies")
     if db.exists() and (not db.is_file() or db.stat().st_size > MAX_DATABASE_BYTES):
         raise ValueError("Cookie database unsupported or too large")
@@ -61,7 +61,7 @@ def _maintenance(store, profile_id):
     except FileExistsError:
         raise ValueError("Cookie maintenance is already in progress") from None
     try:
-        if (folder / ".lock").exists():
+        if (folder / ".lock").exists() or (folder / ".launching").exists():
             raise ValueError("Stop the profile before managing cookies")
         yield db
     finally:
