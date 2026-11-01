@@ -51,7 +51,7 @@ GitHub Actions workflow `browser-build.yml` packages Windows and modern macOS pr
 For a selected **stopped** profile, the desktop Profile tab now has:
 - **Cookies**: local Firefox cookie count and top domain summary; cookie *values* are not displayed.
 - **Export cookies**: manually selected JSON export of cookie records and values. These values can be account/session secrets. The user must approve a prominent security warning. Files are created without overwriting existing paths and use owner-only 0600 permissions on POSIX; Windows follows its ACL. Do not share or sync these exports.
-- **Clear cookies**: backs up the entire Firefox cookie database as a separate SQLite file under the owner's local Murdilimax directory before deleting cookie rows. Clearing can log you out of websites; the backup remains sensitive and is not automatically deleted. Restoration is manual, and the current GUI has no restore button.
+- **Clear cookies**: backs up the entire Firefox cookie database as a separate SQLite file under the owner's local Murdilimax directory before deleting cookie rows. Clearing can log you out of websites; the backup remains sensitive and is not automatically deleted. A new source-beta **Restore cookies** dialog can select a locally generated backup belonging to the same stopped profile. It checks the Firefox SQLite schema and integrity before restoring, and first saves a second private backup of the current database. It does **not** import arbitrary third-party cookie files.
 
 The cookie manager only supports Firefox/Camoufox profiles with the standard 'moz_cookies' SQLite schema. It cannot inspect a currently running profile and does not import cookies. It never changes localStorage, cache, history or the profile identity file. No cookies are transferred to the Murdilimax server. A maintenance guard prevents browser startup while a cookie operation is in progress. If the app crashes during maintenance, verify that the profile is closed before removing its stale '.cookie-maintenance' marker.
 
@@ -73,3 +73,12 @@ A new **Extensions / Расширения** tab lets you select a browser profil
 - Some extensions may not function in Camoufox, interfere with automation, change browser fingerprint characteristics or have permission conflicts. This feature is **source-beta only** until real-device installation and compatibility tests pass. Do not promise undetectability.
 
 Offline QA: 'python -m unittest discover -s browser -p test_addon_manager.py -v'. Smoke tests and packaging still do not verify a real add-on inside a launched Windows/Mac Firefox process.
+
+
+### Restore only your own cookies (source beta)
+
+Select a stopped profile in **Profiles**, click **↶ Restore cookies**, choose a backup by UTC creation time and size, and confirm. The browser stays offline during the operation. Only matching profile-scoped SQLite backups in `cookie-backups/` are offered; file paths, external JSON and other profiles' backups are not accepted. The current cookie database is backed up before it changes; the returned path is a recovery snapshot. Backups contain session secrets and should be secured and deleted only when no longer needed. Restoring cookies can change website sign-in state and does not restore localStorage, cache, extension state or profile settings.
+
+Technical: SQLite `quick_check` and the `moz_cookies` schema are validated before restoring. SQLite's backup API is used to handle databases with WAL safely. Running profiles, symlinked files and concurrent cookie maintenance are refused. This UI has **no third-party cookie import** and does not transfer cookies to the cloud. Real Windows/macOS launch and rollback QA is still a release requirement.
+
+Developer QA: `python -m unittest discover -s browser -p 'test_cookie_restore.py' -v` using synthetic Firefox SQLite databases.
