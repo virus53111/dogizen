@@ -33,3 +33,14 @@ Never treat GUI-enforced profile limits as server-side licensing. Only use user-
 
 ## Packaging
 GitHub Actions workflow `browser-build.yml` packages Windows and modern macOS preview installers without publishing a public release. Review CI results and verify on a physical host before tagging a release.
+
+## Engine and identity hardening — 1 November 2026
+
+- Each profile now pins the generated Firefox fpgen device identity in its own `fingerprint-v1.json`. The same baseline fpgen fields (User-Agent, navigator, screen) are fed back to Camoufox for every later launch. The file is created atomically, and changes of the identity OS cause an explicit error rather than stealthy rotation; use a newly duplicated profile to change device identity.
+- Real Linux Camoufox integration test now launches twice, validates the persisted cookie and compares `navigator.userAgent`, `navigator.hardwareConcurrency`, `screen.width`, `navigator.language`. **Not** a claim that GPU-level canvas/WebGL/audio noise, remote site fingerprint hashes, or browser upgrades are always identical. These require their own integration and physical-device matrix.
+- The packaged Windows/macOS builds now hydrate a sha256-pinned Camoufox fpgen model **before** PyInstaller packaging, include fpgen resources and assert model integrity in the packaged `--selftest`. Browser engine binaries themselves are still downloaded on first use and are **not** included in current small installers.
+- New proxy exit-IP button issues a single HTTPS request via HTTP/HTTPS/SOCKS5; SOCKS5 DNS is resolved remotely (`socks5h`). The button deliberately does not certify WebRTC/DNS/IPv6 routing and never displays a credential-bearing exception.
+- Local folders and profile metadata/logs use owner-only POSIX permissions. Windows uses its file-system ACL; no separate Windows permission audit has been performed.
+- Command-line profile IDs are checked before constructing paths to logs and browser data.
+
+**Release blocker:** Offline automated tests and packaging checks do not substitute for a clean Windows/macOS install with real browser launch and network diagnostics. Commercial subscriptions and OS Catalina support are not activated.
