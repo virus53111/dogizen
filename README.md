@@ -1,25 +1,29 @@
-# Murdilimax Forms
+# Murdilimax Browser — Windows & macOS desktop beta
 
-Official website: https://murdilimax.com
+This repository also contains **archived Murdilimax Forms, cinema and Murdilimax Orbit Android** materials. The product being developed in the `feature/orbit-browser-only-2026-10-31` branch is browser-only.
 
-This repository serves the public, static landing page for **Murdilimax Forms**, an independent online form builder.
+## Components
 
-- **Marketing website:** GitHub Pages from `main` (root folder) with domain `murdilimax.com` in `CNAME`
-- **Application:** https://murdilimax-forms.hatchable.site
-- **Application dashboard:** https://hatchable.com/console/projects/murdilimax-forms
+- `browser/` — new independent Tkinter + Camoufox desktop code: profiles, proxies, local data, QA tests.
+- `browser-site.css`, `index.html`, `download.html` — browser-only product website and transparent installer status.
+- `.github/workflows/browser-ci.yml` — offline regression tests on Windows, macOS, Linux.
+- `.github/workflows/browser-build.yml` — unsigned preview EXE / DMG artifacts, **not public release**.
+- `docs/BROWSER_PRODUCT_ROADMAP_RU.md` — priorities, gaps and compatibility tracking.
+- `desktop/` and `Murdilimax-Orbit-Windows-macOS-Beta.zip` — **legacy Android / Orbit only**, retained for preservation.
+- GitHub Pages is deployed from `main` (root) with `CNAME` = `murdilimax.com`.
 
-## Application features (early access)
+## Development
+```
+cd browser
+python -m pip install -r requirements.txt
+python -m camoufox fetch
+python -m unittest discover -v
+python app.py
+```
 
-Passwordless accounts, editable forms with nine field types, publishable form links, answer collection, owner-scoped responses and CSV export.
+**Release gate:** Published downloads only after OS-specific browser launch, proxy, fingerprint, session persistence and security QA. A green packaging job alone is insufficient.
 
-## Important: public access
+**Catalina:** modern Camoufox compatibility has not been established; an old native WebKit app does not provide full antidetect protection.
 
-The application is hosted separately from the landing page. It must be set to **Public** in the Hatchable project Settings for visitors to access login and published forms. The marketing site being publicly accessible does not automatically make the application public.
-
-## Rollback
-
-The original cinema site was preserved before replacement on the branch `backup/cinema-before-forms-2026-10-25` at commit `a1d8ba83421d981310fe96f13c6492b4646308dc`.
-
-To restore the cinema, revert commit `b3581edb62ee09366014de4384ca132f5fbb0ae8` or restore the previous `index.html` from that backup branch. Do not remove `CNAME` when restoring the website.
-
-The old site is intentionally retained in backup history and has not been permanently deleted.
+## Safe rollback
+Pre-migration main snapshot: `backup/orbit-android-before-browser-only-2026-10-31`. Other archived project branches are unchanged.

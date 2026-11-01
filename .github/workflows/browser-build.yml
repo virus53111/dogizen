@@ -1,0 +1,146 @@
+name: Build Murdilimax Browser-only preview
+on:
+  push:
+    branches: [feature/orbit-browser-only-2026-10-31, qa/desktop-runtime-crossplatform-20261101]
+    paths: ['browser/**', 'assets/murdilimax-icon.svg', 'tools/build_brand_assets.py', '.github/workflows/browser-build.yml']
+  workflow_dispatch:
+concurrency:
+  group: browser-build-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  windows:
+    name: Windows 10/11 x64 preview
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        env:
+          MURDILIMAX_BRAND_PNG: assets/generated/icon-1024.png
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r browser/requirements.txt pyinstaller 'pillow>=10,<13'
+          npm install --no-save --no-package-lock @resvg/resvg-js@2.6.2
+          node -e 'const fs=require("fs"); const {Resvg}=require("@resvg/resvg-js"); fs.mkdirSync("assets/generated",{recursive:true}); const r=new Resvg(fs.readFileSync("assets/murdilimax-icon.svg","utf8"),{fitTo:{mode:"width",value:1024}}); fs.writeFileSync("assets/generated/icon-1024.png",r.render().asPng());'
+          python tools/build_brand_assets.py
+          python -c "from camoufox.fpgen_model import ensure_fpgen_model, is_pinned; ensure_fpgen_model(); assert is_pinned()"
+      - name: Build EXE
+        run: |
+          python -m PyInstaller --noconfirm --clean --windowed --onedir --name "Murdilimax Browser" --icon assets/generated/murdilimax.ico --add-data "assets/generated/app-icon-512.png:assets/generated" --collect-all camoufox --collect-all fpgen --collect-all language_tags --collect-data language_tags --collect-all browserforge --collect-all playwright --hidden-import keyring.backends.Windows --paths browser browser/app.py
+      - name: Smoke test packaged executable
+        shell: pwsh
+        run: |
+          $exe = (Resolve-Path 'dist/Murdilimax Browser/Murdilimax Browser.exe').Path
+          $proc = Start-Process -FilePath $exe -ArgumentList @('--selftest') -Wait -PassThru
+          Write-Host "Packaged Windows selftest exit code: $($proc.ExitCode)"
+          if ($proc.ExitCode -ne 0) { throw "Selftest failed with exit $($proc.ExitCode)" }
+      - name: Build Setup.exe
+        shell: pwsh
+        run: |
+          choco install innosetup -y --no-progress
+          @'
+          [Setup]
+          AppName=Murdilimax Browser
+          AppVersion=0.1.0
+          SetupIconFile=assets\\generated\\murdilimax.ico
+          DefaultDirName={autopf}\Murdilimax Browser
+          DefaultGroupName=Murdilimax Browser
+          PrivilegesRequired=lowest
+          OutputDir=.
+          OutputBaseFilename=Murdilimax-Browser-Windows-Preview-Setup
+          Compression=lzma
+          SolidCompression=yes
+          [Files]
+          Source: "dist\Murdilimax Browser\*"; DestDir: "{app}"; Flags: recursesubdirs ignoreversion
+          [Icons]
+          Name: "{autoprograms}\Murdilimax Browser"; Filename: "{app}\Murdilimax Browser.exe"
+          [Run]
+          Filename: "{app}\Murdilimax Browser.exe"; Description: "Launch"; Flags: nowait postinstall skipifsilent
+          '@ | Set-Content browser-preview.iss -Encoding UTF8
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' browser-preview.iss
+          if (!(Test-Path 'Murdilimax-Browser-Windows-Preview-Setup.exe')) { throw 'Installer missing' }
+      - name: Silent install and run packaged Windows executable
+        shell: pwsh
+        run: |
+          $dest = Join-Path $env:RUNNER_TEMP 'Murdilimax-QA-Install'
+          $setup = (Resolve-Path 'Murdilimax-Browser-Windows-Preview-Setup.exe').Path
+          $proc = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/DIR="' + $dest + '"')) -Wait -PassThru
+          if ($proc.ExitCode -ne 0) { throw "Silent installation failed: $($proc.ExitCode)" }
+          $exe = Join-Path $dest 'Murdilimax Browser.exe'
+          if (!(Test-Path $exe)) { throw "Installed Murdilimax executable missing" }
+          $selftest = Start-Process -FilePath $exe -ArgumentList @('--selftest') -Wait -PassThru
+          if ($selftest.ExitCode -ne 0) { throw "Installed Windows selftest failed: $($selftest.ExitCode)" }
+          Write-Host 'PASS: Setup.exe installation and installed executable selftest'
+          Get-FileHash -Path $setup -Algorithm SHA256 | Format-List
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Murdilimax-Browser-Windows-Preview
+          path: Murdilimax-Browser-Windows-Preview-Setup.exe
+          if-no-files-found: error
+          retention-days: 30
+  mac:
+    name: macOS preview / ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            name: Apple-Silicon
+          - runner: macos-15-intel
+            name: Intel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        env:
+          MURDILIMAX_BRAND_PNG: assets/generated/icon-1024.png
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r browser/requirements.txt pyinstaller 'pillow>=10,<13'
+          npm install --no-save --no-package-lock @resvg/resvg-js@2.6.2
+          node -e 'const fs=require("fs"); const {Resvg}=require("@resvg/resvg-js"); fs.mkdirSync("assets/generated",{recursive:true}); const r=new Resvg(fs.readFileSync("assets/murdilimax-icon.svg","utf8"),{fitTo:{mode:"width",value:1024}}); fs.writeFileSync("assets/generated/icon-1024.png",r.render().asPng());'
+          python tools/build_brand_assets.py
+          python -c "from camoufox.fpgen_model import ensure_fpgen_model, is_pinned; ensure_fpgen_model(); assert is_pinned()"
+      - name: Build .app and smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+          iconutil -c icns assets/generated/Murdilimax.iconset -o assets/generated/Murdilimax.icns
+          python -m PyInstaller --noconfirm --clean --windowed --onedir --name 'Murdilimax Browser' --icon assets/generated/Murdilimax.icns --add-data 'assets/generated/app-icon-512.png:assets/generated' --osx-bundle-identifier 'com.murdilimax.browser' --collect-all camoufox --collect-all fpgen --collect-all language_tags --collect-data language_tags --collect-all browserforge --collect-all playwright --hidden-import keyring.backends.macOS --paths browser browser/app.py
+          test -d 'dist/Murdilimax Browser.app'
+          'dist/Murdilimax Browser.app/Contents/MacOS/Murdilimax Browser' --selftest
+          codesign --force --deep --sign - 'dist/Murdilimax Browser.app'
+          codesign --verify --deep 'dist/Murdilimax Browser.app'
+          mkdir -p dmgroot
+          cp -R 'dist/Murdilimax Browser.app' dmgroot/
+          ln -s /Applications dmgroot/Applications
+          hdiutil create -ov -fs HFS+ -volname 'Murdilimax Browser Preview' -srcfolder dmgroot -format UDZO "Murdilimax-Browser-macOS-${{ matrix.name }}-Preview.dmg"
+      - name: Mount DMG, copy app and selftest installed bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          dmg="Murdilimax-Browser-macOS-${{ matrix.name }}-Preview.dmg"
+          mountpoint="$RUNNER_TEMP/murdilimax-mounted"
+          installroot="$RUNNER_TEMP/murdilimax-installed"
+          mkdir -p "$mountpoint" "$installroot"
+          hdiutil attach "$dmg" -readonly -nobrowse -mountpoint "$mountpoint"
+          trap 'hdiutil detach "$mountpoint" -quiet || true' EXIT
+          test -d "$mountpoint/Murdilimax Browser.app"
+          ditto "$mountpoint/Murdilimax Browser.app" "$installroot/Murdilimax Browser.app"
+          codesign --verify --deep "$installroot/Murdilimax Browser.app"
+          "$installroot/Murdilimax Browser.app/Contents/MacOS/Murdilimax Browser" --selftest
+          shasum -a 256 "$dmg"
+          echo 'PASS: DMG mounted; installed app bundle passed selftest'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Murdilimax-Browser-macOS-${{ matrix.name }}-Preview
+          path: Murdilimax-Browser-macOS-${{ matrix.name }}-Preview.dmg
+          if-no-files-found: error
+          retention-days: 30

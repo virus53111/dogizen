@@ -1,20 +1,27 @@
 """Build brand PNG/ICO/ICNS inputs and social preview from source SVG.
 
 Generated files stay out of Git; Pages, Android and desktop CI build them.
-Requires: pillow, cairosvg.
+Requires: Pillow and either a trusted pre-rendered PNG (preferred for packaging) or CairoSVG.
 """
 from pathlib import Path
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
-import cairosvg
+import os
 
 ROOT = Path(__file__).resolve().parents[1]
 SVG = ROOT / "assets/murdilimax-icon.svg"
 OUT = ROOT / "assets/generated"
 OUT.mkdir(parents=True, exist_ok=True)
 
-raw = cairosvg.svg2png(bytestring=SVG.read_bytes(), output_width=1024, output_height=1024)
-source = Image.open(BytesIO(raw)).convert("RGBA")
+external_png = os.environ.get("MURDILIMAX_BRAND_PNG")
+if external_png:
+    source = Image.open(external_png).convert("RGBA")
+    if source.size != (1024, 1024):
+        raise ValueError("MURDILIMAX_BRAND_PNG must be 1024x1024")
+else:
+    import cairosvg
+    raw = cairosvg.svg2png(bytestring=SVG.read_bytes(), output_width=1024, output_height=1024)
+    source = Image.open(BytesIO(raw)).convert("RGBA")
 
 def icon(size, path):
     image = source.resize((size, size), Image.Resampling.LANCZOS)

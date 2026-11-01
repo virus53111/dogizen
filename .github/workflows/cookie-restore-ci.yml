@@ -1,0 +1,28 @@
+name: Cookie backup restore security
+on:
+  push:
+    branches: [feature/restore-own-cookie-backups-20261101]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  restore:
+    name: Firefox cookie restore / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile Python source
+        run: python -m compileall -q browser
+      - name: Test same-profile restore and backup isolation
+        run: python -m unittest discover -s browser -p 'test_cookie_restore.py' -v
+      - name: Preserve existing cookie and addon behavior
+        run: |
+          python -m unittest discover -s browser -p 'test_cookie_manager.py' -v
+          python -m unittest discover -s browser -p 'test_addon_manager.py' -v

@@ -1,0 +1,32 @@
+name: Real Camoufox Cookie Restore QA
+on:
+  push:
+    branches: [qa/real-cookie-restore-camoufox-20261101, feature/orbit-browser-only-2026-10-31]
+    paths:
+      - 'browser/cookie_manager.py'
+      - 'browser/integration_cookie_restore.py'
+      - '.github/workflows/browser-cookie-integration.yml'
+  pull_request:
+    paths:
+      - 'browser/cookie_manager.py'
+      - 'browser/integration_cookie_restore.py'
+      - '.github/workflows/browser-cookie-integration.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-restore:
+    name: Local Firefox cookie lifecycle / Linux Camoufox
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install and fetch Camoufox engine
+        run: |
+          python -m pip install -r browser/requirements.txt
+          python -m camoufox fetch
+      - name: Test cookie backup and restoration inside real browser
+        run: python browser/integration_cookie_restore.py

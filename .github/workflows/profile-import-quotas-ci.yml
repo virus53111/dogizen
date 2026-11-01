@@ -1,0 +1,26 @@
+name: Atomic desktop profile import and tier quota QA
+on:
+  push:
+    branches: [fix/atomic-profile-import-quotas-20261101]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  profile-import:
+    name: Atomic metadata import / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile sources
+        run: python -m compileall -q browser
+      - name: Test tier quota and all-or-nothing profile import
+        run: python -m unittest discover -s browser -p 'test_profile_import_quotas.py' -v
+      - name: Recheck existing profile store behavior
+        run: python -m unittest discover -s browser -p 'test_store.py' -v

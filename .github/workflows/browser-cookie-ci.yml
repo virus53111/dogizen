@@ -1,0 +1,30 @@
+name: Test Murdilimax Cookie Manager
+on:
+  push:
+    branches:
+      - feature/browser-cookie-manager-20261101
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-cookie-tests:
+    name: Cookies safety / ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile all browser Python source
+        run: python -m compileall -q browser
+      - name: Synthetic Firefox cookie database tests
+        run: python -m unittest discover -s browser -p 'test_cookie_manager.py' -v
+      - name: Previous profile manager, locale and proxy tests
+        run: |
+          python -m unittest discover -s browser -p 'test_profile_view.py' -v
+          python -m unittest discover -s browser -p 'test_i18n.py' -v
+          python -m unittest discover -s browser -p 'test_proxy_import.py' -v
