@@ -894,7 +894,7 @@ class BrowserUI:
         """Create one isolated default profile without the configuration form."""
         created = create_quick_profiles(self.store, allowance=self.entitlement_limit)
         self.refresh()
-        if created:
+        if created and self.profile_tree.exists(created[0]["id"]):
             self.profile_tree.selection_set(created[0]["id"])
             self.profile_tree.see(created[0]["id"])
         self.state.set("Created quick profile" if self.language == "en" else
