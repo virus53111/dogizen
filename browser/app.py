@@ -546,6 +546,12 @@ class BrowserUI:
         self.root.mainloop()
 
 def selftest():
+    if getattr(sys, "frozen", False):
+        # A clean machine cannot write a model into the read-only app bundle.
+        # Verify it was bundled at build time instead of silently downloading.
+        from camoufox.fpgen_model import is_pinned
+        if not is_pinned():
+            raise RuntimeError("Pinned Camoufox fingerprint model missing from installer")
     with tempfile.TemporaryDirectory() as dirname:
         store = Store(dirname)
         p = store.add_profile("Smoke test", "https://example.com")
