@@ -3,7 +3,7 @@ on:
   push:
     branches: [release/windows-browser-beta-040-20261101]
     paths:
-      - '.github/workflows/windows-beta-release.yml'
+      - '.github/workflows/windows-040-beta-release.yml'
   workflow_dispatch:
 permissions:
   contents: write
