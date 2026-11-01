@@ -120,3 +120,32 @@ def plan_profile_launches(profiles, selected_ids, entitlement_limit, running):
     if any(pid not in allowed for pid in selected):
         raise ValueError("One or more selected profiles exceed the plan limit")
     return [pid for pid in selected if not running(pid)]
+
+
+SORT_COLUMNS = frozenset(("name", "group", "tags", "proxy", "os", "status"))
+
+
+def sort_visible_profiles(visible, *, column=None, descending=False, proxy_names=None):
+    """Stable, presentation-only sort of the filtered (profile, running) rows.
+
+    None preserves the Store's original order. User metadata is never mutated.
+    Proxy sorting uses the same display names as the profile table.
+    """
+    rows = list(visible)
+    if column is None:
+        return rows
+    if column not in SORT_COLUMNS:
+        raise ValueError("Unsupported profile sort column")
+    proxy_names = proxy_names or {}
+
+    def key(row):
+        profile, live = row
+        if column == "status":
+            return int(bool(live))
+        if column == "proxy":
+            value = proxy_names.get(profile.get("proxy_id", ""), "No proxy")
+        else:
+            value = profile.get(column, "")
+        return str(value).casefold()
+
+    return sorted(rows, key=key, reverse=bool(descending))
