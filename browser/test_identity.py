@@ -7,6 +7,7 @@ from unittest.mock import patch
 
 from identity import FILENAME, get_identity
 from engine import launch_command, safe_profile_id
+from store import Store
 
 def fake_fp(**kwargs):
     return {
@@ -59,6 +60,16 @@ class IdentityTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             get_identity(self.path, "linux", generator=invalid)
         self.assertFalse((self.path / FILENAME).exists())
+
+    def test_editing_fixed_os_rejected_at_save_time(self):
+        store = Store(Path(self.temp.name) / "workspace")
+        profile = store.add_profile("Identity test", os_name="linux")
+        folder = store.root / "profiles" / profile["id"]
+        get_identity(folder, "linux", generator=fake_fp)
+        store.update_profile(profile["id"], name="Updated title")
+        with self.assertRaisesRegex(ValueError, "Duplicate"):
+            store.update_profile(profile["id"], os="windows")
+        self.assertEqual(store.get_profile(profile["id"])["os"], "linux")
 
     def test_invalid_child_paths_rejected(self):
         for bad in ("../../settings", "", "deadbeef", "F"*32, "a"*32+"/other"):
