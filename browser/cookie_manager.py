@@ -4,7 +4,7 @@ Cookies contain session secrets. Never log values, send them to servers,
 or include them in a normal settings export.
 """
 from __future__ import annotations
-from contextlib import contextmanager
+from contextlib import contextmanager, closing
 from dataclasses import dataclass
 from datetime import datetime, timezone
 import json
@@ -88,7 +88,7 @@ def cookie_inventory(store, profile_id):
         if not db.exists():
             return CookieInventory(0, 0, False)
         try:
-            with _read_only(db) as conn:
+            with closing(_read_only(db)) as conn:
                 _columns(conn)
                 count = conn.execute("SELECT COUNT(*) FROM moz_cookies").fetchone()[0]
                 domains = conn.execute(
@@ -112,7 +112,7 @@ def export_cookies(store, profile_id, destination):
         if target.resolve().is_relative_to(store.root.resolve()):
             raise ValueError("Export outside Murdilimax app storage")
         try:
-            with _read_only(db) as conn:
+            with closing(_read_only(db)) as conn:
                 fields = [name for name in COOKIE_FIELDS if name in _columns(conn)]
                 count = conn.execute("SELECT COUNT(*) FROM moz_cookies").fetchone()[0]
                 if count > MAX_COOKIES_EXPORT:
@@ -158,11 +158,11 @@ def clear_cookies(store, profile_id):
         fd = os.open(backup, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
         os.close(fd)
         try:
-            with sqlite3.connect(db, timeout=5) as source:
+            with closing(sqlite3.connect(db, timeout=5)) as source:
                 _columns(source)
-                with sqlite3.connect(backup) as dest:
+                with closing(sqlite3.connect(backup)) as dest:
                     source.backup(dest)
-            with sqlite3.connect(db, timeout=5) as source:
+            with closing(sqlite3.connect(db, timeout=5)) as source:
                 _columns(source)
                 source.execute("PRAGMA secure_delete=ON")
                 source.execute("BEGIN IMMEDIATE")
