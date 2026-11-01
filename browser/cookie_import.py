@@ -231,7 +231,7 @@ def import_cookies(store, profile_id, source, *, context_factory=None,
                 expected = {(r["domain"], r["path"], r["name"])
                             for r in cookies}
                 if not expected.issubset(installed):
-                    raise ValueError("Firefox rejected imported cookies in the live context")
+                    raise ValueError("Firefox cookie jar mismatch: expected=" + repr(sorted(expected)) + " got=" + repr(sorted(installed)))
                 page.wait_for_timeout(1000)
         except Exception as exc:
             # Do not expose token values or browser exception messages to
