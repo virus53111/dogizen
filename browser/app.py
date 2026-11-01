@@ -15,7 +15,8 @@ from tkinter import filedialog, messagebox, ttk
 from urllib.parse import urlsplit
 
 from auth_client import BrowserAccount
-from engine import pid_alive, request_stop, run_profile, start_background
+from engine import pid_alive, request_stop, run_profile, start_background, safe_profile_id
+from network_check import probe_proxy_exit
 from store import Store
 
 BG = "#0b1117"
@@ -136,7 +137,8 @@ class BrowserUI:
         self.button(bar, "＋ Добавить прокси", self.new_proxy)
         self.button(bar, "✎ Изменить прокси", self.edit_proxy)
         self.button(bar, "✕ Удалить прокси", self.remove_proxy)
-        self.button(bar, "Проверить TCP-подключение", self.check_proxy)
+        self.button(bar, "Проверить TCP-порт", self.check_proxy)
+        self.button(bar, "Проверить выходной IP", self.check_proxy_exit)
         self.proxy_tree = ttk.Treeview(self.proxy_tab, columns=("name", "server", "auth"), show="headings")
         for k, label, width in [("name", "Название", 200), ("server", "Адрес HTTP/SOCKS5", 460),
                                 ("auth", "Авторизация", 160)]:
@@ -145,7 +147,7 @@ class BrowserUI:
         self.proxy_tree.pack(fill="both", expand=True, padx=12, pady=8)
         self.proxy_tree.bind("<Double-1>", lambda _: self.call(self.edit_proxy))
         ttk.Label(self.proxy_tab,
-                  text="Проверка TCP подтверждает соединение с сервером, но не проверяет выходной IP. Пароли — только в системном хранилище ключей.",
+                  text="TCP-тест проверяет порт. Выходной IP проверяется отдельным HTTPS-запросом через прокси; WebRTC, IPv6 и DNS-утечки этим не подтверждаются. Пароли — в системном хранилище ключей.",
                   foreground=MUTED, wraplength=1000).pack(anchor="w", padx=14, pady=10)
 
     def setup_account(self):
@@ -498,6 +500,31 @@ class BrowserUI:
             pass
         messagebox.showinfo("Прокси", "TCP-порт отвечает. Это НЕ проверка авторизации, DNS, утечек или выходного IP.")
 
+    def check_proxy_exit(self):
+        """Nonblocking HTTPS request through the saved proxy; don't display credentials."""
+        pid = self.one(self.proxy_tree, "прокси")
+        self.state.set("Проверяем выходной IP через выбранный прокси…")
+        def work():
+            try:
+                config = self.store.proxy_config(pid)
+                result = probe_proxy_exit(config)
+                self.root.after(0, lambda r=result: messagebox.showinfo(
+                    "Проверка прокси",
+                    "Выходной IP: " + r["exit_ip"] + "\nПротокол: " + r["route_type"] +
+                    "\n\nЭто один HTTPS-запрос. Проверки DNS, WebRTC и IPv6 проводятся отдельно.",
+                    parent=self.root
+                ))
+                self.root.after(0, lambda r=result: self.state.set(
+                    "Внешний IP прокси: " + r["exit_ip"] + " · один HTTPS-запрос"
+                ))
+            except Exception:
+                # Requests exceptions can include credential-bearing proxy URLs.
+                self.root.after(0, lambda: messagebox.showerror(
+                    "Проверка прокси", "Не удалось получить выходной IP через прокси. Проверьте адрес, доступность и авторизацию.",
+                    parent=self.root))
+                self.root.after(0, lambda: self.state.set("Ошибка проверки прокси (без раскрытия логина и пароля)"))
+        threading.Thread(target=work, daemon=True).start()
+
     def open_folder(self):
         p = self.store.root
         if sys.platform == "win32":
@@ -543,6 +570,7 @@ def main():
         selftest()
     elif args.run_profile:
         if getattr(sys, "frozen", False):
+            safe_profile_id(args.run_profile)
             log = Store().root / "logs" / (args.run_profile + ".log")
             output = log.open("a", encoding="utf-8")
             sys.stdout = output
