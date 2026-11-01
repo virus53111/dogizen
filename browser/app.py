@@ -284,6 +284,185 @@ class BrowserUI:
                   text="TCP-тест проверяет порт. Выходной IP проверяется отдельным HTTPS-запросом через прокси; WebRTC, IPv6 и DNS-утечки этим не подтверждаются. Пароли — в системном хранилище ключей.",
                   foreground=MUTED, wraplength=1000).pack(anchor="w", padx=14, pady=10)
 
+    def setup_addons(self):
+        outer = self.addon_tab
+        hero = ttk.Frame(outer)
+        hero.pack(fill="x", padx=16, pady=(17, 9))
+        ttk.Label(hero, text="EXTENSIONS / FIREFOX",
+                  foreground=CYAN, font=("Arial", 13, "bold")).pack(anchor="w")
+        ttk.Label(hero, text="Установленные дополнения одного профиля. "
+                  "Расширения активируются после перезапуска браузера.",
+                  foreground=MUTED, wraplength=1000).pack(anchor="w", pady=(7, 3))
+        picker = ttk.Frame(outer)
+        picker.pack(fill="x", padx=16, pady=9)
+        ttk.Label(picker, text="Профиль:").pack(side="left", padx=(0, 10))
+        self.addon_profile_var = tk.StringVar()
+        self.addon_profile_id = None
+        self.addon_profile_map = {}
+        self.addon_profile_combo = ttk.Combobox(
+            picker, textvariable=self.addon_profile_var,
+            width=52, state="readonly")
+        self.addon_profile_combo.pack(side="left", fill="x", expand=True, padx=(0, 10))
+        self.addon_profile_combo.bind("<<ComboboxSelected>>", self.on_addon_profile)
+        ttk.Button(picker, text="↻ Обновить",
+                   command=self.refresh_addons).pack(side="left")
+        buttons = ttk.Frame(outer)
+        buttons.pack(fill="x", padx=16, pady=8)
+        self.button(buttons, "＋ Установить XPI", self.install_selected_addon)
+        self.button(buttons, "◈ Вкл / выкл", self.toggle_selected_addon)
+        self.button(buttons, "✕ Удалить расширение", self.delete_selected_addon)
+        self.addon_tree = ttk.Treeview(
+            outer, columns=("name", "version", "status"), show="headings",
+            selectmode="browse", height=9)
+        for col, name, width in (
+            ("name", "Название", 420), ("version", "Версия", 110),
+            ("status", "Статус", 150)):
+            self.addon_tree.heading(col, text=name)
+            self.addon_tree.column(col, width=width, stretch=True)
+        self.addon_tree.pack(fill="both", expand=True, padx=16, pady=(8, 9))
+        self.addon_tree.bind("<<TreeviewSelect>>", self.on_addon_selected)
+        self.addon_details = tk.StringVar(value="")
+        ttk.Label(outer, textvariable=self.addon_details, foreground=CYAN,
+                  wraplength=1040, justify="left").pack(
+                      anchor="w", fill="x", padx=19, pady=(0, 8))
+        ttk.Label(outer,
+                  text="Важно: сторонние расширения могут читать страницы, cookies и "
+                  "данные аккаунтов. Устанавливайте только дополнения, которым доверяете. "
+                  "XPI не проверяется на вредоносный код. Пока поддерживаются локальные "
+                  "архивы Firefox, а не Chrome CRX.",
+                  foreground=MUTED, wraplength=1040,
+                  justify="left").pack(anchor="w", padx=19, pady=(5, 18))
+
+    def refresh_addons(self):
+        current = self.addon_profile_id
+        profiles = self.store.profiles()
+        self.addon_profile_map = {
+            p["name"] + " [" + p["id"][:8] + "]": p["id"] for p in profiles}
+        self.addon_profile_combo.configure(values=list(self.addon_profile_map))
+        if current not in self.addon_profile_map.values():
+            current = profiles[0]["id"] if profiles else None
+        self.addon_profile_id = current
+        label = next((k for k, v in self.addon_profile_map.items() if v == current), "")
+        self.addon_profile_var.set(label)
+        self.addon_tree.delete(*self.addon_tree.get_children())
+        self.addon_details.set("")
+        if current is None:
+            return
+        for row in list_addons(self.store, current):
+            state = ("Enabled" if row["enabled"] else "Disabled") if self.language == "en" else (
+                "Включено" if row["enabled"] else "Выключено")
+            self.addon_tree.insert("", "end", iid=row["id"],
+                                   values=(row["name"], row["version"], state))
+
+    def on_addon_profile(self, _event=None):
+        self.addon_profile_id = self.addon_profile_map.get(
+            self.addon_profile_var.get())
+        self.refresh_addons()
+
+    def on_addon_selected(self, _event=None):
+        ids = list(self.addon_tree.selection())
+        if not ids or not self.addon_profile_id:
+            self.addon_details.set("")
+            return
+        addon = next((row for row in list_addons(self.store, self.addon_profile_id)
+                      if row["id"] == ids[0]), None)
+        if addon is None:
+            return
+        permissions = ", ".join(addon["permissions"][:20]) or (
+            "No declared permissions" if self.language == "en" else
+            "Разрешения не объявлены")
+        label = "Requested permissions" if self.language == "en" else "Запрошенные разрешения"
+        self.addon_details.set(f"{label}: {permissions[:550]}")
+
+    def _addon_profile(self):
+        if not self.addon_profile_id:
+            raise ValueError("Выберите профиль" if self.language == "ru" else
+                             "Select a browser profile")
+        return self.addon_profile_id
+
+    def _addon_async(self, action, on_success):
+        """Keep large local XPI extraction off the main Tk loop."""
+        def work():
+            try:
+                result = action()
+            except ValueError as exc:
+                message = str(exc)
+                self.root.after(0, lambda m=message: messagebox.showerror(
+                    "Murdilimax Extensions", m, parent=self.root))
+            except Exception:
+                self.root.after(0, lambda: messagebox.showerror(
+                    "Murdilimax Extensions",
+                    "Addon operation failed. Check the archive and disk access.",
+                    parent=self.root))
+            else:
+                self.root.after(0, lambda r=result: on_success(r))
+        threading.Thread(target=work, daemon=True).start()
+
+    def install_selected_addon(self):
+        pid = self._addon_profile()
+        path = filedialog.askopenfilename(
+            title="Firefox XPI / ZIP",
+            filetypes=[("Firefox extensions", "*.xpi *.zip"), ("All files", "*.*")])
+        if not path:
+            return
+        # Manifest-only inspection; never install before explicit approval.
+        info = inspect_archive(path)
+        en = self.language == "en"
+        permissions = ", ".join(info["permissions"][:20]) or (
+            "none declared" if en else "не объявлены")
+        warning = (
+            f"Install {info['name']} v{info['version']}?\n\n"
+            f"Requested permissions: {permissions[:700]}\n\n"
+            "WARNING: Browser extensions run third-party code and may access "
+            "sites and sessions. The package is NOT malware-scanned or signed "
+            "by Murdilimax. Install only from sources you trust. "
+            "The browser profile must be stopped. Continue?"
+            if en else
+            f"Установить {info['name']} v{info['version']}?\n\n"
+            f"Запрошенные разрешения: {permissions[:700]}\n\n"
+            "ВНИМАНИЕ: расширения выполняют сторонний код и могут получать "
+            "доступ к сайтам и сессиям. Murdilimax НЕ проверяет файл на вирусы "
+            "и не подтверждает его подпись. Устанавливайте только проверенные "
+            "дополнения. Профиль должен быть остановлен. Продолжить?"
+        )
+        if not messagebox.askyesno("Murdilimax Extensions", warning, parent=self.root):
+            return
+        def success(entry):
+            self.refresh_addons()
+            messagebox.showinfo(
+                "Murdilimax Extensions",
+                ("Installed. Restart the browser profile to enable the extension."
+                 if en else
+                 "Установлено. Запустите профиль заново, чтобы включить расширение."),
+                parent=self.root)
+        self._addon_async(lambda: install_addon(self.store, pid, path), success)
+
+    def toggle_selected_addon(self):
+        pid = self._addon_profile()
+        addon_id = self.one(self.addon_tree, "расширение")
+        item = next((r for r in list_addons(self.store, pid) if r["id"] == addon_id), None)
+        if item is None:
+            raise ValueError("Extension not found")
+        set_addon_enabled(self.store, pid, addon_id, not item["enabled"])
+        self.refresh_addons()
+        self.state.set(
+            "Extension setting saved. Restart profile to apply." if self.language == "en" else
+            "Настройка расширения сохранена. Перезапустите профиль для применения.")
+
+    def delete_selected_addon(self):
+        pid = self._addon_profile()
+        addon_id = self.one(self.addon_tree, "расширение")
+        en = self.language == "en"
+        question = ("Remove the extension from this stopped profile? "
+                    "Changes take effect after restart." if en else
+                    "Удалить расширение из остановленного профиля? "
+                    "Изменения применяются после перезапуска.")
+        if not messagebox.askyesno("Murdilimax Extensions", question, parent=self.root):
+            return
+        remove_addon(self.store, pid, addon_id)
+        self.refresh_addons()
+        self.state.set("Extension removed" if en else "Расширение удалено")
+
     def setup_account(self):
         outer = ttk.Frame(self.account_tab)
         outer.pack(fill="both", expand=True, padx=32, pady=26)
