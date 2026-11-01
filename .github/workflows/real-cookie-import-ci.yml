@@ -1,0 +1,41 @@
+name: Real Firefox cookie import on native platforms
+on:
+  push:
+    branches: [feature/validated-cookie-import-20261101]
+    paths:
+      - 'browser/cookie_import.py'
+      - 'browser/integration_cookie_import.py'
+      - '.github/workflows/real-cookie-import-ci.yml'
+  pull_request:
+    paths:
+      - 'browser/cookie_import.py'
+      - 'browser/cookie_manager.py'
+      - 'browser/store.py'
+      - 'browser/engine.py'
+      - 'browser/integration_cookie_import.py'
+      - '.github/workflows/real-cookie-import-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  real-cookie-import:
+    name: Camoufox import / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15, macos-15-intel]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned browser environment
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          python -m pip install -r browser/requirements.txt
+          python -m camoufox fetch
+      - name: Open actual Camoufox, import cookies and prove isolation
+        run: python browser/integration_cookie_import.py
