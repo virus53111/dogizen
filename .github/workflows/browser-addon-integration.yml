@@ -1,7 +1,10 @@
 name: Real Camoufox Addon QA
 on:
   push:
-    branches: [qa/real-firefox-addon-integration-20261101]
+    branches: [qa/real-firefox-addon-integration-20261101, feature/orbit-browser-only-2026-10-31]
+    paths: ['browser/addon_manager.py', 'browser/integration_addon.py', 'browser/engine.py', '.github/workflows/browser-addon-integration.yml']
+  pull_request:
+    paths: ['browser/addon_manager.py', 'browser/integration_addon.py', 'browser/engine.py', '.github/workflows/browser-addon-integration.yml']
   workflow_dispatch:
 permissions:
   contents: read
