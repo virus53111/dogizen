@@ -46,6 +46,8 @@ class BrowserUI:
         self.authorized = False
         self.plan = 'free'
         self.entitlement_limit = 3
+        self._api_server = None
+        self._api_thread = None
         self.pairing = None
         self.root = tk.Tk()
         try:
@@ -119,6 +121,7 @@ class BrowserUI:
         self.root.after(2500, self.refresh_status)
         self.root.after(1500, self.restore_login)
         self.root.after(300000, self.license_tick)
+        self.root.protocol("WM_DELETE_WINDOW", self.close_application)
 
     def _status_changed(self, variable):
         if self._localizing:
@@ -734,6 +737,98 @@ class BrowserUI:
         ttk.Button(self.info_tab, text="Документация движка", command=lambda: webbrowser.open("https://camoufox.com/python/")).pack(anchor="w", padx=24)
         ttk.Button(self.info_tab, text="Проверить обновления Windows",
                    command=self.check_updates).pack(anchor="w", padx=24, pady=(12, 0))
+        ttk.Button(self.info_tab, text="▶ Локальный API",
+                   command=lambda: self.call(self.start_local_api)).pack(anchor="w", padx=24, pady=(12, 0))
+        ttk.Button(self.info_tab, text="■ Остановить API",
+                   command=lambda: self.call(self.stop_local_api)).pack(anchor="w", padx=24, pady=(6, 0))
+        ttk.Button(self.info_tab, text="↻ Новый ключ API",
+                   command=lambda: self.call(self.rotate_local_api_token)).pack(anchor="w", padx=24, pady=(6, 0))
+
+    def _show_local_token(self, token):
+        """One-time secret dialog; never writes the token to files or logs."""
+        window = tk.Toplevel(self.root)
+        window.title("Murdilimax · Local API token")
+        window.configure(bg=BG)
+        window.geometry("710x225")
+        window.transient(self.root)
+        window.grab_set()
+        tk.Label(window, text="Секретный ключ API — сохраните в надёжном месте",
+                 bg=BG, fg=TEXT, font=("Arial", 12, "bold")).pack(pady=(18, 9))
+        tk.Label(window, text="Не передавайте ключ другим. Очистите буфер после копирования.",
+                 bg=BG, fg=MUTED).pack(pady=(0, 10))
+        entry = ttk.Entry(window, width=69, font=("Consolas", 10), show="•")
+        entry.insert(0, token)
+        entry.configure(state="readonly")
+        entry.pack(padx=16)
+        visible = tk.BooleanVar(value=False)
+        def show():
+            entry.configure(show="" if visible.get() else "•")
+        ttk.Checkbutton(window, text="Показать ключ", variable=visible,
+                        command=show).pack(pady=(6, 2))
+        def copy():
+            window.clipboard_clear()
+            window.clipboard_append(token)
+            window.update()
+        ttk.Button(window, text="Копировать", command=copy).pack(
+            side="left", padx=(135, 15), pady=9)
+        ttk.Button(window, text="Закрыть", command=window.destroy).pack(
+            side="left", pady=9)
+
+    def start_local_api(self):
+        """Explicit local-only API, not started automatically with the app."""
+        if self._api_server is not None:
+            self.state.set("Локальный API уже запущен (127.0.0.1:18765)")
+            return
+        from local_api import load_token, make_server, rotate_token
+        try:
+            token = load_token()
+            reveal = False
+        except RuntimeError as exc:
+            if "absent" not in str(exc):
+                raise
+            token = rotate_token()
+            reveal = True
+        server = make_server(self.store, token)
+        self._api_server = server
+        self._api_thread = threading.Thread(
+            target=server.serve_forever, kwargs={"poll_interval": 0.2},
+            daemon=True, name="murdilimax-local-api")
+        self._api_thread.start()
+        self.state.set("Локальный API: http://127.0.0.1:18765 (только этот ПК)")
+        if reveal:
+            self._show_local_token(token)
+
+    def stop_local_api(self):
+        server = self._api_server
+        if server is None:
+            self.state.set("Локальный API уже остановлен")
+            return
+        self._api_server = None
+        thread = self._api_thread
+        self._api_thread = None
+        server.shutdown()
+        server.server_close()
+        if thread is not None:
+            thread.join(timeout=2)
+        self.state.set("Локальный API остановлен")
+
+    def rotate_local_api_token(self):
+        from local_api import rotate_token
+        if self._api_server is not None:
+            if not messagebox.askyesno(
+                    "Murdilimax · API",
+                    "Остановить API и заменить ключ? Старый ключ перестанет работать.",
+                    parent=self.root):
+                return
+            self.stop_local_api()
+        token = rotate_token()
+        self._show_local_token(token)
+        self.state.set("Новый ключ API сохранён в системном хранилище")
+
+    def close_application(self):
+        if self._api_server is not None:
+            self.stop_local_api()
+        self.root.destroy()
 
     def check_updates(self):
         """Read GitHub release metadata on request; no automatic installation."""
