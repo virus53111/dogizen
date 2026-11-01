@@ -122,7 +122,7 @@
   }
   function saveProfiles(){localStorageSafeSet(dataKey,JSON.stringify(profiles));}
   function t(key) { return lang==='en' ? (en[key] || key) : (ruDynamic[key] || key); }
-  const ruDynamic = {run:'Запустить',stop:'Остановить',delete:'Удалить',noProfiles:'Профили не найдены',shown:'Показано',profiles:'профилей',cryptoUnavailable:'Криптооплата скоро',confirmDelete:'Удалить этот демо-профиль?',confirmReset:'Сбросить демонстрационные профили?',enterName:'Введите название профиля.'};
+  const ruDynamic = {planCta:'Выбрать тариф',running:'Активен',stopped:'Остановлен',run:'Запустить',stop:'Остановить',delete:'Удалить',noProfiles:'Профили не найдены',shown:'Показано',profiles:'профилей',cryptoUnavailable:'Криптооплата скоро',confirmDelete:'Удалить этот демо-профиль?',confirmReset:'Сбросить демонстрационные профили?',enterName:'Введите название профиля.'};
   const enDynamic = {run:'Launch',stop:'Stop',delete:'Delete',noProfiles:'No profiles found',shown:'Showing',profiles:'profiles',cryptoUnavailable:'Crypto coming soon',confirmDelete:'Delete this demo profile?',confirmReset:'Reset demo profiles?',enterName:'Enter a profile name.'};
   function d(key){return (lang==='en'?enDynamic:ruDynamic)[key]||key;}
   function setLanguage(next) {
