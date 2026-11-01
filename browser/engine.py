@@ -174,6 +174,8 @@ def request_stop(store, profile_id):
     folder = store.root / "profiles" / profile_id
     if (folder / ".lock").exists():
         (folder / ".stop").touch()
+    elif launch_pending(folder):
+        raise RuntimeError("Profile is still starting; retry Stop after launch finishes")
 
 def start_background(store, profile_id):
     safe_profile_id(profile_id)
