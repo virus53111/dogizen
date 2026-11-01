@@ -295,3 +295,20 @@ body{background:#060a1c;color:#f9f8ff}
   .neo-display { font-size: clamp(29px, 9.4vw, 34px); }
   .neo-micro > span { font-size: 8px; }
 }
+
+
+/* Root viewport containment. The decorative ambient blobs in theme.css
+   intentionally extend 240px past the body's right edge. Older Android
+   Chromium may include this invisible overflow when choosing its layout
+   viewport, then auto-zoom the entire 100%-width page into a narrow column.
+   Clip at the root instead of disabling user pinch-to-zoom. */
+html {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+body {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
