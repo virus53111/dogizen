@@ -39,6 +39,7 @@ TEXT = {
 
     "⇩ Экспорт cookies": "⇩ Export cookies",
     "✕ Очистить cookies": "✕ Clear cookies",
+    "↶ Восстановить cookies": "↶ Restore cookies",
     "Только остановленный профиль": "Stopped profile only",
 
     "Изменить группу": "Change group",
