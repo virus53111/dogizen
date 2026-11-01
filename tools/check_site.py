@@ -5,8 +5,8 @@ from html.parser import HTMLParser
 import xml.etree.ElementTree as ET
 from urllib.parse import urlparse
 ROOT=Path(__file__).resolve().parents[1]
-FILES=["index.html","download.html","updates.html","mobile-app.html","guides/index.html","guides/browser-profiles.html","guides/proxies.html","guides/cookies.html","privacy/index.html","account.html","mobile/index.html"]
-PUBLIC=["/","/download.html","/updates.html","/mobile-app.html","/guides/","/guides/browser-profiles.html","/guides/proxies.html","/guides/cookies.html","/privacy/"]
+FILES=["index.html","download.html","updates.html","mobile-app.html","guides/index.html","guides/browser-profiles.html","guides/proxies.html","guides/cookies.html","guides/extensions.html","privacy/index.html","account.html","mobile/index.html"]
+PUBLIC=["/","/download.html","/updates.html","/mobile-app.html","/guides/","/guides/browser-profiles.html","/guides/proxies.html","/guides/cookies.html","/guides/extensions.html","/privacy/"]
 class Audit(HTMLParser):
  def __init__(self):
   super().__init__(); self.ids=set();self.links=[];self.titles=[];self.canonical=[];self.jsonld=[];self.noindex=False;self._title=False;self._json=False;self._jsontext=""
