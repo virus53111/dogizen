@@ -173,6 +173,17 @@ def read_cookie_file(source):
             raise ValueError("Expected JSON cookies array or storage state")
     if not 1 <= len(rows) <= MAX_ROWS:
         raise ValueError("Cookie file must have 1 to 5000 cookies")
+    # Firefox 142+ writes SQLite cookie expirations in milliseconds.
+    # Murdilimax exports the raw field; Playwright/Netscape use seconds.
+    if fmt == "Murdilimax JSON":
+        adjusted = []
+        for original in rows:
+            if isinstance(original, dict) and "expiry" in original and "expires" not in original:
+                raw_expiry = original["expiry"]
+                if type(raw_expiry) in (int, float) and raw_expiry > 100_000_000_000:
+                    original = {**original, "expiry": raw_expiry / 1000}
+            adjusted.append(original)
+        rows = adjusted
     cookies = [_cookie(row) for row in rows]
     keys = [(c["domain"], c["path"], c["name"]) for c in cookies]
     if len(set(keys)) != len(keys):
