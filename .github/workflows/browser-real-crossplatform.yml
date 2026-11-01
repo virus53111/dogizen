@@ -1,7 +1,24 @@
 name: Real desktop browser engine cross-platform acceptance
 on:
   push:
-    branches: [qa/desktop-runtime-crossplatform-20261101]
+    branches: [qa/desktop-runtime-crossplatform-20261101, feature/orbit-browser-only-2026-10-31]
+    paths:
+      - 'browser/integration_*.py'
+      - 'browser/engine.py'
+      - 'browser/identity.py'
+      - 'browser/addon_manager.py'
+      - 'browser/cookie_manager.py'
+      - 'browser/store.py'
+      - '.github/workflows/browser-real-crossplatform.yml'
+  pull_request:
+    paths:
+      - 'browser/integration_*.py'
+      - 'browser/engine.py'
+      - 'browser/identity.py'
+      - 'browser/addon_manager.py'
+      - 'browser/cookie_manager.py'
+      - 'browser/store.py'
+      - '.github/workflows/browser-real-crossplatform.yml'
   workflow_dispatch:
 permissions:
   contents: read
