@@ -934,9 +934,20 @@ class BrowserUI:
             self.state.set(f"Запуск {count} браузеров. Первый запуск может загрузить Camoufox; смотри журнал.")
 
     def stop(self):
-        for pid in self.selected(self.profile_tree):
+        selected = self.selected(self.profile_tree)
+        # Avoid a partial bulk stop and misleading "sent" status while one
+        # selected profile is still waiting for its browser PID lock.
+        if any(launch_pending(self.store.root / "profiles" / pid)
+               and not (self.store.root / "profiles" / pid / ".lock").exists()
+               for pid in selected):
+            raise ValueError(
+                "Один из профилей ещё запускается. Повторите остановку позже."
+                if self.language == "ru" else
+                "A selected profile is still starting. Retry Stop after launch.")
+        for pid in selected:
             request_stop(self.store, pid)
-        self.state.set("Отправлена команда корректного завершения")
+        self.state.set("Stop requested" if self.language == "en" else
+                       "Отправлена команда корректного завершения")
 
     def export(self):
         path = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON", "*.json")])
