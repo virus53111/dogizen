@@ -578,7 +578,8 @@ def main():
         if getattr(sys, "frozen", False):
             safe_profile_id(args.run_profile)
             log = Store().root / "logs" / (args.run_profile + ".log")
-            output = log.open("a", encoding="utf-8")
+            fd = os.open(str(log), os.O_WRONLY | os.O_APPEND | os.O_CREAT, 0o600)
+            output = os.fdopen(fd, "a", encoding="utf-8")
             sys.stdout = output
             sys.stderr = output
         try:
