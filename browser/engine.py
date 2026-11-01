@@ -1,6 +1,7 @@
 """Camoufox-based browser launcher. Each profile runs in its own process and storage."""
 from __future__ import annotations
 import os
+import re
 import subprocess
 import sys
 import time
@@ -8,6 +9,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from store import Store
+from identity import get_identity, resolved_os
 
 def pid_alive(pid):
     """Non-destructive cross-platform process status probe."""
@@ -29,12 +31,19 @@ def pid_alive(pid):
     except (OSError, ValueError):
         return False
 
+def safe_profile_id(profile_id):
+    if not isinstance(profile_id, str) or re.fullmatch(r'[0-9a-f]{32}', profile_id) is None:
+        raise ValueError('Invalid profile identifier')
+    return profile_id
+
 def launch_command(profile_id):
+    safe_profile_id(profile_id)
     if getattr(sys, "frozen", False):
         return [sys.executable, "--run-profile", profile_id]
     return [sys.executable, str(Path(__file__).with_name("app.py")), "--run-profile", profile_id]
 
 def run_profile(profile_id):
+    safe_profile_id(profile_id)
     store = Store()
     profile = store.get_profile(profile_id)
     if not profile:
@@ -61,14 +70,15 @@ def run_profile(profile_id):
         # Import only in a child process. A missing engine is a visible launch error.
         from camoufox.sync_api import Camoufox
         os_name = profile.get("os", "native")
+        fingerprint = get_identity(folder, os_name)
         opts = {
             "headless": False,
             "persistent_context": True,
             "user_data_dir": str(folder / "data"),
             "enable_cache": True,
+            "fingerprint": fingerprint,
+            "os": resolved_os(os_name),
         }
-        opts["os"] = ({"win32": "windows", "darwin": "macos"}.get(sys.platform, "linux")
-                      if os_name == "native" else os_name)
         if profile.get("proxy_id"):
             opts["proxy"] = store.proxy_config(profile["proxy_id"])
             opts["geoip"] = True
@@ -95,6 +105,7 @@ def run_profile(profile_id):
         stop_file.unlink(missing_ok=True)
 
 def request_stop(store, profile_id):
+    safe_profile_id(profile_id)
     profile = store.get_profile(profile_id)
     if not profile:
         return
@@ -103,6 +114,7 @@ def request_stop(store, profile_id):
         (folder / ".stop").touch()
 
 def start_background(store, profile_id):
+    safe_profile_id(profile_id)
     profile = store.get_profile(profile_id)
     if not profile:
         raise ValueError("Profile not found")
