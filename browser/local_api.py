@@ -120,7 +120,8 @@ def make_server(store, token, *, port=DEFAULT_PORT):
                 return False
             value = self.headers.get("Authorization", "")
             supplied = value[7:] if value.startswith("Bearer ") else ""
-            if len(supplied) != 64 or not hmac.compare_digest(supplied, token):
+            if (len(supplied) != 64 or _TOKEN_PATTERN.fullmatch(supplied) is None
+                    or not hmac.compare_digest(supplied, token)):
                 self._json(401, {"error": "unauthorized"})
                 return False
             if "?" in self.path or "#" in self.path:
