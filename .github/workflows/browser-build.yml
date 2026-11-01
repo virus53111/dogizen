@@ -1,7 +1,7 @@
 name: Build Murdilimax Browser-only preview
 on:
   push:
-    branches: [feature/orbit-browser-only-2026-10-31]
+    branches: [feature/orbit-browser-only-2026-10-31, qa/desktop-runtime-crossplatform-20261101]
     paths: ['browser/**', 'assets/murdilimax-icon.svg', 'tools/build_brand_assets.py', '.github/workflows/browser-build.yml']
   workflow_dispatch:
 concurrency:
