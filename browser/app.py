@@ -23,6 +23,7 @@ from profile_view import (ALL, RUNNING, STOPPED, filter_profiles,
                           distinct_groups, bulk_update_groups, plan_profile_launches,
                           sort_visible_profiles)
 from profile_table import reconcile_profile_tree
+from profile_actions import create_quick_profiles, bulk_assign_proxy
 from cookie_manager import (cookie_inventory, export_cookies, clear_cookies,
                             list_cookie_backups, restore_cookie_backup)
 from cookie_import import inspect_cookie_file, import_cookies
@@ -258,11 +259,13 @@ class BrowserUI:
         bulk.pack(fill="x", padx=12, pady=(3, 3))
         self.button(bulk, "Выбрать видимые", self.select_visible_profiles)
         self.button(bulk, "Изменить группу", self.change_selected_groups)
+        self.button(bulk, "⇄ Назначить прокси", self.assign_proxy_to_selected)
         self.profile_stats = tk.StringVar(value="")
         ttk.Label(bulk, textvariable=self.profile_stats,
                   foreground=CYAN).pack(side="right", padx=(8, 4))
         tools = ttk.Frame(self.profile_tab)
         tools.pack(fill="x", padx=12, pady=8)
+        self.button(tools, "⚡ Быстрый профиль", self.quick_profile)
         self.button(tools, "Экспорт настроек", self.export)
         self.button(tools, "Импорт настроек", self.import_profiles)
         self.button(tools, "Стартовые вкладки", self.edit_startup_tabs)
@@ -875,6 +878,8 @@ class BrowserUI:
                     values["os"] = values.pop("os_name")
                     self.store.update_profile(profile["id"], **values)
                 else:
+                    if len(self.store.profiles()) >= self.entitlement_limit:
+                        raise ValueError("Достигнут лимит профилей текущего тарифа")
                     self.store.add_profile(**values)
                 self.refresh()
                 window.destroy()
@@ -884,6 +889,58 @@ class BrowserUI:
         ttk.Button(window, text="Сохранить профиль", command=save).grid(row=8, column=1, sticky="e", padx=23, pady=18)
         window.columnconfigure(1, weight=1)
         self.apply_language(window)
+
+    def quick_profile(self):
+        """Create one isolated default profile without the configuration form."""
+        created = create_quick_profiles(self.store, allowance=self.entitlement_limit)
+        self.refresh()
+        if created and self.profile_tree.exists(created[0]["id"]):
+            self.profile_tree.selection_set(created[0]["id"])
+            self.profile_tree.see(created[0]["id"])
+        self.state.set("Created quick profile" if self.language == "en" else
+                       "Создан быстрый профиль")
+
+    def assign_proxy_to_selected(self):
+        """Bulk-assign a named proxy or no proxy to stopped profiles."""
+        ids = list(self.profile_tree.selection())
+        if not ids:
+            raise ValueError("Сначала выбери профили" if self.language == "ru"
+                             else "Select profiles first")
+        proxies = self.store.proxies()
+        en = self.language == "en"
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Bulk proxy assignment" if en else "Назначить прокси")
+        dialog.configure(bg=BG)
+        dialog.geometry("530x210")
+        dialog.transient(self.root)
+        dialog.grab_set()
+        ttk.Label(dialog, text=("Apply one proxy to all selected STOPPED profiles"
+                                if en else
+                                "Один прокси для всех выбранных ОСТАНОВЛЕННЫХ профилей")).pack(
+                                    anchor="w", padx=18, pady=(20, 12))
+        labels = ["No proxy" if en else "Без прокси"] + [
+            p["name"] + " (" + p["id"][:8] + ")" for p in proxies]
+        choice = tk.StringVar(value=labels[0])
+        combo = ttk.Combobox(dialog, state="readonly", width=58,
+                             values=labels, textvariable=choice)
+        combo.pack(fill="x", padx=18, pady=8)
+        def save():
+            try:
+                index = labels.index(choice.get())
+                pid = "" if index == 0 else proxies[index - 1]["id"]
+                count = bulk_assign_proxy(
+                    self.store, ids, pid,
+                    lambda item: self.running(item))
+                dialog.destroy()
+                self.refresh()
+                self.state.set(
+                    f"Updated proxy for {count} profiles" if en else
+                    f"Прокси обновлён у {count} профилей")
+            except Exception as exc:
+                messagebox.showerror("Murdilimax · Proxy", str(exc),
+                                     parent=dialog)
+        ttk.Button(dialog, text="Save" if en else "Сохранить", command=save).pack(
+            side="right", padx=18, pady=17)
 
     def new_profile(self):
         if len(self.store.profiles()) >= self.entitlement_limit:
