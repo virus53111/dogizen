@@ -34,7 +34,7 @@
     neoDisclosure: 'The browser interface illustration is an artistic concept, not a screenshot of the released application. The browser remains in beta; team and cloud synchronization features are not yet available.',
     skip: 'Skip to content',
     announcement: 'Murdilimax Browser · cosmic design and new possibilities',
-    navProduct: 'Product', navPricing: 'Pricing', navWorkspace: 'Workspace',
+    navProduct: 'Product', navPricing: 'Pricing', navWorkspace: 'Workspace', navUpdates: 'Updates',
     account: 'My account', download: 'Download',
     heroEyebrow: 'THE NEXT GENERATION OF BROWSER WORKSPACES',
     heroTitle: 'Every browser profile. <em>Under your control.</em>',
