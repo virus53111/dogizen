@@ -87,7 +87,7 @@ def _write(folder, rows):
 @contextmanager
 def _maintenance(store, profile_id):
     folder = _profile(store, profile_id)
-    if (folder / ".lock").exists() or (folder / ".cookie-maintenance").exists():
+    if (folder / ".lock").exists() or (folder / ".launching").exists() or (folder / ".cookie-maintenance").exists():
         raise ValueError("Stop the browser or cookie maintenance first")
     lock = folder / ".addon-maintenance"
     try:
@@ -96,7 +96,7 @@ def _maintenance(store, profile_id):
     except FileExistsError:
         raise ValueError("An addon operation is already running") from None
     try:
-        if (folder / ".lock").exists() or (folder / ".cookie-maintenance").exists():
+        if (folder / ".lock").exists() or (folder / ".launching").exists() or (folder / ".cookie-maintenance").exists():
             raise ValueError("Stop the browser before changing extensions")
         yield folder
     finally:
