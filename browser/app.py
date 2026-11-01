@@ -1364,11 +1364,23 @@ def main():
         if sys.stderr is None:
             sys.stderr = open(os.devnull, "w")
     parser = argparse.ArgumentParser()
-    parser.add_argument("--run-profile", default="")
-    parser.add_argument("--selftest", action="store_true")
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--run-profile", default="")
+    mode.add_argument("--selftest", action="store_true")
+    mode.add_argument("--api-server", action="store_true",
+                      help="Start opt-in authenticated loopback profile API")
+    mode.add_argument("--api-rotate-token", action="store_true",
+                      help="Create a new API token in the OS keyring and show it once")
+    parser.add_argument("--api-port", type=int, default=18765)
     args = parser.parse_args()
     if args.selftest:
         selftest()
+    elif args.api_rotate_token:
+        from local_api import rotate_token
+        print("Local API token (keep private; shown once): " + rotate_token())
+    elif args.api_server:
+        from local_api import serve_api
+        serve_api(port=args.api_port)
     elif args.run_profile:
         if getattr(sys, "frozen", False):
             safe_profile_id(args.run_profile)
