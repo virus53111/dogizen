@@ -155,7 +155,8 @@ def run_profile(profile_id):
         from camoufox.sync_api import Camoufox
         ensure_engine_ready()  # Downloads the actual browser to the user cache on first use.
         os_name = profile.get("os", "native")
-        fingerprint = get_identity(folder, os_name)
+        fingerprint = get_identity(folder, os_name,
+                                   screen_limit=profile.get("screen_limit", "auto"))
         opts = {
             "headless": False,
             "persistent_context": True,
