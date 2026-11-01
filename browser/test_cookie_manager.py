@@ -1,5 +1,6 @@
 """Offline cookie tests with synthetic Firefox SQLite databases, no credentials or network."""
 import json
+from contextlib import closing
 import os
 from pathlib import Path
 import sqlite3
@@ -14,7 +15,7 @@ def prepare_cookie_db(store, profile_id, records=2):
     directory = store.root / "profiles" / profile_id / "data"
     directory.mkdir(mode=0o700)
     db = directory / "cookies.sqlite"
-    with sqlite3.connect(db) as conn:
+    with closing(sqlite3.connect(db)) as conn:
         conn.execute(
             "CREATE TABLE moz_cookies (id INTEGER PRIMARY KEY, name TEXT, "
             "value TEXT, host TEXT, path TEXT, expiry INTEGER, "
@@ -34,7 +35,7 @@ def prepare_cookie_db(store, profile_id, records=2):
 
 
 def cookie_values(path):
-    with sqlite3.connect(path) as conn:
+    with closing(sqlite3.connect(path)) as conn:
         return [r[0] for r in conn.execute("SELECT value FROM moz_cookies")]
 
 
@@ -128,17 +129,17 @@ class CookieManagerTests(unittest.TestCase):
         directory = self.store.root / "profiles" / self.id / "data"
         directory.mkdir()
         db = directory / "cookies.sqlite"
-        with sqlite3.connect(db) as conn:
+        with closing(sqlite3.connect(db)) as conn:
             conn.execute("CREATE TABLE not_cookies (value TEXT)")
         with self.assertRaises(ValueError):
             clear_cookies(self.store, self.id)
-        with sqlite3.connect(db) as conn:
+        with closing(sqlite3.connect(db)) as conn:
             self.assertEqual(conn.execute("SELECT name FROM sqlite_master WHERE name='not_cookies'").fetchone()[0], "not_cookies")
 
     @unittest.skipIf(os.name == "nt", "Symlinks require developer mode on Windows")
     def test_reject_symlinked_database(self):
         outside = Path(self.tmp.name) / "outside.sqlite"
-        with sqlite3.connect(outside) as conn:
+        with closing(sqlite3.connect(outside)) as conn:
             conn.execute("CREATE TABLE private(value TEXT)")
         folder = self.store.root / "profiles" / self.id / "data"
         folder.mkdir()
