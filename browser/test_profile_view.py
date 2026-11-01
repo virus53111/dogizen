@@ -6,7 +6,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from profile_view import ALL, RUNNING, STOPPED, bulk_update_groups, distinct_groups, filter_profiles
+from profile_view import (ALL, RUNNING, STOPPED, bulk_update_groups,
+                          distinct_groups, filter_profiles, plan_profile_launches)
 from store import Store
 
 
@@ -85,6 +86,32 @@ class ProfileViewTests(unittest.TestCase):
             p = store.add_profile("Test", group="Former")
             bulk_update_groups(store, [p["id"]], "  ", running=lambda pid: False)
             self.assertEqual(store.get_profile(p["id"])["group"], "")
+
+
+    def test_launch_planning_skips_running_and_deduplicates(self):
+        started = []
+        profiles = [{"id": f"p-{i}"} for i in range(1000)]
+        selected = ["p-1", "p-2", "p-1", "p-100"]
+        ready = plan_profile_launches(
+            profiles, selected, 300,
+            running=lambda pid: pid == "p-2")
+        self.assertEqual(ready, ["p-1", "p-100"])
+
+    def test_launch_plan_rejects_invalid_or_overlimit_without_launch(self):
+        profiles = [{"id": f"p-{i}"} for i in range(1000)]
+        checks = []
+        def running(pid):
+            checks.append(pid)
+            return False
+        with self.assertRaisesRegex(ValueError, "limit"):
+            plan_profile_launches(profiles, ["p-1", "p-400"], 20, running)
+        self.assertEqual(checks, [])  # no launch or running-status checks
+        with self.assertRaisesRegex(ValueError, "no longer exist"):
+            plan_profile_launches(profiles, ["p-1", "stale"], 20, running)
+        self.assertEqual(checks, [])
+        with self.assertRaisesRegex(ValueError, "allowance"):
+            plan_profile_launches(profiles, ["p-1"], True, running)
+
 
 
 if __name__ == "__main__":

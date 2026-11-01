@@ -97,3 +97,26 @@ def bulk_update_groups(store, ids: Iterable[str], group: str, running: Callable[
             profile["updated_at"] = update_stamp
     store._write("profiles", profiles)
     return len(selected)
+
+
+def plan_profile_launches(profiles, selected_ids, entitlement_limit, running):
+    """Validate all selected profiles before any desktop launch is attempted.
+
+    The entitlement allowance is applied to the stored profile order, just
+    as in the existing browser launcher. Duplicate IDs cannot spawn duplicate
+    processes. Stale selections and out-of-plan profiles fail atomically.
+    """
+    if (type(entitlement_limit) is not int or
+            not 0 <= entitlement_limit <= 1000):
+        raise ValueError("Invalid profile allowance")
+    profiles = list(profiles)
+    selected = list(dict.fromkeys(selected_ids))
+    if not selected:
+        raise ValueError("Select browser profiles first")
+    existing = {p["id"] for p in profiles}
+    if any(pid not in existing for pid in selected):
+        raise ValueError("One or more selected profiles no longer exist")
+    allowed = {p["id"] for p in profiles[:entitlement_limit]}
+    if any(pid not in allowed for pid in selected):
+        raise ValueError("One or more selected profiles exceed the plan limit")
+    return [pid for pid in selected if not running(pid)]
