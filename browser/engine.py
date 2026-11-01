@@ -42,12 +42,39 @@ def launch_command(profile_id):
         return [sys.executable, "--run-profile", profile_id]
     return [sys.executable, str(Path(__file__).with_name("app.py")), "--run-profile", profile_id]
 
+def verify_commercial_access(store, profile_id, account=None, required=None):
+    """Server-owned entitlement check for opt-in commercial QA mode.
+
+    This is a *client-side gate*, not tamper-proof DRM: a modified offline
+    client can skip local code. Paid cloud entitlements require enforcement
+    on the API server, signed binaries, and a threat-model review.
+    """
+    safe_profile_id(profile_id)
+    mandatory = (os.environ.get("MURDILIMAX_REQUIRE_LOGIN") == "1"
+                 if required is None else required)
+    if not mandatory:
+        return None
+    if account is None:
+        from auth_client import BrowserAccount
+        account = BrowserAccount()
+    data = account.verify()  # Server validates device/network binding and token.
+    if not isinstance(data, dict) or not data.get("authorized"):
+        raise PermissionError("Account license is missing, expired, or could not be verified")
+    limit = (data.get("entitlements") or {}).get("profiles")
+    if isinstance(limit, bool) or not isinstance(limit, int) or not (0 <= limit <= 1000):
+        raise PermissionError("The license server returned an invalid profile allowance")
+    permitted = [p.get("id") for p in store.profiles()[:limit]]
+    if profile_id not in permitted:
+        raise PermissionError("Profile exceeds the server-authorized subscription limit")
+    return data
+
 def run_profile(profile_id):
     safe_profile_id(profile_id)
     store = Store()
     profile = store.get_profile(profile_id)
     if not profile:
         raise ValueError("Unknown profile")
+    verify_commercial_access(store, profile_id)
     folder = store.root / "profiles" / profile_id
     folder.mkdir(parents=True, exist_ok=True)
     stop_file = folder / ".stop"
