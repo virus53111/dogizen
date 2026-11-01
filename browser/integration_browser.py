@@ -5,7 +5,7 @@ import tempfile
 import threading
 from pathlib import Path
 
-from identity import get_identity
+from identity import get_identity, host_os
 
 class Site(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
@@ -26,9 +26,9 @@ def main():
         with tempfile.TemporaryDirectory() as temp:
             root = str(Path(temp) / "persistent")
             identity_dir = Path(temp) / "identity"
-            fingerprint = get_identity(identity_dir, "linux")
+            fingerprint = get_identity(identity_dir, host_os())
             opts = dict(persistent_context=True, user_data_dir=root,
-                        headless=True, os="linux", fingerprint=fingerprint)
+                        headless=True, os=host_os(), fingerprint=fingerprint)
             with Camoufox(**opts) as first:
                 page = first.pages[0] if first.pages else first.new_page()
                 page.goto(url)
@@ -36,7 +36,7 @@ def main():
                 page.evaluate("document.cookie = 'orbit_profile_test=survived; Max-Age=3600; SameSite=Lax; Path=/'")
                 assert "orbit_profile_test=survived" in page.evaluate("document.cookie")
                 before = page.evaluate("({ua:navigator.userAgent,cpu:navigator.hardwareConcurrency,screen:screen.width,language:navigator.language})")
-            assert get_identity(identity_dir, "linux", generator=lambda **_: 1) == fingerprint
+            assert get_identity(identity_dir, host_os(), generator=lambda **_: 1) == fingerprint
             with Camoufox(**opts) as second:
                 page = second.pages[0] if second.pages else second.new_page()
                 page.goto(url)
@@ -46,9 +46,9 @@ def main():
                 assert before == after, f"Identity drift between relaunches: {before} != {after}"
             # A separate profile must not inherit the first profile's site cookies.
             other_root = str(Path(temp) / "separate-browser-data")
-            other_identity = get_identity(Path(temp) / "separate-identity", "linux")
+            other_identity = get_identity(Path(temp) / "separate-identity", host_os())
             other_opts = dict(persistent_context=True, user_data_dir=other_root,
-                              headless=True, os="linux", fingerprint=other_identity)
+                              headless=True, os=host_os(), fingerprint=other_identity)
             with Camoufox(**other_opts) as isolated:
                 isolated_page = isolated.pages[0] if isolated.pages else isolated.new_page()
                 isolated_page.goto(url)
