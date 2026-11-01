@@ -1,0 +1,33 @@
+name: Mobile pricing & workspace QA
+on:
+  push:
+    branches: [fix/mobile-pricing-workspace-account-20261101]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  mobile-journeys:
+    name: Real Chromium / responsive marketing flows
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Set up mobile Chromium
+        run: |
+          python -m pip install playwright
+          python -m playwright install --with-deps chromium
+      - name: Check 27 mobile screen and route combinations
+        run: python tools/test_mobile_flows.py
+      - name: Capture mobile screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: murdilimax-mobile-flows
+          path: mobile-flows-artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
+      - name: Check existing mobile homepage viewport
+        run: python tools/test_mobile_layout.py
