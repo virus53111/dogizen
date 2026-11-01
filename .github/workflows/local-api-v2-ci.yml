@@ -1,0 +1,37 @@
+name: Local API v2 security and platform acceptance
+on:
+  push:
+    branches: [feature/profile-local-api-v2-20261101]
+    paths:
+      - 'browser/**'
+      - '.github/workflows/local-api-v2-ci.yml'
+  pull_request:
+    paths:
+      - 'browser/**'
+      - '.github/workflows/local-api-v2-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  unit:
+    name: Authenticated local profile API v2 / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15-intel]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Syntax validation
+        run: python -m compileall -q browser
+      - name: HTTP API v1 compatibility and v2 mutation/authorization regression
+        run: |
+          python -m unittest discover -s browser -p 'test_local_api.py' -v
+          python -m unittest discover -s browser -p 'test_local_api_v2.py' -v
+      - name: Full existing browser regressions
+        run: python -m unittest discover -s browser -v
+      - name: Desktop smoke
+        run: python browser/app.py --selftest

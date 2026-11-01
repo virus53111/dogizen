@@ -61,7 +61,7 @@ class ProfileAPITests(unittest.TestCase):
     def test_authenticated_health_and_private_profile_list(self):
         code, obj, head = self.call("GET", "/v1/health")
         self.assertEqual(code, 200)
-        self.assertEqual(obj["api_version"], 1)
+        self.assertEqual(obj["api_version"], 2)
         self.assertEqual(head["Cache-Control"], "no-store")
         code, data, _ = self.call("GET", "/v1/profiles")
         self.assertEqual(code, 200)
