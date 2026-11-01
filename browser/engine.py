@@ -10,6 +10,7 @@ from urllib.parse import urlsplit
 
 from store import Store
 from identity import get_identity, resolved_os
+from engine_setup import ensure_engine_ready
 
 def pid_alive(pid):
     """Non-destructive cross-platform process status probe."""
@@ -96,6 +97,7 @@ def run_profile(profile_id):
     try:
         # Import only in a child process. A missing engine is a visible launch error.
         from camoufox.sync_api import Camoufox
+        ensure_engine_ready()  # Downloads the actual browser to the user cache on first use.
         os_name = profile.get("os", "native")
         fingerprint = get_identity(folder, os_name)
         opts = {
