@@ -639,7 +639,9 @@ class BrowserUI:
             return
         rows = list_bookmarks(self.store)
         selected = set(self.bookmark_tree.selection())
-        self.bookmark_tree.delete(*self.bookmark_tree.get_children())
+        present = self.bookmark_tree.get_children()
+        if present:
+            self.bookmark_tree.delete(*present)
         for row in rows:
             self.bookmark_tree.insert("", "end", iid=row["id"],
                                       values=(row["name"], row["url"],
