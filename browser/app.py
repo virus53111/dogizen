@@ -20,10 +20,14 @@ from network_check import probe_proxy_exit
 from engine_setup import ensure_engine_ready
 from store import Store
 from neon_theme import BG, PANEL, TEXT, MUTED, ACCENT, apply_neon_theme, NeonHeader
+from i18n import load_language, save_language, translate
 
 class BrowserUI:
     def __init__(self):
         self.store = Store()
+        self.language = load_language(self.store.root)
+        self._status_original = {}
+        self._localizing = False
         self.account = BrowserAccount()
         self.authorized = False
         self.plan = 'free'
@@ -46,6 +50,15 @@ class BrowserUI:
         self.state = tk.StringVar(value="Локальная рабочая область · браузерные профили")
         apply_neon_theme(self.root)
         self.header = NeonHeader(self.root, self.open_folder)
+        language_bar = ttk.Frame(self.root)
+        language_bar.pack(fill="x", padx=28, pady=(0, 2))
+        ttk.Label(language_bar, text="LANGUAGE / ЯЗЫК", foreground=ACCENT).pack(side="left", padx=(1, 13))
+        self.language_buttons = {}
+        for lang in ("ru", "en"):
+            button = ttk.Button(language_bar, text=lang.upper(),
+                                command=lambda choice=lang: self.set_language(choice))
+            button.pack(side="left", padx=3, pady=3)
+            self.language_buttons[lang] = button
         self.tabs = ttk.Notebook(self.root)
         self.tabs.pack(fill="both", expand=True, padx=22, pady=8)
         self.profile_tab = ttk.Frame(self.tabs)
@@ -70,6 +83,10 @@ class BrowserUI:
                                                    pady=11)
         tk.Label(status_frame, text="NEON  /  BETA", bg="#192140",
                  fg=ACCENT, font=("Arial", 9, "bold")).pack(side="right", padx=15)
+        for variable in (self.state, self.account_message, self.account_code):
+            self._status_original[id(variable)] = variable.get()
+            variable.trace_add("write", lambda *_args, var=variable: self._status_changed(var))
+        self.apply_language(self.root)
         self.refresh()
         self.root.after(2500, self.refresh_status)
         self.root.after(1500, self.restore_login)
@@ -299,7 +316,7 @@ class BrowserUI:
         for p in self.store.profiles():
             if query and query not in " ".join(str(p.get(k, "")) for k in ("name", "group", "tags", "notes")).lower():
                 continue
-            status = "● Запущен" if self.running(p["id"]) else "○ Остановлен"
+            status = translate("● Запущен" if self.running(p["id"]) else "○ Остановлен", self.language)
             self.profile_tree.insert("", "end", iid=p["id"], values=(p["name"], p["group"], p["tags"],
                                     proxies.get(p["proxy_id"], "Без прокси"), p["os"], status))
         self.profile_tree.selection_set([x for x in old if self.profile_tree.exists(x)])
@@ -374,6 +391,7 @@ class BrowserUI:
                 messagebox.showerror("Профиль", str(exc), parent=window)
         ttk.Button(window, text="Сохранить профиль", command=save).grid(row=8, column=1, sticky="e", padx=23, pady=18)
         window.columnconfigure(1, weight=1)
+        self.apply_language(window)
 
     def new_profile(self):
         if len(self.store.profiles()) >= self.entitlement_limit:
@@ -486,6 +504,7 @@ class BrowserUI:
             ttk.Label(window, text="Оставь пароль пустым, чтобы сохранить прежний.", foreground=MUTED).grid(row=5, column=0, columnspan=2, padx=15)
         ttk.Button(window, text="Сохранить", command=save).grid(row=4, column=1, sticky="e", pady=16)
         window.columnconfigure(1, weight=1)
+        self.apply_language(window)
 
     def remove_proxy(self):
         pid = self.one(self.proxy_tree, "прокси")
