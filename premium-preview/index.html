@@ -11,13 +11,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="./theme.css?v=1" rel="stylesheet">
+  <link href="./theme.css?v=1"
+  <link href="./neon.css?v=1" rel="stylesheet"> rel="stylesheet">
   <script src="./app.js?v=1" defer></script>
 </head>
 <body>
 <a class="skip-link" href="#main" data-i="skip">Перейти к содержимому</a>
 <div class="ambient ambient-a" aria-hidden="true"></div><div class="ambient ambient-b" aria-hidden="true"></div>
-<div class="announcement"><span class="sparkle">✦</span> <span data-i="announcement">Новый дизайн · ранний просмотр, действующий сайт не изменён</span><span class="announcement-tag">PREVIEW 01</span></div>
+<div class="announcement"><span class="sparkle">✦</span> <span data-i="announcement">Новый Murdilimax — космический дизайн и новые возможности</span><span class="announcement-tag">NEON EDITION</span></div>
 <header class="site-header">
   <div class="container header-inner">
     <a class="brand" href="#home" aria-label="Murdilimax Browser — Home">
@@ -41,57 +42,79 @@
 </header>
 
 <main id="main">
-  <section class="page page-home" data-page="home">
-    <div class="container">
-      <section class="hero">
-        <div class="hero-copy">
-          <div class="eyebrow"><span class="tiny-led"></span><span data-i="heroEyebrow">НОВОЕ ПОКОЛЕНИЕ РАБОЧЕГО ПРОСТРАНСТВА</span></div>
-          <h1 data-i="heroTitle">Все браузерные профили. <em>Под вашим контролем.</em></h1>
-          <p class="hero-description" data-i="heroDesc">Отдельные сессии, прокси и удобное управление в едином рабочем пространстве. Меньше рутины. Больше свободы.</p>
-          <div class="hero-ctas">
-            <a class="btn btn-primary btn-large" href="https://murdilimax.com/download.html"><span data-i="heroCta">Скачать бесплатную бета-версию</span><span aria-hidden="true">↗</span></a>
-            <a class="btn btn-glass btn-large" href="#workspace"><span class="play-icon">▶</span><span data-i="heroDemo">Посмотреть интерфейс</span></a>
-          </div>
-          <div class="hero-trust"><span class="trust-circles"><i>M</i><i>W</i><i>F</i></span><span data-i="heroTrust">Windows и macOS · Локальное хранение · Ранний доступ</span></div>
-        </div>
-        <div class="hero-visual" aria-label="Browser dashboard visual concept">
-          <div class="visual-orbit orbit-one"></div><div class="visual-orbit orbit-two"></div>
-          <div class="float-chip chip-top"><span class="chip-symbol">◈</span><span><b>LOCAL</b><small data-i="floatSecure">Отдельные сессии</small></span></div>
-          <div class="product-shot">
-            <div class="shot-sidebar">
-              <div class="shot-logo">◈</div><span class="shot-side active">▦</span><span class="shot-side">◉</span><span class="shot-side">⛓</span><span class="shot-side">⚙</span>
-              <span class="shot-bottom">M</span>
-            </div>
-            <div class="shot-main">
-              <div class="shot-topline"><span>MURDILIMAX <span class="shot-muted">/ WORKSPACE</span></span><span class="shot-top-right"><span class="shot-green"></span> <span data-i="shotReady">Готово к работе</span></span></div>
-              <div class="shot-greet"><div><small data-i="shotOverview">ОБЗОР</small><h3 data-i="shotHeading">Мои профили</h3></div><span class="shot-add">+ <span data-i="shotCreate">Новый профиль</span></span></div>
-              <div class="shot-stats"><div><small data-i="statProfiles">Профили</small><b>12</b><span>↗ 02 <span data-i="statNew">новых</span></span></div><div><small data-i="statActive">Активные</small><b>04</b><span class="green-text">● <span data-i="shotOnline">В сети</span></span></div><div><small data-i="statProxies">Прокси</small><b>08</b><span class="purple-text">◈ SOCKS5</span></div></div>
-              <div class="shot-thead"><span data-i="tableProfile">ПРОФИЛЬ</span><span data-i="tableGroup">ГРУППА</span><span data-i="tableProxy">ПРОКСИ</span><span data-i="tableStatus">СТАТУС</span></div>
-              <div class="shot-table-row"><span><i class="avatar avatar-purple">A</i><b>Atlas Studio<small>atlas-01</small></b></span><span>Marketing</span><span>🇳🇱 NL</span><span><i class="status-dot"></i><span data-i="running">Активен</span></span></div>
-              <div class="shot-table-row"><span><i class="avatar avatar-blue">N</i><b>Nova Commerce<small>nova-02</small></b></span><span>Commerce</span><span>🇩🇪 DE</span><span><i class="status-dot off"></i><span data-i="stopped">Остановлен</span></span></div>
-              <div class="shot-table-row"><span><i class="avatar avatar-peach">O</i><b>Orbit Research<small>orbit-03</small></b></span><span>Research</span><span>🇫🇷 FR</span><span><i class="status-dot"></i><span data-i="running">Активен</span></span></div>
-              <div class="shot-footer"><span data-i="shotLocal">Защищённое локальное пространство</span><span>01 / 03 →</span></div>
-            </div>
-          </div>
-          <div class="float-chip chip-bottom"><span class="chip-symbol chip-check">✓</span><span><b data-i="chipIsolated">Раздельные сессии</b><small data-i="chipLocal">Данные профилей хранятся локально</small></span></div>
-        </div>
-      </section>
-
-      <div class="trusted-row"><span data-i="platformCaption">ПРОДУКТ ДЛЯ РАБОТЫ НА</span><strong><span class="platform-icon">⊞</span> WINDOWS</strong><strong><span class="platform-icon">●</span> macOS</strong><span class="trusted-sep"></span><span data-i="engineCaption">ДВИЖОК</span><strong>CAMOUFOX / FIREFOX</strong><span class="beta-pill">BETA</span></div>
-
-      <section class="section-heading centered"><span class="kicker" data-i="featureKicker">ВОЗМОЖНОСТИ</span><h2 data-i="featureTitle">Всё важное — <em>в одном месте.</em></h2><p data-i="featureSubtitle">Продуманное пространство для управления локальными браузерными профилями. Уже работающие возможности и честно обозначенный план развития.</p></section>
-      <div class="bento">
-        <article class="feature-card feature-wide">
-          <div class="feature-text"><div class="feature-icon purple">▦</div><span class="feature-state" data-i="featureAvailable">ДОСТУПНО В БЕТЕ</span><h3 data-i="featureProfilesTitle">Профили без хаоса</h3><p data-i="featureProfilesDesc">Создавайте, ищите, группируйте и запускайте отдельные браузерные пространства. Cookies и данные сайтов разделены.</p><a href="#workspace" class="text-link"><span data-i="featureExplore">Посмотреть панель</span> ↗</a></div>
-          <div class="mini-stack" aria-hidden="true"><div><i class="avatar avatar-purple">A</i><span><b>Atlas Studio</b><small>Marketing · NL</small></span><span class="mini-check">✓</span></div><div><i class="avatar avatar-blue">N</i><span><b>Nova Commerce</b><small>Commerce · DE</small></span><span class="mini-check">✓</span></div><div><i class="avatar avatar-peach">O</i><span><b>Orbit Research</b><small>Research · FR</small></span><span class="mini-check">✓</span></div></div>
-        </article>
-        <article class="feature-card"><div class="feature-icon cyan">⌁</div><span class="feature-state" data-i="featureAvailable">ДОСТУПНО В БЕТЕ</span><h3 data-i="featureProxyTitle">Прокси под контролем</h3><p data-i="featureProxyDesc">HTTP, HTTPS и SOCKS5 с назначением к профилям. Базовые проверки соединения уже есть.</p><div class="proxy-preview"><span class="proxy-pulse"></span> SOCKS5 <span>192.0.2.12</span><b>DEMO</b></div></article>
-        <article class="feature-card"><div class="feature-icon amber">✧</div><span class="feature-state future" data-i="featureInProgress">В ПЛАНАХ</span><h3 data-i="featureSyncTitle">Команды и облако</h3><p data-i="featureSyncDesc">Синхронизация, доступы команды, шаблоны и автоматизация войдут в следующие версии.</p><div class="future-preview"><span>◈</span><span>◈</span><span>◈</span><i></i></div></article>
+<section class="page page-home neon-page" data-page="home">
+  <div class="neon-world" aria-hidden="true"><div class="sky-noise"></div><div class="nebula nebula-left"></div><div class="nebula nebula-right"></div><div class="nebula nebula-cyan"></div><div class="neon-stars"></div>
+    <svg class="cosmic-ribbons" viewBox="0 0 1600 1120" preserveAspectRatio="xMidYMin slice" xmlns="http://www.w3.org/2000/svg">
+      <defs><linearGradient id="ribbonColor" x1="0" x2="1" y1=".3" y2=".6"><stop stop-color="#00d9ff"/><stop offset=".28" stop-color="#714fff"/><stop offset=".6" stop-color="#ff4be8"/><stop offset=".82" stop-color="#38fcd9"/><stop offset="1" stop-color="#ff8c56"/></linearGradient><linearGradient id="ribbonColor2" x1="0" x2="1"><stop stop-color="#8b30ff"/><stop offset=".5" stop-color="#fa5cfd"/><stop offset="1" stop-color="#22eeff"/></linearGradient><filter id="ribbonBlur"><feGaussianBlur stdDeviation="13"/></filter></defs>
+      <path d="M-135 185 C30 64 53 200 12 277 C-45 393 151 384 118 252 C108 207 73 155 90 125" stroke="url(#ribbonColor)" stroke-width="35" fill="none" opacity=".24" filter="url(#ribbonBlur)"/><path d="M-135 185 C30 64 53 200 12 277 C-45 393 151 384 118 252 C108 207 73 155 90 125" stroke="url(#ribbonColor)" stroke-width="10" fill="none" opacity=".8"/>
+      <path d="M1517 130 C1398 260 1625 165 1645 297 C1667 470 1467 335 1562 490 C1682 674 1480 690 1597 817" stroke="url(#ribbonColor)" stroke-width="22" fill="none" opacity=".7"/>
+      <path d="M-120 727 C112 581 256 831 437 732 C650 618 726 776 928 672 C1084 593 1158 727 1333 628 C1475 541 1525 662 1729 581" stroke="url(#ribbonColor2)" stroke-width="115" fill="none" opacity=".12" filter="url(#ribbonBlur)"/>
+      <path d="M-120 727 C112 581 256 831 437 732 C650 618 726 776 928 672 C1084 593 1158 727 1333 628 C1475 541 1525 662 1729 581" stroke="url(#ribbonColor2)" stroke-width="17" fill="none" opacity=".45"/>
+      <path d="M-70 1091 C236 873 343 1156 550 963 C728 791 903 1064 1104 898 C1312 735 1527 1074 1681 837" stroke="url(#ribbonColor)" stroke-width="140" fill="none" opacity=".19" filter="url(#ribbonBlur)"/>
+      <path d="M-70 1091 C236 873 343 1156 550 963 C728 791 903 1064 1104 898 C1312 735 1527 1074 1681 837" stroke="url(#ribbonColor)" stroke-width="20" fill="none" opacity=".65"/>
+    </svg>
+  </div>
+  <div class="container cosmic-container">
+    <div class="neo-hero">
+      <div class="neo-hero-copy">
+        <div class="neo-label"><span class="crown-icon">♛</span><span data-i="neoEyebrow">ПРОФЕССИОНАЛЬНЫЙ АНТИДЕТЕКТ-БРАУЗЕР</span></div>
+        <h1 class="neo-display"><span>Murdilimax</span><span class="neo-gradient-type">Browser</span><svg class="neo-underline" viewBox="0 0 280 18" aria-hidden="true"><path d="M5 13 Q135 -4 276 8" fill="none" stroke="url(#type-underline)" stroke-width="8" stroke-linecap="round"/><defs><linearGradient id="type-underline"><stop stop-color="#fa47f4"/><stop offset="1" stop-color="#1ef2f6"/></linearGradient></defs></svg></h1>
+        <p class="neo-subheading" data-i="neoSubtitle">Мощные <span class="c-cyan">браузерные профили</span>, удобные <span class="c-pink">прокси</span> и <span class="c-lilac">единое рабочее пространство</span>.</p>
+        <p class="neo-description" data-i="neoDescription">Управляйте изолированными профилями и локальными сессиями в одном приложении. Murdilimax находится в активной бета-разработке.</p>
+        <div class="neo-actions"><a class="neo-primary-btn" href="https://murdilimax.com/download.html"><span class="rocket">✦</span><span data-i="neoPrimary">Скачать бесплатно</span><span class="button-arrow">→</span></a><a class="neo-secondary-btn" href="#workspace"><span class="play-circle">▶</span><span data-i="neoSecondary">Смотреть интерфейс</span></a></div>
+        <div class="neo-micro"><span><i class="micro-tick">✓</i><span data-i="neoMicro1">3 профиля бесплатно</span></span><span><i class="micro-tick">✓</i><span data-i="neoMicro2">Windows и macOS</span></span><span><i class="micro-flash">ϟ</i><span data-i="neoMicro3">Ранний доступ</span></span></div>
       </div>
-      <div class="disclaimer"><span>ⓘ</span><span data-i="previewDisclaimer">Иллюстрации показывают целевой дизайн, а не текущий интерфейс установленной программы. Продукт в бета-разработке, совместимость проверяется.</span></div>
-      <section class="cta-band"><div><span class="kicker" data-i="ctaKicker">НАЧНИТЕ СЕГОДНЯ</span><h2 data-i="ctaTitle">Ваша новая рабочая среда начинается здесь.</h2><p data-i="ctaDesc">3 бесплатных профиля. Платные тарифы от $7/месяц. Тестовые сборки Windows и Mac.</p></div><div class="cta-right"><a class="btn btn-white btn-large" href="https://murdilimax.com/download.html"><span data-i="ctaDownload">Скачать Murdilimax</span> ↗</a><a href="#pricing" class="cta-link"><span data-i="ctaCompare">Сравнить тарифы</span> →</a></div></section>
+      <div class="neo-hero-art" aria-label="Фантастический арт с примером интерфейса Murdilimax">
+        <div class="big-planet"></div><div class="little-planet"></div><div class="planet-ring"></div><div class="art-aura"></div>
+        <svg class="neon-panther" viewBox="0 0 440 355" role="img" aria-label="Неоновая иллюстрация снежного барса" xmlns="http://www.w3.org/2000/svg">
+          <defs><linearGradient id="catBody" x1=".15" y1="0" x2=".8" y2="1"><stop stop-color="#a8f8ff"/><stop offset=".28" stop-color="#506bff"/><stop offset=".6" stop-color="#a44bfa"/><stop offset="1" stop-color="#fb48dc"/></linearGradient><linearGradient id="catMuzzle" x1="0" y1="0" x2=".7" y2="1"><stop stop-color="#f3fdff"/><stop offset=".6" stop-color="#a5b5ff"/><stop offset="1" stop-color="#bd4afa"/></linearGradient><filter id="catGlow"><feGaussianBlur stdDeviation="10"/></filter></defs>
+          <path d="M88 152 63 29 Q125 40 157 68 Q242 37 319 80 L388 39 362 159 Q407 226 336 283 Q261 349 148 292 Q62 269 88 152Z" fill="#5027bf" stroke="#b052ff" stroke-width="16" opacity=".6" filter="url(#catGlow)"/>
+          <path d="M89 151 62 28 Q132 42 153 74 Q240 35 317 77 L388 38 363 156 Q409 222 332 284 Q260 352 148 292 Q66 270 89 151Z" fill="url(#catBody)" stroke="#8458ff" stroke-width="4"/>
+          <path d="M99 139 88 65 158 100 187 134ZM349 138 366 71 300 103 283 138Z" fill="#1c174b"/><path d="M104 132 100 94 140 112ZM343 129 352 95 312 113Z" fill="#f94ff8"/>
+          <path d="M132 163 Q197 120 222 176 Q264 122 328 161 Q360 211 297 247 L273 293 220 319 167 290 144 252 Q90 210 132 163Z" fill="url(#catMuzzle)" opacity=".97"/>
+          <path d="M126 178 Q161 150 193 179 Q158 213 128 188 M247 180 Q289 148 321 183 Q289 212 253 190" fill="#1b1449"/><path d="M145 175 Q167 160 187 175 Q165 196 145 175ZM261 175 Q287 161 306 176 Q283 198 261 175Z" fill="#56f8f1"/><path d="M165 172 176 169 M281 169 292 171" stroke="white" stroke-width="3" stroke-linecap="round"/>
+          <path d="M191 222 Q221 209 251 223 L224 246Z" fill="#2b174e"/><path d="M225 245 225 264 M225 264 Q202 280 181 263 M225 264 Q251 282 272 264" fill="none" stroke="#38225f" stroke-width="5" stroke-linecap="round"/>
+          <path d="M133 237 28 218 M131 249 18 254 M140 263 36 288 M311 236 409 216 M312 250 421 252 M307 265 401 292" fill="none" stroke="#edb8ff" stroke-width="4" stroke-linecap="round"/>
+          <path d="M156 96 Q188 85 190 132 M208 77 Q227 109 224 129 M253 86 Q257 105 257 124 M300 105 Q285 119 281 139" fill="none" stroke="#181346" stroke-width="10" stroke-linecap="round"/>
+          <path d="M108 153 85 177 107 185 M342 150 364 178 345 186 M171 210 139 218 161 227 M270 212 309 225 290 234 M184 286 166 299 M265 283 282 299" fill="none" stroke="#3b225f" stroke-width="10" stroke-linecap="round" opacity=".9"/>
+          <g fill="#21154b" opacity=".82"><ellipse cx="117" cy="196" rx="7" ry="10" transform="rotate(-25 117 196)"/><ellipse cx="106" cy="218" rx="6" ry="9"/><ellipse cx="325" cy="199" rx="7" ry="11" transform="rotate(22 325 199)"/><ellipse cx="339" cy="220" rx="7" ry="9"/><ellipse cx="175" cy="127" rx="7" ry="10"/><ellipse cx="269" cy="131" rx="7" ry="12"/><ellipse cx="148" cy="272" rx="7" ry="9"/><ellipse cx="295" cy="273" rx="8" ry="8"/></g>
+          <path d="M100 141 Q76 181 85 217 Q93 257 150 287 M337 287 Q387 254 372 203" fill="none" stroke="#60f3ff" stroke-width="3" opacity=".75"/>
+        </svg>
+        <div class="laptop-device">
+          <div class="laptop-frame"><div class="laptop-bezel"><div class="laptop-toolbar"><span class="laptop-title"><i class="tiny-m">M</i> Murdilimax <small>Browser</small></span><span class="laptop-window-controls">◦ ◦ ◦</span></div>
+            <div class="laptop-app">
+              <div class="laptop-sidebar"><span class="lab-sidebar-selected">▦ <span data-i="labProfiles">Профили</span></span><span>⛓ <span data-i="labProxies">Прокси</span></span><span>▧ <span data-i="labWorkspaces">Группы</span></span><span>◷ <span data-i="labHistory">История</span></span><span>⚙ <span data-i="labSettings">Настройки</span></span></div>
+              <div class="laptop-body"><div class="lab-top"><div><b data-i="labTitle">Браузерные профили</b><small data-i="labCount">Демонстрация интерфейса</small></div><span class="lab-new">+ <span data-i="labCreate">Создать</span></span></div>
+                <div class="lab-filters"><span class="chosen" data-i="labAll">Все (12)</span><span data-i="labRunning">Запущены (4)</span><span data-i="labReady">Готовы (8)</span></div>
+                <div class="lab-table-head"><span data-i="labColName">ПРОФИЛЬ</span><span data-i="labColStatus">СТАТУС</span><span data-i="labColProxy">ПРОКСИ</span></div>
+                <div class="lab-row"><span><i class="lab-avatar pink">A</i> Atlas Studio</span><span class="lab-status">● <span data-i="labOn">Работает</span></span><span>🇳🇱 NL</span></div>
+                <div class="lab-row"><span><i class="lab-avatar cyan">N</i> Nova Commerce</span><span class="lab-status">● <span data-i="labOn">Работает</span></span><span>🇩🇪 DE</span></div>
+                <div class="lab-row"><span><i class="lab-avatar purple">O</i> Orbit Research</span><span class="lab-status off">● <span data-i="labOff">Готов</span></span><span>🇫🇷 FR</span></div>
+                <div class="lab-row"><span><i class="lab-avatar amber">P</i> Pixel Projects</span><span class="lab-status off">● <span data-i="labOff">Готов</span></span><span>🇺🇸 US</span></div>
+              </div>
+            </div>
+          </div></div><div class="laptop-base"></div>
+        </div>
+        <div class="neon-crystal"><span>M</span></div>
+        <div class="floating-capabilities"><div><i>✓</i><span data-i="neoCap1">Изолированные сессии</span></div><div><i>✓</i><span data-i="neoCap2">Прокси HTTP / SOCKS5</span></div><div><i>✓</i><span data-i="neoCap3">Локальные профили</span></div><div class="cap-roadmap"><i>◌</i><span data-i="neoCap4">Команды — в планах</span></div></div>
+        <div class="art-footnote" data-i="neoConcept">КОНЦЕПТ ИНТЕРФЕЙСА</div>
+      </div>
     </div>
-  </section>
+    <div class="neo-use-cases"><span data-i="neoIndustries">ОДНО ПРОСТРАНСТВО ДЛЯ</span><span>◈ <span data-i="neoCase1">Электронной коммерции</span></span><span>✦ <span data-i="neoCase2">Маркетинга</span></span><span>▱ <span data-i="neoCase3">Работы с аккаунтами</span></span><span>▥ <span data-i="neoCase4">Исследований</span></span><span>⚡ <span data-i="neoCase5">Автоматизации*</span></span></div>
+    <div id="features" class="neo-feature-grid">
+      <article class="neo-feature neo-feature-purple"><div class="neo-f-icon"><svg viewBox="0 0 90 90" aria-hidden="true" fill="none" stroke="#e6b6ff" stroke-width="4" stroke-linecap="round"><path d="M17 43 Q19 15 46 15 Q76 15 75 45 M26 49 Q26 26 47 26 Q65 26 65 49 M37 49 Q37 37 48 37 Q56 37 56 49 M13 55 Q16 73 28 83 M27 57 Q29 72 39 81 M39 56 Q40 68 47 75 M50 51 Q53 67 58 77 M63 59 Q66 68 71 73"/></svg></div><div><h3 data-i="neoFeature1Title">Браузерные профили</h3><p data-i="neoFeature1Body">Разные данные сайтов и отдельные сессии для каждого проекта.</p></div><a href="#workspace" aria-label="Explore workspace">→</a></article>
+      <article class="neo-feature neo-feature-cyan"><div class="neo-f-icon"><svg viewBox="0 0 90 90" aria-hidden="true"><defs><linearGradient id="proxyCube" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#6cfaff"/><stop offset="1" stop-color="#534dff"/></linearGradient></defs><path d="m17 31 29-14 27 14-28 15Z" fill="#56ddfa" stroke="#9dfaff" stroke-width="2"/><path d="M17 31v21l28 15V46Z" fill="#3959da" stroke="#6ceeff" stroke-width="2"/><path d="M73 31v21L45 67V46Z" fill="url(#proxyCube)" stroke="#6ceeff" stroke-width="2"/><path d="m17 52 28 15 28-15 M17 60l28 15 28-15" stroke="#47eaff" stroke-width="3" fill="none"/><circle cx="59" cy="47" r="3" fill="#b1fff2"/></svg></div><div><h3 data-i="neoFeature2Title">Прокси</h3><p data-i="neoFeature2Body">Назначайте HTTP, HTTPS и SOCKS5 конкретным профилям.</p></div><a href="#workspace" aria-label="Explore workspace">→</a></article>
+      <article class="neo-feature neo-feature-pink"><div class="neo-f-icon"><svg viewBox="0 0 90 90" aria-hidden="true"><defs><linearGradient id="peopleG" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#ffc0ff"/><stop offset="1" stop-color="#7348ed"/></linearGradient></defs><circle cx="45" cy="28" r="14" fill="url(#peopleG)"/><circle cx="20" cy="36" r="9" fill="#ff8fba"/><circle cx="70" cy="36" r="9" fill="#99a6ff"/><rect x="25" y="45" width="40" height="31" rx="17" fill="url(#peopleG)"/><path d="M25 54Q8 45 7 67v6h19 M65 54Q83 45 84 67v6H64" fill="#a262e8"/></svg></div><div><h3 data-i="neoFeature3Title">Рабочее пространство</h3><p data-i="neoFeature3Body">Группы, теги и быстрый поиск. Командные роли — в разработке.</p></div><a href="#workspace" aria-label="Explore workspace">→</a></article>
+      <article class="neo-feature neo-feature-blue"><div class="neo-f-icon"><svg viewBox="0 0 90 90" aria-hidden="true" fill="none" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"><path d="M45 8 75 21v24Q72 65 45 81 18 65 15 45V21Z" fill="#1b60bf" stroke="#60efff"/><path d="m29 44 11 11 21-22" stroke="#9affef"/></svg></div><div><h3 data-i="neoFeature4Title">Контроль профилей</h3><p data-i="neoFeature4Body">Сохранение локальных данных, постоянный fingerprint и проверки прокси.</p></div><a href="#workspace" aria-label="Explore workspace">→</a></article>
+    </div>
+    <section class="neo-benefits">
+      <div class="neo-benefit-art" aria-hidden="true"><div class="neo-art-orb"></div><div class="neo-art-window window-back"><span class="dots">● ● ●</span><div class="window-lines"><i></i><i></i><i></i></div></div><div class="neo-art-window window-front"><span class="dots">● ● ●</span><svg viewBox="0 0 140 145" fill="none" stroke="#46eaff" stroke-width="5" stroke-linecap="round"><path d="M32 70Q32 23 71 23 Q111 23 111 72 M21 72Q21 13 72 13Q123 13 123 74 M45 77Q45 36 71 36Q98 36 98 77 M59 79Q59 51 72 51Q84 51 84 80 M28 88 Q31 115 41 127 M44 90 Q49 122 62 137 M60 93 Q66 123 76 133 M77 94 Q82 114 90 125 M96 91 Q106 111 113 119"/></svg></div><div class="art-lock">⌑</div></div>
+      <div class="neo-benefit-copy"><div class="neo-label mini-label"><span data-i="neoBenefitKicker">ВСЁ В ОДНОМ МЕСТЕ</span></div><h2 data-i="neoBenefitTitle">Управляйте своей работой <em>в одном браузере.</em></h2><p data-i="neoBenefitDesc">От небольших проектов до масштабной работы с профилями. Развитие Murdilimax строится вокруг скорости, удобства и контроля пользовательских данных.</p><div class="neo-checks"><span>✓ <span data-i="neoBenefit1">Создавайте отдельные браузерные профили</span></span><span>✓ <span data-i="neoBenefit2">Назначайте прокси, группы и теги</span></span><span>✓ <span data-i="neoBenefit3">Управляйте профилями массово</span></span></div><a href="#pricing" class="neo-inline-link"><span data-i="neoSeePrices">Смотреть тарифы</span> ↗</a></div>
+    </section>
+    <section class="neo-bottom-cta"><div><span class="neo-label mini-label" data-i="neoFinalKicker">НАЧНИТЕ БЕСПЛАТНО</span><h2 data-i="neoFinalTitle">Ваш новый браузер. Ваши правила.</h2><p data-i="neoFinalDesc">3 бесплатных профиля. Бета-версия для Windows и современных Mac.</p></div><a class="neo-primary-btn" href="https://murdilimax.com/download.html"><span data-i="neoPrimary">Скачать бесплатно</span> →</a></section>
+    <div class="neo-legal-note"><span>ⓘ</span><span data-i="neoDisclosure">Иллюстрация интерфейса — художественный концепт, а не скриншот готового приложения. Браузер сейчас в бета-разработке; функция команды и облачной синхронизации пока недоступна.</span></div>
+  </div>
+</section>
 
   <section class="page page-pricing" data-page="pricing" hidden>
     <div class="container">
