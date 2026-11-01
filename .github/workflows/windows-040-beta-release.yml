@@ -4,6 +4,7 @@ on:
     branches: [release/windows-browser-beta-040-20261101]
     paths:
       - '.github/workflows/windows-040-beta-release.yml'
+      - 'docs/WINDOWS_040_TESTING_RU.md'
   workflow_dispatch:
 permissions:
   contents: write
