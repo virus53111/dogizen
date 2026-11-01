@@ -16,6 +16,7 @@ from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 from auth_client import BrowserAccount
 from engine import pid_alive, request_stop, run_profile, start_background, safe_profile_id
+from launch_guard import launch_pending
 from network_check import probe_proxy_exit
 from proxy_diagnostics import diagnose_proxy, describe_diagnosis
 from profile_view import (ALL, RUNNING, STOPPED, filter_profiles,
@@ -634,6 +635,10 @@ class BrowserUI:
 
     def running(self, profile_id):
         path = self.store.root / "profiles" / profile_id / ".lock"
+        # A launch being handed to its child is busy, even before the PID
+        # lock exists. Repeated clicks and bulk edits must not race startup.
+        if launch_pending(path.parent):
+            return True
         if not path.exists():
             return False
         try:
@@ -787,7 +792,10 @@ class BrowserUI:
         # focus and scroll position even with hundreds of local profiles.
         rows = []
         for p, live in visible:
-            status = translate("● Запущен" if live else "○ Остановлен", self.language)
+            if launch_pending(self.store.root / "profiles" / p["id"]):
+                status = translate("◌ Запускается", self.language)
+            else:
+                status = translate("● Запущен" if live else "○ Остановлен", self.language)
             rows.append((
                 p["id"],
                 (p["name"], p.get("group", ""), p.get("tags", ""),
