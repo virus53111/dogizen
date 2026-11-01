@@ -11,17 +11,18 @@ import time
 import tkinter as tk
 import webbrowser
 from pathlib import Path
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 from auth_client import BrowserAccount
 from engine import pid_alive, request_stop, run_profile, start_background, safe_profile_id
 from network_check import probe_proxy_exit
 from proxy_diagnostics import diagnose_proxy, describe_diagnosis
+from profile_view import ALL, RUNNING, STOPPED, filter_profiles, distinct_groups, bulk_update_groups
 from proxy_import import import_proxy_list
 from engine_setup import ensure_engine_ready
 from store import Store
-from neon_theme import BG, PANEL, TEXT, MUTED, ACCENT, apply_neon_theme, NeonHeader
+from neon_theme import BG, PANEL, TEXT, MUTED, ACCENT, CYAN, apply_neon_theme, NeonHeader
 from i18n import load_language, save_language, translate
 
 class BrowserUI:
@@ -49,6 +50,10 @@ class BrowserUI:
         self.root.minsize(920, 620)
         self.root.configure(bg=BG)
         self.search = tk.StringVar()
+        self.group_filter_key = None
+        self.status_filter_key = ALL
+        self.proxy_filter_key = None
+        self._filter_signature = None
         self.state = tk.StringVar(value="Локальная рабочая область · браузерные профили")
         apply_neon_theme(self.root)
         self.header = NeonHeader(self.root, self.open_folder)
@@ -124,7 +129,7 @@ class BrowserUI:
                 variable.set(translate(source, language))
         finally:
             self._localizing = False
-        self.refresh_profiles()
+        self.update_filter_labels()
 
     def apply_language(self, widget):
         # Translate only authored UI strings, not profile names, notes,
@@ -197,6 +202,31 @@ class BrowserUI:
         e = ttk.Entry(search, textvariable=self.search, width=48)
         e.pack(side="left", fill="x", expand=True)
         self.search.trace_add("write", lambda *_: self.refresh_profiles())
+        filters = ttk.Frame(self.profile_tab)
+        filters.pack(fill="x", padx=12, pady=(1, 7))
+        self.group_filter_label = ttk.Label(filters, text="Группа:")
+        self.group_filter_label.pack(side="left", padx=(0, 6))
+        self.group_filter_var = tk.StringVar()
+        self.group_filter_combo = ttk.Combobox(filters, textvariable=self.group_filter_var,
+                                               state="readonly", width=20)
+        self.group_filter_combo.pack(side="left", padx=(0, 13))
+        self.group_filter_combo.bind("<<ComboboxSelected>>", self.on_group_filter)
+        self.status_filter_label = ttk.Label(filters, text="Статус:")
+        self.status_filter_label.pack(side="left", padx=(0, 6))
+        self.status_filter_var = tk.StringVar()
+        self.status_filter_combo = ttk.Combobox(filters, textvariable=self.status_filter_var,
+                                                state="readonly", width=14)
+        self.status_filter_combo.pack(side="left", padx=(0, 13))
+        self.status_filter_combo.bind("<<ComboboxSelected>>", self.on_status_filter)
+        self.proxy_filter_label = ttk.Label(filters, text="Прокси:")
+        self.proxy_filter_label.pack(side="left", padx=(0, 6))
+        self.proxy_filter_var = tk.StringVar()
+        self.proxy_filter_combo = ttk.Combobox(filters, textvariable=self.proxy_filter_var,
+                                               state="readonly", width=23)
+        self.proxy_filter_combo.pack(side="left", padx=(0, 9))
+        self.proxy_filter_combo.bind("<<ComboboxSelected>>", self.on_proxy_filter)
+        ttk.Button(filters, text="Сбросить фильтры",
+                   command=self.reset_profile_filters).pack(side="left")
         cols = ("name", "group", "tags", "proxy", "os", "status")
         self.profile_tree = ttk.Treeview(self.profile_tab, columns=cols, show="headings", selectmode="extended")
         for key, title, width in [("name", "Название", 230), ("group", "Группа", 130),
@@ -206,6 +236,13 @@ class BrowserUI:
             self.profile_tree.column(key, width=width, stretch=True)
         self.profile_tree.pack(fill="both", expand=True, padx=12, pady=7)
         self.profile_tree.bind("<Double-1>", lambda _: self.call(self.edit_profile))
+        bulk = ttk.Frame(self.profile_tab)
+        bulk.pack(fill="x", padx=12, pady=(3, 3))
+        self.button(bulk, "Выбрать видимые", self.select_visible_profiles)
+        self.button(bulk, "Изменить группу", self.change_selected_groups)
+        self.profile_stats = tk.StringVar(value="")
+        ttk.Label(bulk, textvariable=self.profile_stats,
+                  foreground=CYAN).pack(side="right", padx=(8, 4))
         tools = ttk.Frame(self.profile_tab)
         tools.pack(fill="x", padx=12, pady=8)
         self.button(tools, "Экспорт настроек", self.export)
@@ -389,18 +426,130 @@ class BrowserUI:
         except (OSError, ValueError):
             return False
 
+    def update_filter_labels(self):
+        """Regenerate translated combo labels while preserving filter keys."""
+        self._filter_signature = None
+        self.refresh_profiles()
+
+    def _refresh_profile_filter_options(self, profiles, proxies):
+        signature = (self.language,
+                     tuple(distinct_groups(profiles)),
+                     tuple((p["id"], p["name"]) for p in proxies))
+        if signature == self._filter_signature:
+            return
+        self._filter_signature = signature
+        en = self.language == "en"
+        all_groups = "All groups" if en else "Все группы"
+        all_status = "All statuses" if en else "Все статусы"
+        active_status = "Running" if en else "Запущены"
+        stopped_status = "Stopped" if en else "Остановлены"
+        all_proxies = "All proxies" if en else "Все прокси"
+        no_proxy = "No proxy" if en else "Без прокси"
+        self.group_filter_map = {all_groups: None}
+        for group in distinct_groups(profiles):
+            self.group_filter_map["• " + group] = group
+        self.status_filter_map = {
+            all_status: ALL, active_status: RUNNING, stopped_status: STOPPED,
+        }
+        self.proxy_filter_map = {all_proxies: None, no_proxy: ""}
+        for proxy in proxies:
+            self.proxy_filter_map[
+                proxy["name"] + " [" + proxy["id"][:8] + "]"] = proxy["id"]
+        if self.group_filter_key not in self.group_filter_map.values():
+            self.group_filter_key = None
+        if self.proxy_filter_key not in self.proxy_filter_map.values():
+            self.proxy_filter_key = None
+        for combo, variable, mapping, current in (
+            (self.group_filter_combo, self.group_filter_var,
+             self.group_filter_map, self.group_filter_key),
+            (self.status_filter_combo, self.status_filter_var,
+             self.status_filter_map, self.status_filter_key),
+            (self.proxy_filter_combo, self.proxy_filter_var,
+             self.proxy_filter_map, self.proxy_filter_key),
+        ):
+            combo.configure(values=list(mapping))
+            variable.set(next(label for label, key in mapping.items()
+                              if key == current))
+
+    def on_group_filter(self, _event=None):
+        self.group_filter_key = self.group_filter_map.get(
+            self.group_filter_var.get())
+        self.refresh_profiles()
+
+    def on_status_filter(self, _event=None):
+        self.status_filter_key = self.status_filter_map.get(
+            self.status_filter_var.get(), ALL)
+        self.refresh_profiles()
+
+    def on_proxy_filter(self, _event=None):
+        self.proxy_filter_key = self.proxy_filter_map.get(
+            self.proxy_filter_var.get())
+        self.refresh_profiles()
+
+    def reset_profile_filters(self):
+        self.search.set("")
+        self.group_filter_key = None
+        self.status_filter_key = ALL
+        self.proxy_filter_key = None
+        self.update_filter_labels()
+
+    def select_visible_profiles(self):
+        ids = self.profile_tree.get_children()
+        if ids:
+            self.profile_tree.selection_set(ids)
+            self.profile_tree.focus(ids[0])
+        self.state.set(
+            ("Выбрано видимых профилей: " if self.language == "ru" else
+             "Selected visible profiles: ") + str(len(ids)))
+
+    def change_selected_groups(self):
+        ids = list(self.profile_tree.selection())
+        if not ids:
+            raise ValueError(
+                "Сначала выбери профили" if self.language == "ru" else
+                "Select profiles first")
+        title = "Массовая смена группы" if self.language == "ru" else "Bulk group update"
+        prompt = (
+            "Новое название группы (пустое = без группы)." if self.language == "ru" else
+            "New group name (blank = no group).")
+        name = simpledialog.askstring(title, prompt, parent=self.root)
+        if name is None:
+            return
+        count = bulk_update_groups(self.store, ids, name, self.running)
+        self.group_filter_key = None
+        self._filter_signature = None
+        self.refresh_profiles()
+        self.state.set(
+            (f"Обновлена группа у {count} профилей" if self.language == "ru" else
+             f"Updated groups for {count} profiles"))
+
     def refresh_profiles(self):
         old = set(self.profile_tree.selection())
+        profiles = self.store.profiles()
+        proxy_list = self.store.proxies()
+        self._refresh_profile_filter_options(profiles, proxy_list)
+        proxies = {p["id"]: p["name"] for p in proxy_list}
+        visible, active = filter_profiles(
+            profiles, query=self.search.get(), group=self.group_filter_key,
+            status=self.status_filter_key, proxy_id=self.proxy_filter_key,
+            running=self.running,
+        )
         self.profile_tree.delete(*self.profile_tree.get_children())
-        proxies = {p["id"]: p["name"] for p in self.store.proxies()}
-        query = self.search.get().strip().lower()
-        for p in self.store.profiles():
-            if query and query not in " ".join(str(p.get(k, "")) for k in ("name", "group", "tags", "notes")).lower():
-                continue
-            status = translate("● Запущен" if self.running(p["id"]) else "○ Остановлен", self.language)
-            self.profile_tree.insert("", "end", iid=p["id"], values=(p["name"], p["group"], p["tags"],
-                                    proxies.get(p["proxy_id"], "Без прокси"), p["os"], status))
-        self.profile_tree.selection_set([x for x in old if self.profile_tree.exists(x)])
+        for p, live in visible:
+            status = translate("● Запущен" if live else "○ Остановлен", self.language)
+            self.profile_tree.insert(
+                "", "end", iid=p["id"],
+                values=(p["name"], p.get("group", ""), p.get("tags", ""),
+                        proxies.get(p.get("proxy_id", ""),
+                                    translate("Без прокси", self.language)),
+                        p.get("os", "native"), status))
+        self.profile_tree.selection_set(
+            [pid for pid in old if self.profile_tree.exists(pid)])
+        if self.language == "en":
+            label = f"Profiles: {len(profiles)}  ·  Running: {active}  ·  Visible: {len(visible)}"
+        else:
+            label = f"Профилей: {len(profiles)}  ·  Запущено: {active}  ·  Показано: {len(visible)}"
+        self.profile_stats.set(label)
 
     def refresh_proxies(self):
         self.proxy_tree.delete(*self.proxy_tree.get_children())
