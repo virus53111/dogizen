@@ -24,6 +24,8 @@ from profile_view import (ALL, RUNNING, STOPPED, filter_profiles,
                           sort_visible_profiles)
 from profile_table import reconcile_profile_tree
 from profile_actions import create_quick_profiles, bulk_assign_proxy
+from bookmarks import (list_bookmarks, add_bookmark, update_bookmark,
+                       remove_bookmark)
 from cookie_manager import (cookie_inventory, export_cookies, clear_cookies,
                             list_cookie_backups, restore_cookie_backup)
 from cookie_import import inspect_cookie_file, import_cookies
@@ -83,16 +85,19 @@ class BrowserUI:
         self.profile_tab = ttk.Frame(self.tabs)
         self.proxy_tab = ttk.Frame(self.tabs)
         self.addon_tab = ttk.Frame(self.tabs)
+        self.bookmark_tab = ttk.Frame(self.tabs)
         self.info_tab = ttk.Frame(self.tabs)
         self.account_tab = ttk.Frame(self.tabs)
         self.tabs.add(self.profile_tab, text="Профили")
         self.tabs.add(self.proxy_tab, text="Прокси")
         self.tabs.add(self.addon_tab, text="Расширения")
+        self.tabs.add(self.bookmark_tab, text="Закладки")
         self.tabs.add(self.account_tab, text="Аккаунт и лицензия")
         self.tabs.add(self.info_tab, text="О программе")
         self.setup_profiles()
         self.setup_proxies()
         self.setup_addons()
+        self.setup_bookmarks()
         self.setup_account()
         self.setup_info()
         self.tabs.bind("<<NotebookTabChanged>>", self.on_main_tab_changed)
@@ -602,6 +607,118 @@ class BrowserUI:
             self.root.after(0, lambda: self.update_license({}))
         threading.Thread(target=worker, daemon=True).start()
 
+    def setup_bookmarks(self):
+        """Local bookmark catalog for all profiles or a profile group."""
+        bar = ttk.Frame(self.bookmark_tab)
+        bar.pack(fill="x", padx=14, pady=(15, 8))
+        self.button(bar, "＋ Закладка", self.add_bookmark_ui)
+        self.button(bar, "✎ Изменить закладку", self.edit_bookmark_ui)
+        self.button(bar, "✕ Удалить закладку", self.delete_bookmark_ui)
+        self.button(bar, "↻ Обновить", self.refresh_bookmarks)
+        self.bookmark_tree = ttk.Treeview(
+            self.bookmark_tab, columns=("name", "url", "group"),
+            show="headings", selectmode="browse")
+        for key, title, width in (
+                ("name", "Название", 240), ("url", "Ссылка", 480),
+                ("group", "Группа", 190)):
+            self.bookmark_tree.heading(key, text=title)
+            self.bookmark_tree.column(key, width=width, stretch=True)
+        self.bookmark_tree.pack(fill="both", expand=True, padx=14, pady=7)
+        self.bookmark_tree.bind(
+            "<Double-1>", lambda _event: self.call(self.edit_bookmark_ui))
+        self.bookmark_note = ttk.Label(
+            self.bookmark_tab,
+            text="Локальные закладки открываются на пустой стартовой странице "
+                 "профиля (about:blank). Группа пустая — закладка для всех профилей.",
+            foreground=MUTED, wraplength=1030)
+        self.bookmark_note.pack(anchor="w", padx=17, pady=(3, 12))
+        self.refresh_bookmarks()
+
+    def refresh_bookmarks(self):
+        if not hasattr(self, "bookmark_tree"):
+            return
+        rows = list_bookmarks(self.store)
+        selected = set(self.bookmark_tree.selection())
+        present = self.bookmark_tree.get_children()
+        if present:
+            self.bookmark_tree.delete(*present)
+        for row in rows:
+            self.bookmark_tree.insert("", "end", iid=row["id"],
+                                      values=(row["name"], row["url"],
+                                              row["group"] or "Все профили"))
+        for selected_id in selected:
+            if self.bookmark_tree.exists(selected_id):
+                self.bookmark_tree.selection_add(selected_id)
+
+    def bookmark_form(self, existing=None):
+        en = self.language == "en"
+        win = tk.Toplevel(self.root)
+        win.title("Bookmark" if en else "Закладка")
+        win.configure(bg=BG)
+        win.geometry("680x290")
+        win.transient(self.root)
+        win.grab_set()
+        vals = {}
+        for index, (key, title, default) in enumerate((
+                ("name", "Name" if en else "Название",
+                 existing.get("name", "") if existing else ""),
+                ("url", "HTTPS / HTTP URL",
+                 existing.get("url", "") if existing else ""),
+                ("group", "Profile group (blank = all)" if en else
+                 "Группа профилей (пусто = все)",
+                 existing.get("group", "") if existing else ""))):
+            ttk.Label(win, text=title).grid(
+                row=index, column=0, sticky="w", padx=20, pady=15)
+            var = tk.StringVar(value=default)
+            field = ttk.Entry(win, textvariable=var, width=53)
+            field.grid(row=index, column=1, sticky="ew", padx=17, pady=10)
+            vals[key] = var
+            if index == 0:
+                field.focus_set()
+
+        def save():
+            name = vals["name"].get()
+            url = vals["url"].get()
+            group = vals["group"].get()
+            try:
+                if existing:
+                    update_bookmark(self.store, existing["id"], name, url, group)
+                else:
+                    add_bookmark(self.store, name, url, group)
+                self.refresh_bookmarks()
+                self.state.set("Bookmark saved" if en else "Закладка сохранена")
+                win.destroy()
+            except (ValueError, OSError) as exc:
+                messagebox.showerror("Bookmark" if en else "Закладка",
+                                     str(exc), parent=win)
+        ttk.Button(win, text="Save" if en else "Сохранить",
+                   command=save).grid(row=3, column=1, sticky="e",
+                                      padx=18, pady=20)
+        win.columnconfigure(1, weight=1)
+
+    def add_bookmark_ui(self):
+        self.bookmark_form()
+
+    def edit_bookmark_ui(self):
+        bookmark_id = self.one(self.bookmark_tree, "закладку")
+        existing = next((b for b in list_bookmarks(self.store)
+                         if b["id"] == bookmark_id), None)
+        if not existing:
+            raise ValueError("Закладка не найдена")
+        self.bookmark_form(existing)
+
+    def delete_bookmark_ui(self):
+        bookmark_id = self.one(self.bookmark_tree, "закладку")
+        en = self.language == "en"
+        if not messagebox.askyesno(
+                "Bookmarks" if en else "Закладки",
+                "Delete selected bookmark?" if en else
+                "Удалить выбранную закладку?", parent=self.root):
+            return
+        remove_bookmark(self.store, bookmark_id)
+        self.refresh_bookmarks()
+        self.state.set("Bookmark removed" if en else "Закладка удалена")
+
     def setup_info(self):
         intro = ("Murdilimax Browser · независимая настольная бета\n\n"
                  "• Изолированные постоянные каталоги сайтов и cookies\n"
@@ -615,6 +732,47 @@ class BrowserUI:
                  font=("Arial", 12), padx=26, pady=28).pack(anchor="w")
         ttk.Button(self.info_tab, text="Проверить / установить Camoufox", command=self.install_engine).pack(anchor="w", padx=24, pady=(0, 12))
         ttk.Button(self.info_tab, text="Документация движка", command=lambda: webbrowser.open("https://camoufox.com/python/")).pack(anchor="w", padx=24)
+        ttk.Button(self.info_tab, text="Проверить обновления Windows",
+                   command=self.check_updates).pack(anchor="w", padx=24, pady=(12, 0))
+
+    def check_updates(self):
+        """Read GitHub release metadata on request; no automatic installation."""
+        if sys.platform != "win32":
+            messagebox.showinfo("Murdilimax",
+                                "Проверка установщиков доступна в Windows-версии.",
+                                parent=self.root)
+            return
+        self.state.set("Проверяем официальный GitHub Release…")
+        def worker():
+            try:
+                from update_check import check_windows_updates
+                release = check_windows_updates(installed=(0, 6, 0))
+            except Exception:
+                self.root.after(0, lambda: messagebox.showwarning(
+                    "Murdilimax", "Не удалось проверить обновления. Проверьте интернет "
+                    "или откройте murdilimax.com/download.html вручную.",
+                    parent=self.root))
+                self.root.after(0, lambda: self.state.set(
+                    "Проверка обновления недоступна"))
+                return
+            def show():
+                if release is None:
+                    self.state.set("Обновлений Windows пока нет")
+                    messagebox.showinfo("Murdilimax",
+                                        "Установлена актуальная Windows-версия.",
+                                        parent=self.root)
+                    return
+                version = ".".join(map(str, release["version"]))
+                self.state.set("Доступна Windows v" + version)
+                if messagebox.askyesno(
+                        "Murdilimax",
+                        "Доступна версия v" + version +
+                        ". Открыть официальный релиз на GitHub? "
+                        "Программа ничего не скачивает и не устанавливает автоматически.",
+                        parent=self.root):
+                    webbrowser.open(release["url"])
+            self.root.after(0, show)
+        threading.Thread(target=worker, daemon=True).start()
 
     def install_engine(self):
         """Start cache installation without blocking Tkinter on a network download."""
