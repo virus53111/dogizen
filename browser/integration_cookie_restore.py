@@ -13,7 +13,7 @@ from cookie_manager import (
     cookie_inventory, clear_cookies, list_cookie_backups,
     restore_cookie_backup,
 )
-from identity import get_identity
+from identity import get_identity, host_os
 from store import Store
 
 
@@ -50,7 +50,7 @@ def options_for(store, profile_id):
     return dict(
         headless=True, persistent_context=True,
         user_data_dir=str(folder / "data"),
-        os="linux", fingerprint=get_identity(folder, "linux"),
+        os=host_os(), fingerprint=get_identity(folder, host_os()),
     )
 
 
