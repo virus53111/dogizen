@@ -67,6 +67,14 @@ def main():
             other = store.add_profile("Other")["id"]
             check(store, first, url, {"before"}, init=True)
             check(store, other, url, set())
+            # Local synthetic-only database metadata, never cookie values.
+            db_file = store.root / "profiles" / first / "data" / "cookies.sqlite"
+            with closing(sqlite3.connect(db_file)) as metadata:
+                version = metadata.execute("PRAGMA user_version").fetchone()[0]
+                fields = [(row[1], row[2], row[3], row[4])
+                          for row in metadata.execute("PRAGMA table_info(moz_cookies)")]
+                print("FIREFOX_COOKIE_SCHEMA", version, fields, flush=True)
+
             source = folder / "playwright-cookies.json"
             source.write_text(json.dumps({"cookies": [{
                 "name": "imported", "value": "synthetic-new",
