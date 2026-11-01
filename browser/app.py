@@ -17,6 +17,7 @@ from urllib.parse import urlsplit
 from auth_client import BrowserAccount
 from engine import pid_alive, request_stop, run_profile, start_background, safe_profile_id
 from network_check import probe_proxy_exit
+from engine_setup import ensure_engine_ready
 from store import Store
 
 BG = "#0b1117"
@@ -270,7 +271,22 @@ class BrowserUI:
                  "Совместимость Camoufox с macOS Catalina должна пройти реальное тестирование.")
         tk.Label(self.info_tab, text=intro, justify="left", fg=TEXT, bg=BG, wraplength=950,
                  font=("Arial", 12), padx=26, pady=28).pack(anchor="w")
+        ttk.Button(self.info_tab, text="Проверить / установить Camoufox", command=self.install_engine).pack(anchor="w", padx=24, pady=(0, 12))
         ttk.Button(self.info_tab, text="Документация движка", command=lambda: webbrowser.open("https://camoufox.com/python/")).pack(anchor="w", padx=24)
+
+    def install_engine(self):
+        """Start cache installation without blocking Tkinter on a network download."""
+        self.state.set("Проверка и подготовка Camoufox… Первая загрузка может быть большой.")
+        def work():
+            try:
+                ensure_engine_ready()
+                self.root.after(0, lambda: self.state.set("Camoufox установлен и готов к запуску профилей"))
+            except Exception:
+                self.root.after(0, lambda: self.state.set("Ошибка загрузки Camoufox: проверьте сеть и доступное место"))
+                self.root.after(0, lambda: messagebox.showerror(
+                    "Camoufox", "Не удалось установить браузерный движок. Проверьте интернет, место на диске и повторите попытку.",
+                    parent=self.root))
+        threading.Thread(target=work, daemon=True).start()
 
     def selected(self, tree):
         return list(tree.selection())
