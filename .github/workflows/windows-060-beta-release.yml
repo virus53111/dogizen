@@ -54,7 +54,7 @@ jobs:
         run: |
           npm install --no-save --no-package-lock @resvg/resvg-js@2.6.2
           node -e 'const fs=require("fs"); const {Resvg}=require("@resvg/resvg-js"); fs.mkdirSync("assets/generated",{recursive:true}); const r=new Resvg(fs.readFileSync("assets/murdilimax-icon.svg","utf8"),{fitTo:{mode:"width",value:1024}}); fs.writeFileSync("assets/generated/icon-1024.png",r.render().asPng());'
-          python tools/build_brand_assets.py
+          python -c "from PIL import Image; from pathlib import Path; p=Path('assets/generated'); im=Image.open(p/'icon-1024.png').convert('RGBA'); im.resize((512,512),Image.Resampling.LANCZOS).save(p/'app-icon-512.png'); im.save(p/'murdilimax.ico',format='ICO',sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)]); assert (p/'app-icon-512.png').is_file() and (p/'murdilimax.ico').is_file()"
           python -c "from camoufox.fpgen_model import ensure_fpgen_model, is_pinned; ensure_fpgen_model(); assert is_pinned()"
       - name: Build desktop Windows executable without changing product design
         run: |
