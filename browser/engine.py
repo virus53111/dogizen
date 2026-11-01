@@ -78,7 +78,7 @@ def run_profile(profile_id):
     verify_commercial_access(store, profile_id)
     folder = store.root / "profiles" / profile_id
     folder.mkdir(parents=True, exist_ok=True)
-    if (folder / ".cookie-maintenance").exists():
+    if (folder / ".cookie-maintenance").exists() or (folder / ".addon-maintenance").exists():
         raise RuntimeError("Cookie maintenance is in progress; retry after it finishes")
     stop_file = folder / ".stop"
     stop_file.unlink(missing_ok=True)
@@ -97,7 +97,7 @@ def run_profile(profile_id):
     with os.fdopen(fd, "w") as writer:
         writer.write(str(os.getpid()))
     try:
-        if (folder / ".cookie-maintenance").exists():
+        if (folder / ".cookie-maintenance").exists() or (folder / ".addon-maintenance").exists():
             raise RuntimeError("Cookie maintenance is in progress; stop and retry")
         # Import only in a child process. A missing engine is a visible launch error.
         from camoufox.sync_api import Camoufox
@@ -112,6 +112,10 @@ def run_profile(profile_id):
             "fingerprint": fingerprint,
             "os": resolved_os(os_name),
         }
+        # Each profile owns its own extracted Firefox addons. Load only the
+        # explicitly enabled directories when Camoufox starts; no hot reload.
+        from addon_manager import enabled_addon_paths
+        opts["addons"] = enabled_addon_paths(store, profile_id)
         if profile.get("proxy_id"):
             opts["proxy"] = store.proxy_config(profile["proxy_id"])
             opts["geoip"] = True
@@ -152,7 +156,7 @@ def start_background(store, profile_id):
     if not profile:
         raise ValueError("Profile not found")
     lock = store.root / "profiles" / profile_id / ".lock"
-    if (lock.parent / ".cookie-maintenance").exists():
+    if (lock.parent / ".cookie-maintenance").exists() or (lock.parent / ".addon-maintenance").exists():
         raise RuntimeError("Cookie maintenance is in progress")
     if lock.exists():
         try:

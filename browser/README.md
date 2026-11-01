@@ -58,3 +58,18 @@ The cookie manager only supports Firefox/Camoufox profiles with the standard 'mo
 The standard **Export settings** action remains metadata-only and never includes cookies or proxy passwords. The new cookie export is a separate, explicitly sensitive operation. The feature is *source-beta only* until CI, release packaging and physical Windows/Mac acceptance are complete.
 
 Developer checks: 'python -m unittest discover -s browser -p test_cookie_manager.py -v' from the repository root, or all browser tests via 'python -m unittest discover -s browser -p test_*.py -v'. No real browser engine, account or payment processing is needed for these synthetic SQLite tests.
+
+
+## Firefox add-on manager — development beta (November 2026)
+
+A new **Extensions / Расширения** tab lets you select a browser profile, manually import a local Firefox XPI/ZIP, inspect the add-on's manifest name/version/declared permissions, enable/disable and remove it. Enabled add-ons are passed as extracted local directories to Camoufox using its documented 'addons' launch parameter when a *stopped* profile next launches. Add-on changes require a restart. This manager lists user-installed addons; Camoufox may also include its own built-in default addons.
+
+**Security and compatibility limitations:**
+- Browser extensions execute third-party scripts with the permissions their authors request. They may observe pages, cookies, sessions, account information and proxies. Import is opt-in and requires a confirmation warning. Only install add-ons from trusted publishers.
+- The importer only uses **local files**. There is no automatic add-on marketplace, no remote URL fetching, no Chrome CRX support and **no malware, digital signature, extension compatibility or permission-runtime verification**. A valid manifest does not mean the extension is safe.
+- A local XPI is a ZIP containing Firefox WebExtension files and a root manifest.json. Archives must pass entry/path/symlink validation, max 20 MB compressed and 70 MB extracted, and max 600 entries. Nested path traversal and zip bomb patterns are refused.
+- Files are stored under the selected profile's local 'addons/' directory with a dedicated metadata file. No extension file, manifest or browser session data is uploaded to the Murdilimax server.
+- Installing, toggling and removing add-ons are blocked for running profiles and during cookie maintenance. The browser launch is blocked while an add-on operation is in progress.
+- Some extensions may not function in Camoufox, interfere with automation, change browser fingerprint characteristics or have permission conflicts. This feature is **source-beta only** until real-device installation and compatibility tests pass. Do not promise undetectability.
+
+Offline QA: 'python -m unittest discover -s browser -p test_addon_manager.py -v'. Smoke tests and packaging still do not verify a real add-on inside a launched Windows/Mac Firefox process.
