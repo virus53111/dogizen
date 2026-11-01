@@ -223,7 +223,20 @@ def import_cookies(store, profile_id, source, *, context_factory=None,
                 # cookie service without visiting ANY external website.
                 page = context.new_page()
                 page.goto("about:blank")
-                context.add_cookies(cookies)
+                # Camoufox/Playwright Firefox requires a URL origin for
+                # host-only cookies: supplying an explicit IP host domain can
+                # silently leave the old cookie jar unchanged on some builds.
+                # This URL is metadata for add_cookies, NOT a navigation.
+                browser_rows = []
+                for cookie in cookies:
+                    row = dict(cookie)
+                    if not row["domain"].startswith("."):
+                        host = row.pop("domain")
+                        path = row["path"]
+                        scheme = "https" if row["secure"] else "http"
+                        row["url"] = scheme + "://" + host + path
+                    browser_rows.append(row)
+                context.add_cookies(browser_rows)
                 # Firefox may silently decline invalid cookies. Refuse to
                 # report success unless its live cookie jar contains them.
                 installed = {(r["domain"], r["path"], r["name"])
