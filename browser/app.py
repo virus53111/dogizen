@@ -732,6 +732,47 @@ class BrowserUI:
                  font=("Arial", 12), padx=26, pady=28).pack(anchor="w")
         ttk.Button(self.info_tab, text="Проверить / установить Camoufox", command=self.install_engine).pack(anchor="w", padx=24, pady=(0, 12))
         ttk.Button(self.info_tab, text="Документация движка", command=lambda: webbrowser.open("https://camoufox.com/python/")).pack(anchor="w", padx=24)
+        ttk.Button(self.info_tab, text="Проверить обновления Windows",
+                   command=self.check_updates).pack(anchor="w", padx=24, pady=(12, 0))
+
+    def check_updates(self):
+        """Read GitHub release metadata on request; no automatic installation."""
+        if sys.platform != "win32":
+            messagebox.showinfo("Murdilimax",
+                                "Проверка установщиков доступна в Windows-версии.",
+                                parent=self.root)
+            return
+        self.state.set("Проверяем официальный GitHub Release…")
+        def worker():
+            try:
+                from update_check import check_windows_updates
+                release = check_windows_updates(installed=(0, 6, 0))
+            except Exception:
+                self.root.after(0, lambda: messagebox.showwarning(
+                    "Murdilimax", "Не удалось проверить обновления. Проверьте интернет "
+                    "или откройте murdilimax.com/download.html вручную.",
+                    parent=self.root))
+                self.root.after(0, lambda: self.state.set(
+                    "Проверка обновления недоступна"))
+                return
+            def show():
+                if release is None:
+                    self.state.set("Обновлений Windows пока нет")
+                    messagebox.showinfo("Murdilimax",
+                                        "Установлена актуальная Windows-версия.",
+                                        parent=self.root)
+                    return
+                version = ".".join(map(str, release["version"]))
+                self.state.set("Доступна Windows v" + version)
+                if messagebox.askyesno(
+                        "Murdilimax",
+                        "Доступна версия v" + version +
+                        ". Открыть официальный релиз на GitHub? "
+                        "Программа ничего не скачивает и не устанавливает автоматически.",
+                        parent=self.root):
+                    webbrowser.open(release["url"])
+            self.root.after(0, show)
+        threading.Thread(target=worker, daemon=True).start()
 
     def install_engine(self):
         """Start cache installation without blocking Tkinter on a network download."""
