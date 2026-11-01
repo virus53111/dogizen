@@ -20,6 +20,7 @@ from network_check import probe_proxy_exit
 from proxy_diagnostics import diagnose_proxy, describe_diagnosis
 from profile_view import ALL, RUNNING, STOPPED, filter_profiles, distinct_groups, bulk_update_groups
 from cookie_manager import cookie_inventory, export_cookies, clear_cookies
+from addon_manager import list_addons, inspect_archive, install_addon, set_addon_enabled, remove_addon
 from proxy_import import import_proxy_list
 from engine_setup import ensure_engine_ready
 from store import Store
@@ -71,14 +72,17 @@ class BrowserUI:
         self.tabs.pack(fill="both", expand=True, padx=22, pady=8)
         self.profile_tab = ttk.Frame(self.tabs)
         self.proxy_tab = ttk.Frame(self.tabs)
+        self.addon_tab = ttk.Frame(self.tabs)
         self.info_tab = ttk.Frame(self.tabs)
         self.account_tab = ttk.Frame(self.tabs)
         self.tabs.add(self.profile_tab, text="Профили")
         self.tabs.add(self.proxy_tab, text="Прокси")
+        self.tabs.add(self.addon_tab, text="Расширения")
         self.tabs.add(self.account_tab, text="Аккаунт и лицензия")
         self.tabs.add(self.info_tab, text="О программе")
         self.setup_profiles()
         self.setup_proxies()
+        self.setup_addons()
         self.setup_account()
         self.setup_info()
         status_frame = tk.Frame(self.root, bg="#192140", highlightbackground="#544b8e",
@@ -569,6 +573,7 @@ class BrowserUI:
     def refresh(self):
         self.refresh_proxies()
         self.refresh_profiles()
+        self.refresh_addons()
 
     def refresh_status(self):
         try:
