@@ -206,15 +206,76 @@ class Store:
         safe = {"format": "murdilimax-browser-v1", "profiles": self.profiles(), "proxies": self.proxies()}
         Path(path).write_text(json.dumps(safe, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    def import_metadata(self, path):
-        obj = json.loads(Path(path).read_text(encoding="utf-8"))
-        if obj.get("format") != "murdilimax-browser-v1":
+    def import_metadata(self, path, *, max_profiles=2000):
+        """Validate an entire metadata export and apply it once, or not at all.
+
+        This is profile metadata only: never imports cookies, browser folders,
+        proxy passwords, or caller-provided internal profile identifiers.
+        """
+        if (isinstance(max_profiles, bool) or not isinstance(max_profiles, int)
+                or not 1 <= max_profiles <= 2000):
+            raise ValueError("Invalid profile allowance")
+        source = Path(path)
+        if source.is_symlink() or not source.is_file():
+            raise ValueError("Choose an existing local JSON export")
+        if not 0 < source.stat().st_size <= 8_000_000:
+            raise ValueError("Metadata export must be 1 to 8 MB")
+        try:
+            obj = json.loads(source.read_text(encoding="utf-8"))
+        except (json.JSONDecodeError, UnicodeError):
+            raise ValueError("Invalid UTF-8 JSON profile export") from None
+        if not isinstance(obj, dict) or obj.get("format") != "murdilimax-browser-v1":
             raise ValueError("Unrecognized export format")
-        imported = 0
-        for p in obj.get("profiles", [])[:2000]:
-            if isinstance(p, dict):
-                self.add_profile(str(p.get("name", "Imported")), str(p.get("url", "about:blank")),
-                                 str(p.get("group", "")), str(p.get("tags", "")),
-                                 str(p.get("notes", "")), "", str(p.get("os", "native")))
-                imported += 1
-        return imported
+        entries = obj.get("profiles")
+        if not isinstance(entries, list) or len(entries) > 2000:
+            raise ValueError("Export must contain a list of up to 2,000 profiles")
+        existing = self.profiles()
+        if len(existing) + len(entries) > max_profiles:
+            raise ValueError(
+                f"Profile allowance exceeded: {len(existing)} + "
+                f"{len(entries)} > {max_profiles}")
+        prepared = []
+        timestamp = now()
+        for record in entries:
+            if not isinstance(record, dict):
+                raise ValueError("Invalid profile record")
+            name = record.get("name", "")
+            url = record.get("url", "about:blank")
+            os_name = record.get("os", "native")
+            if (not isinstance(name, str) or not name.strip()
+                    or not isinstance(url, str) or not valid_url(url)
+                    or os_name not in ("native", "windows", "macos", "linux")):
+                raise ValueError("Invalid name, URL or platform in export")
+            fields = {}
+            for field, size in (("group", 80), ("tags", 200), ("notes", 2000)):
+                value = record.get(field, "")
+                if not isinstance(value, str):
+                    raise ValueError("Invalid profile " + field)
+                fields[field] = value.strip()[:size]
+            prepared.append({
+                "id": uuid.uuid4().hex, "name": name.strip()[:100],
+                "url": url or "about:blank", **fields,
+                "proxy_id": "", "os": os_name,
+                "created_at": timestamp, "updated_at": timestamp,
+            })
+        if not prepared:
+            return 0
+        # Make directories before the atomic metadata replacement. If any
+        # operation fails, clean up only our newly-created *empty* folders.
+        created = []
+        try:
+            for record in prepared:
+                folder = self.root / "profiles" / record["id"]
+                folder.mkdir(mode=0o700)
+                created.append(folder)
+                if os.name != "nt":
+                    folder.chmod(0o700)
+            self._write("profiles", existing + prepared)
+        except Exception:
+            for folder in created:
+                try:
+                    folder.rmdir()
+                except OSError:
+                    pass
+            raise
+        return len(prepared)
