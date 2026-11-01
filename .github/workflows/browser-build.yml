@@ -27,9 +27,10 @@ jobs:
           npm install --no-save --no-package-lock @resvg/resvg-js@2.6.2
           node -e 'const fs=require("fs"); const {Resvg}=require("@resvg/resvg-js"); fs.mkdirSync("assets/generated",{recursive:true}); const r=new Resvg(fs.readFileSync("assets/murdilimax-icon.svg","utf8"),{fitTo:{mode:"width",value:1024}}); fs.writeFileSync("assets/generated/icon-1024.png",r.render().asPng());'
           python tools/build_brand_assets.py
+          python -c "from camoufox.fpgen_model import ensure_fpgen_model, is_pinned; ensure_fpgen_model(); assert is_pinned()"
       - name: Build EXE
         run: |
-          python -m PyInstaller --noconfirm --clean --windowed --onedir --name "Murdilimax Browser" --icon assets/generated/murdilimax.ico --add-data "assets/generated/app-icon-512.png:assets/generated" --collect-all camoufox --collect-all browserforge --collect-all playwright --hidden-import keyring.backends.Windows --paths browser browser/app.py
+          python -m PyInstaller --noconfirm --clean --windowed --onedir --name "Murdilimax Browser" --icon assets/generated/murdilimax.ico --add-data "assets/generated/app-icon-512.png:assets/generated" --collect-all camoufox --collect-all fpgen --collect-all browserforge --collect-all playwright --hidden-import keyring.backends.Windows --paths browser browser/app.py
       - name: Smoke test packaged executable
         shell: pwsh
         run: |
@@ -93,12 +94,13 @@ jobs:
           npm install --no-save --no-package-lock @resvg/resvg-js@2.6.2
           node -e 'const fs=require("fs"); const {Resvg}=require("@resvg/resvg-js"); fs.mkdirSync("assets/generated",{recursive:true}); const r=new Resvg(fs.readFileSync("assets/murdilimax-icon.svg","utf8"),{fitTo:{mode:"width",value:1024}}); fs.writeFileSync("assets/generated/icon-1024.png",r.render().asPng());'
           python tools/build_brand_assets.py
+          python -c "from camoufox.fpgen_model import ensure_fpgen_model, is_pinned; ensure_fpgen_model(); assert is_pinned()"
       - name: Build .app and smoke test
         shell: bash
         run: |
           set -euo pipefail
           iconutil -c icns assets/generated/Murdilimax.iconset -o assets/generated/Murdilimax.icns
-          python -m PyInstaller --noconfirm --clean --windowed --onedir --name 'Murdilimax Browser' --icon assets/generated/Murdilimax.icns --add-data 'assets/generated/app-icon-512.png:assets/generated' --osx-bundle-identifier 'com.murdilimax.browser' --collect-all camoufox --collect-all browserforge --collect-all playwright --hidden-import keyring.backends.macOS --paths browser browser/app.py
+          python -m PyInstaller --noconfirm --clean --windowed --onedir --name 'Murdilimax Browser' --icon assets/generated/Murdilimax.icns --add-data 'assets/generated/app-icon-512.png:assets/generated' --osx-bundle-identifier 'com.murdilimax.browser' --collect-all camoufox --collect-all fpgen --collect-all browserforge --collect-all playwright --hidden-import keyring.backends.macOS --paths browser browser/app.py
           test -d 'dist/Murdilimax Browser.app'
           'dist/Murdilimax Browser.app/Contents/MacOS/Murdilimax Browser' --selftest
           codesign --force --deep --sign - 'dist/Murdilimax Browser.app'
