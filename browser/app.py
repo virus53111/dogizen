@@ -701,6 +701,93 @@ class BrowserUI:
             self.refresh()
             self.state.set("Импортировано профилей: " + str(count))
 
+    def _cookie_action(self, action, on_success):
+        """Run cookie storage operations off the Tk UI thread."""
+        def worker():
+            try:
+                result = action()
+            except ValueError as exc:
+                safe = str(exc)
+                self.root.after(0, lambda msg=safe: messagebox.showerror(
+                    "Murdilimax Cookies", msg, parent=self.root))
+            except Exception:
+                self.root.after(0, lambda: messagebox.showerror(
+                    "Murdilimax Cookies",
+                    "Local cookie operation failed; no cookie values were logged."
+                    if self.language == "en" else
+                    "Ошибка локальной операции. Значения cookies не записаны в журнал.",
+                    parent=self.root))
+            else:
+                self.root.after(0, lambda answer=result: on_success(answer))
+        threading.Thread(target=worker, daemon=True).start()
+
+    def show_cookie_inventory(self):
+        pid = self.one(self.profile_tree, "профиль")
+        lang = self.language
+        def display(info):
+            summary = (f"Cookies: {info.count}\n" +
+                       (f"Domains: {info.domains}" if lang == "en" else
+                        f"Доменов: {info.domains}"))
+            if info.top_domains:
+                summary += ("\n\nTop domains:\n" if lang == "en" else
+                            "\n\nЧастые домены:\n")
+                summary += "\n".join(
+                    f"{host}: {count}" for host, count in info.top_domains)
+            if not info.present:
+                summary += ("\nCookie database not created yet." if lang == "en" else
+                            "\nБаза cookies ещё не создана.")
+            messagebox.showinfo("Murdilimax Cookies", summary, parent=self.root)
+        self._cookie_action(lambda: cookie_inventory(self.store, pid), display)
+
+    def export_profile_cookies(self):
+        pid = self.one(self.profile_tree, "профиль")
+        en = self.language == "en"
+        warning = (
+            "Cookies may contain login tokens. Export creates an UNENCRYPTED JSON "
+            "file containing session secrets. Do not share it. Continue?"
+            if en else
+            "Cookies могут содержать токены входа. Экспорт создаёт НЕЗАШИФРОВАННЫЙ "
+            "JSON-файл с секретами сеансов. Не передавайте его другим. Продолжить?"
+        )
+        if not messagebox.askyesno("Murdilimax Cookies", warning, parent=self.root):
+            return
+        path = filedialog.asksaveasfilename(
+            defaultextension=".json",
+            initialfile="murdilimax-cookies-" + pid[:8] + ".json",
+            filetypes=[("JSON", "*.json")])
+        if not path:
+            return
+        def success(count):
+            messagebox.showinfo(
+                "Murdilimax Cookies",
+                (f"Exported {count} cookies to a sensitive private file:\n{path}"
+                 if en else
+                 f"Экспортировано cookies: {count}. Секретный файл:\n{path}"),
+                parent=self.root)
+        self._cookie_action(lambda: export_cookies(self.store, pid, path), success)
+
+    def clear_profile_cookies(self):
+        pid = self.one(self.profile_tree, "профиль")
+        en = self.language == "en"
+        warning = (
+            "Clear cookies for this stopped profile? You may be signed out of "
+            "websites. A private local SQLite backup is made first."
+            if en else
+            "Очистить cookies остановленного профиля? Возможен выход из "
+            "аккаунтов на сайтах. Сначала сохранится локальная резервная копия SQLite."
+        )
+        if not messagebox.askyesno("Murdilimax Cookies", warning, parent=self.root):
+            return
+        def success(result):
+            count, backup = result
+            messagebox.showinfo(
+                "Murdilimax Cookies",
+                (f"Cleared {count} cookies.\nLocal private backup: {backup or 'none'}"
+                 if en else
+                 f"Очищено cookies: {count}\nЛокальная резервная копия: {backup or 'нет'}"),
+                parent=self.root)
+        self._cookie_action(lambda: clear_cookies(self.store, pid), success)
+
     def import_proxies_txt(self):
         """Import proxy endpoints without copying passwords in plaintext."""
         path = filedialog.askopenfilename(
