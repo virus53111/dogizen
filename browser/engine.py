@@ -172,7 +172,9 @@ def run_profile(profile_id):
             opts["proxy"] = store.proxy_config(profile["proxy_id"])
             opts["geoip"] = True
         with Camoufox(**opts) as context:
-            tabs = navigate_startup_tabs(context, profile)
+            from bookmarks import bookmarks_for_profile
+            tabs = navigate_startup_tabs(context, profile,
+                                         bookmarks=bookmarks_for_profile(store, profile))
             if tabs["failed"]:
                 # Do not print browser URLs or exception strings: they may
                 # contain sensitive query parameters or session details.
