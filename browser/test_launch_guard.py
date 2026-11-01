@@ -5,6 +5,8 @@ No Camoufox instance, network, subscription or private profile data needed.
 from __future__ import annotations
 
 import os
+import sys
+import types
 from pathlib import Path
 import tempfile
 import time
@@ -119,6 +121,46 @@ class AtomicProfileLaunchTests(unittest.TestCase):
         os.utime(flag, (old, old))
         self.assertFalse(launch_pending(self.folder))
         self.assertTrue(release_launch(self.folder, token))
+
+    def test_child_claims_start_reservation_and_cleans_lock_on_exit(self):
+        """Simulated Camoufox context validates actual run_profile handoff."""
+        token = reserve_launch(self.folder)
+        (self.folder / ".stop").touch()  # old stop is cleared by true owner
+
+        class FakePage:
+            def goto(self, *_args, **_kwargs):
+                return None
+
+        class FakeContext:
+            pages = ()
+            def __enter__(self):
+                return self
+            def __exit__(self, *_args):
+                return False
+            def new_page(self):
+                return FakePage()
+
+        fake_package = types.ModuleType("camoufox")
+        fake_package.__path__ = []
+        fake_sync = types.ModuleType("camoufox.sync_api")
+        kwargs_seen = {}
+        def fake_browser(**kwargs):
+            kwargs_seen.update(kwargs)
+            return FakeContext()
+        fake_sync.Camoufox = fake_browser
+        with (patch.dict(sys.modules, {
+                "camoufox": fake_package, "camoufox.sync_api": fake_sync}),
+              patch.dict(os.environ, {LAUNCH_TOKEN_ENV: token}),
+              patch("engine.Store", return_value=self.store),
+              patch("engine.ensure_engine_ready", return_value=None),
+              patch("engine.get_identity", return_value={}),
+              patch("engine.resolved_os", return_value="linux")):
+            run_profile(self.pid)
+
+        self.assertFalse(launch_pending(self.folder))
+        self.assertFalse((self.folder / ".lock").exists())
+        self.assertFalse((self.folder / ".stop").exists())
+        self.assertEqual(kwargs_seen.get("addons"), [])
 
     @unittest.skipIf(os.name == "nt", "Creating symlinks on Windows needs developer mode")
     def test_symlinked_launch_reservation_never_followed(self):
