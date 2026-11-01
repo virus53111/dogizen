@@ -1,0 +1,38 @@
+{
+  "name": "Murdilimax Mobile Companion",
+  "short_name": "Murdilimax",
+  "description": "Локальное управление списком браузерных профилей на телефоне. Не является антидетект-браузером.",
+  "start_url": "/mobile/",
+  "scope": "/mobile/",
+  "id": "/mobile/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f8f7ff",
+  "theme_color": "#7250f4",
+  "lang": "ru",
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "/mobile/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/mobile/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Профили",
+      "url": "/mobile/",
+      "description": "Локальные профили"
+    }
+  ]
+}

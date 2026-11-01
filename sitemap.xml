@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-<url><loc>https://murdilimax.com/</loc></url>
-<url><loc>https://murdilimax.com/download.html</loc></url>
-<url><loc>https://murdilimax.com/privacy/</loc></url>
+<url><loc>https://murdilimax.com/</loc><lastmod>2026-10-31</lastmod></url>
+<url><loc>https://murdilimax.com/download.html</loc><lastmod>2026-10-31</lastmod></url>
+<url><loc>https://murdilimax.com/mobile-app.html</loc><lastmod>2026-10-31</lastmod></url>
+<url><loc>https://murdilimax.com/guides/</loc><lastmod>2026-10-31</lastmod></url>
+<url><loc>https://murdilimax.com/guides/browser-profiles.html</loc><lastmod>2026-10-31</lastmod></url>
+<url><loc>https://murdilimax.com/guides/proxies.html</loc><lastmod>2026-10-31</lastmod></url>
+<url><loc>https://murdilimax.com/privacy/</loc><lastmod>2026-10-31</lastmod></url>
 </urlset>

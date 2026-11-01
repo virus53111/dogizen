@@ -6,20 +6,15 @@ Requires: pillow, cairosvg.
 from pathlib import Path
 from io import BytesIO
 from PIL import Image, ImageDraw, ImageFont
-import os
+import cairosvg
 
 ROOT = Path(__file__).resolve().parents[1]
 SVG = ROOT / "assets/murdilimax-icon.svg"
 OUT = ROOT / "assets/generated"
 OUT.mkdir(parents=True, exist_ok=True)
 
-external_png = os.environ.get("MURDILIMAX_BRAND_PNG")
-if external_png:
-    source = Image.open(external_png).convert("RGBA")
-else:
-    import cairosvg
-    raw = cairosvg.svg2png(bytestring=SVG.read_bytes(), output_width=1024, output_height=1024)
-    source = Image.open(BytesIO(raw)).convert("RGBA")
+raw = cairosvg.svg2png(bytestring=SVG.read_bytes(), output_width=1024, output_height=1024)
+source = Image.open(BytesIO(raw)).convert("RGBA")
 
 def icon(size, path):
     image = source.resize((size, size), Image.Resampling.LANCZOS)
