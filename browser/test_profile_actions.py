@@ -60,7 +60,7 @@ class LocalActionsTests(unittest.TestCase):
         self.assertEqual([x["name"] for x in made],
                          ["Быстрый профиль 2", "Быстрый профиль 3"])
         self.store.export_metadata(self.store.root / "export.json")
-        exported = json.loads((self.store.root / "export.json").read_text())
+        exported = json.loads((self.store.root / "export.json").read_text(encoding="utf-8"))
         self.assertEqual(len(exported["profiles"]), 3)
         self.assertTrue(all("password" not in p and "cookie" not in p
                             for p in exported["profiles"]))
