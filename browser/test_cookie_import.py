@@ -49,6 +49,11 @@ def db_with_cookie(store, profile_id):
     return path
 
 
+def _capture(instance, options):
+    instance.kwargs = options
+    return instance
+
+
 class CookieImportTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -134,7 +139,7 @@ class CookieImportTests(unittest.TestCase):
         with (patch("cookie_import.get_identity", return_value={"navigator": {"userAgent": "mock"}}),
               patch("cookie_import.resolved_os", return_value="linux")):
             count, backup = import_cookies(
-                self.store, self.profile, path, context_factory=lambda **k: ctx,
+                self.store, self.profile, path, context_factory=lambda **k: _capture(ctx, k),
                 check_engine=lambda: None)
         self.assertEqual(count, 1)
         self.assertTrue(backup.is_file())
@@ -180,7 +185,7 @@ class CookieImportTests(unittest.TestCase):
         with (patch("cookie_import.get_identity", return_value={"navigator": {"userAgent": "mock"}}),
               patch("cookie_import.resolved_os", return_value="linux")):
             count, backup = import_cookies(self.store, self.profile, self.make_json(),
-                context_factory=lambda **k: ctx, check_engine=lambda: None)
+                context_factory=lambda **k: _capture(ctx, k), check_engine=lambda: None)
         self.assertEqual(count, 1)
         self.assertIsNone(backup)
         self.assertIsNotNone(ctx.cookies)
