@@ -18,7 +18,20 @@ STALE_AFTER_SECONDS = 180
 
 
 def launch_pending(folder: str | Path) -> bool:
-    return (Path(folder) / LAUNCH_MARKER).exists()
+    """Return False for orphan markers old enough to permit a retry.
+
+    Reserve_launch performs the actual guarded cleanup. Suspicious links and
+    stat failures are treated as busy rather than as a safe launch.
+    """
+    marker = Path(folder) / LAUNCH_MARKER
+    if not marker.exists() and not marker.is_symlink():
+        return False
+    try:
+        if marker.is_symlink():
+            return True
+        return time.time() - marker.stat().st_mtime <= STALE_AFTER_SECONDS
+    except OSError:
+        return True
 
 
 def reserve_launch(folder: str | Path, *, clock=time.time) -> str:
