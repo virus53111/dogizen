@@ -98,8 +98,13 @@ class AddonManagerTests(unittest.TestCase):
             install_addon(self.store, self.first, self.source)
 
     def test_reject_archive_traversal_and_absolute_names(self):
-        for n in ("../escape.js", "/absolute.js", "bad\\windows.js", "C:/drive.js",
-                  "nested/../../path.js", "CON"):
+        # Python zipfile normalizes backslashes when WRITING on Windows.
+        # Raw backslash names remain rejected by _open_archive when reading.
+        names = ["../escape.js", "/absolute.js", "C:/drive.js",
+                 "nested/../../path.js", "CON"]
+        if os.name != "nt":
+            names.append("bad\\windows.js")
+        for n in names:
             malicious = make_xpi(self.root / "bad.xpi",
                                  entries={"manifest.json": json.dumps({
                                      "manifest_version": 2, "name": "Mal",
