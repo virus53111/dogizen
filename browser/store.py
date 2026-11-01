@@ -7,6 +7,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
+from identity import FILENAME, resolved_os
 
 def now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -106,6 +107,13 @@ class Store:
                     raise ValueError("Invalid name or start URL")
                 if merged["os"] not in ("native", "windows", "macos", "linux"):
                     raise ValueError("Invalid OS")
+                if (self.root / "profiles" / profile_id / FILENAME).exists() and (
+                    resolved_os(merged["os"]) != resolved_os(p.get("os", "native"))
+                ):
+                    raise ValueError(
+                        "This profile already has a fixed device identity. "
+                        "Duplicate the profile to choose a different OS."
+                    )
                 if merged["proxy_id"] and not any(x["id"] == merged["proxy_id"] for x in self.proxies()):
                     raise ValueError("Proxy not found")
                 for field, size in [("name",100),("group",80),("tags",200),("notes",2000)]:
