@@ -100,14 +100,24 @@ def run_profile(profile_id):
             break
         except FileExistsError:
             try:
+                previous = lock.lstat()
+                if lock.is_symlink() or not lock.is_file():
+                    raise RuntimeError("Unsafe profile lock")
                 pid = int(lock.read_text().strip())
+            except FileNotFoundError:
+                continue
             except (ValueError, OSError):
                 pid = -1
             if pid_alive(pid):
                 release_launch(folder, launch_token)
                 raise RuntimeError("The profile is already running")
+            # Remove only the exact stale file we inspected; do not delete
+            # another process's newly acquired live lock during a race.
             try:
-                lock.unlink()
+                current = lock.lstat()
+                if (previous.st_ino, previous.st_mtime_ns) == (
+                        current.st_ino, current.st_mtime_ns):
+                    lock.unlink()
             except FileNotFoundError:
                 pass
     if fd is None:
