@@ -9,6 +9,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 from store import Store
+from startup_tabs import navigate_startup_tabs
 from identity import get_identity, resolved_os
 from engine_setup import ensure_engine_ready
 from launch_guard import (LAUNCH_TOKEN_ENV, launch_pending,
@@ -171,15 +172,12 @@ def run_profile(profile_id):
             opts["proxy"] = store.proxy_config(profile["proxy_id"])
             opts["geoip"] = True
         with Camoufox(**opts) as context:
-            pages = context.pages
-            page = pages[0] if pages else context.new_page()
-            start_url = profile.get("url", "about:blank")
-            if not (start_url == "about:blank" or (urlsplit(start_url).scheme in ("http", "https") and urlsplit(start_url).hostname)):
-                raise ValueError("Invalid home page URL")
-            try:
-                page.goto(start_url, wait_until="domcontentloaded", timeout=20000)
-            except Exception as exc:
-                print("Navigation issue:", str(exc)[:300], file=sys.stderr)
+            tabs = navigate_startup_tabs(context, profile)
+            if tabs["failed"]:
+                # Do not print browser URLs or exception strings: they may
+                # contain sensitive query parameters or session details.
+                print("Startup tabs: " + str(tabs["failed"]) +
+                      " navigation(s) failed", file=sys.stderr)
             while not stop_file.exists():
                 try:
                     pages = context.pages
