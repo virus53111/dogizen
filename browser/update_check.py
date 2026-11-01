@@ -14,7 +14,7 @@ MAX_RESPONSE = 150_000
 APP_VERSION = (0, 7, 0)
 
 
-def select_windows_update(releases, installed=(0, 6, 0)):
+def select_windows_update(releases, installed=APP_VERSION):
     if (not isinstance(installed, (tuple, list)) or len(installed) != 3 or
             any(type(x) is not int or not 0 <= x < 10000 for x in installed)):
         raise ValueError("Invalid installed application version")
@@ -52,7 +52,7 @@ def select_windows_update(releases, installed=(0, 6, 0)):
     return best
 
 
-def check_windows_updates(*, installed=(0, 6, 0), opener=None):
+def check_windows_updates(*, installed=APP_VERSION, opener=None):
     """Explicit network request; only official GitHub releases, bounded JSON."""
     req = Request(RELEASES_URL, headers={
         "Accept": "application/vnd.github+json",
