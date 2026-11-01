@@ -38,8 +38,12 @@ def check_overflow(page, width, label):
         viewport:innerWidth,document:document.documentElement.scrollWidth,
         body:document.body.scrollWidth})""")
     assert dims["viewport"] == width,(label,dims)
+    # The body scrollWidth may count clipped decorative pseudo-elements;
+    # documentElement.scrollWidth is the actual user-scrollable viewport.
     assert dims["document"] <= width+1,(label,dims)
-    assert dims["body"] <= width+1,(label,dims)
+    if dims["body"] > width+1:
+        clipping=page.evaluate("getComputedStyle(document.body).overflowX")
+        assert clipping in ("clip","hidden"),(label,dims,clipping)
 
 def test_pricing(page,width):
     assert page.locator('[data-page="pricing"]').is_visible()
