@@ -219,7 +219,20 @@ def import_cookies(store, profile_id, source, *, context_factory=None,
                     user_data_dir=str(folder / "data"),
                     os=resolved_os(profile.get("os", "native")),
                     fingerprint=fingerprint, geoip=False) as context:
+                # Initializing one about:blank page warms Firefox's persistent
+                # cookie service without visiting ANY external website.
+                page = context.new_page()
+                page.goto("about:blank")
                 context.add_cookies(cookies)
+                # Firefox may silently decline invalid cookies. Refuse to
+                # report success unless its live cookie jar contains them.
+                installed = {(r["domain"], r["path"], r["name"])
+                             for r in context.cookies()}
+                expected = {(r["domain"], r["path"], r["name"])
+                            for r in cookies}
+                if not expected.issubset(installed):
+                    raise ValueError("Firefox rejected one or more imported cookies")
+                page.wait_for_timeout(1000)
         except Exception:
             # Retain private pre-import snapshot for manual recovery. Never
             # overwrite Firefox DB while a crashed context may have WAL files.
