@@ -9,6 +9,7 @@ from pathlib import Path
 from urllib.parse import urlsplit
 from identity import FILENAME, resolved_os
 from startup_tabs import normalize_extra_urls
+from fingerprint_options import validate_screen_limit
 
 def now():
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -72,7 +73,7 @@ class Store:
     def get_profile(self, profile_id):
         return next((p for p in self.profiles() if p["id"] == profile_id), None)
 
-    def add_profile(self, name, url="about:blank", group="", tags="", notes="", proxy_id="", os_name="native", startup_urls=None):
+    def add_profile(self, name, url="about:blank", group="", tags="", notes="", proxy_id="", os_name="native", startup_urls=None, screen_limit="auto"):
         if not name.strip():
             raise ValueError("Profile name is required")
         if not valid_url(url):
@@ -80,12 +81,13 @@ class Store:
         if os_name not in ("native", "windows", "macos", "linux"):
             raise ValueError("Invalid OS choice")
         extra_urls = normalize_extra_urls(startup_urls if startup_urls is not None else [], primary=url or "about:blank")
+        screen_limit = validate_screen_limit(screen_limit)
         if proxy_id and not any(p["id"] == proxy_id for p in self.proxies()):
             raise ValueError("Proxy not found")
         profile = {
             "id": uuid.uuid4().hex, "name": name.strip()[:100], "url": url or "about:blank",
             "group": group.strip()[:80], "tags": tags.strip()[:200], "notes": notes.strip()[:2000],
-            "proxy_id": proxy_id, "os": os_name, "startup_urls": extra_urls,
+            "proxy_id": proxy_id, "os": os_name, "startup_urls": extra_urls, "screen_limit": screen_limit,
             "created_at": now(), "updated_at": now(),
         }
         items = self.profiles()
@@ -98,7 +100,7 @@ class Store:
         return profile
 
     def update_profile(self, profile_id, **changes):
-        allowed = {"name", "url", "group", "tags", "notes", "proxy_id", "os", "startup_urls"}
+        allowed = {"name", "url", "group", "tags", "notes", "proxy_id", "os", "startup_urls", "screen_limit"}
         if set(changes) - allowed:
             raise ValueError("Unsupported fields")
         items = self.profiles()
@@ -109,6 +111,7 @@ class Store:
                     raise ValueError("Invalid name or start URL")
                 if merged["os"] not in ("native", "windows", "macos", "linux"):
                     raise ValueError("Invalid OS")
+                merged["screen_limit"] = validate_screen_limit(merged.get("screen_limit", "auto"))
                 merged["startup_urls"] = normalize_extra_urls(
                     merged.get("startup_urls", []), primary=merged["url"] or "about:blank")
                 if (self.root / "profiles" / profile_id / FILENAME).exists() and (
@@ -118,6 +121,10 @@ class Store:
                         "This profile already has a fixed device identity. "
                         "Duplicate the profile to choose a different OS."
                     )
+                if (self.root / "profiles" / profile_id / FILENAME).exists() and (
+                    merged["screen_limit"] != validate_screen_limit(p.get("screen_limit", "auto"))
+                ):
+                    raise ValueError("This fingerprint screen bound is already fixed. Duplicate the profile instead.")
                 if merged["proxy_id"] and not any(x["id"] == merged["proxy_id"] for x in self.proxies()):
                     raise ValueError("Proxy not found")
                 for field, size in [("name",100),("group",80),("tags",200),("notes",2000)]:
@@ -132,7 +139,7 @@ class Store:
         p = self.get_profile(profile_id)
         if not p:
             raise ValueError("Profile not found")
-        return self.add_profile(p["name"] + " (copy)", p["url"], p["group"], p["tags"], p["notes"], p["proxy_id"], p["os"], startup_urls=p.get("startup_urls", []))
+        return self.add_profile(p["name"] + " (copy)", p["url"], p["group"], p["tags"], p["notes"], p["proxy_id"], p["os"], startup_urls=p.get("startup_urls", []), screen_limit=p.get("screen_limit", "auto"))
 
     def delete_profile(self, profile_id):
         items = self.profiles()
@@ -257,10 +264,11 @@ class Store:
                     raise ValueError("Invalid profile " + field)
                 fields[field] = value.strip()[:size]
             extra_urls = normalize_extra_urls(record.get("startup_urls", []), primary=url or "about:blank")
+            screen_limit = validate_screen_limit(record.get("screen_limit", "auto"))
             prepared.append({
                 "id": uuid.uuid4().hex, "name": name.strip()[:100],
                 "url": url or "about:blank", **fields,
-                "proxy_id": "", "os": os_name, "startup_urls": extra_urls,
+                "proxy_id": "", "os": os_name, "startup_urls": extra_urls, "screen_limit": screen_limit,
                 "created_at": timestamp, "updated_at": timestamp,
             })
         if not prepared:

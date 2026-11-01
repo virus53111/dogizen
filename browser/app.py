@@ -26,6 +26,7 @@ from profile_table import reconcile_profile_tree
 from profile_actions import create_quick_profiles, bulk_assign_proxy
 from bookmarks import (list_bookmarks, add_bookmark, update_bookmark,
                        remove_bookmark)
+from fingerprint_options import BOUNDS, safe_identity_preview
 from cookie_manager import (cookie_inventory, export_cookies, clear_cookies,
                             list_cookie_backups, restore_cookie_backup)
 from cookie_import import inspect_cookie_file, import_cookies
@@ -277,6 +278,7 @@ class BrowserUI:
         self.button(tools, "Экспорт настроек", self.export)
         self.button(tools, "Импорт настроек", self.import_profiles)
         self.button(tools, "Стартовые вкладки", self.edit_startup_tabs)
+        self.button(tools, "◈ Отпечаток", self.inspect_fingerprint)
         self.button(tools, "Открыть журнал", self.open_log)
         cookie_bar = ttk.Frame(self.profile_tab)
         cookie_bar.pack(fill="x", padx=12, pady=(0, 6))
@@ -1090,7 +1092,7 @@ class BrowserUI:
         window = tk.Toplevel(self.root)
         window.title("Настройки браузерного профиля")
         window.configure(bg=BG)
-        window.geometry("620x545")
+        window.geometry("650x625")
         window.transient(self.root)
         window.grab_set()
         fields = {}
@@ -1120,13 +1122,22 @@ class BrowserUI:
         os_var = tk.StringVar(value=profile.get("os", "native") if profile else "native")
         ttk.Label(window, text="ОС отпечатка").grid(row=6, column=0, sticky="w", padx=24, pady=11)
         ttk.Combobox(window, textvariable=os_var, values=os_options, state="readonly", width=45).grid(row=6, column=1, padx=22, pady=8)
-        ttk.Label(window, text="native = ОС компьютера. Отпечаток генерирует Camoufox.", foreground=MUTED).grid(row=7, column=0, columnspan=2, padx=24, pady=12)
+        ttk.Label(window, text="native = ОС компьютера. Отпечаток генерирует Camoufox.", foreground=MUTED).grid(row=7, column=0, columnspan=2, padx=24, pady=8)
+        screen_var = tk.StringVar(value=profile.get("screen_limit", "auto") if profile else "auto")
+        ttk.Label(window, text="Предел экрана (fpgen)").grid(row=8, column=0, sticky="w", padx=24, pady=11)
+        screen_box = ttk.Combobox(window, textvariable=screen_var,
+                                  values=tuple(BOUNDS), state="readonly", width=45)
+        screen_box.grid(row=8, column=1, padx=22, pady=8)
+        if profile and (self.store.root / "profiles" / profile["id"] / "fingerprint-v1.json").exists():
+            screen_box.configure(state="disabled")
+        ttk.Label(window, text="Максимум для нового отпечатка, не точный размер. После первого запуска зафиксирован.",
+                  foreground=MUTED, wraplength=610).grid(row=9, column=0, columnspan=2, padx=24, pady=7)
         def save():
             try:
                 index = options.index(proxy_var.get())
                 proxy_id = "" if index == 0 else proxies[index - 1]["id"]
                 values = {k: v.get() for k, v in fields.items()}
-                values.update(proxy_id=proxy_id, os_name=os_var.get())
+                values.update(proxy_id=proxy_id, os_name=os_var.get(), screen_limit=screen_var.get())
                 if profile:
                     values["os"] = values.pop("os_name")
                     self.store.update_profile(profile["id"], **values)
@@ -1139,7 +1150,7 @@ class BrowserUI:
                 self.state.set("Настройки профиля сохранены")
             except Exception as exc:
                 messagebox.showerror("Профиль", str(exc), parent=window)
-        ttk.Button(window, text="Сохранить профиль", command=save).grid(row=8, column=1, sticky="e", padx=23, pady=18)
+        ttk.Button(window, text="Сохранить профиль", command=save).grid(row=10, column=1, sticky="e", padx=23, pady=18)
         window.columnconfigure(1, weight=1)
         self.apply_language(window)
 
@@ -1205,6 +1216,30 @@ class BrowserUI:
         if item and self.running(item["id"]):
             raise ValueError("Останови профиль перед изменением настроек")
         self.profile_form(item)
+
+    def inspect_fingerprint(self):
+        """Show a bounded preview of an existing fpgen identity; no regeneration."""
+        pid = self.one(self.profile_tree, "профиль")
+        item = self.store.get_profile(pid)
+        if item is None:
+            raise ValueError("Профиль не найден")
+        preview = safe_identity_preview(self.store.root / "profiles" / pid)
+        if not preview["generated"]:
+            messagebox.showinfo(
+                "Murdilimax · Отпечаток",
+                "Отпечаток ещё не создан. Camoufox зафиксирует его при первом запуске. "
+                "Текущий предел экрана: " + item.get("screen_limit", "auto") + ".",
+                parent=self.root)
+            return
+        fields = ("ОС: " + preview["os"] + "\n" +
+                  "Предел экрана: " + preview["screen_limit"] + "\n" +
+                  "Реальный выбранный размер: " + preview["screen"] + "\n" +
+                  "Потоки CPU: " + str(preview["cpu"] or "неизвестно") + "\n" +
+                  "User-Agent: " + preview["user_agent"] + "\n\n" +
+                  "Это локальный просмотр. Подмена UA/WebGL отдельно не производится. "
+                  "Для нового отпечатка дублируйте профиль.")
+        messagebox.showinfo("Murdilimax · Отпечаток", fields,
+                            parent=self.root)
 
     def edit_startup_tabs(self):
         """Edit additional pages for one STOPPED profile without changing the theme."""
