@@ -7,7 +7,8 @@ import unittest
 from pathlib import Path
 
 from profile_view import (ALL, RUNNING, STOPPED, bulk_update_groups,
-                          distinct_groups, filter_profiles, plan_profile_launches)
+                          distinct_groups, filter_profiles, plan_profile_launches,
+                          sort_visible_profiles)
 from store import Store
 
 
@@ -112,6 +113,36 @@ class ProfileViewTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "allowance"):
             plan_profile_launches(profiles, ["p-1"], True, running)
 
+
+    def test_sort_names_case_insensitive_and_toggle(self):
+        visible = [(p, bool(self.live(p["id"]))) for p in self.rows]
+        ascending = sort_visible_profiles(visible, column="name")
+        self.assertEqual([p["name"] for p, _ in ascending],
+                         ["Atlas", "Lighthouse", "Nova"])
+        descending = sort_visible_profiles(visible, column="name", descending=True)
+        self.assertEqual([p["name"] for p, _ in descending],
+                         ["Nova", "Lighthouse", "Atlas"])
+        self.assertEqual([p["id"] for p in self.rows], ["a", "b", "c"])
+
+    def test_sort_by_running_proxy_group_with_unchanged_source(self):
+        visible = [(p, bool(self.live(p["id"]))) for p in self.rows]
+        status_sorted = sort_visible_profiles(visible, column="status")
+        self.assertEqual([p["id"] for p, _ in status_sorted], ["b", "a", "c"])
+        proxy_sorted = sort_visible_profiles(
+            visible, column="proxy",
+            proxy_names={"px1": "Zebra", "px2": "alpha"})
+        self.assertEqual([p["id"] for p, _ in proxy_sorted],
+                         ["c", "b", "a"])
+        group_sorted = sort_visible_profiles(visible, column="group")
+        self.assertEqual([p["id"] for p, _ in group_sorted], ["b", "a", "c"])
+
+    def test_default_sort_retains_original_order_and_ties(self):
+        visible = [(p, False) for p in self.rows]
+        self.assertEqual(sort_visible_profiles(visible), visible)
+        sorted_rows = sort_visible_profiles(visible, column="group")
+        self.assertEqual([p["id"] for p, _ in sorted_rows], ["b", "a", "c"])
+        with self.assertRaisesRegex(ValueError, "Unsupported"):
+            sort_visible_profiles(visible, column="cookies")
 
 
 if __name__ == "__main__":
