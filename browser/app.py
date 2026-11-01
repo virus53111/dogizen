@@ -19,7 +19,8 @@ from engine import pid_alive, request_stop, run_profile, start_background, safe_
 from network_check import probe_proxy_exit
 from proxy_diagnostics import diagnose_proxy, describe_diagnosis
 from profile_view import (ALL, RUNNING, STOPPED, filter_profiles,
-                          distinct_groups, bulk_update_groups, plan_profile_launches)
+                          distinct_groups, bulk_update_groups, plan_profile_launches,
+                          sort_visible_profiles)
 from profile_table import reconcile_profile_tree
 from cookie_manager import (cookie_inventory, export_cookies, clear_cookies,
                             list_cookie_backups, restore_cookie_backup)
@@ -60,6 +61,8 @@ class BrowserUI:
         self.status_filter_key = ALL
         self.proxy_filter_key = None
         self._filter_signature = None
+        self.sort_column = None
+        self.sort_descending = False
         self.state = tk.StringVar(value="Локальная рабочая область · браузерные профили")
         apply_neon_theme(self.root)
         self.header = NeonHeader(self.root, self.open_folder)
@@ -140,6 +143,7 @@ class BrowserUI:
         finally:
             self._localizing = False
         self.update_filter_labels()
+        self.refresh_profile_headings()
         self.refresh_addons()
 
     def apply_language(self, widget):
@@ -243,7 +247,8 @@ class BrowserUI:
         for key, title, width in [("name", "Название", 230), ("group", "Группа", 130),
                                   ("tags", "Теги", 180), ("proxy", "Прокси", 140),
                                   ("os", "ОС отпечатка", 115), ("status", "Статус", 110)]:
-            self.profile_tree.heading(key, text=title)
+            self.profile_tree.heading(key, text=title,
+                                      command=lambda selected=key: self.set_profile_sort(selected))
             self.profile_tree.column(key, width=width, stretch=True)
         self.profile_tree.pack(fill="both", expand=True, padx=12, pady=7)
         self.profile_tree.bind("<Double-1>", lambda _: self.call(self.edit_profile))
@@ -681,6 +686,27 @@ class BrowserUI:
             variable.set(next(label for label, key in mapping.items()
                               if key == current))
 
+    def set_profile_sort(self, column):
+        """Click a heading to sort A→Z; click it again to reverse."""
+        if self.sort_column == column:
+            self.sort_descending = not self.sort_descending
+        else:
+            self.sort_column = column
+            self.sort_descending = False
+        self.refresh_profile_headings()
+        self.refresh_profiles()
+
+    def refresh_profile_headings(self):
+        columns = (
+            ("name", "Название"), ("group", "Группа"), ("tags", "Теги"),
+            ("proxy", "Прокси"), ("os", "ОС отпечатка"), ("status", "Статус"),
+        )
+        for key, original in columns:
+            label = translate(original, self.language)
+            if key == self.sort_column:
+                label += " ↓" if self.sort_descending else " ↑"
+            self.profile_tree.heading(key, text=label)
+
     def schedule_profile_search(self, *_):
         """Debounce keystrokes: avoid scanning large tables on every character."""
         if self._search_after_id is not None:
@@ -753,6 +779,9 @@ class BrowserUI:
             status=self.status_filter_key, proxy_id=self.proxy_filter_key,
             running=self.running,
         )
+        visible = sort_visible_profiles(
+            visible, column=self.sort_column,
+            descending=self.sort_descending, proxy_names=proxies)
         # Incremental rendering: a periodic refresh with unchanged profiles
         # now performs zero Tk row writes, preserving multi-selection,
         # focus and scroll position even with hundreds of local profiles.
