@@ -44,7 +44,18 @@ def main():
                 assert "orbit_profile_test=survived" in cookie, "Cookie did not persist across browser launches"
                 after = page.evaluate("({ua:navigator.userAgent,cpu:navigator.hardwareConcurrency,screen:screen.width,language:navigator.language})")
                 assert before == after, f"Identity drift between relaunches: {before} != {after}"
-        print("PASS: real Camoufox launch, HTTP navigation, cookies and baseline identity persistence")
+            # A separate profile must not inherit the first profile's site cookies.
+            other_root = str(Path(temp) / "separate-browser-data")
+            other_identity = get_identity(Path(temp) / "separate-identity", "linux")
+            other_opts = dict(persistent_context=True, user_data_dir=other_root,
+                              headless=True, os="linux", fingerprint=other_identity)
+            with Camoufox(**other_opts) as isolated:
+                isolated_page = isolated.pages[0] if isolated.pages else isolated.new_page()
+                isolated_page.goto(url)
+                assert "orbit_profile_test" not in isolated_page.evaluate("document.cookie"), (
+                    "Different profiles unexpectedly shared cookies"
+                )
+        print("PASS: real Camoufox HTTP navigation, persistence, baseline identity and cross-profile cookie isolation")
     finally:
         server.shutdown()
         server.server_close()
