@@ -1,0 +1,37 @@
+name: Check Murdilimax Neon desktop source
+on:
+  push:
+    branches:
+      - design/murdilimax-desktop-neon-20261101
+    paths:
+      - 'browser/app.py'
+      - 'browser/neon_theme.py'
+      - '.github/workflows/neon-desktop-check.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile all browser Python modules
+        run: python -m compileall -q browser
+      - name: Validate neon theme wiring
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          app=Path("browser/app.py").read_text(encoding="utf-8")
+          theme=Path("browser/neon_theme.py").read_text(encoding="utf-8")
+          for source in (app,theme): ast.parse(source)
+          assert "apply_neon_theme(self.root)" in app
+          assert "NeonHeader(self.root, self.open_folder)" in app
+          assert "def apply_neon_theme" in theme
+          assert "class NeonHeader" in theme
+          assert "self.root.after(300000, self.license_tick)" in app
+          print("Neon source syntax and wiring passed")
+          PY

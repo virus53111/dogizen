@@ -19,12 +19,7 @@ from engine import pid_alive, request_stop, run_profile, start_background, safe_
 from network_check import probe_proxy_exit
 from engine_setup import ensure_engine_ready
 from store import Store
-
-BG = "#0b1117"
-PANEL = "#182329"
-TEXT = "#eee9dc"
-MUTED = "#abb9b7"
-ACCENT = "#e3c68e"
+from neon_theme import BG, PANEL, TEXT, MUTED, ACCENT, apply_neon_theme, NeonHeader
 
 class BrowserUI:
     def __init__(self):
@@ -49,28 +44,8 @@ class BrowserUI:
         self.root.configure(bg=BG)
         self.search = tk.StringVar()
         self.state = tk.StringVar(value="Локальная рабочая область · браузерные профили")
-        style = ttk.Style(self.root)
-        style.theme_use("clam")
-        style.configure(".", background=BG, foreground=TEXT, font=("Arial", 10))
-        style.configure("TFrame", background=BG)
-        style.configure("TLabel", background=BG, foreground=TEXT)
-        style.configure("TButton", background="#23313b", foreground=TEXT, padding=(14, 11), borderwidth=0, relief="flat")
-        style.map("TButton", background=[("active", "#655b44")], foreground=[("active", "#f8ecce")])
-        style.configure("Treeview", background=PANEL, foreground=TEXT, fieldbackground=PANEL,
-                        rowheight=36, borderwidth=0)
-        style.map("Treeview", background=[("selected", "#534e41")])
-        style.configure("Treeview.Heading", background="#27323a", foreground=ACCENT, padding=12)
-        style.configure("TEntry", fieldbackground=PANEL, foreground=TEXT)
-        style.configure("TCombobox", fieldbackground=PANEL, foreground="#111627")
-        style.configure("TNotebook", background=BG, borderwidth=0)
-        style.configure("TNotebook.Tab", background=PANEL, foreground=TEXT, padding=(22, 13))
-        title = tk.Frame(self.root, bg=BG)
-        title.pack(fill="x", padx=26, pady=(24, 12))
-        tk.Label(title, text="◈ MURDILIMAX", fg=ACCENT, bg=BG,
-                 font=("Georgia", 25, "bold")).pack(side="left")
-        tk.Label(title, text="BROWSER STUDIO  /  PRIVATE WORKSPACE", fg=MUTED, bg=BG,
-                 font=("Arial", 10)).pack(side="left", padx=22)
-        ttk.Button(title, text="Открыть папку данных", command=self.open_folder).pack(side="right")
+        apply_neon_theme(self.root)
+        self.header = NeonHeader(self.root, self.open_folder)
         self.tabs = ttk.Notebook(self.root)
         self.tabs.pack(fill="both", expand=True, padx=22, pady=8)
         self.profile_tab = ttk.Frame(self.tabs)
@@ -85,14 +60,24 @@ class BrowserUI:
         self.setup_proxies()
         self.setup_account()
         self.setup_info()
-        tk.Label(self.root, textvariable=self.state, anchor="w", bg=BG, fg=MUTED, font=("Arial", 10)).pack(fill="x", padx=26, pady=(5, 15))
+        status_frame = tk.Frame(self.root, bg="#192140", highlightbackground="#544b8e",
+                                highlightthickness=1)
+        status_frame.pack(fill="x", padx=24, pady=(5, 16))
+        tk.Label(status_frame, text="●", bg="#192140", fg="#5be6b4",
+                 font=("Arial", 13, "bold")).pack(side="left", padx=(14, 8))
+        tk.Label(status_frame, textvariable=self.state, anchor="w", bg="#192140",
+                 fg=MUTED, font=("Arial", 10)).pack(side="left", fill="x", expand=True,
+                                                   pady=11)
+        tk.Label(status_frame, text="NEON  /  BETA", bg="#192140",
+                 fg=ACCENT, font=("Arial", 9, "bold")).pack(side="right", padx=15)
         self.refresh()
         self.root.after(2500, self.refresh_status)
         self.root.after(1500, self.restore_login)
         self.root.after(300000, self.license_tick)
 
     def button(self, parent, label, command):
-        ttk.Button(parent, text=label, command=lambda: self.call(command)).pack(side="left", padx=(0, 7), pady=5)
+        style = "Neon.TButton" if label.startswith(("＋", "▶", "↗")) else "TButton"
+        ttk.Button(parent, text=label, style=style, command=lambda: self.call(command)).pack(side="left", padx=(0, 7), pady=5)
 
     def call(self, action):
         try:
@@ -173,9 +158,9 @@ class BrowserUI:
                     lambda: webbrowser.open("https://murdilimax-browser.hatchable.site/account.html"))
         self.button(bar, "↻ Проверить лицензию", self.check_license)
         self.button(bar, "Выйти", self.logout)
-        tk.Label(outer, text="Личный кабинет пока проходит настройку публичного доступа и Google OAuth. "
-                 "Платные подписки отключены до проверки оплаты Stripe. "
-                 "Текущая бесплатная бета ограничена тремя профилями.",
+        tk.Label(outer, text="Бета-версия: лицензия проверяется через личный кабинет. "
+                 "Stripe используется для оплачиваемых тарифов, если продажи включены сервером. "
+                 "Поддержка Google OAuth и некоторые функции ещё в разработке.",
                  bg=BG, fg=MUTED, font=("Arial", 10), wraplength=800, justify="left").pack(anchor="w", pady=(12, 0))
 
     def license_tick(self):
