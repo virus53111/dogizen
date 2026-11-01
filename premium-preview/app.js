@@ -3,7 +3,7 @@
   'use strict';
   const en = {
     skip: 'Skip to content',
-    announcement: 'New design · early preview, the live site is unchanged',
+    announcement: 'Murdilimax Browser · new workspace experience',
     navProduct: 'Product', navPricing: 'Pricing', navWorkspace: 'Workspace',
     account: 'My account', download: 'Download',
     heroEyebrow: 'THE NEXT GENERATION OF BROWSER WORKSPACES',
@@ -34,7 +34,7 @@
     ctaDownload: 'Download Murdilimax', ctaCompare: 'Compare plans',
     footerDesc: 'Building a simpler, more powerful and more affordable browser profile workspace.',
     privacy: 'Privacy', guides: 'Guides', allRights: 'All rights reserved.',
-    footerNote: 'Design preview · Not a final release',
+    footerNote: 'Murdilimax Browser · Early beta version', mobileApp: 'Mobile app',
     priceEyebrow: 'TRANSPARENT PRICING · NO UNNECESSARY COSTS',
     priceHeading: 'Professional tools. <em>Fair prices.</em>',
     priceIntro: 'Start for free, then choose the profile capacity you need. Card payments are processed by Stripe. All paid plans provide early access to a beta product.',
