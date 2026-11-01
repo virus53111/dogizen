@@ -31,9 +31,12 @@ def proxy_probe_url(proxy):
     return urlunsplit((scheme, authority, "", "", ""))
 
 def probe_proxy_exit(proxy, timeout=12, session=None):
-    import requests
     route = proxy_probe_url(proxy)
-    request_session = session or requests.Session()
+    if session is None:
+        import requests  # Kept out of the offline tests and Tkinter startup.
+        request_session = requests.Session()
+    else:
+        request_session = session
     request_session.trust_env = False  # never silently route around the chosen proxy
     try:
         response = request_session.get(
