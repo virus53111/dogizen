@@ -85,6 +85,7 @@ class BrowserUI:
         self.setup_addons()
         self.setup_account()
         self.setup_info()
+        self.tabs.bind("<<NotebookTabChanged>>", self.on_main_tab_changed)
         status_frame = tk.Frame(self.root, bg="#192140", highlightbackground="#544b8e",
                                 highlightthickness=1)
         status_frame.pack(fill="x", padx=24, pady=(5, 16))
@@ -135,6 +136,7 @@ class BrowserUI:
         finally:
             self._localizing = False
         self.update_filter_labels()
+        self.refresh_addons()
 
     def apply_language(self, widget):
         # Translate only authored UI strings, not profile names, notes,
@@ -283,6 +285,17 @@ class BrowserUI:
         ttk.Label(self.proxy_tab,
                   text="TCP-тест проверяет порт. Выходной IP проверяется отдельным HTTPS-запросом через прокси; WebRTC, IPv6 и DNS-утечки этим не подтверждаются. Пароли — в системном хранилище ключей.",
                   foreground=MUTED, wraplength=1000).pack(anchor="w", padx=14, pady=10)
+
+    def on_main_tab_changed(self, _event=None):
+        if self.tabs.select() != str(self.addon_tab):
+            return
+        selection = list(self.profile_tree.selection())
+        if len(selection) == 1:
+            self.addon_profile_id = selection[0]
+        try:
+            self.refresh_addons()
+        except ValueError as exc:
+            messagebox.showerror("Murdilimax Extensions", str(exc), parent=self.root)
 
     def setup_addons(self):
         outer = self.addon_tab
