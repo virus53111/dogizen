@@ -49,7 +49,7 @@ def normalize_extra_urls(urls, *, primary="about:blank"):
     return result
 
 
-def navigate_startup_tabs(context, profile):
+def navigate_startup_tabs(context, profile, *, bookmarks=()):
     """Open the main URL and validated extras in the same Camoufox context.
 
     Errors are collected as counts, never with possibly sensitive URLs in
@@ -64,11 +64,17 @@ def navigate_startup_tabs(context, profile):
         if len(normalized) != 1:
             raise ValueError("Invalid primary startup URL")
     extras = normalize_extra_urls(profile.get("startup_urls", []), primary=primary)
+    dashboard = None
+    if primary == "about:blank" and bookmarks:
+        from bookmarks import bookmark_dashboard
+        dashboard = bookmark_dashboard(bookmarks)
     existing = context.pages
     page = existing[0] if existing else context.new_page()
     loaded, failed = 0, 0
     try:
         page.goto(primary, wait_until="domcontentloaded", timeout=20000)
+        if dashboard is not None:
+            page.set_content(dashboard, wait_until="domcontentloaded")
         loaded += 1
     except Exception:
         failed += 1
