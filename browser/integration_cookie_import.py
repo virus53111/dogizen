@@ -43,10 +43,14 @@ def check(store, profile_id, url, expected, init=False):
         page = browser.pages[0] if browser.pages else browser.new_page()
         page.goto(url, wait_until="domcontentloaded", timeout=25000)
         if init:
-            browser.add_cookies([{"name": "before", "value": "synthetic-old",
-                "domain": "127.0.0.1", "path": "/", "expires": 1999999999}])
+            # Set an ordinary site cookie using the real document API, as
+            # Firefox itself would, before testing the external file import.
+            page.evaluate(
+                "document.cookie='before=synthetic-old; Max-Age=3600; "
+                "Path=/; SameSite=Lax'")
             page.reload()
-        actual = {x["name"] for x in browser.cookies(url)}
+        actual = {fragment.split("=", 1)[0].strip() for fragment in
+                  page.evaluate("document.cookie").split(";") if fragment.strip()}
         assert expected.issubset(actual), (expected, actual)
         assert not ({"imported", "before"} - expected) & actual, actual
 
