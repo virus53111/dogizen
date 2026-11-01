@@ -17,6 +17,7 @@ from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 from auth_client import BrowserAccount
 from engine import pid_alive, request_stop, run_profile, start_background, safe_profile_id
 from network_check import probe_proxy_exit
+from proxy_import import import_proxy_list
 from engine_setup import ensure_engine_ready
 from store import Store
 from neon_theme import BG, PANEL, TEXT, MUTED, ACCENT, apply_neon_theme, NeonHeader
@@ -215,6 +216,7 @@ class BrowserUI:
         bar = ttk.Frame(self.proxy_tab)
         bar.pack(fill="x", padx=12, pady=10)
         self.button(bar, "＋ Добавить прокси", self.new_proxy)
+        self.button(bar, "⇩ Импорт .txt", self.import_proxies_txt)
         self.button(bar, "✎ Изменить прокси", self.edit_proxy)
         self.button(bar, "✕ Удалить прокси", self.remove_proxy)
         self.button(bar, "Проверить TCP-порт", self.check_proxy)
@@ -538,6 +540,31 @@ class BrowserUI:
             count = self.store.import_metadata(path)
             self.refresh()
             self.state.set("Импортировано профилей: " + str(count))
+
+    def import_proxies_txt(self):
+        """Import proxy endpoints without copying passwords in plaintext."""
+        path = filedialog.askopenfilename(
+            title="Import proxies / Импорт прокси",
+            filetypes=[("Text proxy lists", "*.txt"), ("All files", "*.*")])
+        if not path:
+            return
+        if Path(path).stat().st_size > 1_000_000:
+            raise ValueError("Proxy file is too large (maximum 1 MB)")
+        try:
+            content = Path(path).read_text(encoding="utf-8-sig")
+        except UnicodeDecodeError as exc:
+            raise ValueError("Use a UTF-8 text file with one URL per line") from exc
+        # Validate before adding; never echo any potentially credential-bearing
+        # user-supplied URL in dialogs, notifications or log messages.
+        added, skipped = import_proxy_list(self.store, content)
+        self.refresh_proxies()
+        self.state.set(f"Импортировано прокси: {added} · дубликатов: {skipped}")
+        messagebox.showinfo(
+            "Murdilimax Browser",
+            f"Добавлено прокси: {added}\nПропущено дубликатов: {skipped}\n"
+            "Пароли из текстовых файлов не импортируются. Добавьте пароль "
+            "в редакторе прокси для защищённого хранения в OS Keychain.",
+            parent=self.root)
 
     def new_proxy(self):
         self.proxy_form()
