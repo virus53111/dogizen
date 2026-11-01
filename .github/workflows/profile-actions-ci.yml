@@ -1,0 +1,31 @@
+name: Profile quick-create and bulk proxy regression QA
+on:
+  push:
+    branches: [feature/quick-profile-bulk-proxy-20261101]
+    paths: ['browser/**', '.github/workflows/profile-actions-ci.yml']
+  pull_request:
+    paths: ['browser/**', '.github/workflows/profile-actions-ci.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cross-platform:
+    name: Profile quick + proxy / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15-intel]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Compile application
+        run: python -m compileall -q browser
+      - name: Quick profile and proxy all-or-nothing tests
+        run: python -m unittest discover -s browser -p 'test_profile_actions.py' -v
+      - name: Full browser unit regressions
+        run: python -m unittest discover -s browser -v
+      - name: Desktop CLI smoke
+        run: python browser/app.py --selftest
