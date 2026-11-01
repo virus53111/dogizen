@@ -231,10 +231,12 @@ def import_cookies(store, profile_id, source, *, context_factory=None,
                 expected = {(r["domain"], r["path"], r["name"])
                             for r in cookies}
                 if not expected.issubset(installed):
-                    raise ValueError("Firefox rejected one or more imported cookies")
+                    raise ValueError("Firefox rejected imported cookies in the live context")
                 page.wait_for_timeout(1000)
-        except Exception:
-            # Retain private pre-import snapshot for manual recovery. Never
-            # overwrite Firefox DB while a crashed context may have WAL files.
-            raise ValueError("Cookie import failed. Check the local backup before retrying.") from None
+        except Exception as exc:
+            # Do not expose token values or browser exception messages to
+            # logs. The exception CLASS helps diagnose engine compatibility.
+            raise ValueError(
+                "Cookie import failed (" + type(exc).__name__ +
+                "). Check the local backup before retrying.") from None
         return preview.count, rollback
