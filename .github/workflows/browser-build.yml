@@ -63,6 +63,19 @@ jobs:
           '@ | Set-Content browser-preview.iss -Encoding UTF8
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' browser-preview.iss
           if (!(Test-Path 'Murdilimax-Browser-Windows-Preview-Setup.exe')) { throw 'Installer missing' }
+      - name: Silent install and run packaged Windows executable
+        shell: pwsh
+        run: |
+          $dest = Join-Path $env:RUNNER_TEMP 'Murdilimax-QA-Install'
+          $setup = (Resolve-Path 'Murdilimax-Browser-Windows-Preview-Setup.exe').Path
+          $proc = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',('/DIR="' + $dest + '"')) -Wait -PassThru
+          if ($proc.ExitCode -ne 0) { throw "Silent installation failed: $($proc.ExitCode)" }
+          $exe = Join-Path $dest 'Murdilimax Browser.exe'
+          if (!(Test-Path $exe)) { throw "Installed Murdilimax executable missing" }
+          $selftest = Start-Process -FilePath $exe -ArgumentList @('--selftest') -Wait -PassThru
+          if ($selftest.ExitCode -ne 0) { throw "Installed Windows selftest failed: $($selftest.ExitCode)" }
+          Write-Host 'PASS: Setup.exe installation and installed executable selftest'
+          Get-FileHash -Path $setup -Algorithm SHA256 | Format-List
       - uses: actions/upload-artifact@v4
         with:
           name: Murdilimax-Browser-Windows-Preview
@@ -109,6 +122,22 @@ jobs:
           cp -R 'dist/Murdilimax Browser.app' dmgroot/
           ln -s /Applications dmgroot/Applications
           hdiutil create -ov -fs HFS+ -volname 'Murdilimax Browser Preview' -srcfolder dmgroot -format UDZO "Murdilimax-Browser-macOS-${{ matrix.name }}-Preview.dmg"
+      - name: Mount DMG, copy app and selftest installed bundle
+        shell: bash
+        run: |
+          set -euo pipefail
+          dmg="Murdilimax-Browser-macOS-${{ matrix.name }}-Preview.dmg"
+          mountpoint="$RUNNER_TEMP/murdilimax-mounted"
+          installroot="$RUNNER_TEMP/murdilimax-installed"
+          mkdir -p "$mountpoint" "$installroot"
+          hdiutil attach "$dmg" -readonly -nobrowse -mountpoint "$mountpoint"
+          trap 'hdiutil detach "$mountpoint" -quiet || true' EXIT
+          test -d "$mountpoint/Murdilimax Browser.app"
+          ditto "$mountpoint/Murdilimax Browser.app" "$installroot/Murdilimax Browser.app"
+          codesign --verify --deep "$installroot/Murdilimax Browser.app"
+          "$installroot/Murdilimax Browser.app/Contents/MacOS/Murdilimax Browser" --selftest
+          shasum -a 256 "$dmg"
+          echo 'PASS: DMG mounted; installed app bundle passed selftest'
       - uses: actions/upload-artifact@v4
         with:
           name: Murdilimax-Browser-macOS-${{ matrix.name }}-Preview
