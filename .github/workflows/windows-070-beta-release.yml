@@ -5,6 +5,8 @@ on:
     paths:
       - '.github/workflows/windows-070-beta-release.yml'
       - 'docs/WINDOWS_070_TESTING_RU.md'
+      - 'browser/update_check.py'
+      - 'browser/local_api.py'
   workflow_dispatch:
 permissions:
   contents: write
