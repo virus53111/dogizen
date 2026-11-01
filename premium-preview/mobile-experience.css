@@ -1,0 +1,129 @@
+/* Mobile-first polish for real pricing / interactive demo. No checkout logic.
+   This stylesheet is included after theme.css and neon.css. */
+[data-page][hidden]{display:none!important}
+.page-pricing,.page-workspace{min-width:0;max-width:100%}
+.page-pricing .container,.page-workspace .container{min-width:0}
+.page-pricing .page-lead,.page-workspace .workspace-intro{min-width:0}
+.page-pricing h1,.page-workspace h1{overflow-wrap:break-word}
+.page-pricing .pricing-card,.page-pricing .payment-message,
+.page-workspace .workspace-shell,.page-workspace .dash-content,
+.page-workspace .dash-table-card{min-width:0;max-width:100%}
+.page-pricing .pay-link,.page-pricing .price-button{
+  display:flex;align-items:center;justify-content:center;min-height:49px;
+  text-align:center;white-space:normal;overflow-wrap:anywhere;
+}
+.page-pricing .method,.page-pricing .billing-term{min-height:44px}
+.page-workspace #open-create{min-height:46px}
+.page-workspace .tiny-action{min-height:39px;touch-action:manipulation}
+.page-workspace .search-box input{min-width:0}
+.page-workspace .table-scroll{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.page-workspace .workspace-shell{overflow:hidden}
+.page-workspace .profile-dialog{max-width:calc(100vw - 24px)}
+@media(max-width:920px){
+  .page-pricing .pricing-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+  .page-pricing .pricing-card{min-height:0}
+  .page-workspace .workspace-intro{display:flex;flex-wrap:wrap;align-items:flex-start;gap:16px}
+  .page-workspace .workspace-intro>div{min-width:0;flex:1 1 320px}
+  .page-workspace .workspace-shell{grid-template-columns:minmax(0,1fr)}
+  .page-workspace .dash-sidebar{display:none}
+  .page-workspace .dash-content{min-width:0}
+}
+@media(max-width:630px){
+  .page-pricing .container,.page-workspace .container{width:calc(100% - 32px)}
+  .page-pricing .page-lead{padding:42px 0 22px}
+  .page-pricing .page-lead h1{font-size:clamp(28px,8vw,38px);line-height:1.13;
+    letter-spacing:-.05em;margin:20px 0}
+  .page-pricing .page-lead p{font-size:13px;line-height:1.75}
+  .page-pricing .billing-top{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin:17px 0}
+  .page-pricing .billing-term{flex-wrap:wrap}
+  .page-pricing .method-selector{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+  .page-pricing .method-selector>span:first-child{grid-column:1/-1;margin:0}
+  .page-pricing .method{width:100%;min-width:0;min-height:49px;white-space:normal;
+    line-height:1.35;padding:9px;justify-content:center;text-align:center}
+  .page-pricing .coming{font-size:9px}
+  .page-pricing .pricing-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:17px}
+  .page-pricing .pricing-card{padding:25px 22px;min-height:0;border-radius:19px}
+  .page-pricing .pricing-card.featured{margin-top:8px}
+  .page-pricing .pricing-card h2{font-size:22px}
+  .page-pricing .pricing-card>p{min-height:0;font-size:13px}
+  .page-pricing .price-line{margin:14px 0}
+  .page-pricing .price-button{width:100%;min-height:52px;font-size:13px}
+  .page-pricing .pricing-card li{font-size:13px}
+  .page-pricing .payment-message{margin:25px 0 65px;padding:18px;gap:12px}
+  .page-pricing .payment-message p{overflow-wrap:anywhere}
+  .page-pricing .faq{margin-bottom:65px}
+  .page-pricing .faq summary{padding:17px 10px;overflow-wrap:anywhere}
+  .page-workspace .workspace-intro{padding:38px 0 25px;display:grid;gap:17px}
+  .page-workspace .workspace-intro h1{font-size:clamp(28px,8.4vw,39px)}
+  .page-workspace .workspace-intro p{font-size:13px}
+  .page-workspace .workspace-intro>.btn{width:100%;min-height:49px;white-space:normal;text-align:center}
+  .page-workspace .demo-notice{display:flex;align-items:flex-start;gap:9px;
+    padding:14px;font-size:11px;overflow-wrap:anywhere}
+  .page-workspace .workspace-shell{margin:18px 0 60px;width:100%;border-radius:17px}
+  .page-workspace .dash-content{padding:0 13px 14px}
+  .page-workspace .dash-toolbar{min-height:48px;height:auto;padding:9px 0}
+  .page-workspace .dash-breadcrumb{font-size:10px;min-width:0;overflow:hidden}
+  .page-workspace .dash-tools{gap:7px;flex-shrink:0}
+  .page-workspace .dash-head{display:grid;gap:15px;padding-top:19px}
+  .page-workspace .dash-head h2{font-size:25px}
+  .page-workspace .dash-head p{font-size:12px}
+  .page-workspace #open-create{width:100%;justify-content:center;min-height:50px}
+  .page-workspace .dash-metrics{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+  .page-workspace .dash-metrics>div{min-width:0;padding:10px 8px}
+  .page-workspace .dash-metrics span{font-size:10px;overflow-wrap:anywhere}
+  .page-workspace .dash-metrics strong{font-size:clamp(19px,6vw,27px);margin:5px 0}
+  .page-workspace .dash-metrics small{font-size:9px;line-height:1.35}
+  .page-workspace .dash-table-card{border-radius:13px}
+  .page-workspace .table-controls{display:grid;grid-template-columns:minmax(0,1fr);
+    gap:12px;padding:12px}
+  .page-workspace .filter-tabs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px}
+  .page-workspace .filter{min-height:44px;padding:8px 4px;font-size:10px;
+    white-space:normal;line-height:1.3}
+  .page-workspace .search-box{max-width:100%;width:100%;min-height:47px}
+  .page-workspace .search-box input{font-size:16px}
+  /* A table becomes a set of accessible profile cards at phone width.
+     data-label comes from the current RU/EN translation in app.js. */
+  .page-workspace .table-scroll{overflow-x:visible}
+  .page-workspace .profile-table{display:block;width:100%;min-width:0!important;
+    white-space:normal;table-layout:auto}
+  .page-workspace .profile-table thead{display:none}
+  .page-workspace .profile-table tbody{display:grid;grid-template-columns:minmax(0,1fr);gap:11px;padding:11px}
+  .page-workspace .profile-table tr{display:grid;grid-template-columns:minmax(0,1fr);
+    gap:8px;padding:14px;border:1px solid #62518c;border-radius:12px;
+    background:linear-gradient(135deg,#24204c,#131d3c)}
+  .page-workspace .profile-table td{display:flex;align-items:center;justify-content:space-between;
+    gap:10px;min-width:0;width:100%;padding:0;border:0;
+    font-size:12px;text-align:right;white-space:normal;overflow-wrap:anywhere}
+  .page-workspace .profile-table td::before{content:attr(data-label);flex:0 0 auto;
+    text-align:left;font-weight:800;font-size:10px;color:#a4b6d9;
+    letter-spacing:.03em}
+  .page-workspace .profile-table td:first-child{justify-content:flex-start;
+    text-align:left;padding-bottom:9px;border-bottom:1px solid #6b5e994e}
+  .page-workspace .profile-table td:first-child::before{display:none}
+  .page-workspace .profile-table td:last-child{padding-top:9px;
+    border-top:1px solid #6b5e994e}
+  .page-workspace .profile-table td:last-child::before{display:none}
+  .page-workspace .profile-table td.no-data{display:block;text-align:center}
+  .page-workspace .profile-table td.no-data::before{display:none}
+  .page-workspace .profile-person{min-width:0;max-width:100%;overflow-wrap:anywhere}
+  .page-workspace .profile-person b{white-space:normal;overflow-wrap:anywhere}
+  .page-workspace .row-actions{display:grid;grid-template-columns:1fr 1fr;
+    width:100%;gap:8px}
+  .page-workspace .tiny-action{min-width:0;min-height:43px;padding:10px 8px;
+    font-size:12px;overflow-wrap:anywhere}
+  .page-workspace .table-footer{padding:13px 12px;flex-wrap:wrap;gap:12px}
+  .page-workspace .dash-bottom{flex-wrap:wrap;gap:10px}
+  .profile-dialog{width:calc(100% - 26px);max-width:calc(100% - 26px);
+    max-height:calc(100dvh - 24px);overflow-y:auto;padding:20px}
+  .profile-dialog .dialog-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .profile-dialog .dialog-actions .btn{min-width:0;min-height:46px;
+    white-space:normal;padding:10px}
+  .profile-dialog input,.profile-dialog select{font-size:16px}
+  .site-footer .footer-grid{grid-template-columns:1fr;gap:25px}
+  .site-footer .footer-grid>div:first-child{grid-column:auto}
+}
+@media(max-width:350px){
+  .page-workspace .dash-metrics{grid-template-columns:minmax(0,1fr)}
+  .page-workspace .dash-metrics>div{padding:13px}
+  .page-pricing .method-selector{grid-template-columns:minmax(0,1fr)}
+}

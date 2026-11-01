@@ -1,0 +1,51 @@
+/* Phone-safe download page: artwork remains decorative and never widens page. */
+html,body.mx-download-page{max-width:100%;overflow-x:clip}
+.mx-download-page main,.mx-download-page .container,.mx-download-head-inner,
+.mx-dl-hero-grid,.mx-dl-hero-content,.mx-hero-graphic,
+.mx-download-grid,.mx-download-card{min-width:0}
+.mx-download-page .mx-download-card{overflow-wrap:anywhere}
+.mx-download-page .mx-download-action{min-width:0;min-height:50px;
+  white-space:normal;overflow-wrap:anywhere;text-align:center;touch-action:manipulation}
+.mx-download-page .mx-download-action span{min-width:0}
+@media(max-width:760px){
+ .mx-download-head-inner{flex-wrap:wrap;gap:11px 9px;justify-content:space-between}
+ .mx-download-nav{order:3;flex:0 0 100%;width:100%;min-width:0;
+  margin:0;padding:10px 0 0;justify-content:center;flex-wrap:wrap;gap:9px 18px}
+ .mx-download-nav a{min-height:32px;display:inline-flex;align-items:center;white-space:normal}
+ .mx-download-nav-actions{flex:0 0 auto;gap:7px}
+ .mx-download-hero .mx-dl-hero-grid{grid-template-columns:minmax(0,1fr)}
+ .mx-download-grid{grid-template-columns:minmax(0,1fr)}
+ .mx-download-bottom{display:grid;grid-template-columns:minmax(0,1fr);gap:17px}
+ .mx-download-bottom .mx-get-download{width:100%;min-height:49px;justify-content:center}
+ .mx-steps-grid{grid-template-columns:minmax(0,1fr)}
+ .mx-download-footer nav{gap:9px 18px}
+}
+@media(max-width:540px){
+ .mx-download-page .container{width:calc(100% - 32px)}
+ .mx-download-head-inner{width:calc(100% - 28px)}
+ .mx-download-header .brand{min-width:0;max-width:calc(100% - 115px)}
+ .mx-download-header .brand-text{overflow-wrap:anywhere;min-width:0}
+ .mx-download-nav a{font-size:11px;min-height:34px}
+ .mx-download-topbar{font-size:9px;gap:8px;justify-content:center}
+ .mx-download-hero{padding:31px 0 23px}
+ .mx-download-hero h1{font-size:clamp(31px,9vw,43px);overflow-wrap:anywhere}
+ .mx-dl-hero-content>p{font-size:13px;line-height:1.75}
+ .mx-download-page .mx-hero-graphic{position:relative;width:100%;height:clamp(230px,78vw,325px);
+    transform:none;min-width:0;margin:0 auto}
+ .mx-download-page .mx-glass-device{max-width:100%;width:95%;left:2.5%;right:auto}
+ .mx-download-page .mx-download-planet{max-width:60%;right:4%}
+ .mx-download-page .mx-floating-shield{right:0;max-width:46%;padding:8px}
+ .mx-download-page .mx-download-action{min-height:52px;padding:12px 13px;font-size:12px}
+ .mx-download-card{padding:22px 17px;min-height:0}
+ .mx-download-card h2{font-size:22px}
+ .mx-section-head h2{font-size:clamp(29px,8vw,40px)}
+ .mx-download-note{display:grid;grid-template-columns:auto 1fr;gap:10px}
+ .mx-install-steps{padding:30px 0 50px}
+ .mx-download-bottom{padding:25px 19px;margin-bottom:55px}
+ .mx-download-bottom h2{font-size:clamp(26px,7.5vw,33px)}
+}
+@media(max-width:350px){
+ .mx-download-nav{gap:8px 11px}
+ .mx-download-nav a{font-size:10px}
+ .mx-download-page .mx-small-account{font-size:9px}
+}

@@ -227,16 +227,21 @@
     for(const p of matches){
       const tr=elt('tr');
       const nameTd=elt('td');
+      nameTd.dataset.label=t('tableProfile');
       const person=elt('span','profile-person');
       const letter=(p.name.trim()[0]||'M').toLocaleUpperCase();
       const avatar=elt('i','avatar '+(['avatar-purple','avatar-blue','avatar-peach'][Math.abs(p.name.length)%3]),letter);
       const words=elt('span');words.append(elt('b','',p.name),elt('small','',String(p.id).startsWith('demo-')?'demo-local':'local-demo'));
       person.append(avatar,words);nameTd.append(person);
-      tr.append(nameTd,elt('td','',p.group),elt('td','',countries[p.proxy]+' '+p.proxy));
-      const statusCell=elt('td');const pill=elt('span','pill '+(p.active?'running':'stopped'));
+      const groupTd=elt('td','',p.group);groupTd.dataset.label=t('tableGroup');
+      const proxyTd=elt('td','',countries[p.proxy]+' '+p.proxy);proxyTd.dataset.label=t('tableProxy');
+      tr.append(nameTd,groupTd,proxyTd);
+      const statusCell=elt('td');statusCell.dataset.label=t('tableStatus');
+      const pill=elt('span','pill '+(p.active?'running':'stopped'));
       pill.append(elt('i','status-dot '+(p.active?'':'off')),elt('span','',p.active?t('running'):t('stopped')));
       statusCell.append(pill);tr.append(statusCell);
-      const actCell=elt('td');const act=elt('div','row-actions');
+      const actCell=elt('td');actCell.dataset.label=t('tableActions');
+      const act=elt('div','row-actions');
       act.append(actionButton(p.active?d('stop'):d('run'),'',
         ()=>{p.active=!p.active;saveProfiles();renderProfiles();}));
       act.append(actionButton(d('delete'),'danger',
