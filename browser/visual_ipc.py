@@ -157,6 +157,12 @@ def consume_visual_commands(context, folder, token):
                 elif kind == "wait_visible":
                     page.locator(step["selector"]).wait_for(
                         state="visible", timeout=step["seconds"] * 1000)
+                elif kind == "assert_text":
+                    # Only an acknowledgement leaves this profile, never page text.
+                    # Playwright's locator waits for asynchronously rendered text.
+                    page.locator(step["selector"]).filter(
+                        has_text=step["text"]).first.wait_for(
+                        state="visible", timeout=step["seconds"] * 1000)
                 elif kind == "fill":
                     page.locator(step["selector"]).fill(step["text"], timeout=12000)
                 elif kind == "scroll":

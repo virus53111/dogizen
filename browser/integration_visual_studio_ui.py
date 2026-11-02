@@ -68,6 +68,13 @@ def main():
                        return_value=7):
                 assert editor._ask_step("wait_visible") == {
                     "kind": "wait_visible", "selector": "#ready", "seconds": 7}
+            with patch("visual_studio_ui.simpledialog.askstring",
+                       side_effect=["#status", "Flow confirmed"]), patch(
+                       "visual_studio_ui.simpledialog.askinteger",
+                       return_value=8):
+                assert editor._ask_step("assert_text") == {
+                    "kind": "assert_text", "selector": "#status",
+                    "text": "Flow confirmed", "seconds": 8}
             editor.steps = [
                 {"kind": "wait", "seconds": 1},
                 {"kind": "open", "url": "https://example.org"}]

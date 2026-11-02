@@ -24,8 +24,9 @@ class LocalPage(http.server.BaseHTTPRequestHandler):
     def do_GET(self):
         html = (b"<html><head><title>Flow QA</title></head><body>"
                 b"<input id='search' /><button id='submit' "
-                b"onclick=\"document.body.dataset.sent=document.querySelector('#search').value\">"
-                b"Send</button><div id='out'></div></body></html>")
+                b"onclick=\"document.body.dataset.sent=document.querySelector('#search').value;"
+                b"document.querySelector('#status').textContent='Flow confirmed'\">"
+                b"Send</button><div id='status'></div></body></html>")
         self.send_response(200)
         self.send_header("Content-Type", "text/html")
         self.send_header("Content-Length", str(len(html)))
@@ -51,6 +52,8 @@ def main():
                 {"kind": "wait_visible", "selector": "#search", "seconds": 8},
                 {"kind": "fill", "selector": "#search", "text": "Murdilimax Flow"},
                 {"kind": "click", "selector": "#submit"},
+                {"kind": "assert_text", "selector": "#status",
+                 "text": "Flow confirmed", "seconds": 8},
                 {"kind": "scroll", "pixels": 420},
                 {"kind": "wait", "seconds": 1},
             ]
@@ -68,7 +71,7 @@ def main():
                             **kwargs)
                     done = run_visual_flow(store, plan, verify=lambda *_: None,
                                            dispatch=dispatch)
-                    assert done == {"state": "completed", "actions": 5}, done
+                    assert done == {"state": "completed", "actions": 6}, done
                     page = browser.pages[-1]
                     assert page.title() == "Flow QA"
                     assert page.evaluate("document.body.dataset.sent") == "Murdilimax Flow"
@@ -84,7 +87,7 @@ def main():
                 assert "flow_qa=persisted" in page.evaluate("document.cookie")
             saved = store._read("visual_flows")
             assert saved[0]["steps"] == blocks
-        print("PASS: actual Camoufox visual open/wait-visible/fill/click/scroll/wait, acks and persistent cookies")
+        print("PASS: actual Camoufox visual open/wait-visible/fill/click/assert-text/scroll/wait, acks and persistent cookies")
     finally:
         web.shutdown()
         web.server_close()

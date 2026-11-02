@@ -15,9 +15,15 @@ from visual_ipc import (REQUESTS, RESPONSES, consume_visual_commands,
 
 
 class Locator:
-    def __init__(self, page, selector):
+    def __init__(self, page, selector, text=None):
         self.page = page
         self.selector = selector
+        self.text = text
+    def filter(self, **kw):
+        return Locator(self.page, self.selector, kw.get("has_text"))
+    @property
+    def first(self):
+        return self
     def click(self, **kw):
         self.page.events.append(("click", self.selector))
         if self.page.fail:
@@ -25,9 +31,15 @@ class Locator:
     def fill(self, text, **kw):
         self.page.events.append(("fill", self.selector, text))
     def wait_for(self, **kw):
-        self.page.events.append(("wait_visible", self.selector, kw.get("state"), kw.get("timeout")))
-        if self.selector == "#missing":
-            raise RuntimeError("Synthetic locator timeout")
+        if self.text is not None:
+            self.page.events.append(("assert_text", self.selector, self.text,
+                                     kw.get("state"), kw.get("timeout")))
+            if self.text != "Flow confirmed":
+                raise RuntimeError("Synthetic expected text missing")
+        else:
+            self.page.events.append(("wait_visible", self.selector, kw.get("state"), kw.get("timeout")))
+            if self.selector == "#missing":
+                raise RuntimeError("Synthetic locator timeout")
 
 
 class Mouse:
@@ -78,12 +90,15 @@ class VisualIPCTests(unittest.TestCase):
     def test_open_click_fill_scroll_and_ack_cleanup(self):
         self.assertTrue(self.execute({"kind": "open", "url": "https://example.org"}))
         self.assertTrue(self.execute({"kind": "wait_visible", "selector": "#search", "seconds": 8}))
+        self.assertTrue(self.execute({"kind": "assert_text", "selector": "#status",
+                                      "text": "Flow confirmed", "seconds": 8}))
         self.assertTrue(self.execute({"kind": "click", "selector": "#login"}))
         self.assertTrue(self.execute({"kind": "fill", "selector": "#search", "text": "public text"}))
         self.assertTrue(self.execute({"kind": "scroll", "pixels": 650}))
         self.assertEqual(self.browser.pages[-1].events, [
             ("open", "https://example.org"),
             ("wait_visible", "#search", "visible", 8000),
+            ("assert_text", "#status", "Flow confirmed", "visible", 8000),
             ("click", "#login"), ("fill", "#search", "public text"),
             ("scroll", 650)])
         self.assertEqual(list((self.folder / REQUESTS).glob("*.json")), [])
@@ -95,6 +110,15 @@ class VisualIPCTests(unittest.TestCase):
         self.assertEqual(list((self.folder / RESPONSES).glob("*.json")), [])
         self.assertEqual(self.browser.pages[-1].events,
                          [("wait_visible", "#missing", "visible", 2000)])
+
+    def test_text_mismatch_stops_action_without_leaking_page_content(self):
+        with self.assertRaisesRegex(RuntimeError, "did not complete"):
+            self.execute({"kind": "assert_text", "selector": "#status",
+                          "text": "Not shown", "seconds": 2})
+        self.assertEqual(self.browser.pages[-1].events,
+                         [("assert_text", "#status", "Not shown", "visible", 2000)])
+        self.assertEqual(list((self.folder / REQUESTS).glob("*.json")), [])
+        self.assertEqual(list((self.folder / RESPONSES).glob("*.json")), [])
 
     def test_stale_session_rejected_before_any_browser_action(self):
         # Submit a command file with an old token and rotate the browser key.
@@ -118,7 +142,9 @@ class VisualIPCTests(unittest.TestCase):
         for bad in ({"kind": "fill", "selector": "input[type=password]", "text": "bad"},
                     {"kind": "open", "url": "file:///etc/passwd"},
                     {"kind": "scroll", "pixels": 99999},
-                    {"kind": "wait_visible", "selector": "#ok", "seconds": 17}):
+                    {"kind": "wait_visible", "selector": "#ok", "seconds": 17},
+                    {"kind": "assert_text", "selector": "#ok",
+                     "text": "ok", "seconds": 17}):
             with self.assertRaises(ValueError):
                 self.execute(bad)
         self.assertFalse((self.folder / REQUESTS).exists())
