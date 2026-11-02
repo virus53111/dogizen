@@ -187,6 +187,7 @@ class FlowEditor:
             padx=14, pady=9, font=("Arial", 9, "bold")
         ).pack(side="right")
         popup.grab_set()
+        return popup
 
     def _scroll_flow(self, event):
         if getattr(event, "num", None) == 4:
