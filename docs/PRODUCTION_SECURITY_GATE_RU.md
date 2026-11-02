@@ -47,3 +47,23 @@ Before repeating the fork, produce a staging-only migration variant with the *ac
 The owner must provide/perform (in service consoles, not in GitHub or chat): Windows code-signing certificate, production-independent Stripe TEST keys and webhook signing secret, two synthetic authorized test accounts for staging, and final go/no-go approval for a reversible server permission migration. No secret is required to run the read-only/offline repository unit tests.
 
 **Not changed by this audit:** LIVE Stripe switch, card prices, server DB permissions, customer subscriptions, app branding, Mac packages, hosting, or the published v0.16.0 installer.
+
+
+## Isolated Hatchable staging acceptance — results
+
+A private, no-customer-data copy of the account backend was deployed to a separate personal Hatchable QA project; it has **no LIVE Stripe keys** and the default LIVE sales flag is **false**. The production database, billing configuration and deployed API files were not modified. The copy's hard-coded `SECURITY DEFINER search_path` was repaired **only in staging** so its 13 migrations could be replayed.
+
+In this staging project, six missing table declarations were provisionally set to `read="own"; write="member"`. This removed all six row-access warnings, but must **not** be copied into production yet.
+
+A temporary authenticated test route, verified via the platform's actual `as:"user"` access tier, checked two distinct synthetic identities and two pairs of fake billing records. Results:
+
+- User A sees 1 own checkout session and 1 own subscription; sees **0** sessions or subscriptions belonging to synthetic B.
+- User A's attempts to update B's session **and A's own server-controlled billing session** were blocked.
+- Anonymous requests to the authenticated test route returned 401; ordinary signed-in users could not access the member-only test seeder (403).
+- The scheduler reconciliation handler still saw 2 synthetic subscription records (`checked=2`), despite the row policies; it returned `failed=2` because no LIVE Stripe key is configured in staging. Those fake subscriptions never grant paid access.
+- A deliberately temporary public-writer test that models the DB access tier of the actual signed Stripe webhook was **blocked** from inserting a subscription row. This is a **confirmed compatibility blocker**: applying these member-write policies directly to production would break legitimate public-webhook writes. Checkout user-route writes would likewise require a redesign.
+- A signed-in staging user got HTTP 200 from live-status with the own synthetic canceled subscription and LIVE sales disabled. The actual public webhook correctly rejected an unsigned event with HTTP 400.
+
+All three temporary QA API handlers (seeder, row-policy probe and public-writer probe) were **removed**, and the private staging project was redeployed at version 5 retaining only the test policies and fake records. This was not an end-to-end Stripe purchase/renewal test.
+
+**Required next engineering change:** design and test tightly permissioned, atomic backend writes for signed webhooks and authenticated checkout/rate-limiter operations, rather than weakening row policies or silently downgrading paid customers. Require real signed Stripe TEST fixtures, event replay/out-of-order tests and server entitlement checks before considering production migration.
