@@ -13,13 +13,14 @@ import uuid
 from engine import (pid_alive, request_stop, safe_profile_id,
                     start_background, verify_commercial_access)
 from launch_guard import launch_pending
+from navigation_commands import submit_navigation, validated_navigation_url
 from store import now
 
 MAX_SCENARIOS = 50
 MAX_PROFILES = 20
 MAX_WAIT_SECONDS = 300
 ID_RE = re.compile(r"[0-9a-f]{32}\Z")
-KINDS = frozenset({"start", "stop", "session"})
+KINDS = frozenset({"start", "stop", "session", "navigate"})
 
 
 def _validated(value):
@@ -124,6 +125,10 @@ def preflight(store, scenario, *, verify=verify_commercial_access,
             if running(store, pid):
                 raise RuntimeError("Stop selected profiles before starting this scenario")
             verify(store, pid)
+        if action["kind"] == "navigate":
+            if not running(store, pid):
+                raise RuntimeError("Navigation requires an already running profile")
+            verify(store, pid)
     return action
 
 
@@ -143,7 +148,8 @@ def _owns_session_process(store, profile_id, launched_pid):
 def run_scenario(store, scenario, *, cancel=None, notify=None,
                  verify=verify_commercial_access,
                  start=start_background, stop=request_stop,
-                 running=_is_running, ownership=_owns_session_process):
+                 running=_is_running, ownership=_owns_session_process,
+                 navigation_url=None, navigate=submit_navigation):
     """Synchronous worker function. Tk must invoke from a background thread.
 
     Stops on first failure. Earlier accepted starts are NOT implicitly rolled
@@ -151,6 +157,15 @@ def run_scenario(store, scenario, *, cancel=None, notify=None,
     """
     action = preflight(store, scenario, verify=verify, running=running)
     cancel = cancel if cancel is not None else threading.Event()
+    if action["kind"] == "navigate":
+        validated_navigation_url(navigation_url)
+        if cancel.is_set():
+            return {"state": "cancelled", "accepted": 0}
+        outcome = navigate(store, action["profile_ids"], navigation_url, verify=verify)
+        accepted = outcome["queued"]
+        if notify is not None:
+            notify("navigation_queued", accepted)
+        return {"state": "completed", "accepted": accepted}
     count = 0
     launched = {}
     skipped = 0
