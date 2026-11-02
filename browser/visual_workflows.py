@@ -139,3 +139,28 @@ def delete_flow(store, ident):
     if len(remaining) == len(saved):
         raise ValueError("Workflow not found")
     store._write("visual_flows", remaining)
+
+
+def duplicate_flow(store, ident):
+    """Copy only a saved Flow definition; never copy a browser profile/session.
+
+    The original ID, creation timestamp and stored entry are left untouched.
+    Existing target profiles must still exist; normal profile and quota checks
+    are performed again by save_flow.
+    """
+    if not isinstance(ident, str) or not HEX.fullmatch(ident):
+        raise ValueError("Invalid workflow ID")
+    saved = list_flows(store)
+    original = next((item for item in saved if item["id"] == ident), None)
+    if original is None:
+        raise ValueError("Workflow not found")
+    if len(saved) >= MAX_FLOWS:
+        raise ValueError("Visual workflow limit reached")
+    used = {item["name"].casefold() for item in saved}
+    for i in range(1, MAX_FLOWS + 2):
+        suffix = " — копия" if i == 1 else f" — копия {i}"
+        name = original["name"][:80 - len(suffix)].rstrip() + suffix
+        if name.casefold() not in used:
+            return save_flow(store, name, original["profile_ids"],
+                             original["steps"])
+    raise ValueError("No unique name available")
