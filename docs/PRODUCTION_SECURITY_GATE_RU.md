@@ -74,3 +74,18 @@ All three temporary QA API handlers (seeder, row-policy probe and public-writer 
 In the same private test project a separate `SECURITY DEFINER` PL/pgSQL function was created to insert **only a pending fake Checkout record** for the trusted `req.user.id`, with no paid entitlement and no Stripe keys. Invoking it from `access='user'` returned SQLSTATE 42501: the staging row policy still rejected the INSERT. Therefore a naïve SECURITY DEFINER wrapper does **not** repair this platform's enforced row-write ceiling.
 
 The QA route was removed, and the test-only function was removed through a cleanup migration in staging version 7; the fork remains private with 30 original endpoints and synthetic records only. This is a confirmed API/runtime compatibility issue requiring a reviewed, supported privileged-write design, not a reason to weaken production table protection or bypass webhook signature verification. The source production Hatchable project was not modified.
+
+
+### Signed synthetic HMAC → deduplicated queue → scheduler: isolated QA
+
+The private staging project tested a temporary **synthetic non-paying** webhook pipeline using Hatchable's same `webhooks.verifyHmac` helper as the production Stripe handler. The fixture used a dedicated test-only HMAC secret (not a Stripe key), exact raw-body signature and `t=...,v1=...` format, timestamp tolerance, and a single allowlisted fake event/subscription ID. Results:
+
+- No signature: HTTP 400 `invalid_signature`.
+- Invalid SHA-256 signature: HTTP 400 `invalid_signature`.
+- Correct synthetic signature: HTTP 200 `accepted:true`, one queued event.
+- Replaying the identical signed event did not enqueue another record (`ON CONFLICT(event_id) DO NOTHING`).
+- Public attempt to call the scheduler-only handler: HTTP 404; a simulated scheduler trigger processed one queued event on the first call and zero on the second. The targeted fake subscription was *already unpaid*, so `changed=0`; this specific test does **not** evidence another entitlement change.
+
+The tests establish only signature-gate integration, duplicate protection, caller-tier separation and delivery bookkeeping in the isolated staging environment. They do **not** constitute a real signed Stripe TEST delivery, atomic transaction guarantee, actual Stripe GET reconciliation, two concurrent workers, charge/refund simulation or production approval.
+
+Temporary QA routes and table were removed; **private staging version 11** restored the original 30 API endpoints and retained six experimental row policies. Production account server stays on v40; LIVE Stripe and actual user rows remain unchanged. Before deploying a real queue, ensure durable transactional event claims, bounded retries/dead-letter handling, idempotent entitlement updates, signed webhooks, test-mode fixtures and a separate secure checkout-intent mechanism.
