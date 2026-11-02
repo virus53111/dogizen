@@ -31,6 +31,9 @@ class FlowEditor:
         self.profile_ids = list(profile_ids)
         self.on_saved = on_saved
         self.steps = [dict(s) for s in (flow or {}).get("steps", [])]
+        self._initial_steps = [dict(s) for s in self.steps]
+        self._initial_name = (flow or {}).get("name", "Мой Flow")
+        self._initial_profile_ids = list(self.profile_ids)
         self.window = tk.Toplevel(parent)
         self.window.title("Murdilimax · NEON FLOW STUDIO")
         self.window.geometry("910x720")
@@ -38,6 +41,10 @@ class FlowEditor:
         self.window.configure(bg=BG)
         self.window.transient(parent)
         self.window.grab_set()
+        self.window.protocol("WM_DELETE_WINDOW", self.request_close)
+        # Bind to this modal's toplevel, not globally across the app.
+        for key in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+            self.window.bind(key, self._scroll_flow)
 
         header = tk.Frame(self.window, bg=BG)
         header.pack(fill="x", padx=25, pady=(20, 5))
@@ -53,7 +60,7 @@ class FlowEditor:
                  font=("Arial", 11, "bold")).pack(side="left", padx=(0, 10))
         self.name = ttk.Entry(caption, width=42)
         self.name.pack(side="left", fill="x", expand=True)
-        self.name.insert(0, (flow or {}).get("name", "Мой Flow"))
+        self.name.insert(0, self._initial_name)
         tk.Label(caption, text=f"ПРОФИЛЕЙ: {len(self.profile_ids)}",
                  bg=BG, fg=CYAN, font=("Arial", 9, "bold")).pack(
                      side="right", padx=12)
@@ -100,6 +107,30 @@ class FlowEditor:
             bd=0, padx=17, pady=12, font=("Arial", 10, "bold"),
             cursor="hand2").pack(side="right", padx=(14, 0))
         self.redraw()
+
+    def _scroll_flow(self, event):
+        if getattr(event, "num", None) == 4:
+            steps = -1
+        elif getattr(event, "num", None) == 5:
+            steps = 1
+        else:
+            delta = getattr(event, "delta", 0)
+            if not delta:
+                return
+            steps = -int(delta / 120) or (-1 if delta > 0 else 1)
+        self.canvas.yview_scroll(steps, "units")
+        return "break"
+
+    def request_close(self):
+        changed = (self.name.get() != self._initial_name or
+                   self.steps != self._initial_steps or
+                   self.profile_ids != self._initial_profile_ids)
+        if changed and not messagebox.askyesno(
+                "Murdilimax",
+                "Есть несохранённые изменения Flow. Закрыть без сохранения?",
+                parent=self.window):
+            return
+        self.window.destroy()
 
     def _resize_canvas(self, _event):
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
