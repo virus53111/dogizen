@@ -25,7 +25,11 @@ def main():
             editor.redraw()
             editor.window.update()
             assert editor.canvas.yview()[1] < 1.0
+            editor.canvas.yview_moveto(0.0)
+            editor.window.update_idletasks()
+            assert editor.canvas.yview()[0] == 0.0
             editor._scroll_flow(SimpleNamespace(num=None, delta=-120))
+            editor.window.update_idletasks()
             assert editor.canvas.yview()[0] > 0.0
             editor.steps = [
                 {"kind": "wait", "seconds": 1},
