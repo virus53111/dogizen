@@ -9,7 +9,7 @@ import tkinter as tk
 from tkinter import messagebox, simpledialog, ttk
 
 from neon_theme import BG, PANEL, TEXT, MUTED, ACCENT, CYAN
-from visual_workflows import MAX_STEPS, save_flow, validated_step
+from visual_workflows import MAX_STEPS, MAX_TARGETS, save_flow, validated_step
 
 
 TITLES = {
@@ -62,9 +62,16 @@ class FlowEditor:
         self.name = ttk.Entry(caption, width=42)
         self.name.pack(side="left", fill="x", expand=True)
         self.name.insert(0, self._initial_name)
-        tk.Label(caption, text=f"ПРОФИЛЕЙ: {len(self.profile_ids)}",
-                 bg=BG, fg=CYAN, font=("Arial", 9, "bold")).pack(
-                     side="right", padx=12)
+        tk.Button(
+            caption, text="✦ ИЗМЕНИТЬ ПРОФИЛИ", command=self.choose_profiles,
+            bg="#283157", fg=CYAN, activebackground="#32416e",
+            activeforeground="#ffffff", relief="flat", bd=0,
+            padx=10, pady=7, font=("Arial", 9, "bold")
+        ).pack(side="right", padx=(8, 0))
+        self.profile_count = tk.Label(
+            caption, text=f"ПРОФИЛЕЙ: {len(self.profile_ids)}",
+            bg=BG, fg=CYAN, font=("Arial", 9, "bold"))
+        self.profile_count.pack(side="right", padx=(8, 0))
 
         palette = tk.Frame(self.window, bg=BG)
         palette.pack(fill="x", padx=25, pady=(2, 10))
@@ -108,6 +115,85 @@ class FlowEditor:
             bd=0, padx=17, pady=12, font=("Arial", 10, "bold"),
             cursor="hand2").pack(side="right", padx=(14, 0))
         self.redraw()
+
+    def set_target_profiles(self, ids):
+        """Change only Flow targets, never browser/session data."""
+        valid = {p["id"] for p in self.store.profiles()}
+        if (not isinstance(ids, list) or not 1 <= len(ids) <= MAX_TARGETS
+                or any(not isinstance(i, str) or i not in valid for i in ids)
+                or len(ids) != len(set(ids))):
+            raise ValueError("Выберите 1–10 существующих профилей.")
+        self.profile_ids = list(ids)
+        self.profile_count.configure(
+            text=f"ПРОФИЛЕЙ: {len(self.profile_ids)}")
+
+    def choose_profiles(self):
+        """Modal multi-select: changes are applied only after confirmation."""
+        available = [(p["id"], p["name"]) for p in self.store.profiles()]
+        if not available:
+            messagebox.showerror("Murdilimax", "Профили отсутствуют.",
+                                 parent=self.window)
+            return
+        popup = tk.Toplevel(self.window)
+        popup.title("Murdilimax · Профили Flow")
+        popup.geometry("510x510")
+        popup.minsize(380, 340)
+        popup.transient(self.window)
+        popup.configure(bg=BG)
+        tk.Label(popup, text="ВЫБЕРИ ПРОФИЛИ ДЛЯ FLOW",
+                 bg=BG, fg=ACCENT, font=("Arial", 12, "bold")).pack(
+                     anchor="w", padx=18, pady=(18, 6))
+        tk.Label(popup, text="От 1 до 10 локальных профилей. "
+                 "Данные браузеров не копируются.",
+                 bg=BG, fg=MUTED, font=("Arial", 9),
+                 wraplength=450).pack(anchor="w", padx=18, pady=(0, 10))
+        box = tk.Frame(popup, bg=PANEL)
+        box.pack(fill="both", expand=True, padx=18)
+        sb = ttk.Scrollbar(box, orient="vertical")
+        chooser = tk.Listbox(
+            box, selectmode=tk.MULTIPLE, exportselection=False,
+            bg="#10182d", fg=TEXT, selectbackground="#534577",
+            selectforeground="#ffffff", highlightthickness=0,
+            font=("Arial", 11), borderwidth=0,
+            yscrollcommand=sb.set)
+        sb.configure(command=chooser.yview)
+        sb.pack(side="right", fill="y")
+        chooser.pack(side="left", fill="both", expand=True)
+        chosen = set(self.profile_ids)
+        for index, (ident, name) in enumerate(available):
+            chooser.insert(tk.END, f"{name[:75]}  ·  {ident[:8]}")
+            if ident in chosen:
+                chooser.selection_set(index)
+
+        def apply():
+            ids = [available[int(index)][0]
+                   for index in chooser.curselection()]
+            try:
+                self.set_target_profiles(ids)
+            except ValueError as exc:
+                messagebox.showerror("Murdilimax", str(exc), parent=popup)
+                return
+            close_picker()
+
+        def close_picker():
+            popup.destroy()
+            if self.window.winfo_exists():
+                self.window.grab_set()
+
+        popup.protocol("WM_DELETE_WINDOW", close_picker)
+        buttons = tk.Frame(popup, bg=BG)
+        buttons.pack(fill="x", padx=18, pady=16)
+        tk.Button(
+            buttons, text="ОТМЕНА", command=close_picker,
+            bg="#283157", fg=TEXT, relief="flat", bd=0,
+            padx=12, pady=9).pack(side="left")
+        tk.Button(
+            buttons, text="ПРИМЕНИТЬ", command=apply,
+            bg=ACCENT, fg=BG, relief="flat", bd=0,
+            padx=14, pady=9, font=("Arial", 9, "bold")
+        ).pack(side="right")
+        popup.grab_set()
+        return popup
 
     def _scroll_flow(self, event):
         if getattr(event, "num", None) == 4:

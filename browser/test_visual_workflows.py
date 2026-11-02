@@ -9,7 +9,8 @@ from unittest.mock import Mock, patch
 
 from store import Store
 from visual_workflows import (save_flow, list_flows, delete_flow,
-                              validated_step, validated_flow, MAX_STEPS)
+                              duplicate_flow, validated_step, validated_flow,
+                              MAX_STEPS, MAX_FLOWS)
 from visual_executor import run_visual_flow
 
 
@@ -45,6 +46,52 @@ class StudioTests(unittest.TestCase):
         delete_flow(self.store, x["id"])
         self.assertEqual(list_flows(self.store), [])
         self.assertEqual(len(self.store.profiles()), 2)
+
+    def test_duplicate_flow_preserves_original_and_browser_data(self):
+        src = save_flow(self.store, "Campaign", [self.one["id"]],
+                        self.blocks())
+        original = self.store._read("visual_flows")[0].copy()
+        before_profiles = self.store.profiles()
+        copy1 = duplicate_flow(self.store, src["id"])
+        copy2 = duplicate_flow(self.store, src["id"])
+        self.assertEqual(copy1["name"], "Campaign — копия")
+        self.assertEqual(copy2["name"], "Campaign — копия 2")
+        self.assertNotEqual(src["id"], copy1["id"])
+        self.assertNotEqual(copy1["id"], copy2["id"])
+        self.assertEqual(copy1["steps"], original["steps"])
+        self.assertEqual(copy1["profile_ids"], original["profile_ids"])
+        self.assertEqual(self.store._read("visual_flows")[0], original)
+        self.assertEqual(self.store.profiles(), before_profiles)
+        self.assertFalse((self.store.root / "cookie-backups").exists())
+        self.assertEqual(len(list_flows(self.store)), 3)
+
+    def test_duplicate_long_name_and_reject_deleted_targets(self):
+        long_name = "W" * 80
+        flow = save_flow(self.store, long_name, [self.one["id"]],
+                         self.blocks())
+        copied = duplicate_flow(self.store, flow["id"])
+        self.assertLessEqual(len(copied["name"]), 80)
+        self.assertTrue(copied["name"].endswith(" — копия"))
+        before = self.store._read("visual_flows")
+        with patch.object(self.store, "profiles", return_value=[]):
+            with self.assertRaisesRegex(ValueError, "deleted"):
+                duplicate_flow(self.store, flow["id"])
+        self.assertEqual(self.store._read("visual_flows"), before)
+
+    def test_duplicate_rejects_invalid_id_and_capacity(self):
+        with self.assertRaises(ValueError):
+            duplicate_flow(self.store, "../../cookie.sqlite")
+        with self.assertRaises(ValueError):
+            duplicate_flow(self.store, "f" * 32)
+        src = save_flow(self.store, "Flow 0", [self.one["id"]],
+                        self.blocks())
+        for number in range(1, MAX_FLOWS):
+            save_flow(self.store, f"Flow {number}", [self.one["id"]],
+                      [{"kind": "wait", "seconds": 1}])
+        before = self.store._read("visual_flows")
+        with self.assertRaisesRegex(ValueError, "limit"):
+            duplicate_flow(self.store, src["id"])
+        self.assertEqual(self.store._read("visual_flows"), before)
 
     def test_schema_rejects_unsafe_web_and_script_actions(self):
         bad = [
