@@ -26,6 +26,8 @@ from profile_table import reconcile_profile_tree
 from profile_actions import create_quick_profiles, bulk_assign_proxy
 from profile_templates import (list_templates, save_template, delete_template,
                                create_profiles_from_template)
+from action_scenarios import (list_scenarios, create_scenario, delete_scenario,
+                              run_scenario)
 from bookmarks import (list_bookmarks, add_bookmark, update_bookmark,
                        remove_bookmark)
 from fingerprint_options import BOUNDS, safe_identity_preview
@@ -51,6 +53,8 @@ class BrowserUI:
         self.entitlement_limit = 3
         self._api_server = None
         self._api_thread = None
+        self._scenario_cancel = None
+        self._scenario_thread = None
         self.pairing = None
         self.root = tk.Tk()
         try:
@@ -92,6 +96,7 @@ class BrowserUI:
         self.addon_tab = ttk.Frame(self.tabs)
         self.bookmark_tab = ttk.Frame(self.tabs)
         self.template_tab = ttk.Frame(self.tabs)
+        self.scenario_tab = ttk.Frame(self.tabs)
         self.info_tab = ttk.Frame(self.tabs)
         self.account_tab = ttk.Frame(self.tabs)
         self.tabs.add(self.profile_tab, text="Профили")
@@ -99,6 +104,7 @@ class BrowserUI:
         self.tabs.add(self.addon_tab, text="Расширения")
         self.tabs.add(self.bookmark_tab, text="Закладки")
         self.tabs.add(self.template_tab, text="Шаблоны")
+        self.tabs.add(self.scenario_tab, text="Сценарии")
         self.tabs.add(self.account_tab, text="Аккаунт и лицензия")
         self.tabs.add(self.info_tab, text="О программе")
         self.setup_profiles()
@@ -106,6 +112,7 @@ class BrowserUI:
         self.setup_addons()
         self.setup_bookmarks()
         self.setup_templates()
+        self.setup_scenarios()
         self.setup_account()
         self.setup_info()
         self.tabs.bind("<<NotebookTabChanged>>", self.on_main_tab_changed)
@@ -225,6 +232,7 @@ class BrowserUI:
         self.button(bar, "＋ Профиль", self.new_profile)
         self.button(bar, "✎ Изменить", self.edit_profile)
         self.button(bar, "⧉ Дублировать", self.duplicate)
+        self.button(bar, "✦ Сценарий", self.create_scenario_ui)
         self.button(bar, "▶ Запустить", self.start)
         self.button(bar, "■ Остановить", self.stop)
         self.button(bar, "✕ Удалить", self.delete)
@@ -618,6 +626,152 @@ class BrowserUI:
             self.root.after(0, lambda: self.update_license({}))
         threading.Thread(target=worker, daemon=True).start()
 
+    def setup_scenarios(self):
+        """Local manual workflows: no arbitrary scripts or remote scheduling."""
+        bar = ttk.Frame(self.scenario_tab)
+        bar.pack(fill="x", padx=14, pady=(15, 8))
+        self.button(bar, "✚ Из выделенных профилей", self.create_scenario_ui)
+        self.button(bar, "▶ Выполнить", self.run_selected_scenario)
+        self.button(bar, "■ Отменить", self.cancel_scenario)
+        self.button(bar, "✕ Удалить", self.delete_selected_scenario)
+        self.button(bar, "↻ Обновить", self.refresh_scenarios)
+        self.scenario_tree = ttk.Treeview(
+            self.scenario_tab, columns=("name", "kind", "count", "duration"),
+            show="headings", selectmode="browse")
+        for key, title, width in (
+                ("name", "Сценарий", 300),
+                ("kind", "Действие", 185),
+                ("count", "Профилей", 115),
+                ("duration", "Ожидание, сек", 165)):
+            self.scenario_tree.heading(key, text=title)
+            self.scenario_tree.column(key, width=width, stretch=True)
+        self.scenario_tree.pack(fill="both", expand=True, padx=14, pady=7)
+        ttk.Label(
+            self.scenario_tab, foreground=MUTED, wraplength=1000,
+            text="Ручные локальные сценарии без скриптов: запуск, остановка "
+                 "или сеанс 5–300 секунд. Запуск проверяет лицензию. "
+                 "Отмена не закрывает уже запущенные браузеры. "
+                 "Команда запуска не гарантирует загрузку сайтов.").pack(
+                     anchor="w", padx=17, pady=(2, 13))
+        self.refresh_scenarios()
+
+    def refresh_scenarios(self):
+        if not hasattr(self, "scenario_tree"):
+            return
+        selected = self.scenario_tree.selection()
+        existing = self.scenario_tree.get_children()
+        if existing:
+            self.scenario_tree.delete(*existing)
+        for scenario in list_scenarios(self.store):
+            self.scenario_tree.insert(
+                "", "end", iid=scenario["id"],
+                values=(scenario["name"],
+                        {"start": "Запуск", "stop": "Остановка",
+                         "session": "Сеанс"}[scenario["kind"]],
+                        len(scenario["profile_ids"]),
+                        scenario["wait_seconds"] or "—"))
+        for sid in selected:
+            if self.scenario_tree.exists(sid):
+                self.scenario_tree.selection_set(sid)
+
+    def create_scenario_ui(self):
+        selected = self.selected(self.profile_tree)
+        if not 1 <= len(selected) <= 20:
+            raise ValueError("Выделите 1–20 профилей на вкладке «Профили».")
+        name = simpledialog.askstring(
+            "Murdilimax · Сценарии", "Название сценария:",
+            initialvalue="Мой сценарий", parent=self.root)
+        if name is None:
+            return
+        kind = simpledialog.askstring(
+            "Murdilimax · Сценарии",
+            "Тип: start (запуск), stop (остановка), "
+            "session (запуск, ожидание, остановка):",
+            initialvalue="start", parent=self.root)
+        if kind is None:
+            return
+        kind = kind.strip().lower()
+        seconds = 0
+        if kind == "session":
+            seconds = simpledialog.askinteger(
+                "Murdilimax · Сеанс",
+                "Остановить через сколько секунд? (5–300)",
+                minvalue=5, maxvalue=300, initialvalue=30, parent=self.root)
+            if seconds is None:
+                return
+        scenario = create_scenario(
+            self.store, name, kind, selected, wait_seconds=seconds)
+        self.refresh_scenarios()
+        self.scenario_tree.selection_set(scenario["id"])
+        self.scenario_tree.see(scenario["id"])
+        self.tabs.select(self.scenario_tab)
+        self.state.set("Сценарий сохранён: " + scenario["name"])
+
+    def delete_selected_scenario(self):
+        sid = self.one(self.scenario_tree, "сценарий")
+        if self._scenario_thread is not None and self._scenario_thread.is_alive():
+            raise RuntimeError("Сначала завершите выполняющийся сценарий")
+        if not messagebox.askyesno(
+                "Murdilimax · Сценарии", "Удалить сценарий? Профили останутся.",
+                parent=self.root):
+            return
+        delete_scenario(self.store, sid)
+        self.refresh_scenarios()
+        self.state.set("Сценарий удалён")
+
+    def cancel_scenario(self):
+        if self._scenario_cancel is None:
+            self.state.set("Нет выполняющегося сценария")
+        else:
+            self._scenario_cancel.set()
+            self.state.set("Отмена запрошена; браузеры не закрываются автоматически")
+
+    def run_selected_scenario(self):
+        sid = self.one(self.scenario_tree, "сценарий")
+        if self._scenario_thread is not None and self._scenario_thread.is_alive():
+            raise RuntimeError("Другой сценарий ещё выполняется")
+        scenario = next((x for x in list_scenarios(self.store)
+                         if x["id"] == sid), None)
+        if scenario is None:
+            raise ValueError("Сценарий не найден")
+        if not messagebox.askyesno(
+                "Murdilimax · Сценарии",
+                "Выполнить сценарий «" + scenario["name"] +
+                "» для " + str(len(scenario["profile_ids"])) + " профилей? "
+                "При сбое отправленные команды не откатываются.",
+                parent=self.root):
+            return
+        cancel = threading.Event()
+        self._scenario_cancel = cancel
+        self.state.set("Сценарий: проверка профилей и тарифных разрешений…")
+        def worker():
+            try:
+                result = run_scenario(self.store, scenario, cancel=cancel)
+                msg = ("Сценарий отменён; работающие браузеры не закрыты"
+                       if result["state"] == "cancelled" else
+                       "Сценарий завершён; команд отправлено: " +
+                       str(result["accepted"]))
+                failed = False
+            except Exception:
+                msg = ("Сценарий прерван: проверьте статус профилей. "
+                       "Ранее отправленные команды не откатились.")
+                failed = True
+            def report():
+                if self._scenario_cancel is cancel:
+                    self._scenario_cancel = None
+                self.refresh_profiles()
+                self.state.set(msg)
+                if failed:
+                    messagebox.showwarning(
+                        "Murdilimax · Сценарии", msg, parent=self.root)
+            try:
+                self.root.after(0, report)
+            except RuntimeError:
+                pass
+        self._scenario_thread = threading.Thread(
+            target=worker, name="murdilimax-scenario", daemon=True)
+        self._scenario_thread.start()
+
     def setup_templates(self):
         """Metadata-only templates, using existing Tk theme and profile selection."""
         bar = ttk.Frame(self.template_tab)
@@ -926,6 +1080,8 @@ class BrowserUI:
         self.state.set("Новый ключ API сохранён в системном хранилище")
 
     def close_application(self):
+        if self._scenario_cancel is not None:
+            self._scenario_cancel.set()
         if self._api_server is not None:
             self.stop_local_api()
         self.root.destroy()
@@ -1179,6 +1335,7 @@ class BrowserUI:
         self.refresh_profiles()
         self.refresh_addons()
         self.refresh_templates()
+        self.refresh_scenarios()
 
     def refresh_status(self):
         try:
