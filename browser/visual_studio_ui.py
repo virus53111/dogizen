@@ -173,12 +173,18 @@ class FlowEditor:
             except ValueError as exc:
                 messagebox.showerror("Murdilimax", str(exc), parent=popup)
                 return
-            popup.destroy()
+            close_picker()
 
+        def close_picker():
+            popup.destroy()
+            if self.window.winfo_exists():
+                self.window.grab_set()
+
+        popup.protocol("WM_DELETE_WINDOW", close_picker)
         buttons = tk.Frame(popup, bg=BG)
         buttons.pack(fill="x", padx=18, pady=16)
         tk.Button(
-            buttons, text="ОТМЕНА", command=popup.destroy,
+            buttons, text="ОТМЕНА", command=close_picker,
             bg="#283157", fg=TEXT, relief="flat", bd=0,
             padx=12, pady=9).pack(side="left")
         tk.Button(
