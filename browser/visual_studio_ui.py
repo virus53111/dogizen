@@ -37,6 +37,10 @@ class FlowEditor:
         self._initial_name = (flow or {}).get("name", "Мой Flow")
         self._initial_profile_ids = list(self.profile_ids)
         self.window = tk.Toplevel(parent)
+        self.parallel = tk.BooleanVar(
+            master=self.window,
+            value=(flow or {}).get("execution_mode", "serial") == "parallel")
+        self._initial_parallel = self.parallel.get()
         self.window.title("Murdilimax · NEON FLOW STUDIO")
         self.window.geometry("910x720")
         self.window.minsize(690, 520)
@@ -74,6 +78,13 @@ class FlowEditor:
             bg=BG, fg=CYAN, font=("Arial", 9, "bold"))
         self.profile_count.pack(side="right", padx=(8, 0))
 
+        tk.Checkbutton(
+            self.window, text="⇉ ПАРАЛЛЕЛЬНЫЕ ДЕЙСТВИЯ В ВЫБРАННЫХ ПРОФИЛЯХ",
+            variable=self.parallel, bg=BG, fg=CYAN, selectcolor=PANEL,
+            activebackground=BG, activeforeground=ACCENT,
+            font=("Arial", 10, "bold"), highlightthickness=0,
+            anchor="w"
+        ).pack(fill="x", padx=25, pady=(0, 5))
         palette = tk.Frame(self.window, bg=BG)
         palette.pack(fill="x", padx=25, pady=(2, 10))
         for kind, label in (
@@ -107,9 +118,10 @@ class FlowEditor:
         footer.pack(fill="x", padx=25, pady=(5, 18))
         tk.Label(
             footer, bg=BG, fg=MUTED, wraplength=580, justify="left",
-            text="До 12 блоков • действия выполняются последовательно • "
-                 "текст сохраняется локально — не вводите пароли, токены или "
-                 "платёжные сведения. Редактирование не запускает браузер."
+            text="До 12 блоков • параллельный режим отправляет один блок "
+                 "в 1–10 открытых профилей и ждёт ответы всех. При ошибке "
+                 "дальнейшие блоки остановятся, уже выполненные действия не "
+                 "откатываются. Не вводите пароли и токены."
         ).pack(side="left", fill="x", expand=True)
         tk.Button(
             footer, text="СОХРАНИТЬ FLOW", command=self.save,
@@ -213,7 +225,8 @@ class FlowEditor:
     def request_close(self):
         changed = (self.name.get() != self._initial_name or
                    self.steps != self._initial_steps or
-                   self.profile_ids != self._initial_profile_ids)
+                   self.profile_ids != self._initial_profile_ids or
+                   self.parallel.get() != self._initial_parallel)
         if changed and not messagebox.askyesno(
                 "Murdilimax",
                 "Есть несохранённые изменения Flow. Закрыть без сохранения?",
@@ -409,7 +422,8 @@ class FlowEditor:
         try:
             saved = save_flow(
                 self.store, self.name.get(), self.profile_ids, self.steps,
-                replace_id=self.original["id"] if self.original else None)
+                replace_id=self.original["id"] if self.original else None,
+                execution_mode="parallel" if self.parallel.get() else "serial")
         except (OSError, ValueError) as exc:
             messagebox.showerror("Murdilimax", str(exc), parent=self.window)
             return
