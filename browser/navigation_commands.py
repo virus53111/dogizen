@@ -137,6 +137,8 @@ def submit_navigation(store, profile_ids, url, *, verify=None, alive=None):
     url = validated_navigation_url(url)
     if not isinstance(profile_ids, (list, tuple)) or not 1 <= len(profile_ids) <= MAX_TARGETS:
         raise ValueError("Select 1–20 running profiles")
+    if any(not isinstance(pid, str) for pid in profile_ids):
+        raise ValueError("Invalid profile selection")
     if len(set(profile_ids)) != len(profile_ids):
         raise ValueError("Duplicate profile selected")
     verify = verify if verify is not None else verify_commercial_access
@@ -168,15 +170,17 @@ def submit_navigation(store, profile_ids, url, *, verify=None, alive=None):
                              ensure_ascii=False).encode("utf-8")
         if len(payload) > MAX_COMMAND:
             raise ValueError("URL is too large for a navigation request")
-        fd = os.open(item, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        pending = commands / (item.name + ".tmp")
         try:
+            fd = os.open(pending, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
             with os.fdopen(fd, "wb") as writer:
                 writer.write(payload)
                 writer.flush()
                 os.fsync(writer.fileno())
-        except Exception:
-            item.unlink(missing_ok=True)
-            raise
+            # The child sees only complete JSON requests, never partial files.
+            os.replace(pending, item)
+        finally:
+            pending.unlink(missing_ok=True)
         accepted += 1
     return {"queued": accepted}
 
