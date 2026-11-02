@@ -120,8 +120,8 @@ class FlowEditor:
         """Change only Flow targets, never browser/session data."""
         valid = {p["id"] for p in self.store.profiles()}
         if (not isinstance(ids, list) or not 1 <= len(ids) <= MAX_TARGETS
-                or len(ids) != len(set(ids))
-                or any(not isinstance(i, str) or i not in valid for i in ids)):
+                or any(not isinstance(i, str) or i not in valid for i in ids)
+                or len(ids) != len(set(ids))):
             raise ValueError("Выберите 1–10 существующих профилей.")
         self.profile_ids = list(ids)
         self.profile_count.configure(
