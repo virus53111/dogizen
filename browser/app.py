@@ -24,6 +24,8 @@ from profile_view import (ALL, RUNNING, STOPPED, filter_profiles,
                           sort_visible_profiles)
 from profile_table import reconcile_profile_tree
 from profile_actions import create_quick_profiles, bulk_assign_proxy
+from profile_templates import (list_templates, save_template, delete_template,
+                               create_profiles_from_template)
 from bookmarks import (list_bookmarks, add_bookmark, update_bookmark,
                        remove_bookmark)
 from fingerprint_options import BOUNDS, safe_identity_preview
@@ -89,18 +91,21 @@ class BrowserUI:
         self.proxy_tab = ttk.Frame(self.tabs)
         self.addon_tab = ttk.Frame(self.tabs)
         self.bookmark_tab = ttk.Frame(self.tabs)
+        self.template_tab = ttk.Frame(self.tabs)
         self.info_tab = ttk.Frame(self.tabs)
         self.account_tab = ttk.Frame(self.tabs)
         self.tabs.add(self.profile_tab, text="Профили")
         self.tabs.add(self.proxy_tab, text="Прокси")
         self.tabs.add(self.addon_tab, text="Расширения")
         self.tabs.add(self.bookmark_tab, text="Закладки")
+        self.tabs.add(self.template_tab, text="Шаблоны")
         self.tabs.add(self.account_tab, text="Аккаунт и лицензия")
         self.tabs.add(self.info_tab, text="О программе")
         self.setup_profiles()
         self.setup_proxies()
         self.setup_addons()
         self.setup_bookmarks()
+        self.setup_templates()
         self.setup_account()
         self.setup_info()
         self.tabs.bind("<<NotebookTabChanged>>", self.on_main_tab_changed)
@@ -275,6 +280,7 @@ class BrowserUI:
         tools = ttk.Frame(self.profile_tab)
         tools.pack(fill="x", padx=12, pady=8)
         self.button(tools, "⚡ Быстрый профиль", self.quick_profile)
+        self.button(tools, "✚ Сохранить шаблон", self.save_selected_as_template)
         self.button(tools, "Экспорт настроек", self.export)
         self.button(tools, "Импорт настроек", self.import_profiles)
         self.button(tools, "Стартовые вкладки", self.edit_startup_tabs)
@@ -611,6 +617,98 @@ class BrowserUI:
                 self.account.forget_token()
             self.root.after(0, lambda: self.update_license({}))
         threading.Thread(target=worker, daemon=True).start()
+
+    def setup_templates(self):
+        """Metadata-only templates, using existing Tk theme and profile selection."""
+        bar = ttk.Frame(self.template_tab)
+        bar.pack(fill="x", padx=14, pady=(15, 9))
+        self.button(bar, "✚ Из выбранного профиля", self.save_selected_as_template)
+        self.button(bar, "⚡ Создать профили по шаблону", self.create_using_template)
+        self.button(bar, "✕ Удалить шаблон", self.delete_selected_template)
+        self.button(bar, "↻ Обновить", self.refresh_templates)
+        self.template_tree = ttk.Treeview(
+            self.template_tab,
+            columns=("name", "group", "url", "proxy", "screen"),
+            show="headings", selectmode="browse")
+        for key, label, width in [
+            ("name", "Шаблон", 190), ("group", "Группа", 140),
+            ("url", "Стартовая страница", 360),
+            ("proxy", "Прокси", 120), ("screen", "Предел экрана", 155)]:
+            self.template_tree.heading(key, text=label)
+            self.template_tree.column(key, width=width, stretch=True)
+        self.template_tree.pack(fill="both", expand=True, padx=14, pady=8)
+        ttk.Label(
+            self.template_tab, foreground=MUTED, wraplength=1060,
+            text="Шаблоны содержат только настройки. Cookies, сессии, отпечатки, "
+                 "расширения и пароли не копируются. До 10 профилей за один раз; "
+                 "лимит тарифа перепроверяется перед созданием.").pack(
+                     anchor="w", padx=17, pady=(2, 14))
+        self.refresh_templates()
+
+    def refresh_templates(self):
+        if not hasattr(self, "template_tree"):
+            return
+        previous = self.template_tree.selection()
+        children = self.template_tree.get_children()
+        if children:
+            self.template_tree.delete(*children)
+        for t in list_templates(self.store):
+            self.template_tree.insert(
+                "", "end", iid=t["id"],
+                values=(t["name"], t["group"] or "—",
+                        t["url"], "Да" if t["proxy_id"] else "Нет",
+                        t["screen_limit"]))
+        for ident in previous:
+            if self.template_tree.exists(ident):
+                self.template_tree.selection_set(ident)
+
+    def save_selected_as_template(self):
+        pid = self.one(self.profile_tree, "профиль")
+        profile = self.store.get_profile(pid)
+        if not profile:
+            raise ValueError("Профиль не найден")
+        label = simpledialog.askstring(
+            "Murdilimax · Шаблоны",
+            "Название нового шаблона (без cookies, паролей, отпечатка):",
+            initialvalue=profile["name"], parent=self.root)
+        if label is None:
+            return
+        saved = save_template(self.store, pid, label)
+        self.refresh_templates()
+        if self.template_tree.exists(saved["id"]):
+            self.template_tree.selection_set(saved["id"])
+            self.template_tree.see(saved["id"])
+        self.state.set("Шаблон сохранён: " + saved["name"])
+
+    def create_using_template(self):
+        template_id = self.one(self.template_tree, "шаблон")
+        template = next((x for x in list_templates(self.store)
+                         if x["id"] == template_id), None)
+        if not template:
+            raise ValueError("Шаблон не найден")
+        count = simpledialog.askinteger(
+            "Murdilimax · Шаблоны",
+            "Сколько отдельных профилей создать? (1–10)",
+            minvalue=1, maxvalue=10, initialvalue=1, parent=self.root)
+        if count is None:
+            return
+        created = create_profiles_from_template(self.store, template_id, count=count)
+        self.refresh()
+        if created and self.profile_tree.exists(created[0]["id"]):
+            self.profile_tree.selection_set(created[0]["id"])
+            self.profile_tree.see(created[0]["id"])
+        self.state.set("Создано профилей по шаблону: " + str(len(created)))
+
+    def delete_selected_template(self):
+        ident = self.one(self.template_tree, "шаблон")
+        if not messagebox.askyesno(
+                "Murdilimax · Шаблоны", "Удалить выбранный шаблон? "
+                "Существующие профили останутся без изменений.",
+                parent=self.root):
+            return
+        delete_template(self.store, ident)
+        self.refresh_templates()
+        self.state.set("Шаблон удалён; существующие профили сохранены")
 
     def setup_bookmarks(self):
         """Local bookmark catalog for all profiles or a profile group."""
@@ -1080,6 +1178,7 @@ class BrowserUI:
         self.refresh_proxies()
         self.refresh_profiles()
         self.refresh_addons()
+        self.refresh_templates()
 
     def refresh_status(self):
         try:
