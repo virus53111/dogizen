@@ -11,7 +11,7 @@ from urllib.request import Request, urlopen
 RELEASES_URL = "https://api.github.com/repos/virus53111/dogizen/releases?per_page=15"
 TAG_PATTERN = re.compile(r"v(\d+)\.(\d+)\.(\d+)-browser-windows-beta-(\d{8})\Z")
 MAX_RESPONSE = 150_000
-APP_VERSION = (0, 11, 0)
+APP_VERSION = (0, 12, 0)
 
 
 def select_windows_update(releases, installed=APP_VERSION):
