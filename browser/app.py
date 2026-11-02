@@ -29,7 +29,7 @@ from profile_templates import (list_templates, save_template, delete_template,
 from action_scenarios import (list_scenarios, create_scenario, delete_scenario,
                               run_scenario)
 from navigation_commands import submit_navigation, validated_navigation_url
-from visual_workflows import list_flows, delete_flow
+from visual_workflows import list_flows, delete_flow, duplicate_flow
 from visual_studio_ui import FlowEditor
 from visual_executor import run_visual_flow
 from bookmarks import (list_bookmarks, add_bookmark, update_bookmark,
@@ -805,6 +805,7 @@ class BrowserUI:
         bar.pack(fill="x", padx=15, pady=(3, 9))
         self.button(bar, "✚ Создать Flow", self.create_visual_flow)
         self.button(bar, "✎ Изменить блоки", self.edit_visual_flow)
+        self.button(bar, "⧉ Копировать Flow", self.duplicate_visual_flow)
         self.button(bar, "▶ Выполнить Flow", self.run_selected_visual_flow)
         self.button(bar, "■ Отменить", self.cancel_scenario)
         self.button(bar, "✕ Удалить", self.delete_visual_flow)
@@ -822,8 +823,9 @@ class BrowserUI:
         ttk.Label(
             self.flow_tab, foreground=MUTED, wraplength=1080,
             text="Собственный визуальный конструктор Murdilimax: URL → пауза "
-                 "→ CSS-клик → ввод текста → прокрутка. До 12 блоков и 10 "
-                 "работающих профилей. Без произвольного JavaScript. "
+                 "→ ожидание элемента → CSS-клик → ввод текста → прокрутка. "
+                 "До 12 блоков и 10 профилей; можно менять цели и копировать Flow. "
+                 "Без произвольного JavaScript. "
                  "Не сохраняйте пароли, токены или платёжные данные в блоках."
         ).pack(anchor="w", padx=17, pady=(2, 14))
         self.refresh_visual_flows()
@@ -865,6 +867,17 @@ class BrowserUI:
             raise ValueError("Flow не найден")
         FlowEditor(self.root, self.store, flow["profile_ids"],
                    flow=flow, on_saved=self._visual_flow_saved)
+
+    def duplicate_visual_flow(self):
+        ident = self.one(self.flow_tree, "Flow")
+        if not messagebox.askyesno(
+                "Murdilimax · Flow Studio",
+                "Создать независимую копию шагов и списка профилей? "
+                "Cookies и данные браузеров не копируются.",
+                parent=self.root):
+            return
+        cloned = duplicate_flow(self.store, ident)
+        self._visual_flow_saved(cloned)
 
     def delete_visual_flow(self):
         if self._scenario_thread is not None and self._scenario_thread.is_alive():
