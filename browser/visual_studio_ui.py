@@ -15,6 +15,7 @@ from visual_workflows import MAX_STEPS, save_flow, validated_step
 TITLES = {
     "open": ("◉", "ОТКРЫТЬ СТРАНИЦУ"),
     "wait": ("◷", "ПАУЗА"),
+    "wait_visible": ("◉", "ОЖИДАТЬ ЭЛЕМЕНТ"),
     "click": ("✧", "НАЖАТЬ ЭЛЕМЕНТ"),
     "fill": ("▣", "ВВЕСТИ ТЕКСТ"),
     "scroll": ("↕", "ПРОКРУТИТЬ"),
@@ -62,7 +63,7 @@ class FlowEditor:
         palette.pack(fill="x", padx=25, pady=(2, 10))
         for kind, label in (
                 ("open", "+ URL"), ("wait", "+ ПАУЗА"),
-                ("click", "+ КЛИК"), ("fill", "+ ТЕКСТ"),
+                ("wait_visible", "+ ЭЛЕМЕНТ"), ("click", "+ КЛИК"), ("fill", "+ ТЕКСТ"),
                 ("scroll", "+ СКРОЛЛ")):
             tk.Button(
                 palette, text=label, command=lambda k=kind: self.add(k),
@@ -114,6 +115,8 @@ class FlowEditor:
             return step["url"][:110]
         if kind == "wait":
             return str(step["seconds"]) + " секунд"
+        if kind == "wait_visible":
+            return "CSS: " + step["selector"][:95] + "  •  до " + str(step["seconds"]) + " сек."
         if kind in ("click", "fill"):
             return "CSS: " + step["selector"][:95] + (
                 "  •  текст введён" if kind == "fill" else "")
@@ -176,6 +179,21 @@ class FlowEditor:
             if sec is None:
                 return None
             raw = {"kind": "wait", "seconds": sec}
+        elif kind == "wait_visible":
+            selector = simpledialog.askstring(
+                title, "CSS-селектор элемента, который должен появиться:",
+                initialvalue=old.get("selector", "#content"),
+                parent=self.window)
+            if selector is None:
+                return None
+            seconds = simpledialog.askinteger(
+                title, "Ждать появления элемента от 1 до 15 секунд:",
+                minvalue=1, maxvalue=15,
+                initialvalue=old.get("seconds", 8), parent=self.window)
+            if seconds is None:
+                return None
+            raw = {"kind": "wait_visible", "selector": selector,
+                   "seconds": seconds}
         elif kind == "click":
             selector = simpledialog.askstring(
                 title, "CSS-селектор кнопки или элемента:",

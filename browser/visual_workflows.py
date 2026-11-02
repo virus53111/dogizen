@@ -15,7 +15,7 @@ MAX_FLOWS = 40
 MAX_STEPS = 12
 MAX_TARGETS = 10
 HEX = re.compile(r"[0-9a-f]{32}\Z")
-TYPES = frozenset({"open", "wait", "click", "fill", "scroll"})
+TYPES = frozenset({"open", "wait", "wait_visible", "click", "fill", "scroll"})
 
 
 def validated_step(raw):
@@ -27,6 +27,7 @@ def validated_step(raw):
     fields = {
         "open": {"kind", "url"},
         "wait": {"kind", "seconds"},
+        "wait_visible": {"kind", "selector", "seconds"},
         "click": {"kind", "selector"},
         "fill": {"kind", "selector", "text"},
         "scroll": {"kind", "pixels"},
@@ -40,13 +41,18 @@ def validated_step(raw):
         if type(v) is not int or not 1 <= v <= 30:
             raise ValueError("Wait must be 1–30 seconds")
         return {"kind": kind, "seconds": v}
-    if kind in ("click", "fill"):
+    if kind in ("click", "fill", "wait_visible"):
         selector = raw["selector"]
         if (not isinstance(selector, str) or not 1 <= len(selector) <= 300 or
                 any(ord(c) < 32 or ord(c) == 127 for c in selector)):
             raise ValueError("Use a CSS selector under 300 characters")
         if kind == "click":
             return {"kind": kind, "selector": selector}
+        if kind == "wait_visible":
+            seconds = raw["seconds"]
+            if type(seconds) is not int or not 1 <= seconds <= 15:
+                raise ValueError("Element wait must be 1–15 seconds")
+            return {"kind": kind, "selector": selector, "seconds": seconds}
         value = raw["text"]
         if (not isinstance(value, str) or len(value) > 400 or
                 any(ord(c) < 32 and c not in "\t" for c in value)):

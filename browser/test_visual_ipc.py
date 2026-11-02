@@ -24,6 +24,10 @@ class Locator:
             raise RuntimeError("synthetic click failure")
     def fill(self, text, **kw):
         self.page.events.append(("fill", self.selector, text))
+    def wait_for(self, **kw):
+        self.page.events.append(("wait_visible", self.selector, kw.get("state"), kw.get("timeout")))
+        if self.selector == "#missing":
+            raise RuntimeError("Synthetic locator timeout")
 
 
 class Mouse:
@@ -73,15 +77,24 @@ class VisualIPCTests(unittest.TestCase):
 
     def test_open_click_fill_scroll_and_ack_cleanup(self):
         self.assertTrue(self.execute({"kind": "open", "url": "https://example.org"}))
+        self.assertTrue(self.execute({"kind": "wait_visible", "selector": "#search", "seconds": 8}))
         self.assertTrue(self.execute({"kind": "click", "selector": "#login"}))
         self.assertTrue(self.execute({"kind": "fill", "selector": "#search", "text": "public text"}))
         self.assertTrue(self.execute({"kind": "scroll", "pixels": 650}))
         self.assertEqual(self.browser.pages[-1].events, [
             ("open", "https://example.org"),
+            ("wait_visible", "#search", "visible", 8000),
             ("click", "#login"), ("fill", "#search", "public text"),
             ("scroll", 650)])
         self.assertEqual(list((self.folder / REQUESTS).glob("*.json")), [])
         self.assertEqual(list((self.folder / RESPONSES).glob("*.json")), [])
+
+    def test_wait_visible_timeout_is_failure_not_success(self):
+        with self.assertRaisesRegex(RuntimeError, "did not complete"):
+            self.execute({"kind": "wait_visible", "selector": "#missing", "seconds": 2})
+        self.assertEqual(list((self.folder / RESPONSES).glob("*.json")), [])
+        self.assertEqual(self.browser.pages[-1].events,
+                         [("wait_visible", "#missing", "visible", 2000)])
 
     def test_stale_session_rejected_before_any_browser_action(self):
         # Submit a command file with an old token and rotate the browser key.
@@ -104,7 +117,8 @@ class VisualIPCTests(unittest.TestCase):
     def test_invalid_selectors_and_oversized_text_before_write(self):
         for bad in ({"kind": "fill", "selector": "input[type=password]", "text": "bad"},
                     {"kind": "open", "url": "file:///etc/passwd"},
-                    {"kind": "scroll", "pixels": 99999}):
+                    {"kind": "scroll", "pixels": 99999},
+                    {"kind": "wait_visible", "selector": "#ok", "seconds": 17}):
             with self.assertRaises(ValueError):
                 self.execute(bad)
         self.assertFalse((self.folder / REQUESTS).exists())

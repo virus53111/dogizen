@@ -24,6 +24,7 @@ class StudioTests(unittest.TestCase):
     def blocks(self):
         return [
             {"kind": "open", "url": "https://example.org/search"},
+            {"kind": "wait_visible", "selector": "#search", "seconds": 8},
             {"kind": "fill", "selector": "#search", "text": "public words"},
             {"kind": "click", "selector": "button.search"},
             {"kind": "wait", "seconds": 1},
@@ -59,6 +60,12 @@ class StudioTests(unittest.TestCase):
             {"kind": "wait", "seconds": 0},
             {"kind": "wait", "seconds": True},
             {"kind": "wait", "seconds": 31},
+            {"kind": "wait_visible", "selector": "#search", "seconds": 0},
+            {"kind": "wait_visible", "selector": "#search", "seconds": 16},
+            {"kind": "wait_visible", "selector": "#search", "seconds": True},
+            {"kind": "wait_visible", "selector": "", "seconds": 8},
+            {"kind": "wait_visible", "selector": "#search"},
+            {"kind": "wait_visible", "selector": "#search", "seconds": 8, "js": "x"},
             {"kind": "execute", "script": "os.system('bad')"},
             {"kind": "click", "selector": "button", "python": "bad"},
         ]
