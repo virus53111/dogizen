@@ -42,3 +42,5 @@ jobs:
           python -m pip install -r browser/requirements.txt
           python -m camoufox fetch
       - run: python browser/integration_visual_flow.py
+      - name: Tk visual Studio card UI smoke
+        run: python browser/integration_visual_studio_ui.py
