@@ -15,7 +15,7 @@ MAX_FLOWS = 40
 MAX_STEPS = 12
 MAX_TARGETS = 10
 HEX = re.compile(r"[0-9a-f]{32}\Z")
-TYPES = frozenset({"open", "wait", "wait_visible", "click", "fill", "scroll"})
+TYPES = frozenset({"open", "wait", "wait_visible", "assert_text", "click", "fill", "scroll"})
 
 
 def validated_step(raw):
@@ -28,6 +28,7 @@ def validated_step(raw):
         "open": {"kind", "url"},
         "wait": {"kind", "seconds"},
         "wait_visible": {"kind", "selector", "seconds"},
+        "assert_text": {"kind", "selector", "text", "seconds"},
         "click": {"kind", "selector"},
         "fill": {"kind", "selector", "text"},
         "scroll": {"kind", "pixels"},
@@ -41,7 +42,7 @@ def validated_step(raw):
         if type(v) is not int or not 1 <= v <= 30:
             raise ValueError("Wait must be 1–30 seconds")
         return {"kind": kind, "seconds": v}
-    if kind in ("click", "fill", "wait_visible"):
+    if kind in ("click", "fill", "wait_visible", "assert_text"):
         selector = raw["selector"]
         if (not isinstance(selector, str) or not 1 <= len(selector) <= 300 or
                 any(ord(c) < 32 or ord(c) == 127 for c in selector)):
@@ -53,6 +54,18 @@ def validated_step(raw):
             if type(seconds) is not int or not 1 <= seconds <= 15:
                 raise ValueError("Element wait must be 1–15 seconds")
             return {"kind": kind, "selector": selector, "seconds": seconds}
+        if kind == "assert_text":
+            value = raw["text"]
+            seconds = raw["seconds"]
+            if (not isinstance(value, str) or not 1 <= len(value) <= 120 or
+                    any(ord(c) < 32 or ord(c) == 127 for c in value)):
+                raise ValueError("Expected text must be 1–120 visible characters")
+            if type(seconds) is not int or not 1 <= seconds <= 15:
+                raise ValueError("Text check timeout must be 1–15 seconds")
+            if "password" in selector.lower() or "type=pw" in selector.lower():
+                raise ValueError("Password fields cannot be inspected")
+            return {"kind": kind, "selector": selector,
+                    "text": value, "seconds": seconds}
         value = raw["text"]
         if (not isinstance(value, str) or len(value) > 400 or
                 any(ord(c) < 32 and c not in "\t" for c in value)):
