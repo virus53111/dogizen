@@ -37,7 +37,7 @@ def _url(value):
     return value
 
 
-def _validated_metadata(source, proxy_ids):
+def _validated_metadata(source, proxy_ids, *, require_existing_proxy=True):
     if not isinstance(source, dict):
         raise ValueError("Invalid template settings")
     name = source.get("name")
@@ -52,7 +52,8 @@ def _validated_metadata(source, proxy_ids):
     if os_choice not in ("native", "windows", "macos", "linux"):
         raise ValueError("Invalid template platform")
     proxy = source.get("proxy_id", "")
-    if not isinstance(proxy, str) or (proxy and proxy not in proxy_ids):
+    if not isinstance(proxy, str) or (proxy and (not _TEMPLATE_ID.fullmatch(proxy) or
+                                          (require_existing_proxy and proxy not in proxy_ids))):
         raise ValueError("Referenced proxy is missing")
     url = _url(source.get("url", "about:blank"))
     extra = normalize_extra_urls(source.get("startup_urls", []), primary=url)
@@ -79,7 +80,8 @@ def list_templates(store):
             raise ValueError("Invalid template database")
         seen.add(record["id"])
         # Missing proxies must not cause silent reassignment to a different proxy.
-        validated = _validated_metadata(record, proxies)
+        validated = _validated_metadata(record, proxies,
+                                       require_existing_proxy=False)
         result.append({"id": record["id"], **validated})
     return result
 
