@@ -1176,6 +1176,9 @@ class BrowserUI:
         ttk.Button(self.info_tab, text="Документация движка", command=lambda: webbrowser.open("https://camoufox.com/python/")).pack(anchor="w", padx=24)
         ttk.Button(self.info_tab, text="Проверить обновления Windows",
                    command=self.check_updates).pack(anchor="w", padx=24, pady=(12, 0))
+        ttk.Button(self.info_tab, text="Проверить скачанный Setup.exe (SHA-256)",
+                   command=self.verify_downloaded_setup).pack(
+                       anchor="w", padx=24, pady=(6, 0))
         ttk.Button(self.info_tab, text="▶ Локальный API",
                    command=lambda: self.call(self.start_local_api)).pack(anchor="w", padx=24, pady=(12, 0))
         ttk.Button(self.info_tab, text="■ Остановить API",
@@ -1270,6 +1273,41 @@ class BrowserUI:
         if self._api_server is not None:
             self.stop_local_api()
         self.root.destroy()
+
+    def verify_downloaded_setup(self):
+        """User-initiated checksum validation, never executes the installer."""
+        selected = filedialog.askopenfilename(
+            parent=self.root, title="Выберите скачанный Windows Setup.exe",
+            filetypes=[("Windows Setup.exe", "*.exe")])
+        if not selected:
+            return
+        self.state.set("Сверяем SHA-256 с официальным GitHub Release…")
+        def worker():
+            try:
+                from installer_integrity import verify_windows_setup
+                verified = verify_windows_setup(selected)
+            except Exception:
+                def rejected():
+                    self.state.set("Setup.exe не прошёл проверку целостности")
+                    messagebox.showwarning(
+                        "Murdilimax · SHA-256",
+                        "Установщик НЕ подтверждён. Не запускайте этот файл. "
+                        "Проверьте загрузку и официальный GitHub Release.",
+                        parent=self.root)
+                self.root.after(0, rejected)
+                return
+            def accepted():
+                ver = ".".join(map(str, verified["version"]))
+                self.state.set("SHA-256 совпал: Murdilimax Windows v" + ver)
+                messagebox.showinfo(
+                    "Murdilimax · SHA-256",
+                    "Файл совпадает с официальной контрольной суммой v" + ver
+                    + ".\\nSHA-256: " + verified["sha256"] +
+                    "\\nЭто проверка целостности, не цифровая подпись издателя. "
+                    "Установщик не запускается автоматически.",
+                    parent=self.root)
+            self.root.after(0, accepted)
+        threading.Thread(target=worker, daemon=True).start()
 
     def check_updates(self):
         """Read GitHub release metadata on request; no automatic installation."""
