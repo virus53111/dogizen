@@ -29,6 +29,9 @@ from profile_templates import (list_templates, save_template, delete_template,
 from action_scenarios import (list_scenarios, create_scenario, delete_scenario,
                               run_scenario)
 from navigation_commands import submit_navigation, validated_navigation_url
+from visual_workflows import list_flows, delete_flow
+from visual_studio_ui import FlowEditor
+from visual_executor import run_visual_flow
 from bookmarks import (list_bookmarks, add_bookmark, update_bookmark,
                        remove_bookmark)
 from fingerprint_options import BOUNDS, safe_identity_preview
@@ -98,6 +101,7 @@ class BrowserUI:
         self.bookmark_tab = ttk.Frame(self.tabs)
         self.template_tab = ttk.Frame(self.tabs)
         self.scenario_tab = ttk.Frame(self.tabs)
+        self.flow_tab = ttk.Frame(self.tabs)
         self.info_tab = ttk.Frame(self.tabs)
         self.account_tab = ttk.Frame(self.tabs)
         self.tabs.add(self.profile_tab, text="Профили")
@@ -106,6 +110,7 @@ class BrowserUI:
         self.tabs.add(self.bookmark_tab, text="Закладки")
         self.tabs.add(self.template_tab, text="Шаблоны")
         self.tabs.add(self.scenario_tab, text="Сценарии")
+        self.tabs.add(self.flow_tab, text="✦ Flow Studio")
         self.tabs.add(self.account_tab, text="Аккаунт и лицензия")
         self.tabs.add(self.info_tab, text="О программе")
         self.setup_profiles()
@@ -114,6 +119,7 @@ class BrowserUI:
         self.setup_bookmarks()
         self.setup_templates()
         self.setup_scenarios()
+        self.setup_visual_flows()
         self.setup_account()
         self.setup_info()
         self.tabs.bind("<<NotebookTabChanged>>", self.on_main_tab_changed)
@@ -785,6 +791,152 @@ class BrowserUI:
             target=worker, name="murdilimax-scenario", daemon=True)
         self._scenario_thread.start()
 
+    def setup_visual_flows(self):
+        """Original Murdilimax neon builder — never a copy of a competitor."""
+        banner = tk.Frame(self.flow_tab, bg="#18213d",
+                          highlightbackground="#544b8e", highlightthickness=1)
+        banner.pack(fill="x", padx=14, pady=(14, 8))
+        tk.Label(banner, text="✦  M / FLOW STUDIO", bg="#18213d", fg=ACCENT,
+                 font=("Arial", 17, "bold")).pack(side="left", padx=17, pady=15)
+        tk.Label(banner, text="ВИЗУАЛЬНЫЕ СЦЕНАРИИ  •  MURDILIMAX",
+                 bg="#18213d", fg=CYAN,
+                 font=("Arial", 9, "bold")).pack(side="right", padx=15)
+        bar = ttk.Frame(self.flow_tab)
+        bar.pack(fill="x", padx=15, pady=(3, 9))
+        self.button(bar, "✚ Создать Flow", self.create_visual_flow)
+        self.button(bar, "✎ Изменить блоки", self.edit_visual_flow)
+        self.button(bar, "▶ Выполнить Flow", self.run_selected_visual_flow)
+        self.button(bar, "■ Отменить", self.cancel_scenario)
+        self.button(bar, "✕ Удалить", self.delete_visual_flow)
+        self.button(bar, "↻ Обновить", self.refresh_visual_flows)
+        self.flow_tree = ttk.Treeview(
+            self.flow_tab, columns=("name", "targets", "steps"),
+            show="headings", selectmode="browse")
+        for key, title, width in (
+                ("name", "Название Flow", 390),
+                ("targets", "Профилей", 180),
+                ("steps", "Блоков", 160)):
+            self.flow_tree.heading(key, text=title)
+            self.flow_tree.column(key, width=width, stretch=True)
+        self.flow_tree.pack(fill="both", expand=True, padx=15, pady=(0, 7))
+        ttk.Label(
+            self.flow_tab, foreground=MUTED, wraplength=1080,
+            text="Собственный визуальный конструктор Murdilimax: URL → пауза "
+                 "→ CSS-клик → ввод текста → прокрутка. До 12 блоков и 10 "
+                 "работающих профилей. Без произвольного JavaScript. "
+                 "Не сохраняйте пароли, токены или платёжные данные в блоках."
+        ).pack(anchor="w", padx=17, pady=(2, 14))
+        self.refresh_visual_flows()
+
+    def refresh_visual_flows(self):
+        if not hasattr(self, "flow_tree"):
+            return
+        selected = self.flow_tree.selection()
+        rows = self.flow_tree.get_children()
+        if rows:
+            self.flow_tree.delete(*rows)
+        for flow in list_flows(self.store):
+            self.flow_tree.insert("", "end", iid=flow["id"],
+                                  values=(flow["name"], len(flow["profile_ids"]),
+                                          len(flow["steps"])))
+        for ident in selected:
+            if self.flow_tree.exists(ident):
+                self.flow_tree.selection_set(ident)
+
+    def _visual_flow_saved(self, flow):
+        self.refresh_visual_flows()
+        self.flow_tree.selection_set(flow["id"])
+        self.flow_tree.see(flow["id"])
+        self.state.set("Flow сохранён: " + flow["name"])
+
+    def create_visual_flow(self):
+        profiles = self.selected(self.profile_tree)
+        if not 1 <= len(profiles) <= 10:
+            raise ValueError("Выделите 1–10 профилей на вкладке «Профили».")
+        self.tabs.select(self.flow_tab)
+        FlowEditor(self.root, self.store, profiles,
+                   on_saved=self._visual_flow_saved)
+
+    def edit_visual_flow(self):
+        ident = self.one(self.flow_tree, "Flow")
+        flow = next((f for f in list_flows(self.store)
+                     if f["id"] == ident), None)
+        if flow is None:
+            raise ValueError("Flow не найден")
+        FlowEditor(self.root, self.store, flow["profile_ids"],
+                   flow=flow, on_saved=self._visual_flow_saved)
+
+    def delete_visual_flow(self):
+        if self._scenario_thread is not None and self._scenario_thread.is_alive():
+            raise RuntimeError("Дождитесь завершения выполняющегося сценария")
+        ident = self.one(self.flow_tree, "Flow")
+        if not messagebox.askyesno(
+                "Murdilimax · Flow Studio",
+                "Удалить этот Flow? Сами профили не будут удалены.",
+                parent=self.root):
+            return
+        delete_flow(self.store, ident)
+        self.refresh_visual_flows()
+        self.state.set("Flow удалён")
+
+    def run_selected_visual_flow(self):
+        if self._scenario_thread is not None and self._scenario_thread.is_alive():
+            raise RuntimeError("Другой сценарий уже выполняется")
+        ident = self.one(self.flow_tree, "Flow")
+        flow = next((item for item in list_flows(self.store)
+                     if item["id"] == ident), None)
+        if flow is None:
+            raise ValueError("Flow не найден")
+        if not messagebox.askyesno(
+                "Murdilimax · Flow Studio",
+                "Запустить «" + flow["name"] + "»? " +
+                str(len(flow["steps"])) + " блоков, " +
+                str(len(flow["profile_ids"])) + " профилей. "
+                "Все профили должны быть открыты. Уже выполненные действия "
+                "не откатываются при ошибке.",
+                parent=self.root):
+            return
+        cancellation = threading.Event()
+        self._scenario_cancel = cancellation
+        self.state.set("Flow: проверка профилей и лицензий…")
+
+        def worker():
+            try:
+                def progress(current, total):
+                    try:
+                        self.root.after(
+                            0, lambda a=current, b=total:
+                            self.state.set(f"Flow: блок {a} / {b}"))
+                    except RuntimeError:
+                        pass
+                outcome = run_visual_flow(
+                    self.store, flow, cancel=cancellation, notify=progress)
+                text = ("Flow отменён; ранее выполненные действия сохранены"
+                        if outcome["state"] == "cancelled" else
+                        "Flow выполнен: " + str(outcome["actions"]) +
+                        " браузерных действий")
+                error = False
+            except Exception:
+                text = ("Flow остановлен: один из блоков не выполнен. "
+                        "Проверьте открытые браузеры, CSS-селекторы и лицензию. "
+                        "Уже выполненные действия не отменены.")
+                error = True
+
+            def finish():
+                if self._scenario_cancel is cancellation:
+                    self._scenario_cancel = None
+                self.state.set(text)
+                if error:
+                    messagebox.showwarning(
+                        "Murdilimax · Flow Studio", text, parent=self.root)
+            try:
+                self.root.after(0, finish)
+            except RuntimeError:
+                pass
+        self._scenario_thread = threading.Thread(
+            target=worker, name="murdilimax-visual-flow", daemon=True)
+        self._scenario_thread.start()
+
     def setup_templates(self):
         """Metadata-only templates, using existing Tk theme and profile selection."""
         bar = ttk.Frame(self.template_tab)
@@ -1349,6 +1501,7 @@ class BrowserUI:
         self.refresh_addons()
         self.refresh_templates()
         self.refresh_scenarios()
+        self.refresh_visual_flows()
 
     def refresh_status(self):
         try:

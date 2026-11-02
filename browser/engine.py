@@ -16,6 +16,7 @@ from launch_guard import (LAUNCH_TOKEN_ENV, launch_pending,
                           reserve_launch, release_launch)
 from navigation_commands import (create_navigation_session,
                                  close_navigation_session, consume_navigation)
+from visual_ipc import consume_visual_commands
 
 def pid_alive(pid):
     """Non-destructive cross-platform process status probe."""
@@ -192,6 +193,7 @@ def run_profile(profile_id):
                         break
                     pages[0].wait_for_timeout(600)
                     consume_navigation(context, folder, navigation_token)
+                    consume_visual_commands(context, folder, navigation_token)
                 except Exception:
                     break
     finally:
