@@ -28,6 +28,7 @@ from profile_templates import (list_templates, save_template, delete_template,
                                create_profiles_from_template)
 from action_scenarios import (list_scenarios, create_scenario, delete_scenario,
                               run_scenario)
+from navigation_commands import submit_navigation, validated_navigation_url
 from bookmarks import (list_bookmarks, add_bookmark, update_bookmark,
                        remove_bookmark)
 from fingerprint_options import BOUNDS, safe_identity_preview
@@ -233,6 +234,7 @@ class BrowserUI:
         self.button(bar, "✎ Изменить", self.edit_profile)
         self.button(bar, "⧉ Дублировать", self.duplicate)
         self.button(bar, "✦ Сценарий", self.create_scenario_ui)
+        self.button(bar, "↗ Открыть URL", self.navigate_selected_profiles)
         self.button(bar, "▶ Запустить", self.start)
         self.button(bar, "■ Остановить", self.stop)
         self.button(bar, "✕ Удалить", self.delete)
@@ -667,7 +669,7 @@ class BrowserUI:
                 "", "end", iid=scenario["id"],
                 values=(scenario["name"],
                         {"start": "Запуск", "stop": "Остановка",
-                         "session": "Сеанс"}[scenario["kind"]],
+                         "session": "Сеанс", "navigate": "Открыть URL"}[scenario["kind"]],
                         len(scenario["profile_ids"]),
                         scenario["wait_seconds"] or "—"))
         for sid in selected:
@@ -686,7 +688,8 @@ class BrowserUI:
         kind = simpledialog.askstring(
             "Murdilimax · Сценарии",
             "Тип: start (запуск), stop (остановка), "
-            "session (запуск, ожидание, остановка):",
+            "session (запуск, ожидание, остановка), "
+            "navigate (открыть URL во вкладке):",
             initialvalue="start", parent=self.root)
         if kind is None:
             return
@@ -741,12 +744,22 @@ class BrowserUI:
                 "При сбое отправленные команды не откатываются.",
                 parent=self.root):
             return
+        navigation_url = None
+        if scenario["kind"] == "navigate":
+            navigation_url = simpledialog.askstring(
+                "Murdilimax · Навигация",
+                "HTTP(S)-адрес для открытия в новом окне-вкладке профилей:",
+                parent=self.root)
+            if navigation_url is None:
+                return
+            validated_navigation_url(navigation_url)
         cancel = threading.Event()
         self._scenario_cancel = cancel
         self.state.set("Сценарий: проверка профилей и тарифных разрешений…")
         def worker():
             try:
-                result = run_scenario(self.store, scenario, cancel=cancel)
+                result = run_scenario(self.store, scenario, cancel=cancel,
+                                      navigation_url=navigation_url)
                 msg = ("Сценарий отменён; работающие браузеры не закрыты"
                        if result["state"] == "cancelled" else
                        "Сценарий завершён; команд отправлено: " +
@@ -1565,6 +1578,50 @@ class BrowserUI:
         for pid in selected:
             self.store.delete_profile(pid)
         self.refresh()
+
+    def navigate_selected_profiles(self):
+        """Queue one user-approved URL for selected, already open profiles."""
+        selected = self.selected(self.profile_tree)
+        if not selected or len(selected) > 20:
+            raise ValueError("Выделите от 1 до 20 работающих профилей.")
+        url = simpledialog.askstring(
+            "Murdilimax · Навигация",
+            "Введите HTTP(S)-адрес для новой вкладки выбранных профилей:",
+            parent=self.root)
+        if url is None:
+            return
+        validated_navigation_url(url)
+        if not messagebox.askyesno(
+                "Murdilimax · Навигация",
+                "Отправить команду открытия новой вкладки в " +
+                str(len(selected)) + " профилей? "
+                "Уже запущенные браузеры не будут перезапущены.",
+                parent=self.root):
+            return
+        self.state.set("Проверяем профили и разрешение на навигацию…")
+        def worker():
+            try:
+                answer = submit_navigation(self.store, selected, url)
+                message = ("Отправлено команд открытия: " +
+                           str(answer["queued"]) +
+                           ". Переход происходит в работающем Camoufox.")
+                failed = False
+            except Exception:
+                message = ("Навигация не выполнена или выполнена частично. "
+                           "Проверьте, что все профили запущены и доступны.")
+                failed = True
+            def report():
+                self.state.set(message)
+                if failed:
+                    messagebox.showwarning("Murdilimax · Навигация",
+                                           message, parent=self.root)
+            try:
+                self.root.after(0, report)
+            except RuntimeError:
+                pass
+        threading.Thread(
+            target=worker, daemon=True,
+            name="murdilimax-navigation").start()
 
     def start(self):
         if os.environ.get("MURDILIMAX_REQUIRE_LOGIN") == "1" and not self.authorized:
