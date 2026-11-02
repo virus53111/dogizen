@@ -45,7 +45,13 @@ def main():
             assert editor.profile_ids == [profile["id"], second["id"]]
             assert editor.profile_count.cget("text") == "ПРОФИЛЕЙ: 2"
             cancelled = editor.choose_profiles()
-            cancelled.destroy()
+            cancel_button = next(
+                item for child in cancelled.winfo_children()
+                for item in child.winfo_children()
+                if isinstance(item, tk.Button)
+                and item.cget("text") == "ОТМЕНА")
+            cancel_button.invoke()
+            assert editor.window.grab_current() == editor.window
             assert editor.profile_ids == [profile["id"], second["id"]]
             # Check native wheel dispatch without relying on CI pixel rounding.
             editor.steps = [{"kind": "wait", "seconds": 1}] * 12
