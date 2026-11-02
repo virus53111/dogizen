@@ -48,6 +48,7 @@ def main():
             url = f"http://127.0.0.1:{web.server_port}/"
             blocks = [
                 {"kind": "open", "url": url},
+                {"kind": "wait_visible", "selector": "#search", "seconds": 8},
                 {"kind": "fill", "selector": "#search", "text": "Murdilimax Flow"},
                 {"kind": "click", "selector": "#submit"},
                 {"kind": "scroll", "pixels": 420},
@@ -67,7 +68,7 @@ def main():
                             **kwargs)
                     done = run_visual_flow(store, plan, verify=lambda *_: None,
                                            dispatch=dispatch)
-                    assert done == {"state": "completed", "actions": 4}, done
+                    assert done == {"state": "completed", "actions": 5}, done
                     page = browser.pages[-1]
                     assert page.title() == "Flow QA"
                     assert page.evaluate("document.body.dataset.sent") == "Murdilimax Flow"
@@ -83,7 +84,7 @@ def main():
                 assert "flow_qa=persisted" in page.evaluate("document.cookie")
             saved = store._read("visual_flows")
             assert saved[0]["steps"] == blocks
-        print("PASS: actual Camoufox visual open/fill/click/scroll/wait, acks and persistent cookies")
+        print("PASS: actual Camoufox visual open/wait-visible/fill/click/scroll/wait, acks and persistent cookies")
     finally:
         web.shutdown()
         web.server_close()
