@@ -9,7 +9,6 @@ from __future__ import annotations
 import re
 import threading
 import uuid
-from collections.abc import Callable
 
 from engine import (pid_alive, request_stop, safe_profile_id,
                     start_background, verify_commercial_access)
@@ -19,7 +18,6 @@ from store import now
 MAX_SCENARIOS = 50
 MAX_PROFILES = 20
 MAX_WAIT_SECONDS = 300
-MAX_STEPS = 3
 ID_RE = re.compile(r"[0-9a-f]{32}\Z")
 KINDS = frozenset({"start", "stop", "session"})
 
@@ -129,10 +127,23 @@ def preflight(store, scenario, *, verify=verify_commercial_access,
     return action
 
 
+def _owns_session_process(store, profile_id, launched_pid):
+    """Stop only the original process, never a user-restarted browser."""
+    lock = store.root / "profiles" / profile_id / ".lock"
+    if type(launched_pid) is not int or launched_pid <= 0 or lock.is_symlink():
+        return False
+    try:
+        return (lock.is_file() and
+                int(lock.read_text(encoding="ascii").strip()) == launched_pid and
+                pid_alive(launched_pid))
+    except (ValueError, OSError, UnicodeError):
+        return False
+
+
 def run_scenario(store, scenario, *, cancel=None, notify=None,
                  verify=verify_commercial_access,
                  start=start_background, stop=request_stop,
-                 running=_is_running):
+                 running=_is_running, ownership=_owns_session_process):
     """Synchronous worker function. Tk must invoke from a background thread.
 
     Stops on first failure. Earlier accepted starts are NOT implicitly rolled
@@ -141,6 +152,8 @@ def run_scenario(store, scenario, *, cancel=None, notify=None,
     action = preflight(store, scenario, verify=verify, running=running)
     cancel = cancel if cancel is not None else threading.Event()
     count = 0
+    launched = {}
+    skipped = 0
     def progress(event, total):
         if notify is not None:
             notify(event, total)
@@ -151,7 +164,11 @@ def run_scenario(store, scenario, *, cancel=None, notify=None,
         if action["kind"] in ("start", "session"):
             # Paid access may have expired during the previous start.
             verify(store, pid)
-            start(store, pid)
+            process_id = start(store, pid)
+            if action["kind"] == "session":
+                if type(process_id) is not int or process_id <= 0:
+                    raise RuntimeError("Could not identify started browser process")
+                launched[pid] = process_id
         else:
             if launch_pending(store.root / "profiles" / pid):
                 raise RuntimeError("Profile is still starting; retry later")
@@ -166,9 +183,16 @@ def run_scenario(store, scenario, *, cancel=None, notify=None,
             if cancel.is_set():
                 progress("cancelled", count)
                 return {"state": "cancelled", "accepted": count}
+            if not ownership(store, pid, launched[pid]):
+                skipped += 1
+                progress("owner_changed", count)
+                continue
             if launch_pending(store.root / "profiles" / pid):
                 raise RuntimeError("Profile is still starting; retry stop later")
             stop(store, pid)
             count += 1
             progress("stop_requested", count)
-    return {"state": "completed", "accepted": count}
+    result = {"state": "completed", "accepted": count}
+    if skipped:
+        result["skipped"] = skipped
+    return result
