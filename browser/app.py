@@ -811,12 +811,13 @@ class BrowserUI:
         self.button(bar, "✕ Удалить", self.delete_visual_flow)
         self.button(bar, "↻ Обновить", self.refresh_visual_flows)
         self.flow_tree = ttk.Treeview(
-            self.flow_tab, columns=("name", "targets", "steps"),
+            self.flow_tab, columns=("name", "targets", "steps", "mode"),
             show="headings", selectmode="browse")
         for key, title, width in (
                 ("name", "Название Flow", 390),
                 ("targets", "Профилей", 180),
-                ("steps", "Блоков", 160)):
+                ("steps", "Блоков", 160),
+                ("mode", "Режим", 190)):
             self.flow_tree.heading(key, text=title)
             self.flow_tree.column(key, width=width, stretch=True)
         self.flow_tree.pack(fill="both", expand=True, padx=15, pady=(0, 7))
@@ -824,7 +825,8 @@ class BrowserUI:
             self.flow_tab, foreground=MUTED, wraplength=1080,
             text="Собственный визуальный конструктор Murdilimax: URL → пауза "
                  "→ ожидание элемента → проверка текста → CSS-клик → ввод текста → прокрутка. "
-                 "До 12 блоков и 10 профилей; можно менять цели и копировать Flow. "
+                 "До 12 блоков и 10 профилей: обычный или параллельный "
+                 "режим выполнения с отдельными сессиями. "
                  "Без произвольного JavaScript. "
                  "Не сохраняйте пароли, токены или платёжные данные в блоках."
         ).pack(anchor="w", padx=17, pady=(2, 14))
@@ -840,7 +842,9 @@ class BrowserUI:
         for flow in list_flows(self.store):
             self.flow_tree.insert("", "end", iid=flow["id"],
                                   values=(flow["name"], len(flow["profile_ids"]),
-                                          len(flow["steps"])))
+                                          len(flow["steps"]),
+                                          "⇉ Параллельно" if flow["execution_mode"] == "parallel"
+                                          else "По очереди"))
         for ident in selected:
             if self.flow_tree.exists(ident):
                 self.flow_tree.selection_set(ident)
@@ -904,7 +908,10 @@ class BrowserUI:
                 "Murdilimax · Flow Studio",
                 "Запустить «" + flow["name"] + "»? " +
                 str(len(flow["steps"])) + " блоков, " +
-                str(len(flow["profile_ids"])) + " профилей. "
+                str(len(flow["profile_ids"])) + " профилей. " +
+                ("Параллельно по каждому блоку, без отката действий. " if
+                 flow["execution_mode"] == "parallel" else
+                 "По очереди по каждому блоку. ") +
                 "Все профили должны быть открыты. Уже выполненные действия "
                 "не откатываются при ошибке.",
                 parent=self.root):
