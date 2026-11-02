@@ -9,7 +9,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 from action_scenarios import (create_scenario, delete_scenario, list_scenarios,
-                              preflight, run_scenario)
+                              preflight, run_scenario, _owns_session_process)
 from store import Store
 
 
@@ -118,11 +118,34 @@ class ScenarioTests(unittest.TestCase):
         result = run_scenario(
             self.store, s, cancel=InstantEvent(), notify=lambda event, n: events.append((event, n)),
             verify=self.verify, running=self.running,
-            start=self.start, stop=self.stop)
+            start=self.start, stop=self.stop,
+            ownership=lambda *_: True)
         self.assertEqual(result, {"state": "completed", "accepted": 4})
         self.assertEqual(self.start.call_count, 2)
         self.assertEqual(self.stop.call_count, 2)
         self.assertEqual(events[-1], ("stop_requested", 4))
+
+    def test_timed_scenario_never_stops_restarted_browser(self):
+        scenario = self.scenario("session", [self.one["id"]], 5)
+        class NoWait:
+            def is_set(self): return False
+            def wait(self, _seconds): return False
+        result = run_scenario(
+            self.store, scenario, cancel=NoWait(), verify=self.verify,
+            running=self.running, start=self.start, stop=self.stop,
+            ownership=lambda *_: False)
+        self.assertEqual(result, {"state": "completed", "accepted": 1,
+                                  "skipped": 1})
+        self.stop.assert_not_called()
+
+    def test_process_ownership_requires_original_live_pid(self):
+        folder = self.store.root / "profiles" / self.one["id"]
+        (folder / ".lock").write_text("12345", encoding="ascii")
+        with patch("action_scenarios.pid_alive", return_value=True):
+            self.assertTrue(_owns_session_process(self.store, self.one["id"], 12345))
+            self.assertFalse(_owns_session_process(self.store, self.one["id"], 45678))
+        with patch("action_scenarios.pid_alive", return_value=False):
+            self.assertFalse(_owns_session_process(self.store, self.one["id"], 12345))
 
     def test_cancellation_during_pause_preserves_running_browser(self):
         s = self.scenario("session", [self.one["id"]], 5)
