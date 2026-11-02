@@ -16,6 +16,7 @@ TITLES = {
     "open": ("◉", "ОТКРЫТЬ СТРАНИЦУ"),
     "wait": ("◷", "ПАУЗА"),
     "wait_visible": ("◉", "ОЖИДАТЬ ЭЛЕМЕНТ"),
+    "assert_text": ("✓", "ПРОВЕРИТЬ ТЕКСТ"),
     "click": ("✧", "НАЖАТЬ ЭЛЕМЕНТ"),
     "fill": ("▣", "ВВЕСТИ ТЕКСТ"),
     "scroll": ("↕", "ПРОКРУТИТЬ"),
@@ -77,7 +78,8 @@ class FlowEditor:
         palette.pack(fill="x", padx=25, pady=(2, 10))
         for kind, label in (
                 ("open", "+ URL"), ("wait", "+ ПАУЗА"),
-                ("wait_visible", "+ ЭЛЕМЕНТ"), ("click", "+ КЛИК"), ("fill", "+ ТЕКСТ"),
+                ("wait_visible", "+ ЭЛЕМЕНТ"), ("assert_text", "+ ПРОВЕРКА"),
+                ("click", "+ КЛИК"), ("fill", "+ ТЕКСТ"),
                 ("scroll", "+ СКРОЛЛ")):
             tk.Button(
                 palette, text=label, command=lambda k=kind: self.add(k),
@@ -234,6 +236,9 @@ class FlowEditor:
             return str(step["seconds"]) + " секунд"
         if kind == "wait_visible":
             return "CSS: " + step["selector"][:95] + "  •  до " + str(step["seconds"]) + " сек."
+        if kind == "assert_text":
+            return ("CSS: " + step["selector"][:75] + "  •  содержит: "
+                    + step["text"][:55] + "  •  до " + str(step["seconds"]) + " сек.")
         if kind in ("click", "fill"):
             return "CSS: " + step["selector"][:95] + (
                 "  •  текст введён" if kind == "fill" else "")
@@ -311,6 +316,27 @@ class FlowEditor:
                 return None
             raw = {"kind": "wait_visible", "selector": selector,
                    "seconds": seconds}
+        elif kind == "assert_text":
+            selector = simpledialog.askstring(
+                title, "CSS-селектор элемента для проверки текста:",
+                initialvalue=old.get("selector", "#status"),
+                parent=self.window)
+            if selector is None:
+                return None
+            text = simpledialog.askstring(
+                title, "Ожидаемый обычный текст (без паролей и секретов):",
+                initialvalue=old.get("text", "Готово"),
+                parent=self.window)
+            if text is None:
+                return None
+            seconds = simpledialog.askinteger(
+                title, "Ожидание текста от 1 до 15 секунд:",
+                minvalue=1, maxvalue=15,
+                initialvalue=old.get("seconds", 8), parent=self.window)
+            if seconds is None:
+                return None
+            raw = {"kind": "assert_text", "selector": selector,
+                   "text": text, "seconds": seconds}
         elif kind == "click":
             selector = simpledialog.askstring(
                 title, "CSS-селектор кнопки или элемента:",
