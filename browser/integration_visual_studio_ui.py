@@ -2,6 +2,7 @@
 from __future__ import annotations
 import tempfile
 import tkinter as tk
+from types import SimpleNamespace
 from unittest.mock import patch
 from pathlib import Path
 from store import Store
@@ -19,6 +20,15 @@ def main():
             editor = FlowEditor(root, store, [profile["id"]],
                                 on_saved=lambda plan: saved.append(plan))
             editor.window.update()
+            # Check native wheel dispatch without relying on CI pixel rounding.
+            editor.steps = [{"kind": "wait", "seconds": 1}] * 12
+            editor.redraw()
+            editor.window.update()
+            assert editor.canvas.yview()[1] < 1.0
+            with patch.object(editor.canvas, "yview_scroll",
+                              wraps=editor.canvas.yview_scroll) as scrolled:
+                assert editor._scroll_flow(SimpleNamespace(num=None, delta=-120)) == "break"
+                scrolled.assert_called_once_with(1, "units")
             with patch("visual_studio_ui.simpledialog.askstring",
                        return_value="#ready"), patch(
                        "visual_studio_ui.simpledialog.askinteger",
@@ -37,6 +47,25 @@ def main():
             assert len(saved) == 1
             assert list_flows(store)[0]["name"] == "My Own Neon Flow"
             assert list_flows(store)[0]["steps"][0]["kind"] == "open"
+
+            existing = list_flows(store)[0]
+            clean = FlowEditor(root, store, [profile["id"]], flow=existing)
+            with patch("visual_studio_ui.messagebox.askyesno",
+                       side_effect=AssertionError("Unmodified flow must close silently")):
+                clean.request_close()
+            assert not clean.window.winfo_exists()
+
+            changed = FlowEditor(root, store, [profile["id"]], flow=existing)
+            changed.name.delete(0, tk.END)
+            changed.name.insert(0, "Unsaved title")
+            with patch("visual_studio_ui.messagebox.askyesno", return_value=False) as asked:
+                changed.request_close()
+                asked.assert_called_once()
+            assert changed.window.winfo_exists()
+            with patch("visual_studio_ui.messagebox.askyesno", return_value=True):
+                changed.request_close()
+            assert not changed.window.winfo_exists()
+            assert list_flows(store)[0]["name"] == "My Own Neon Flow"
         finally:
             root.destroy()
     print("PASS: original Neon Flow Studio card canvas, reorder and persistence")
