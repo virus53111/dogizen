@@ -33,6 +33,8 @@ class TemplateTests(unittest.TestCase):
         original_dir = self.store.root / "profiles" / source["id"]
         original_dir.joinpath("cookies.sqlite").write_bytes(b"PRIVATE COOKIES")
         template = save_template(self.store, source["id"], "Campaign")
+        self.store.add_profile("Filler 1")
+        self.store.add_profile("Filler 2")
         self.assertEqual(len(list_templates(self.store)), 1)
         raw = (self.store.root / "templates.json").read_text(encoding="utf-8")
         for secret in ("DO NOT COPY PERSONAL NOTE", "PRIVATE COOKIES", "qa-user"):
@@ -106,7 +108,6 @@ class TemplateTests(unittest.TestCase):
         for bad in ("file:///etc/passwd", "javascript:alert(1)",
                     "https://user:pwd@example.org", "https://hello.org/space here",
                     "http://example.org:0", "http://[broken"):
-            self.store.update_profile(source["id"], url="about:blank")
             profile = self.store.get_profile(source["id"])
             profile["url"] = bad
             self.store._write("profiles", [profile])
