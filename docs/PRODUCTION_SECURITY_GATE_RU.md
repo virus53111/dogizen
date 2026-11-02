@@ -67,3 +67,10 @@ A temporary authenticated test route, verified via the platform's actual `as:"us
 All three temporary QA API handlers (seeder, row-policy probe and public-writer probe) were **removed**, and the private staging project was redeployed at version 5 retaining only the test policies and fake records. This was not an end-to-end Stripe purchase/renewal test.
 
 **Required next engineering change:** design and test tightly permissioned, atomic backend writes for signed webhooks and authenticated checkout/rate-limiter operations, rather than weakening row policies or silently downgrading paid customers. Require real signed Stripe TEST fixtures, event replay/out-of-order tests and server entitlement checks before considering production migration.
+
+
+### Follow-up: privileged-write prototype also failed (staging only)
+
+In the same private test project a separate `SECURITY DEFINER` PL/pgSQL function was created to insert **only a pending fake Checkout record** for the trusted `req.user.id`, with no paid entitlement and no Stripe keys. Invoking it from `access='user'` returned SQLSTATE 42501: the staging row policy still rejected the INSERT. Therefore a naïve SECURITY DEFINER wrapper does **not** repair this platform's enforced row-write ceiling.
+
+The QA route was removed, and the test-only function was removed through a cleanup migration in staging version 7; the fork remains private with 30 original endpoints and synthetic records only. This is a confirmed API/runtime compatibility issue requiring a reviewed, supported privileged-write design, not a reason to weaken production table protection or bypass webhook signature verification. The source production Hatchable project was not modified.
