@@ -83,12 +83,14 @@ def main():
             assert editor.steps[0]["kind"] == "open"
             editor.name.delete(0, tk.END)
             editor.name.insert(0, "My Own Neon Flow")
+            editor.parallel.set(True)
             editor.save()
             assert len(saved) == 1
             assert list_flows(store)[0]["name"] == "My Own Neon Flow"
             assert list_flows(store)[0]["steps"][0]["kind"] == "open"
             assert list_flows(store)[0]["profile_ids"] == [
                 profile["id"], second["id"]]
+            assert list_flows(store)[0]["execution_mode"] == "parallel"
 
             existing = list_flows(store)[0]
             clean = FlowEditor(root, store, existing["profile_ids"], flow=existing)
@@ -97,6 +99,14 @@ def main():
                 clean.request_close()
             assert not clean.window.winfo_exists()
 
+            toggled = FlowEditor(root, store, existing["profile_ids"], flow=existing)
+            toggled.parallel.set(False)
+            with patch("visual_studio_ui.messagebox.askyesno", return_value=False) as asked:
+                toggled.request_close()
+                asked.assert_called_once()
+            assert toggled.window.winfo_exists()
+            with patch("visual_studio_ui.messagebox.askyesno", return_value=True):
+                toggled.request_close()
             changed = FlowEditor(root, store, existing["profile_ids"], flow=existing)
             changed.name.delete(0, tk.END)
             changed.name.insert(0, "Unsaved title")
@@ -108,6 +118,7 @@ def main():
                 changed.request_close()
             assert not changed.window.winfo_exists()
             assert list_flows(store)[0]["name"] == "My Own Neon Flow"
+            assert list_flows(store)[0]["execution_mode"] == "parallel"
             assert list_flows(store)[0]["profile_ids"] == [
                 profile["id"], second["id"]]
         finally:

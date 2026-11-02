@@ -95,6 +95,72 @@ class StudioTests(unittest.TestCase):
             duplicate_flow(self.store, src["id"])
         self.assertEqual(self.store._read("visual_flows"), before)
 
+    def test_parallel_mode_compatibility_and_persistence(self):
+        original = {"name": "Old Flow", "profile_ids": [self.one["id"]],
+                    "steps": [{"kind": "wait", "seconds": 1}]}
+        self.assertEqual(validated_flow(original)["execution_mode"], "serial")
+        for bad in (None, True, 0, "auto", "PARALLEL", []):
+            with self.subTest(mode=bad), self.assertRaises(ValueError):
+                validated_flow({**original, "execution_mode": bad})
+        flow = save_flow(
+            self.store, "Parallel", [self.one["id"], self.two["id"]],
+            [{"kind": "click", "selector": "button"}],
+            execution_mode="parallel")
+        self.assertEqual(flow["execution_mode"], "parallel")
+        self.assertEqual(list_flows(Store(self.store.root))[0]["execution_mode"],
+                         "parallel")
+        cloned = duplicate_flow(self.store, flow["id"])
+        self.assertEqual(cloned["execution_mode"], "parallel")
+        self.assertNotEqual(cloned["id"], flow["id"])
+
+    def test_parallel_flow_dispatches_same_step_concurrently_and_in_order(self):
+        flow = save_flow(
+            self.store, "Concurrent", [self.one["id"], self.two["id"]],
+            [{"kind": "open", "url": "https://example.org"},
+             {"kind": "click", "selector": "button"}],
+            execution_mode="parallel")
+        barriers = {kind: threading.Barrier(2, timeout=3)
+                    for kind in ("open", "click")}
+        events, lock = [], threading.Lock()
+        def dispatch(_store, profile, step, **_):
+            barriers[step["kind"]].wait()
+            with lock:
+                events.append((profile, step["kind"]))
+        with patch("navigation_commands._active_session", return_value=(
+                self.store.root / "profiles" / self.one["id"],
+                {"pid": 3, "token": "a" * 48})):
+            done = run_visual_flow(self.store, flow, verify=lambda *_: None,
+                                   alive=lambda *_: True, dispatch=dispatch)
+        self.assertEqual(done, {"state": "completed", "actions": 4})
+        self.assertEqual([name for _, name in events].count("open"), 2)
+        self.assertEqual([name for _, name in events].count("click"), 2)
+        self.assertEqual([name for _, name in events][:2], ["open", "open"])
+        self.assertEqual([name for _, name in events][2:], ["click", "click"])
+
+    def test_parallel_failure_stops_following_step_and_cancels_pending(self):
+        flow = save_flow(
+            self.store, "Failure", [self.one["id"], self.two["id"]],
+            [{"kind": "click", "selector": "button"},
+             {"kind": "scroll", "pixels": 400}], execution_mode="parallel")
+        barrier = threading.Barrier(2, timeout=3)
+        calls, cancel = [], threading.Event()
+        def dispatch(_store, profile, step, **_):
+            calls.append(step["kind"])
+            if step["kind"] == "click":
+                barrier.wait()
+                if profile == self.one["id"]:
+                    raise RuntimeError("synthetic per-profile action failure")
+        with patch("navigation_commands._active_session", return_value=(
+                self.store.root / "profiles" / self.one["id"],
+                {"pid": 3, "token": "a" * 48})):
+            with self.assertRaisesRegex(RuntimeError, "action failure"):
+                run_visual_flow(self.store, flow, cancel=cancel,
+                                verify=lambda *_: None, alive=lambda *_: True,
+                                dispatch=dispatch)
+        self.assertEqual(calls.count("click"), 2)
+        self.assertNotIn("scroll", calls)
+        self.assertTrue(cancel.is_set())
+
     def test_schema_rejects_unsafe_web_and_script_actions(self):
         bad = [
             {"kind": "open", "url": "file:///etc/passwd"},

@@ -83,11 +83,15 @@ def validated_step(raw):
 
 def validated_flow(raw):
     if not isinstance(raw, dict) or set(raw) - {
-            "id", "name", "profile_ids", "steps", "created_at"}:
+            "id", "name", "profile_ids", "steps", "created_at",
+            "execution_mode"}:
         raise ValueError("Invalid visual workflow")
     name = raw.get("name")
     ids = raw.get("profile_ids")
     steps = raw.get("steps")
+    mode = raw.get("execution_mode", "serial")
+    if type(mode) is not str or mode not in ("serial", "parallel"):
+        raise ValueError("Flow execution mode must be serial or parallel")
     if not isinstance(name, str) or not 1 <= len(name.strip()) <= 80:
         raise ValueError("Workflow name must be 1–80 characters")
     if (not isinstance(ids, list) or not 1 <= len(ids) <= MAX_TARGETS or
@@ -97,7 +101,8 @@ def validated_flow(raw):
     if not isinstance(steps, list) or not 1 <= len(steps) <= MAX_STEPS:
         raise ValueError("A visual workflow needs 1–12 blocks")
     return {"name": name.strip(), "profile_ids": list(ids),
-            "steps": [validated_step(s) for s in steps]}
+            "steps": [validated_step(s) for s in steps],
+            "execution_mode": mode}
 
 
 def list_flows(store):
@@ -116,9 +121,11 @@ def list_flows(store):
     return result
 
 
-def save_flow(store, name, profile_ids, steps, *, replace_id=None):
+def save_flow(store, name, profile_ids, steps, *, replace_id=None,
+              execution_mode="serial"):
     validated = validated_flow({
-        "name": name, "profile_ids": profile_ids, "steps": steps})
+        "name": name, "profile_ids": profile_ids, "steps": steps,
+        "execution_mode": execution_mode})
     profiles = {p["id"] for p in store.profiles()}
     if any(x not in profiles for x in validated["profile_ids"]):
         raise ValueError("A selected profile was deleted")
@@ -175,5 +182,6 @@ def duplicate_flow(store, ident):
         name = original["name"][:80 - len(suffix)].rstrip() + suffix
         if name.casefold() not in used:
             return save_flow(store, name, original["profile_ids"],
-                             original["steps"])
+                             original["steps"],
+                             execution_mode=original["execution_mode"])
     raise ValueError("No unique name available")
