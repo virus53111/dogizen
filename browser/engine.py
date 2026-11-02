@@ -14,6 +14,8 @@ from identity import get_identity, resolved_os
 from engine_setup import ensure_engine_ready
 from launch_guard import (LAUNCH_TOKEN_ENV, launch_pending,
                           reserve_launch, release_launch)
+from navigation_commands import (create_navigation_session,
+                                 close_navigation_session, consume_navigation)
 
 def pid_alive(pid):
     """Non-destructive cross-platform process status probe."""
@@ -144,6 +146,7 @@ def run_profile(profile_id):
 
     with os.fdopen(fd, "w") as writer:
         writer.write(str(os.getpid()))
+    navigation_token = None
     try:
         # Stop requests are reset only AFTER this child obtains the lock.
         # A duplicate invocation must never cancel the owner's stop signal.
@@ -181,15 +184,19 @@ def run_profile(profile_id):
                 # contain sensitive query parameters or session details.
                 print("Startup tabs: " + str(tabs["failed"]) +
                       " navigation(s) failed", file=sys.stderr)
+            navigation_token = create_navigation_session(folder, os.getpid())
             while not stop_file.exists():
                 try:
                     pages = context.pages
                     if not pages:
                         break
                     pages[0].wait_for_timeout(600)
+                    consume_navigation(context, folder, navigation_token)
                 except Exception:
                     break
     finally:
+        if navigation_token is not None:
+            close_navigation_session(folder, navigation_token)
         release_launch(folder, launch_token)
         lock.unlink(missing_ok=True)
         stop_file.unlink(missing_ok=True)
