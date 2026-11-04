@@ -64,7 +64,7 @@
       ? 'Сохранено в этом браузере. Можно скачать CSV и использовать без регистрации.'
       : state.searched ? state.sector + ' · ' + state.city + ' · OpenStreetMap' : 'Выбери город и сферу бизнеса.';
     $('results-status').textContent = next === 'saved' ? 'СОХРАНЕНО ЛОКАЛЬНО' : state.searched ? 'ОТКРЫТЫЕ ДАННЫЕ' : 'ГОТОВО К ПОИСКУ';
-    $('notice').hidden = true;
+    if (next === 'saved') $('notice').hidden = true;
     render();
   }
 
