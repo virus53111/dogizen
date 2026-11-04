@@ -92,7 +92,7 @@ async function retrieve(key, city, sector) {
     if (Date.now()-lastExternalQueryAt<2000) throw Error('Слишком частые запросы. Повторите немного позже.');
     lastExternalQueryAt=Date.now();
     const body='data='+encodeURIComponent(buildQuery(city,sector));
-    const urls=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
+    const urls=['https://ovp.dresel.systems/api/interpreter','https://overpass-api.de/api/interpreter'];
     let lastError='Не удалось получить данные OpenStreetMap';
     for(const url of urls){
       try {
