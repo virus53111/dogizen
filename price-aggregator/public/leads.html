@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#09131c">
+  <meta name="description" content="LeadRadar — бесплатный поиск компаний и B2B-клиентов по городу и сфере бизнеса. Публичные контакты, сохранение избранного, выгрузка CSV. Без установки кода.">
+  <title>LeadRadar — найди B2B-клиентов бесплатно | Cenaradar</title>
+  <link rel="canonical" href="https://cenaradar.online/">
+  <link rel="stylesheet" href="/leads.css">
+  <script src="/leads.js" defer></script>
+</head>
+<body>
+  <header class="container header">
+    <a class="brand" href="/" aria-label="LeadRadar главная"><span class="brand-logo">↗</span><span>LeadRadar</span></a>
+    <nav aria-label="Навигация">
+      <a href="#finder">Поиск компаний</a>
+      <a href="#about">Как работает</a>
+      <span class="free-label">100% БЕСПЛАТНО</span>
+    </nav>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="container hero-layout">
+        <div>
+          <div class="eyebrow">B2B-ПОИСК · БЕЗ ПОДПИСКИ · БЕЗ КОДА</div>
+          <h1>Находи клиентов, <em>а не гадай,</em> кто зашёл на сайт.</h1>
+          <p class="lede">Выбери город и сферу бизнеса. LeadRadar найдёт реальные организации и доступные публичные контакты — сайты, телефоны и email. Ничего устанавливать и регистрировать не нужно.</p>
+          <div class="hero-foot">✓ Без вставки скриптов &nbsp; ✓ Без платных аккаунтов &nbsp; ✓ Открытые данные</div>
+        </div>
+        <aside class="hero-panel" aria-label="Возможности сервиса">
+          <div>
+            <div class="eyebrow">ТВОЯ НОВАЯ РАБОЧАЯ ПАНЕЛЬ</div>
+            <h2>Клиенты из открытых источников</h2>
+            <p>Начни с одного города и конкретной отрасли. Дальше отсортируй контакты и сохрани интересные компании.</p>
+            <div class="metric-chip"><span>Поиск по городу и нише</span><b>11 × 14</b></div>
+            <div class="metric-chip"><span>Сайт, телефон, email</span><b>По наличию</b></div>
+            <div class="metric-chip"><span>Избранное и CSV</span><b>Бесплатно</b></div>
+            <div class="metric-chip"><span>Установка на чужие сайты</span><b>Не нужна</b></div>
+          </div>
+        </aside>
+      </div>
+    </section>
+    <section class="container app-area" id="finder">
+      <div class="workspace">
+        <div class="workspace-top">
+          <div><h2>Поиск потенциальных клиентов</h2><p>Работает с общедоступной базой OpenStreetMap. Результаты зависят от заполненности данных.</p></div>
+          <div class="modebar" role="group" aria-label="Режим просмотра">
+            <button id="mode-search" class="active" type="button" aria-pressed="true">⌕ Поиск</button>
+            <button id="mode-saved" type="button" aria-pressed="false">☆ Избранное <b id="saved-count">0</b></button>
+          </div>
+        </div>
+        <form class="search" id="search-form">
+          <div class="field">
+            <label for="city">Город</label>
+            <select id="city" name="city">
+              <option value="riga">🇱🇻 Рига</option>
+              <option value="jurmala">🇱🇻 Юрмала</option>
+              <option value="daugavpils">🇱🇻 Даугавпилс</option>
+              <option value="tallinn">🇪🇪 Таллин</option>
+              <option value="vilnius">🇱🇹 Вильнюс</option>
+              <option value="warsaw">🇵🇱 Варшава</option>
+              <option value="helsinki">🇫🇮 Хельсинки</option>
+              <option value="berlin">🇩🇪 Берлин</option>
+              <option value="london">🇬🇧 Лондон</option>
+              <option value="amsterdam">🇳🇱 Амстердам</option>
+              <option value="prague">🇨🇿 Прага</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="sector">Сфера бизнеса</label>
+            <select id="sector" name="sector">
+              <option value="dentist">Стоматологии</option>
+              <option value="restaurant">Рестораны</option>
+              <option value="cafe">Кафе</option>
+              <option value="salon">Салоны красоты и парикмахерские</option>
+              <option value="fitness">Фитнес-клубы</option>
+              <option value="hotel">Отели</option>
+              <option value="realestate">Агентства недвижимости</option>
+              <option value="lawyer">Юридические компании</option>
+              <option value="accountant">Бухгалтерские компании</option>
+              <option value="car">Автосервисы</option>
+              <option value="florist">Цветочные магазины</option>
+              <option value="furniture">Мебельные магазины</option>
+              <option value="vet">Ветеринарные клиники</option>
+              <option value="pharmacy">Аптеки</option>
+            </select>
+          </div>
+          <button id="search-submit" class="btn" type="submit">Найти компании <span aria-hidden="true">→</span></button>
+        </form>
+        <div class="search-notice">
+          Это <b>поиск компаний в открытых данных</b>, а не определение посетителей чужого сайта. Для этого никакие скрипты не нужны.
+        </div>
+        <section class="results" aria-label="Результаты поиска">
+          <div class="result-heading">
+            <div>
+              <h3 id="result-title">Компании твоей ниши</h3>
+              <p id="result-subtitle">Выбери город и направление, затем нажми «Найти компании».</p>
+            </div>
+            <span id="results-status" class="live-pill">ГОТОВО К ПОИСКУ</span>
+          </div>
+          <div id="notice" class="alert" role="alert" hidden></div>
+          <div id="result-content" hidden>
+            <div class="stat-row">
+              <div class="stat"><span>Компаний найдено</span><strong id="stat-total">0</strong><small>За один поиск</small></div>
+              <div class="stat"><span>Сайт указан</span><strong id="stat-web">0</strong><small>Открытые ссылки</small></div>
+              <div class="stat"><span>Телефон указан</span><strong id="stat-phone">0</strong><small>Публичные контакты</small></div>
+              <div class="stat"><span>Email указан</span><strong id="stat-email">0</strong><small>Если есть в данных</small></div>
+            </div>
+            <div class="toolbar">
+              <input id="text-filter" class="quick-search" type="search" placeholder="Поиск по названию или адресу" aria-label="Фильтр найденных компаний">
+              <label class="filter-chip"><input type="checkbox" id="filter-site"> Только с сайтом</label>
+              <label class="filter-chip"><input type="checkbox" id="filter-phone"> С телефоном</label>
+              <div class="tools"><button class="btn secondary small" id="clear-filters" type="button">Сброс</button><button class="btn secondary small" id="download" type="button">↓ CSV</button></div>
+            </div>
+            <p id="filtered-count" style="font-size:12px;color:#8ba9ae;margin-bottom:14px"></p>
+            <div id="lead-grid" class="lead-grid" aria-live="polite"></div>
+          </div>
+          <div id="empty-state" class="empty-state">
+            <div class="empty-icon" id="empty-icon">⌕</div>
+            <h3 id="empty-title">Твой поиск начинается здесь</h3>
+            <p id="empty-detail">Мы найдём действительные записи организаций из открытой карты. Доступность контактов различается по городу и нише.</p>
+            <button type="button" id="empty-start" class="btn small">Начать поиск →</button>
+          </div>
+        </section>
+      </div>
+    </section>
+    <section class="about" id="about">
+      <div class="container">
+        <div class="eyebrow">КАК ЭТО РАБОТАЕТ</div>
+        <h2>Простой инструмент. Без скрытых условий.</h2>
+        <div class="about-grid">
+          <div class="about-card"><div class="symbol">⌕</div><b>1. Выбираешь нишу</b><p>Например, стоматологии в Риге или фитнес-клубы в Таллине. Поиск идёт в ограниченном районе города.</p></div>
+          <div class="about-card"><div class="symbol">✧</div><b>2. Находишь компании</b><p>Просматриваешь публичные сайты и контактные данные, если их добавили участники OpenStreetMap.</p></div>
+          <div class="about-card"><div class="symbol">↓</div><b>3. Сохраняешь лиды</b><p>Избранное сохраняется в твоём браузере. Можно выгрузить CSV для таблицы и дальнейшей работы.</p></div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer class="container footer">
+    <span><b>LeadRadar</b> · Бесплатная бета · cenaradar.online</span>
+    <span>Данные: <a target="_blank" rel="noopener noreferrer" href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors (ODbL)</a>. Контакты могут быть неактуальны.</span>
+    <span>Не идентифицирует посетителей сайтов. Соблюдай правила деловой коммуникации.</span>
+  </footer>
+  <div id="toast" class="floating-msg" role="status" aria-live="polite"></div>
+</body>
+</html>
