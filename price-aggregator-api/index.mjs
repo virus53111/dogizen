@@ -8,10 +8,12 @@ import xray from './xray.mjs';
 import dna from './dna.mjs';
 import watchtower from './watchtower.mjs';
 import signalChart from './signal-chart.mjs';
+import leads from './leads.mjs';
 
 const routes={'/api/market':market,'/api/pair':pair,'/api/hunter':hunter,
  '/api/audit':audit,'/api/signals':signals,'/api/xray':xray,'/api/dna':dna,
- '/api/watchtower':watchtower,'/api/signal-chart':signalChart};
+ '/api/watchtower':watchtower,'/api/signal-chart':signalChart,
+ '/api/leads':leads};
 const origins=new Set(['https://cenaradar.online','https://www.cenaradar.online']);
 const MAX_BODY=12000;
 const listener=http.createServer((req,res)=>{
@@ -29,7 +31,7 @@ const listener=http.createServer((req,res)=>{
  const reply={status(n){res.statusCode=n;return this},setHeader(k,v){res.setHeader(k,v);return this},
    json(v){if(!res.writableEnded)res.end(JSON.stringify(v));return this}};
  if(req.method==='OPTIONS'){res.statusCode=204;res.end();return}
- if(url.pathname==='/health'){reply.json({status:'ok',product:'CenaRadar',time:Date.now()});return}
+ if(url.pathname==='/health'){reply.json({status:'ok',product:'LeadRadar',time:Date.now(),leads:true});return}
  const handler=routes[url.pathname];
  if(!handler){reply.status(404).json({error:'Not found'});return}
  if((isWatch&&req.method!=='POST')||(!isWatch&&req.method!=='GET')){reply.status(405).json({error:'Method not allowed'});return}
