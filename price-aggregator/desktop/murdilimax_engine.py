@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""MURDILIMAX Recovery 0.2 — read-only NTFS/exFAT evidence-based recovery.
+"""MURDILIMAX Recovery 0.3 — read-only NTFS/exFAT evidence-based recovery.
 
-Works on *images*, not physical devices. Unsupported cases are explicitly rejected.
+Supports images; optional Windows physical disks require administrator access. Unsupported cases are explicitly rejected.
 Avoid use as a forensic reference without independent validation.
 """
 from __future__ import annotations
@@ -9,6 +9,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import os, struct, math, json, hashlib, re
 from typing import Callable
+from murdilimax_devices import open_source, is_physical, destination_is_different_disk
+from murdilimax_partitions import backup_gpt_partitions, find_lost_volumes
 
 MAX_FILE = 64 * 1024**3
 MAX_RECORDS = 1_000_000
@@ -29,6 +31,7 @@ class Partition:
     fs: str
     size: int
     origin: str = 'volume'
+    boot_offset: int | None = None
 
 
 @dataclass
@@ -78,35 +81,57 @@ def read_at(fp, at, size, bound):
 
 
 def partition_list(fp, filesize):
-    """Read MBR/GPT and scan a bounded small set of typical VBR offsets."""
+    """Read standard partition tables, with limited backup-boot-sector recovery.
+
+    Direct volumes and images with an intact primary VBR remain supported.
+    Backups are only accepted at a partition boundary inferred from MBR/GPT.
+    """
     candidates=[]
-    def probe(off, length, how):
-        if off < 0 or off+512>filesize: return
+    sector_size=getattr(fp,'sector_size',512)
+    if sector_size not in (512,4096): sector_size=512
+    def detect(off):
+        if off < 0 or off+512>filesize:return ''
         b=read_at(fp,off,512,filesize)
-        fs='NTFS' if b[3:11]==b'NTFS    ' else 'exFAT' if b[3:11]==b'EXFAT   ' else ''
-        if fs and not any(p.offset==off for p in candidates):
-            candidates.append(Partition(off,fs,min(length if length>0 else filesize-off,filesize-off),how))
-    probe(0, filesize, 'direct volume')
+        return 'NTFS' if b[3:11]==b'NTFS    ' else 'exFAT' if b[3:11]==b'EXFAT   ' else ''
+    def probe(off,length,how,allow_backup=True):
+        if off < 0 or off+512>filesize:return
+        if any(p.offset==off for p in candidates):return
+        fs=detect(off)
+        alt=None
+        if not fs and allow_backup and length>24*512 and off+length<=filesize:
+            for sector in (sector_size,512,4096):
+                backup=off+length-sector
+                if backup>off and detect(backup)=='NTFS':
+                    fs='NTFS';alt=backup;break
+            if not fs:
+                for sector in (sector_size,512,4096):
+                    backup=off+12*sector
+                    if backup<off+length and detect(backup)=='exFAT':
+                        fs='exFAT';alt=backup;break
+        if fs:candidates.append(Partition(off,fs,min(length if length>0 else filesize-off,filesize-off),how,alt))
+    probe(0,filesize,'direct volume',False)
     if filesize>=512:
         sector0=read_at(fp,0,512,filesize)
         if sector0[510:512]==b'\x55\xaa':
             for i in range(4):
                 e=sector0[446+i*16:462+i*16]
-                start=u32(e,8); n=u32(e,12)
-                if start and n and (start*512)<filesize:
-                    probe(start*512,n*512,'MBR')
-            if filesize>=1024:
-                h=read_at(fp,512,512,filesize)
+                start=u32(e,8);n=u32(e,12)
+                if start and n and start*sector_size<filesize:
+                    probe(start*sector_size,n*sector_size,'MBR')
+            if filesize>=sector_size*2:
+                h=read_at(fp,sector_size,512,filesize)
                 if h[:8]==b'EFI PART':
-                    entries_lba=u64(h,72); count=min(u32(h,80),256); entrysize=u32(h,84)
-                    if 128<=entrysize<=1024 and entries_lba*512+count*entrysize<=filesize:
+                    entries_lba=u64(h,72);count=min(u32(h,80),256);entrysize=u32(h,84)
+                    if 128<=entrysize<=1024 and entries_lba*sector_size+count*entrysize<=filesize:
                         for i in range(count):
-                            e=read_at(fp,entries_lba*512+i*entrysize,56,filesize)
-                            if not any(e[:16]): continue
-                            start=u64(e,32); end=u64(e,40)
-                            if end>=start: probe(start*512,(end-start+1)*512,'GPT')
+                            e=read_at(fp,entries_lba*sector_size+i*entrysize,56,filesize)
+                            if not any(e[:16]):continue
+                            start=u64(e,32);end=u64(e,40)
+                            if end>=start:probe(start*sector_size,(end-start+1)*sector_size,'GPT')
+    if not candidates and filesize>=512 and read_at(fp,0,512,filesize)==bytes(512):
+        probe(0,filesize,'direct backup boot')
     if not candidates:
-        for off in (512, 4096, 1024*1024, 2*1024*1024, 4*1024*1024, 8*1024*1024):
+        for off in (512,4096,1024*1024,2*1024*1024,4*1024*1024,8*1024*1024):
             probe(off,filesize-off,'heuristic boot sector')
     return candidates
 
@@ -193,7 +218,7 @@ def read_attr(fp, attr, cluster, part, image_size, maxbytes=16*1024*1024):
 
 
 def ntfs_scan(fp, part:Partition, image_size:int, limit:int=MAX_RECORDS, progress:Callable|None=None):
-    boot=read_at(fp,part.offset,512,image_size)
+    boot=read_at(fp,part.boot_offset if part.boot_offset is not None else part.offset,512,image_size)
     sec=u16(boot,11);spc=boot[13]
     if sec not in (512,1024,2048,4096) or spc==0 or (spc & (spc-1)):raise ValueError('Unsupported NTFS sector or cluster size')
     cluster=sec*spc
@@ -283,7 +308,7 @@ def ntfs_scan(fp, part:Partition, image_size:int, limit:int=MAX_RECORDS, progres
 
 
 def exfat_scan(fp,part:Partition,image_size:int,limit:int=100000,progress:Callable|None=None):
-    boot=read_at(fp,part.offset,512,image_size)
+    boot=read_at(fp,part.boot_offset if part.boot_offset is not None else part.offset,512,image_size)
     if boot[3:11]!=b'EXFAT   ':raise ValueError('Invalid exFAT header')
     shift=boot[108];clushift=boot[109]
     if shift not in (9,10,11,12) or clushift>17: raise ValueError('Invalid exFAT sector/cluster size')
@@ -380,22 +405,49 @@ def exfat_scan(fp,part:Partition,image_size:int,limit:int=100000,progress:Callab
     return out
 
 
-def scan_image(image_path, limit=100000, progress=None):
-    path=Path(image_path)
-    if not path.is_file():raise FileNotFoundError(path)
-    if path.stat().st_size<512:raise ValueError('Image too small')
-    filesize=path.stat().st_size
+def scan_image(image_path, limit=100000, progress=None, deep_partitions=False, probe_cap=5_000_000, salvage_mft=False):
+    path=str(image_path)
+    if not is_physical(path) and not Path(path).is_file():
+        raise FileNotFoundError(path)
     found=[];errors=[]
-    with path.open('rb') as fp:
+    with open_source(path) as (fp,filesize):
+        if filesize<512:raise ValueError('Source too small')
         parts=partition_list(fp,filesize)
-        if not parts:raise ValueError('No supported NTFS/exFAT volume found. File carving may still be possible with the alpha scanner.')
+        # Recover partition metadata from a validated backup GPT if present.
+        known={p.offset for p in parts}
+        for start,length,origin in backup_gpt_partitions(fp,filesize):
+            if start in known:
+                for existing in parts:
+                    if existing.offset==start and existing.origin=='heuristic boot sector':
+                        existing.origin='backup GPT'
+                continue
+            raw=read_at(fp,start,512,filesize)
+            fs='NTFS' if raw[3:11]==b'NTFS    ' else 'exFAT' if raw[3:11]==b'EXFAT   ' else ''
+            if fs:
+                parts.append(Partition(start,fs,length,origin));known.add(start)
+        if deep_partitions or not parts:
+            for start,fs,length,origin in find_lost_volumes(fp,filesize,known,probe_cap,progress):
+                if start not in known:
+                    parts.append(Partition(start,fs,length,origin));known.add(start)
+        if not parts:
+            raise ValueError('No supported NTFS/exFAT volume found. Try file carving on an image.')
         for part in parts:
             try:
                 entries=(ntfs_scan if part.fs=='NTFS' else exfat_scan)(fp,part,filesize,limit,progress)
                 found.extend(entries)
-            except (ValueError,EOFError,OSError) as exc:errors.append(f'{part.fs} @ {part.offset}: {exc}')
+            except (ValueError,EOFError,OSError) as exc:
+                if part.fs=='NTFS' and salvage_mft:
+                    try:
+                        from murdilimax_salvage import salvage_mft as _salvage
+                        recovered=_salvage(fp,part,filesize,progress=progress)
+                        found.extend(recovered)
+                        errors.append(f'Primary MFT unavailable at {part.offset}; salvage scanned surviving records: {len(recovered)} candidates; allocation unverified')
+                        continue
+                    except (ValueError,EOFError,OSError) as rescue_error:
+                        errors.append(f'NTFS salvage failed @ {part.offset}: {rescue_error}')
+                errors.append(f'{part.fs} @ {part.offset}: {exc}')
     if not found and errors:raise ValueError('; '.join(errors))
-    return found, parts, errors
+    return found,parts,errors
 
 
 def recover(fp_path, candidate:Candidate, destination, allow_unknown=False):
@@ -403,8 +455,12 @@ def recover(fp_path, candidate:Candidate, destination, allow_unknown=False):
     if not candidate.eligible: raise ValueError(f'Candidate not safely recoverable: {candidate.reason or candidate.state}')
     if candidate.state=='unknown' and not allow_unknown:
         raise ValueError('Allocation status unknown. Explicitly confirm recovery with --allow-unknown.')
-    src=Path(fp_path).resolve();dst=Path(destination).resolve()
-    if dst==src or dst==src.parent:raise ValueError('Output must not overwrite source image')
+    physical=is_physical(str(fp_path))
+    src=str(fp_path) if physical else Path(fp_path).resolve()
+    dst=Path(destination).resolve()
+    if not physical and (dst==src or dst==src.parent):raise ValueError('Output must not overwrite source image')
+    if physical and not destination_is_different_disk(str(fp_path),str(dst)):
+        raise ValueError('Destination physical disk could not be verified as different from source. Recovery blocked.')
     dst.mkdir(parents=True,exist_ok=True)
     parts=[re.sub(r'[^\w.()\- ]','_',p).strip(' .')[:130] for p in candidate.path.replace('\\','/').split('/') if p not in ('','.','..')]
     parts=[p for p in parts if p]
@@ -419,7 +475,7 @@ def recover(fp_path, candidate:Candidate, destination, allow_unknown=False):
     while target.exists():
         target=base/f'{Path(name).stem}-{num}{Path(name).suffix}';num+=1
     copied=0; digest=hashlib.sha256()
-    with src.open('rb') as fp, target.open('xb') as out:
+    with open_source(str(src)) as (fp,image_size), target.open('xb') as out:
         try:
             remaining=candidate.size
             if candidate.resident is not None:
@@ -431,7 +487,7 @@ def recover(fp_path, candidate:Candidate, destination, allow_unknown=False):
                     while n:
                         size=min(n,1024*1024)
                         if off is None:b=b'\0'*size
-                        else:b=read_at(fp,off,size,src.stat().st_size);off+=size
+                        else:b=read_at(fp,off,size,image_size);off+=size
                         out.write(b);digest.update(b);n-=size;remaining-=size
             if remaining:raise IOError(f'Missing {remaining} bytes from data runs')
         except Exception:
@@ -441,15 +497,17 @@ def recover(fp_path, candidate:Candidate, destination, allow_unknown=False):
 
 def main():
     import argparse
-    cli=argparse.ArgumentParser(description='MURDILIMAX Recovery 0.2 · NTFS/exFAT image reader. No changes to source.')
-    cli.add_argument('image',help='Uncompressed disk image (.img/.dd)')
+    cli=argparse.ArgumentParser(description='MURDILIMAX Recovery 0.3 · NTFS/exFAT image/physical source reader. Source stays read-only.')
+    cli.add_argument('image',help='Raw disk image (.img/.dd) or explicit \\\\.\\PhysicalDriveN path on Windows')
+    cli.add_argument('--deep-partitions',action='store_true',help='Search aligned locations for lost NTFS/exFAT volume boot sectors')
+    cli.add_argument('--salvage-mft',action='store_true',help='When primary MFT cannot be parsed, search for surviving deleted MFT records (allocation status unknown)')
     cli.add_argument('--report',help='Write JSON scan report to this path')
     cli.add_argument('--max-records',type=int,default=100000)
     cli.add_argument('--recover',nargs='*',type=int,help='Zero-based candidate indices to recover')
     cli.add_argument('--destination',help='Folder on another physical drive')
     cli.add_argument('--allow-unknown',action='store_true',help='Allow files whose cluster allocation could not be checked')
     args=cli.parse_args()
-    candidates,volumes,errors=scan_image(args.image,max(1,min(MAX_RECORDS,args.max_records)))
+    candidates,volumes,errors=scan_image(args.image,max(1,min(MAX_RECORDS,args.max_records)),deep_partitions=args.deep_partitions,salvage_mft=args.salvage_mft)
     print(f'Volumes: {len(volumes)}; Deleted file candidates: {len(candidates)}')
     for idx,c in enumerate(candidates):
         print(f'{idx:5} {c.fs:5} {c.state:12} {c.size:>12,} {c.path}')

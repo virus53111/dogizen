@@ -1,16 +1,17 @@
 @echo off
+setlocal
 cd /d "%~dp0"
-where py >nul 2>&1
-if %ERRORLEVEL%==0 (
-  py murdilimax_recovery_v02.py
-) else (
-  where python >nul 2>&1
-  if %ERRORLEVEL%==0 (
-    python murdilimax_recovery_v02.py
-  ) else (
-    echo Python 3.11+ required: https://www.python.org/downloads/
-    pause
-    exit /b 1
-  )
+where py >nul 2>nul
+if errorlevel 1 (
+  echo Python Launcher was not detected.
+  echo Install Python 3.11 or newer from https://www.python.org/downloads/windows/
+  pause
+  exit /b 1
 )
-if %ERRORLEVEL% NEQ 0 pause
+py -3 murdilimax_recovery_v02.py
+if errorlevel 1 (
+  echo Launch failed. Keep all .py files together in the same folder.
+  echo Run: py -3 -m unittest -v test_engine test_advanced
+  pause
+  exit /b 1
+)

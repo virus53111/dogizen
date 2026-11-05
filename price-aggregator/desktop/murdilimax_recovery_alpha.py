@@ -10,10 +10,12 @@ import hashlib
 import os
 from pathlib import Path
 import queue
+import shutil
 import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from dataclasses import dataclass
+from murdilimax_devices import open_source, is_physical, destination_is_different_disk
 
 MAX_CARVE = 512 * 1024 * 1024
 CHUNK = 4 * 1024 * 1024
@@ -36,9 +38,11 @@ class Hit:
     size: int
     carved: bool = False
 
+
 def is_crypto(name: str) -> bool:
     low = name.casefold()
     return any(word in low for word in CRYPTO_HINTS)
+
 
 def classify(name: str) -> str:
     if is_crypto(name):
@@ -49,8 +53,10 @@ def classify(name: str) -> str:
             return group
     return "Other"
 
+
 def raw_kind_to_group(kind: str) -> str:
     return {"JPG":"Photos", "PNG":"Photos", "PDF":"Documents", "ZIP":"Archives"}[kind]
+
 
 def find_end(fp, start: int, kind: str, file_size: int) -> int | None:
     """Heuristic validation, not a guarantee the recovered file is intact."""
@@ -97,9 +103,9 @@ def find_end(fp, start: int, kind: str, file_size: int) -> int | None:
         cursor += len(block)
     return None
 
+
 def carve_image(path: str, chosen: set[str], stop: threading.Event, post) -> None:
-    total = os.path.getsize(path)
-    with open(path, 'rb', buffering=0) as fp:
+    with open_source(path) as (fp, total):
         previous = b''; cursor = 0; reported = set()
         while cursor < total and not stop.is_set():
             fp.seek(cursor)
@@ -127,6 +133,7 @@ def carve_image(path: str, chosen: set[str], stop: threading.Event, post) -> Non
             previous = buf[-16:]
             post('progress', int(cursor*100/max(total,1)))
 
+
 def scan_folder(folder: str, chosen: set[str], stop: threading.Event, post) -> None:
     for root, dirs, files in os.walk(folder, followlinks=False):
         if stop.is_set():
@@ -147,8 +154,11 @@ def scan_folder(folder: str, chosen: set[str], stop: threading.Event, post) -> N
                 continue
             post('hit', Hit(group, os.path.relpath(full,folder), full, 0, size))
 
+
 def restore(hit: Hit, destination: str) -> tuple[str, str]:
     output = Path(destination).resolve()
+    if is_physical(hit.source) and not destination_is_different_disk(hit.source, str(output)):
+        raise ValueError('Cannot verify output drive is different from source disk')
     output.mkdir(parents=True, exist_ok=True)
     extension = {'Photos':'.jpg', 'Documents':'.pdf', 'Archives':'.zip'}.get(hit.kind,'.bin') if hit.carved else Path(hit.source).suffix
     stem = f'carved_{hit.offset:012x}' if hit.carved else Path(hit.source).stem
@@ -159,7 +169,7 @@ def restore(hit: Hit, destination: str) -> tuple[str, str]:
     if not hit.carved and target.resolve() == Path(hit.source).resolve():
         raise ValueError('Source and destination must differ')
     remaining = hit.size
-    with open(hit.source, 'rb') as src, open(target, 'xb') as dst:
+    with open_source(hit.source) as (src, _), open(target, 'xb') as dst:
         src.seek(hit.offset)
         while remaining:
             packet = src.read(min(1024*1024,remaining))
@@ -171,6 +181,7 @@ def restore(hit: Hit, destination: str) -> tuple[str, str]:
         for block in iter(lambda:fp.read(1024*1024), b''):
             digest.update(block)
     return str(target), digest.hexdigest()
+
 
 class RecoveryApp(tk.Tk):
     def __init__(self):
