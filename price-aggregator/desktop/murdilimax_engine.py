@@ -450,7 +450,7 @@ def scan_image(image_path, limit=100000, progress=None, deep_partitions=False, p
     return found,parts,errors
 
 
-def recover(fp_path, candidate:Candidate, destination, allow_unknown=False):
+def recover(fp_path, candidate:Candidate, destination, allow_unknown=False, cancel=None, progress=None):
     """Copy recovered content to a *new* file. Block known reallocated data."""
     if not candidate.eligible: raise ValueError(f'Candidate not safely recoverable: {candidate.reason or candidate.state}')
     if candidate.state=='unknown' and not allow_unknown:
@@ -478,17 +478,21 @@ def recover(fp_path, candidate:Candidate, destination, allow_unknown=False):
     with open_source(str(src)) as (fp,image_size), target.open('xb') as out:
         try:
             remaining=candidate.size
+            if cancel is not None and cancel():raise ScanCancelled('Recovery cancelled')
             if candidate.resident is not None:
                 b=candidate.resident[:remaining];out.write(b);digest.update(b);remaining-=len(b)
+                if progress is not None:progress(candidate.size-remaining,candidate.size)
             else:
                 for off,length in candidate.extents:
                     if remaining<=0:break
                     n=min(length,remaining)
                     while n:
+                        if cancel is not None and cancel():raise ScanCancelled('Recovery cancelled')
                         size=min(n,1024*1024)
                         if off is None:b=b'\0'*size
                         else:b=read_at(fp,off,size,image_size);off+=size
                         out.write(b);digest.update(b);n-=size;remaining-=size
+                        if progress is not None:progress(candidate.size-remaining,candidate.size)
             if remaining:raise IOError(f'Missing {remaining} bytes from data runs')
         except Exception:
             out.close();target.unlink(missing_ok=True);raise

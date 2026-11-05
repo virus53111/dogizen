@@ -1,31 +1,76 @@
-name: MURDILIMAX Windows exe build
+name: Build MURDILIMAX Recovery installer for Windows
 on:
+  workflow_dispatch:
   push:
     branches: [price-aggregator-mvp]
     paths:
       - 'price-aggregator/desktop/**'
       - '.github/workflows/murdilimax-windows-build.yml'
-  workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
-  windows:
-    runs-on: windows-latest
+  windows-install:
+    runs-on: windows-2022
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: '3.12'
+          architecture: 'x64'
       - name: Test recovery engine
         working-directory: price-aggregator/desktop
-        run: python -m unittest -v test_engine test_advanced
+        run: python -m unittest discover -v
       - name: Install PyInstaller
-        run: python -m pip install pyinstaller
-      - name: Build .exe
+        run: python -m pip install --disable-pip-version-check pyinstaller==6.16.0
+      - name: Package standalone desktop app
         working-directory: price-aggregator/desktop
-        run: python -m PyInstaller --clean --noconfirm --onefile --windowed --name MURDILIMAX-Recovery --paths . murdilimax_recovery_v02.py
-      - uses: actions/upload-artifact@v4
+        run: python -m PyInstaller --clean --noconfirm --onefile --windowed --noupx --name MURDILIMAX-Recovery --icon assets/murdilimax.ico --paths . murdilimax_recovery_v04.py
+      - name: Verify packaged app exists
+        shell: pwsh
+        run: |
+          $app = 'price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe'
+          if (!(Test-Path $app)) { throw 'PyInstaller did not produce an EXE.' }
+          if ((Get-Item $app).Length -lt 1000000) { throw 'Unexpectedly small executable.' }
+      - name: Install Inno Setup if needed
+        shell: pwsh
+        run: |
+          $iscc = 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
+          if (!(Test-Path $iscc)) { choco install innosetup --yes --no-progress --limit-output }
+          if (!(Test-Path $iscc)) { throw 'Inno Setup compiler not available' }
+      - name: Compile Windows setup installer
+        shell: pwsh
+        run: |
+          Set-Location 'price-aggregator/desktop'
+          & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'windows-installer.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.4.exe'
+          if (!(Test-Path $setup)) { throw 'Installer not created' }
+          Get-FileHash $setup -Algorithm SHA256 | Format-List
+      - name: Upload installers as downloadable artifacts
+        uses: actions/upload-artifact@v4
         with:
-          name: MURDILIMAX-Recovery-Windows
-          path: price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe
+          name: MURDILIMAX-Recovery-0.4-Windows
+          path: |
+            price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe
+            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.4.exe
           if-no-files-found: error
+      - name: Publish direct-download release
+        if: github.ref == 'refs/heads/price-aggregator-mvp'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.4.0
+          target_commitish: ${{ github.sha }}
+          name: MURDILIMAX Recovery 0.4.0 — Windows Alpha
+          prerelease: true
+          make_latest: false
+          body: |
+            Free experimental recovery tool for Windows x64. Setup EXE is an installer, the other EXE is portable.
+            Does not require Python. Includes local read-only NTFS/exFAT, limited RAID image reconstruction and safe-imaging experiments.
+            WARNING: unsigned Windows build, not validated on real damaged devices. Windows SmartScreen may show a warning.
+            Save recovered data to a different physical drive. Never scan a physically failing drive without professional guidance.
+          files: |
+            price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe
+            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.4.exe
+          fail_on_unmatched_files: true
+          overwrite_files: true
