@@ -44,33 +44,33 @@ jobs:
           Set-Location 'price-aggregator/desktop'
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'windows-installer.iss'
           if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
-          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.4.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.5.exe'
           if (!(Test-Path $setup)) { throw 'Installer not created' }
           Get-FileHash $setup -Algorithm SHA256 | Format-List
       - name: Upload installers as downloadable artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: MURDILIMAX-Recovery-0.4-Windows
+          name: MURDILIMAX-Recovery-0.5-Windows
           path: |
             price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe
-            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.4.exe
+            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.5.exe
           if-no-files-found: error
       - name: Publish direct-download release
         if: github.ref == 'refs/heads/price-aggregator-mvp'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.4.0
+          tag_name: v0.5.0
           target_commitish: ${{ github.sha }}
-          name: MURDILIMAX Recovery 0.4.0 — Windows Alpha
+          name: MURDILIMAX Recovery 0.5.0 — Windows Alpha
           prerelease: true
           make_latest: false
           body: |
-            Free experimental recovery tool for Windows x64. Setup EXE is an installer, the other EXE is portable.
+            Experimental Windows x64 recovery tool. Stage 1: imaging safety; system-disk protection, identity-verified resume and capacity preflight. Setup EXE is installer; the other EXE is portable.
             Does not require Python. Includes local read-only NTFS/exFAT, limited RAID image reconstruction and safe-imaging experiments.
             WARNING: unsigned Windows build, not validated on real damaged devices. Windows SmartScreen may show a warning.
             Save recovered data to a different physical drive. Never scan a physically failing drive without professional guidance.
           files: |
             price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe
-            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.4.exe
+            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.5.exe
           fail_on_unmatched_files: true
           overwrite_files: true

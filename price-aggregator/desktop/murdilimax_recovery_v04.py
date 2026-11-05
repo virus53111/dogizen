@@ -39,7 +39,7 @@ class App(tk.Tk):
     def layout(self):
         top=ttk.Frame(self,padding=(24,20,24,8));top.pack(fill='x')
         ttk.Label(top,text='◈  MURDILIMAX   RECOVERY',font=('Segoe UI',22,'bold')).pack(anchor='w')
-        ttk.Label(top,text='Recovery Engine 0.4    ·    NTFS / exFAT    ·    safe imaging with resume    ·    lost partitions    ·    RAID 0 / 1 / 5',font=('Segoe UI',10)).pack(anchor='w',pady=3)
+        ttk.Label(top,text='Recovery Engine 0.5    ·    NTFS / exFAT    ·    safe imaging with resume    ·    lost partitions    ·    RAID 0 / 1 / 5',font=('Segoe UI',10)).pack(anchor='w',pady=3)
         area=ttk.Frame(self,padding=(24,8));area.pack(fill='x')
         ttk.Label(area,text='SCAN MODE',font=('Segoe UI',9,'bold')).pack(anchor='w')
         modes=[('metadata','Deleted files: NTFS / exFAT image'),('carve','Signature scan: JPG / PNG / PDF / ZIP'),('folder','Existing files / wallet backup filenames'),('physical','Physical HDD/USB (metadata)'),('physical-carve','Physical HDD/USB (signatures)')]
@@ -117,7 +117,7 @@ class App(tk.Tk):
         resume_physical=False
         if sidecar.exists() and is_physical(source):
             resume_physical=messagebox.askyesno('Resume physical disk',
-                'Confirm the device number AND capacity still identify the exact same physical disk. Resume the partial image?')
+                'Resume ONLY if this is the SAME drive. Recovery checks the hardware serial, geometry and checkpoint hash; disks with no stable serial cannot be resumed. Continue?')
             if not resume_physical:return
         self.stop_event.clear();self.progress['value']=0;self.set_busy(True)
         self.note.set('Acquisition started. Source is read-only. Cancel saves a resumable checkpoint.')
@@ -276,7 +276,7 @@ class App(tk.Tk):
             try:
                 stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
                 reportpath=str(d/('MURDILIMAX-recovery-'+stamp+'.json'))
-                report={'application':'MURDILIMAX Recovery 0.4','created_utc':stamp,
+                report={'application':'MURDILIMAX Recovery 0.5','created_utc':stamp,
                         'source':str(src),'saved':saved,'errors':failed,'cancelled':cancelled,
                         'note':'Recovery report contains filenames and hashes; keep it private if filenames are sensitive.'}
                 with open(reportpath,'x',encoding='utf-8') as f:

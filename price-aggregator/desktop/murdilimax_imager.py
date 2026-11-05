@@ -20,8 +20,9 @@ from threading import Event
 from typing import Callable
 
 from murdilimax_devices import is_physical, open_source, destination_is_different_disk
+from murdilimax_safety import verify_physical_source
 
-VERSION = "0.4"
+VERSION = "0.5"
 DEFAULT_CHUNK = 2 * 1024 * 1024
 MAX_BAD_BLOCKS = 512  # stop if too much medium damage; refer to specialist
 
@@ -156,19 +157,23 @@ def image_source(source: str, destination: str, *, chunk_size: int = DEFAULT_CHU
             raise ValueError('Chunk must be a multiple of device sector size')
         if length == 0:
             raise ValueError('Source has zero length')
+        physical_check = verify_physical_source(src, device) if physical else {}
         mtime_ns = None if physical else os.stat(src).st_mtime_ns
         expected = {
             'format': 'murdilimax-image-state-v1', 'source': src,
             'physical_source': physical, 'source_size': length,
             'source_mtime_ns': mtime_ns, 'target': str(out),
             'sector_size': sector, 'chunk_size': chunk_size,
+            **physical_check,
         }
         resumable = statepath.exists() or partial.exists()
         if resumable:
             if not statepath.is_file() or not partial.is_file():
                 raise ValueError('Incomplete acquisition journal: do not overwrite, inspect .part and state file')
             if physical and not allow_resume_physical:
-                raise ValueError('Physical device may have been swapped: recheck disk number/capacity; resume requires explicit confirmation')
+                raise ValueError('Physical device may have been swapped: resume requires explicit confirmation')
+            if physical and not physical_check.get('device_fingerprint'):
+                raise ValueError('No stable hardware serial; physical device resume is blocked. Preserve partial data and use a recovery specialist.')
             state = json.loads(statepath.read_text(encoding='utf-8'))
             if not all(state.get(k) == v for k, v in expected.items()):
                 raise ValueError('Acquisition checkpoint does not match this source and destination')
@@ -200,6 +205,8 @@ def image_source(source: str, destination: str, *, chunk_size: int = DEFAULT_CHU
             with partial.open('xb'):
                 pass
             save_json_atomic(statepath, state)
+        if shutil.disk_usage(out.parent).free < length - done + 8 * 1024 * 1024:
+            raise OSError('Not enough free disk space for image plus safety margin')
         # For reliability: flush/fync data BEFORE committing its checkpoint.
         with partial.open('r+b') as dst:
             dst.truncate(done)
@@ -246,7 +253,7 @@ def image_source(source: str, destination: str, *, chunk_size: int = DEFAULT_CHU
 
 
 def main():
-    parser=argparse.ArgumentParser(description='MURDILIMAX 0.4 read-only, resumable image acquisition')
+    parser=argparse.ArgumentParser(description='MURDILIMAX 0.5 read-only, resumable image acquisition')
     parser.add_argument('source', help='Raw image file, or Windows \\.\\PhysicalDriveN')
     parser.add_argument('destination', help='NEW raw image path on a separate drive')
     parser.add_argument('--chunk-mib', type=int, default=2, choices=[1,2,4,8,16])

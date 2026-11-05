@@ -168,6 +168,11 @@ def destination_is_different_disk(source: str, destination: str) -> bool:
 @contextmanager
 def open_source(path: str):
     if is_physical(path):
+        # Protect the running Windows OS disk even during direct scan.
+        from murdilimax_safety import system_disk_numbers
+        physical_number = int(DRIVE_RE.fullmatch(path).group(1))
+        if physical_number in system_disk_numbers():
+            raise ValueError('Live Windows system disk: direct scan blocked. Use an offline disk image.')
         with WindowsPhysicalDisk(path) as d:
             yield d, d.length
     else:
