@@ -60,8 +60,9 @@ jobs:
         shell: pwsh
         run: |
           $env:QT_QPA_PLATFORM='offscreen'
-          & 'price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe' --smoke-test
-          if ($LASTEXITCODE -ne 0) { throw "Packaged Qt app startup failed: $LASTEXITCODE" }
+          $app=(Resolve-Path 'price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe').Path
+          $process=Start-Process -FilePath $app -ArgumentList '--smoke-test' -PassThru -Wait
+          if ($process.ExitCode -ne 0) { throw "Packaged Qt app startup failed: $($process.ExitCode)" }
       - name: Install Inno Setup if needed
         shell: pwsh
         run: |
