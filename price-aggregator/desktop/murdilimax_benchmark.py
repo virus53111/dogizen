@@ -6,6 +6,7 @@ need equivalent runs and independent verification using identical ground truth.
 """
 from __future__ import annotations
 import argparse
+import hashlib
 from collections import Counter
 from datetime import datetime, timezone
 import json
@@ -24,7 +25,7 @@ def evaluate(manifest_file: str, output_file: str, *, max_candidates: int = 1000
     cases=data.get('cases')
     if not isinstance(cases,list) or not cases:
         raise ValueError('Manifest must contain nonempty cases list')
-    report={'tool':'MURDILIMAX 0.4 benchmark', 'utc':datetime.now(timezone.utc).isoformat(), 'cases':[]}
+    report={'tool':'MURDILIMAX 0.9.1 benchmark', 'utc':datetime.now(timezone.utc).isoformat(), 'scope':'Local known test images only — not a competitor benchmark or real-disk certification', 'real_world_validated':False, 'cases':[]}
     for case in cases:
         if not isinstance(case,dict):raise ValueError('Invalid case entry')
         file=Path(case['image'])
@@ -43,7 +44,16 @@ def evaluate(manifest_file: str, output_file: str, *, max_candidates: int = 1000
                 attempted+=1
                 try:
                     result=recover(str(file),cand,tmp,allow_unknown=include_unknown)
-                    restored[result['sha256']]+=1
+                    output=Path(result['path']).resolve(strict=True)
+                    if Path(tmp).resolve() not in output.parents:
+                        raise ValueError('Recovery output escaped benchmark directory')
+                    digest=hashlib.sha256()
+                    with output.open('rb') as stream:
+                        for block in iter(lambda:stream.read(1024*1024),b''):
+                            digest.update(block)
+                    if digest.hexdigest()!=result.get('sha256'):
+                        raise ValueError('Reported digest mismatches recovered bytes')
+                    restored[digest.hexdigest()]+=1
                 except (ValueError,OSError,IOError):failed+=1
         matched=sum(min(restored[h],cnt) for h,cnt in expected_counts.items())
         good=sum(restored.values())
