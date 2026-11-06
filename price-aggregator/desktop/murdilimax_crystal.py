@@ -269,7 +269,7 @@ class Window(QMainWindow):
   self.resulttitle.setText(self.t('results'));self.search.setPlaceholderText(self.t('search'))
   for i,k in enumerate(('name','path','size','type','state')):self.table.setHorizontalHeaderItem(i,QTableWidgetItem(self.t(k)))
   self.previewtitle.setText(self.t('preview'));self.photobtn.setText(self.t('photo'))
-  if not self.items:self.photo.setText(self.t('empty_preview'))
+  if not self.entries:self.photo.setText(self.t('empty_preview'))
   self.restorebtn.setText('↺  '+self.t('recover'));self.privacy.setText(self.t('privacy'))
  def change_lang(self):
   self.lang='en' if self.lang=='ru' else 'ru';self.store.setValue('language',self.lang);self.translate()
