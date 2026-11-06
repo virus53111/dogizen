@@ -49,11 +49,11 @@ def build_fixtures(folder:Path)->list[dict]:
     p=folder/'exfat-reallocated.img';exfat_fixture(p,used=True)
     c.append(_case('exfat_reallocated_blocked',p,blocked={'old.jpg'},fs='exFAT'))
     p=folder/'exfat-nested.img';exfat_fixture(p)
-    raw=bytearray(p.read_bytes());nested=Stage2MetadataTests.add_exfat_directory(raw)
+    raw=bytearray(p.read_bytes());nested=Stage2MetadataTests.add_deleted_folder(raw)
     p.write_bytes(raw)
     c.append(_case('exfat_nested_deleted',p,{'old.jpg':content,'Gone/baby.jpg':nested},fs='exFAT'))
     p=folder/'exfat-stale-folder.img';exfat_fixture(p)
-    raw=bytearray(p.read_bytes());Stage2MetadataTests.add_exfat_directory(raw,reused=True)
+    raw=bytearray(p.read_bytes());Stage2MetadataTests.add_deleted_folder(raw,reused=True)
     p.write_bytes(raw)
     c.append(_case('exfat_reused_directory_not_scanned',p,{'old.jpg':content},
                    absent={'Gone/baby.jpg'},fs='exFAT'))
