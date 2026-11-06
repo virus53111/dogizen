@@ -32,6 +32,8 @@ jobs:
         shell: pwsh
         run: |
           $env:QT_QPA_PLATFORM='offscreen'
+          Write-Host "Installed OS font files:"
+          Get-ChildItem "$env:WINDIR\Fonts" -ErrorAction SilentlyContinue | Select-Object -First 12 -ExpandProperty Name
           python -m unittest test_fontguard -v
           if ($LASTEXITCODE -ne 0) { throw 'Russian/Cyrillic glyph validation failed' }
       - name: Synthetic byte-for-byte recovery quality gate

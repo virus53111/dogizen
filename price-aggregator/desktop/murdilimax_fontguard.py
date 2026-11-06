@@ -1,6 +1,8 @@
 """Verify the real Qt font can display the full Russian alphabet."""
 from __future__ import annotations
-from PySide6.QtGui import QFont, QFontDatabase, QRawFont
+from PySide6.QtGui import QFont, QFontDatabase, QRawFont, QFontMetrics
+from pathlib import Path
+import os
 
 CYRILLIC_TEXT = (
     "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
@@ -14,13 +16,25 @@ PREFERRED_FAMILIES = (
 
 def supports_cyrillic(font: QFont) -> bool:
     # Resolve an actual physical font for Cyrillic, never trust a font name alone.
-    raw = QRawFont.fromFont(font, QFontDatabase.WritingSystem.Cyrillic)
-    if not raw.isValid():
-        return False
-    glyphs = raw.glyphIndexesForString(CYRILLIC_TEXT)
-    return len(glyphs) == len(CYRILLIC_TEXT) and all(gid != 0 for gid in glyphs)
+    for writing in (QFontDatabase.WritingSystem.Cyrillic, QFontDatabase.WritingSystem.Any):
+        raw = QRawFont.fromFont(font, writing)
+        if raw.isValid():
+            glyphs = raw.glyphIndexesForString(CYRILLIC_TEXT)
+            if len(glyphs) == len(CYRILLIC_TEXT) and all(gid != 0 for gid in glyphs):
+                return True
+    # On some headless Windows Qt builds QRawFont cannot access GDI/DirectWrite;
+    # use the actual QFontMetrics text-rendering engine as an additional check.
+    metrics = QFontMetrics(font)
+    return all(metrics.inFontUcs4(ord(ch)) for ch in CYRILLIC_TEXT)
 
 def select_cyrillic_font() -> QFont:
+    # Use only fonts installed on the user's own Windows computer.
+    if os.name == 'nt':
+        fonts_dir = Path(os.environ.get('WINDIR', r'C:\Windows')) / 'Fonts'
+        for filename in ('segoeui.ttf', 'arial.ttf', 'tahoma.ttf', 'calibri.ttf'):
+            path = fonts_dir / filename
+            if path.is_file():
+                QFontDatabase.addApplicationFont(str(path))
     installed = QFontDatabase.families()
     lookup = {family.casefold(): family for family in installed}
     visited = set()
@@ -32,7 +46,7 @@ def select_cyrillic_font() -> QFont:
         font = QFont(name, 10)
         if supports_cyrillic(font):
             return font
-    raise RuntimeError("No readable Cyrillic font found; install standard Windows Segoe UI/Arial fonts.")
+    raise RuntimeError("No readable Cyrillic Qt font found. Available: "+repr(installed[:20]))
 
 def validate_cyrillic_font(font: QFont) -> None:
     if not supports_cyrillic(font):
