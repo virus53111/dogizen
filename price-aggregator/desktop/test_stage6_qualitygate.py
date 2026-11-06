@@ -8,9 +8,9 @@ from murdilimax_qualitygate import run_quality_gate, build_fixtures
 class QualityGateTests(unittest.TestCase):
     def test_synthetic_recovery_truth(self):
         with TemporaryDirectory() as d:
-            result=run_quality_gate(Path(d)/'test_report.json',require_pass=True)
+            result=run_quality_gate(Path(d)/'test_report.json',require_pass=False)
             s=result['summary']
-            self.assertEqual((s['cases_total'],s['cases_passed']),(12,12))
+            self.assertEqual((s['cases_total'],s['cases_passed']),(12,12), str([(x['name'],x['errors']) for x in result['cases'] if not x['passed']]))
             self.assertEqual((s['files_exact_matched'],s['files_exact_expected']),(14,14))
             self.assertEqual(s['unsafe_recovery_blocks_verified'],2)
             self.assertFalse(result['real_world_validated'])
@@ -32,5 +32,5 @@ class QualityGateTests(unittest.TestCase):
             run_quality_gate(path)
             j=json.loads(path.read_text(encoding='utf-8'))
             self.assertIn('SYNTHETIC',j['scope'])
-            self.assertTrue(j['summary']['passed'])
+            self.assertTrue(j['summary']['passed'], str([(x['name'],x['errors']) for x in j['cases'] if not x['passed']]))
 if __name__=='__main__':unittest.main()
