@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MURDILIMAX Recovery v0.8 graphical launcher (requires standard Python Tkinter).
+"""MURDILIMAX Recovery v0.9 graphical launcher (requires standard Python Tkinter).
 All scans local; no internet, accounts, payments or direct physical-device writing.
 """
 from __future__ import annotations
@@ -13,7 +13,9 @@ from murdilimax_devices import is_physical, enumerate_drives, destination_is_dif
 from murdilimax_raid import assemble, probe_raid5_start, RAID5_LAYOUTS
 from murdilimax_md import inspect_md_set, extract_md_member
 from murdilimax_imager import image_source, ImagingCancelled, SourceReadLimitExceeded
-from murdilimax_validate import assess_file
+from murdilimax_deepcheck import assess_deep
+from murdilimax_wallets import discover_wallet_backups
+from murdilimax_advisor import advise
 from murdilimax_preview import preview_bytes, decode_preview
 from murdilimax_recovery_alpha import scan_folder, carve_image, restore as restore_carved, Hit
 
@@ -21,7 +23,7 @@ CATEGORIES=('Photos','Documents','Archives','Video','Audio','Crypto backups','Ot
 
 class App(tk.Tk):
     def __init__(self):
-        super().__init__();self.title('MURDILIMAX Recovery v0.8 — NTFS · exFAT · ext4 · RAID · Safe imaging')
+        super().__init__();self.title('MURDILIMAX Recovery v0.9 — NTFS · exFAT · ext4 · RAID · Safe imaging')
         self.geometry('1180x800');self.minsize(900,650)
         self.busy=False
         self.configure(bg='#0b1121')
@@ -41,7 +43,7 @@ class App(tk.Tk):
     def layout(self):
         top=ttk.Frame(self,padding=(24,20,24,8));top.pack(fill='x')
         ttk.Label(top,text='◈  MURDILIMAX   RECOVERY',font=('Segoe UI',22,'bold')).pack(anchor='w')
-        ttk.Label(top,text='Recovery Engine 0.8    ·    NTFS / exFAT / ext4    ·    RAID 0/1/5/6/10    ·    safe imaging',font=('Segoe UI',10)).pack(anchor='w',pady=3)
+        ttk.Label(top,text='Recovery Engine 0.9    ·    NTFS / exFAT / ext4    ·    RAID 0/1/5/6/10    ·    safe imaging',font=('Segoe UI',10)).pack(anchor='w',pady=3)
         area=ttk.Frame(self,padding=(24,8));area.pack(fill='x')
         ttk.Label(area,text='SCAN MODE',font=('Segoe UI',9,'bold')).pack(anchor='w')
         modes=[('metadata','NTFS/exFAT deleted files + ext4 existing files (image)'),('carve','Signature scan: JPG / PNG / PDF / ZIP'),('folder','Existing files / wallet backup filenames'),('physical','Physical HDD/USB (metadata)'),('physical-carve','Physical HDD/USB (signatures)')]
@@ -65,6 +67,9 @@ class App(tk.Tk):
         self.restore_button=ttk.Button(actions,text='RECOVER SELECTED →',command=self.recover_selected);self.restore_button.pack(side='right')
         self.preview_button=ttk.Button(actions,text='PREVIEW PHOTO…',command=self.preview_selected);self.preview_button.pack(side='right',padx=(0,10))
         self.raid_button=ttk.Button(actions,text='RAID BUILDER…',command=self.raid_builder);self.raid_button.pack(side='right',padx=(0,10))
+        extras=ttk.Frame(self,padding=(24,0,24,2));extras.pack(fill='x')
+        self.wallet_button=ttk.Button(extras,text='WALLET BACKUP FINDER…',command=self.wallet_finder);self.wallet_button.pack(side='left',padx=(0,9))
+        self.advisor_button=ttk.Button(extras,text='RECOVERY ADVISOR · LOCAL GUIDANCE',command=self.advisor_selected);self.advisor_button.pack(side='left')
         tableframe=ttk.Frame(self,padding=(24,8));tableframe.pack(fill='both',expand=True)
         cols=('fs','kind','name','bytes','state','reason')
         self.tree=ttk.Treeview(tableframe,columns=cols,show='headings',selectmode='extended')
@@ -100,7 +105,7 @@ class App(tk.Tk):
 
     def set_busy(self, busy: bool):
         self.busy=busy
-        for button in (self.start_button,self.image_button,self.restore_button,self.preview_button,self.raid_button):
+        for button in (self.start_button,self.image_button,self.restore_button,self.preview_button,self.raid_button,self.advisor_button,self.wallet_button):
             button.state(['disabled'] if busy else ['!disabled'])
 
     def safe_image(self):
@@ -137,7 +142,7 @@ class App(tk.Tk):
     def raid_builder(self):
         if self.busy: return
         dialog=tk.Toplevel(self)
-        dialog.title('MURDILIMAX · Experimental RAID image builder 0.8')
+        dialog.title('MURDILIMAX · Experimental RAID image builder 0.9')
         dialog.geometry('780x670')
         dialog.transient(self)
         ttk.Label(dialog,text='Experimental RAID 0 / 1 / 5 / 6 / 10 image reconstruction',
@@ -329,6 +334,14 @@ class App(tk.Tk):
                 elif kind in ('image_error','image_paused'):
                     self.set_busy(False);self.note.set(('Imaging paused: ' if kind=='image_paused' else 'Imaging error: ')+obj)
                     if kind=='image_error':messagebox.showwarning('Image incomplete',obj)
+                elif kind=='wallet_done':
+                    self.set_busy(False)
+                    findings,stats=obj
+                    self.note.set('Wallet filename search: '+str(stats['matches'])+' matches; no file contents read.')
+                    self.show_wallet_results(findings,stats)
+                elif kind=='wallet_error':
+                    self.set_busy(False);self.note.set('Wallet finder error: '+obj)
+                    messagebox.showwarning('Wallet finder',obj)
                 elif kind=='preview_done':
                     self.set_busy(False)
                     label,state,picture=obj
@@ -347,6 +360,55 @@ class App(tk.Tk):
                     messagebox.showinfo('Recovery results',f'Saved: {len(saved)}\nFailed: {len(failed)}\nCancelled: {cancelled}\nReport: {reportpath}\n\n'+'\n'.join(failed[:4]))
         except queue.Empty:pass
         self.after(85,self.process_events)
+    def wallet_finder(self):
+        """Scan visible wallet backup filenames only; no secret extraction."""
+        if self.busy:return
+        chosen=self.source.get().strip()
+        folder=chosen if chosen and Path(chosen).is_dir() else filedialog.askdirectory(
+            title='Choose an authorized folder to search wallet backup names')
+        if not folder:return
+        if not messagebox.askyesno('Local wallet backup finder',
+            'Search visible filenames on a folder you own or are authorized to inspect?\n\n'
+            'Wallet contents, keys, seed phrases and passwords are NOT read or uploaded.'):
+            return
+        self.stop_event.clear();self.set_busy(True)
+        self.note.set('Searching wallet backup filenames, locally…')
+        def worker():
+            try:self.post('wallet_done',discover_wallet_backups(folder,cancelled=self.stop_event.is_set))
+            except Exception as exc:self.post('wallet_error',str(exc))
+        threading.Thread(target=worker,daemon=True).start()
+
+    def show_wallet_results(self,findings,stats):
+        dialog=tk.Toplevel(self)
+        dialog.title('MURDILIMAX 0.9 · Wallet backup filename candidates')
+        dialog.geometry('860x485');dialog.minsize(630,360)
+        ttk.Label(dialog,text=f"{stats['matches']} candidate(s) · {stats['visited']} files examined · no contents read",
+                  wraplength=830,font=('Segoe UI',12,'bold')).pack(anchor='w',padx=15,pady=(15,5))
+        ttk.Label(dialog,text='Filename matches only. Never upload keys or recovery phrases. No data sent online.',
+                  wraplength=830).pack(anchor='w',padx=15,pady=(0,8))
+        tree=ttk.Treeview(dialog,columns=('filename','family','size'),show='headings')
+        for key,title,width in [('filename','Relative filename',430),('family','Possible family',210),('size','Bytes',100)]:
+            tree.heading(key,text=title);tree.column(key,width=width,stretch=key=='filename')
+        tree.pack(fill='both',expand=True,padx=14,pady=10)
+        for item in findings:tree.insert('','end',values=(item.relative_path,item.label,f'{item.size_bytes:,}'))
+        ttk.Button(dialog,text='Close',command=dialog.destroy).pack(pady=(2,13))
+
+    def advisor_selected(self):
+        if self.busy:return
+        selected=self.tree.selection()
+        if len(selected)!=1:
+            messagebox.showinfo('Recovery Advisor','Select one candidate in the table first.');return
+        obj=self.items[int(selected[0])]
+        is_candidate=isinstance(obj,Candidate)
+        notes=advise(state=obj.state if is_candidate else 'unknown',
+                     fs=obj.fs if is_candidate else '',kind=obj.kind,
+                     deleted=obj.deleted if is_candidate else False,
+                     reason=obj.reason if is_candidate else '',
+                     source_physical=is_physical(self.source.get().strip()))
+        report='\n\n'.join(f"{a.title} [{a.severity.upper()}]\n{a.explanation}\nNEXT: {a.next_step}" for a in notes)
+        messagebox.showinfo('Recovery Advisor · Local rules',
+                            'Conservative rules only; not AI or a hardware diagnosis.\n\n'+report)
+
     def preview_selected(self):
         """Preview bounded photo candidate in a worker thread; never recover to disk."""
         if self.busy:return
@@ -406,10 +468,10 @@ class App(tk.Tk):
                 try:
                     if isinstance(c,Candidate):
                         outcome=recover(src,c,d,allow_unknown=True,cancel=self.stop_event.is_set)
-                        saved.append({'source':c.path,'result':outcome,'format_check':assess_file(outcome['path'])})
+                        saved.append({'source':c.path,'result':outcome,'format_check':assess_deep(outcome['path'])})
                     else:
                         path,sha=restore_carved(c,str(d))
-                        saved.append({'source':c.label,'result':{'path':path,'sha256':sha},'format_check':assess_file(path)})
+                        saved.append({'source':c.label,'result':{'path':path,'sha256':sha},'format_check':assess_deep(path)})
                 except ScanCancelled:cancelled=True;break
                 except Exception as exc:failed.append(f'{c.name if isinstance(c,Candidate) else c.label}: {exc}')
                 self.post('restore_progress',(i+1,len(items)))
@@ -417,7 +479,7 @@ class App(tk.Tk):
             try:
                 stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
                 reportpath=str(d/('MURDILIMAX-recovery-'+stamp+'.json'))
-                report={'application':'MURDILIMAX Recovery 0.8','created_utc':stamp,
+                report={'application':'MURDILIMAX Recovery 0.9','created_utc':stamp,
                         'source':str(src),'saved':saved,'errors':failed,'cancelled':cancelled,
                         'note':'Recovery report contains filenames and hashes; keep it private if filenames are sensitive.'}
                 with open(reportpath,'x',encoding='utf-8') as f:
