@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MURDILIMAX Recovery v0.2 graphical launcher (requires standard Python Tkinter).
+"""MURDILIMAX Recovery v0.7 graphical launcher (requires standard Python Tkinter).
 All scans local; no internet, accounts, payments or direct physical-device writing.
 """
 from __future__ import annotations
@@ -10,7 +10,8 @@ import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 from murdilimax_engine import scan_image, recover, Candidate, ScanCancelled
 from murdilimax_devices import is_physical, enumerate_drives, destination_is_different_disk
-from murdilimax_raid import assemble
+from murdilimax_raid import assemble, probe_raid5_start, RAID5_LAYOUTS
+from murdilimax_md import inspect_md_set, extract_md_member
 from murdilimax_imager import image_source, ImagingCancelled, SourceReadLimitExceeded
 from murdilimax_validate import assess_file
 from murdilimax_preview import preview_bytes, decode_preview
@@ -20,7 +21,7 @@ CATEGORIES=('Photos','Documents','Archives','Video','Audio','Crypto backups','Ot
 
 class App(tk.Tk):
     def __init__(self):
-        super().__init__();self.title('MURDILIMAX Recovery v0.6 — NTFS · exFAT · Photo Preview · Safe imaging')
+        super().__init__();self.title('MURDILIMAX Recovery v0.7 — NTFS · exFAT · RAID6/10 · Safe imaging')
         self.geometry('1180x800');self.minsize(900,650)
         self.busy=False
         self.configure(bg='#0b1121')
@@ -40,7 +41,7 @@ class App(tk.Tk):
     def layout(self):
         top=ttk.Frame(self,padding=(24,20,24,8));top.pack(fill='x')
         ttk.Label(top,text='◈  MURDILIMAX   RECOVERY',font=('Segoe UI',22,'bold')).pack(anchor='w')
-        ttk.Label(top,text='Recovery Engine 0.6    ·    NTFS / exFAT    ·    deleted folders    ·    photo preview    ·    safe imaging',font=('Segoe UI',10)).pack(anchor='w',pady=3)
+        ttk.Label(top,text='Recovery Engine 0.7    ·    NTFS / exFAT    ·    RAID 0/1/5/6/10    ·    safe imaging',font=('Segoe UI',10)).pack(anchor='w',pady=3)
         area=ttk.Frame(self,padding=(24,8));area.pack(fill='x')
         ttk.Label(area,text='SCAN MODE',font=('Segoe UI',9,'bold')).pack(anchor='w')
         modes=[('metadata','Deleted files: NTFS / exFAT image'),('carve','Signature scan: JPG / PNG / PDF / ZIP'),('folder','Existing files / wallet backup filenames'),('physical','Physical HDD/USB (metadata)'),('physical-carve','Physical HDD/USB (signatures)')]
@@ -134,36 +135,131 @@ class App(tk.Tk):
         threading.Thread(target=worker,daemon=True).start()
 
     def raid_builder(self):
-        if self.busy:return
-        dialog=tk.Toplevel(self);dialog.title('MURDILIMAX · RAID image builder');dialog.geometry('710x540');dialog.transient(self)
-        ttk.Label(dialog,text='RAID 0/1/5 reconstruction from already imaged member disks',font=('Segoe UI',13,'bold')).pack(anchor='w',padx=16,pady=(16,5))
-        ttk.Label(dialog,text='IMPORTANT: Correct disk order, layout, stripe size and member images are mandatory.\nFor RAID5 the only supported layout is Linux MD left-symmetric; use - for one missing image.',wraplength=670).pack(anchor='w',padx=16)
+        if self.busy: return
+        dialog=tk.Toplevel(self)
+        dialog.title('MURDILIMAX · Experimental RAID image builder 0.7')
+        dialog.geometry('780x670')
+        dialog.transient(self)
+        ttk.Label(dialog,text='Experimental RAID 0 / 1 / 5 / 6 / 10 image reconstruction',
+                  font=('Segoe UI',13,'bold')).pack(anchor='w',padx=16,pady=(16,6))
+        ttk.Label(dialog,text='Only use previously acquired raw member IMAGES, never physical disks. '
+                  'Order, parity layout and stripe size must match the original array. '
+                  'RAID6 supports fixed-P/Q-last ONLY, not generic Linux MD or vendor NAS layouts.',
+                  wraplength=740).pack(anchor='w',padx=16)
         head=ttk.Frame(dialog,padding=(16,12));head.pack(fill='x')
-        ttk.Label(head,text='RAID level:').pack(side='left')
-        lvl=tk.StringVar(value='5');ttk.Combobox(head,textvariable=lvl,values=['0','1','5'],state='readonly',width=6).pack(side='left',padx=12)
-        ttk.Label(head,text='Stripe size (KiB):').pack(side='left')
-        stripe=tk.StringVar(value='64');ttk.Combobox(head,textvariable=stripe,values=['4','8','16','32','64','128','256','512','1024'],state='readonly',width=8).pack(side='left',padx=12)
-        ttk.Label(dialog,text='Member image paths in PHYSICAL DISK ORDER, one per line (use - for missing RAID5 disk):').pack(anchor='w',padx=16)
-        editor=tk.Text(dialog,height=10,width=60,bg='#172541',fg='white',insertbackground='white');editor.pack(fill='both',expand=True,padx=16,pady=8)
+        ttk.Label(head,text='Level:').pack(side='left')
+        lvl=tk.StringVar(value='5')
+        level_box=ttk.Combobox(head,textvariable=lvl,values=['0','1','5','6','10'],state='readonly',width=5)
+        level_box.pack(side='left',padx=(8,18))
+        ttk.Label(head,text='Chunk (KiB):').pack(side='left')
+        stripe=tk.StringVar(value='64')
+        ttk.Combobox(head,textvariable=stripe,
+                     values=['4','8','16','32','64','128','256','512','1024'],
+                     state='readonly',width=7).pack(side='left',padx=(8,18))
+        ttk.Label(head,text='Layout:').pack(side='left')
+        layout=tk.StringVar(value='left-symmetric')
+        layout_box=ttk.Combobox(head,textvariable=layout,state='readonly',width=20)
+        layout_box.pack(side='left',padx=8)
+        verify=tk.BooleanVar(value=True)
+        ttk.Checkbutton(dialog,text='Verify available P/Q parity or matching mirrors before publishing output',
+                        variable=verify).pack(anchor='w',padx=17)
+        def layouts(_event=None):
+            level=int(lvl.get())
+            options=list(RAID5_LAYOUTS) if level==5 else ['fixed-pq-last'] if level==6 else ['near-2'] if level==10 else ['default']
+            layout_box.configure(values=options)
+            layout.set(options[0])
+        level_box.bind('<<ComboboxSelected>>',layouts)
+        ttk.Label(dialog,text='Member images in PHYSICAL DISK ORDER, one path per line. '
+                  'Use - for a missing RAID5/6/10 member:',wraplength=740).pack(anchor='w',padx=16,pady=(13,0))
+        editor=tk.Text(dialog,height=10,width=65,bg='#172541',fg='white',insertbackground='white')
+        editor.pack(fill='both',expand=True,padx=16,pady=8)
+        bar=ttk.Frame(dialog,padding=(16,0));bar.pack(fill='x')
         def add_image():
-            p=filedialog.askopenfilename(parent=dialog,title='Select existing RAID member image');
-            if p:editor.insert('end',p+'\n')
-        ttk.Button(dialog,text='Add image…',command=add_image).pack(anchor='w',padx=16)
-        msg=tk.StringVar(value='No changes are made to source images.');ttk.Label(dialog,textvariable=msg,wraplength=650).pack(anchor='w',padx=16,pady=10)
-        def build():
-            paths=[p.strip() for p in editor.get('1.0','end').splitlines() if p.strip()]
-            dest=filedialog.asksaveasfilename(parent=dialog,title='Save reconstructed IMAGE to another drive',defaultextension='.img',filetypes=[('Raw image','*.img')])
+            filename=filedialog.askopenfilename(parent=dialog,title='Select existing RAID member image')
+            if filename: editor.insert('end',filename+'\n')
+        ttk.Button(bar,text='Add member image…',command=add_image).pack(side='left')
+        def inspect_md():
+            paths=[v.strip() for v in editor.get('1.0','end').splitlines() if v.strip() and v.strip()!='-']
+            try:
+                result=inspect_md_set(paths)
+                devices='\n'.join('Image '+str(i)+': role='+str(d['role'])+', data offset='+str(d['data_offset_bytes'])+' bytes'
+                                  for i,d in enumerate(result['members']))
+                messagebox.showinfo('Linux MD 1.2 metadata (READ ONLY)',
+                   'Matching array UUID: '+result['array_uuid']+'\nLevel: '+str(result['level'])
+                   +'\nChunk: '+str(result['chunk_bytes'])+' bytes\n'
+                   +devices+'\n\nDoes NOT prove disk order or vendor layout. '
+                   'Use Export MD member data… for data-only images.',parent=dialog)
+            except Exception as exc: messagebox.showerror('MD metadata',str(exc),parent=dialog)
+        ttk.Button(bar,text='Inspect Linux MD metadata',command=inspect_md).pack(side='left',padx=8)
+        def extract_one():
+            paths=[v.strip() for v in editor.get('1.0','end').splitlines() if v.strip() and v.strip()!='-']
+            if len(paths)!=1:
+                messagebox.showinfo('MD member export','For safe export, enter one MD member image in the list at a time.',parent=dialog);return
+            dest=filedialog.asksaveasfilename(parent=dialog,title='Save extracted MD member DATA to a NEW file',
+                defaultextension='.img',filetypes=[('Raw image','*.img')])
             if not dest:return
-            if not messagebox.askyesno('Confirm RAID parameters','Wrong member order, stripe size or parity layout will create incorrect data. Continue?',parent=dialog):return
+            msg.set('Exporting data-only image. Original remains read-only…')
+            def worker():
+                try:
+                    report=extract_md_member(paths[0],dest)
+                    self.after(0,lambda:msg.set('MD data-only image saved: '+report['output']+'. Recheck member order before building.'))
+                except Exception as exc:
+                    err=str(exc)
+                    self.after(0,lambda:msg.set('Export failed: '+err))
+            threading.Thread(target=worker,daemon=True).start()
+        ttk.Button(bar,text='Export MD member DATA…',command=extract_one).pack(side='left')
+        msg=tk.StringVar(value='No changes will be made to the member images.')
+        ttk.Label(dialog,textvariable=msg,wraplength=740).pack(anchor='w',padx=16,pady=(12,6))
+        builder=ttk.Frame(dialog,padding=(16,2));builder.pack(fill='x')
+        def recommend():
+            paths=[v.strip() for v in editor.get('1.0','end').splitlines() if v.strip()]
+            if len(paths)>5 or any(v=='-' for v in paths) or lvl.get()!='5':
+                messagebox.showinfo('RAID hints','Available only for RAID5 with 3–5 existing images; no missing members.',parent=dialog);return
+            try:
+                candidates=probe_raid5_start(paths,int(stripe.get())*1024)
+                if not candidates:
+                    text='No recognizable NTFS/exFAT filesystem boot header at logical byte zero. This is common for partitioned NAS images.'
+                else:
+                    first=candidates[0]
+                    text=('WEAK HINT ONLY, NOT A VALIDATED ARRAY.\n'
+                          f'Possible layout: {first["layout"]}, member indices: {first["member_order"]}.\n'
+                          'Only the first boot sector was matched; verify the entire image independently.')
+                messagebox.showinfo('Experimental RAID5 hints',text,parent=dialog)
+            except Exception as exc:messagebox.showerror('RAID hint error',str(exc),parent=dialog)
+        ttk.Button(builder,text='Suggest RAID5 starting layout (weak hint)',command=recommend).pack(side='left')
+        def build():
+            paths=[v.strip() for v in editor.get('1.0','end').splitlines() if v.strip()]
+            if any(not Path(p).is_file() for p in paths if p!='-'):
+                messagebox.showerror('RAID inputs','Choose existing member image files only.',parent=dialog);return
+            dest=filedialog.asksaveasfilename(parent=dialog,title='Save NEW reconstructed image to a healthy disk',
+                    defaultextension='.img',filetypes=[('Raw image','*.img')])
+            if not dest:return
+            if not messagebox.askyesno('Confirm EXPERIMENTAL reconstruction',
+                'Incorrect order or layout may produce a convincingly structured but WRONG filesystem. '
+                'This tool cannot infer Synology/QNAP/DDF RAID layouts. Continue?',parent=dialog):return
+            build_button.state(['disabled']);hint_button.state(['disabled'])
+            msg.set('Read-only reconstruction running. This can require a long time for large images…')
+            level=int(lvl.get());chunk=int(stripe.get())*1024;chosen_layout=layout.get();check=verify.get()
             def go():
                 try:
-                    outcome=assemble(paths,dest,int(lvl.get()),int(stripe.get())*1024,verify_parity=int(lvl.get())==5 and '-' not in paths)
-                    self.after(0,lambda:self._raid_complete(dialog,msg,outcome['output']))
+                    result=assemble(paths,dest,level,chunk,check,layout=chosen_layout)
+                    def done():
+                        msg.set('Reconstruction complete. Verified stripes: '
+                                +str(result['verified_stripes'])+'/'+str(result['total_stripes'])
+                                +'. SHA-256: '+result['sha256'][:20]+'…')
+                        self._raid_complete(dialog,msg,result['output'])
+                        build_button.state(['!disabled']);hint_button.state(['!disabled'])
+                    self.after(0,done)
                 except Exception as exc:
-                    text=str(exc);self.after(0,lambda:msg.set('RAID error: '+text))
-            msg.set('Reconstructing locally, do not close this window…')
+                    err=str(exc)
+                    def fail():
+                        msg.set('RAID error: '+err)
+                        build_button.state(['!disabled']);hint_button.state(['!disabled'])
+                    self.after(0,fail)
             threading.Thread(target=go,daemon=True).start()
-        ttk.Button(dialog,text='BUILD READ-ONLY RAID IMAGE',command=build).pack(pady=(0,16))
+        hint_button=builder.winfo_children()[0]
+        build_button=ttk.Button(dialog,text='BUILD NEW READ-ONLY RAID IMAGE',command=build)
+        build_button.pack(pady=(8,16))
 
     def _raid_complete(self,dialog,message,result):
         message.set('RAID image created: '+result)
@@ -236,7 +332,7 @@ class App(tk.Tk):
                 elif kind=='preview_done':
                     self.set_busy(False)
                     label,state,picture=obj
-                    self.note.set('Photo preview loaded. Source remains read-only.')
+                    self.note.set('Photo preview loaded. Source remains read-only; no file was saved.')
                     self.display_photo_preview(label,state,picture)
                 elif kind=='preview_error':
                     self.set_busy(False)
@@ -252,16 +348,16 @@ class App(tk.Tk):
         except queue.Empty:pass
         self.after(85,self.process_events)
     def preview_selected(self):
-        """Preview a limited image candidate without saving to disk."""
+        """Preview bounded photo candidate in a worker thread; never recover to disk."""
         if self.busy:return
         selected=self.tree.selection()
         if len(selected)!=1:
             messagebox.showinfo('Preview','Select one filesystem metadata photo first.');return
         candidate=self.items[int(selected[0])]
         if not isinstance(candidate,Candidate):
-            messagebox.showinfo('Preview','Photo preview supports NTFS/exFAT metadata results only.');return
+            messagebox.showinfo('Preview','Photo preview currently supports NTFS/exFAT metadata results only.');return
         source=self.source.get().strip()
-        self.set_busy(True);self.note.set('Reading local photo preview, max 12 MiB…')
+        self.set_busy(True);self.note.set('Reading limited photo preview locally (max 12 MiB)…')
         def worker():
             try:
                 data=preview_bytes(source,candidate)
@@ -273,15 +369,15 @@ class App(tk.Tk):
     def display_photo_preview(self,label,state,picture):
         from PIL import ImageTk
         dialog=tk.Toplevel(self)
-        dialog.title('MURDILIMAX · Photo Preview — UNVERIFIED FILE')
+        dialog.title('MURDILIMAX · Photo preview — UNVERIFIED RECOVERED CONTENT')
         dialog.geometry('790x590');dialog.minsize(560,400)
         dialog.configure(bg='#111b31')
         ttk.Label(dialog,text='PREVIEW ONLY · FILE NOT SAVED',font=('Segoe UI',13,'bold')).pack(padx=18,pady=(18,4))
         ttk.Label(dialog,text='File: '+label,wraplength=740).pack(padx=18,pady=3)
-        ttk.Label(dialog,text='Allocation: '+state+' · preview does not prove complete recovery',wraplength=740).pack(padx=18,pady=3)
+        ttk.Label(dialog,text='Allocation: '+state+' · visual preview does not guarantee integrity',wraplength=740).pack(padx=18,pady=3)
         thumbnail=ImageTk.PhotoImage(picture,master=dialog)
         panel=tk.Label(dialog,image=thumbnail,bg='#111b31')
-        panel.image=thumbnail
+        panel.image=thumbnail  # keep Tcl image alive
         panel.pack(fill='both',expand=True,padx=20,pady=18)
         ttk.Button(dialog,text='Close',command=dialog.destroy).pack(pady=(0,16))
 
