@@ -107,7 +107,7 @@ def run_quality_gate(output_file:str|Path,*,require_pass:bool=False)->dict:
                     expected_hash=sha256(expected).hexdigest()
                     if (contents!=expected or verified_hash!=expected_hash or
                         result.get('sha256')!=verified_hash or
-                        realpath.relative_to(destination)!=Path(*name.split('/'))):
+                        realpath.resolve().relative_to(destination.resolve())!=Path(*name.split('/'))):
                         errors.append('Output mismatch: '+name)
                     else:
                         matched.append({'file':name,'bytes':len(contents),'sha256':verified_hash})
