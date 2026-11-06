@@ -34,12 +34,13 @@ from murdilimax_preview import preview_bytes, decode_preview
 from murdilimax_md import inspect_md_set, extract_md_member
 from murdilimax_deepcheck import assess_deep
 from murdilimax_session import make_session, save_session as store_view_session, load_session as load_view_session
+from murdilimax_fontguard import select_cyrillic_font, validate_cyrillic_font
 from murdilimax_crystal_logic import (
     CATEGORIES, file_size, validate_source, safe_destination,
     normalize_categories, supported_preview, recommendation_color, selected_items, read_visible_photo,
 )
 
-VERSION='0.10.2'
+VERSION='0.10.3'
 BG='#070B20'
 PANEL='#111937'
 VIOLET='#B87AFF'
@@ -292,7 +293,7 @@ class Job(QThread):
 
 
 QSS=r"""
-QWidget { color: #F1F2FF; font-family: 'Segoe UI', 'Arial'; font-size: 12px; }
+QWidget { color: #F1F2FF; font-size: 12px; }
 QMainWindow, QWidget#root { background: #070B20; }
 QFrame#sidebar { background: #0A102C; border-right: 1px solid #353D82; }
 QLabel#brand { font-size: 21px; font-weight: 900; color: #F9F0FF; }
@@ -876,6 +877,9 @@ def main():
     app.setApplicationName('MURDILIMAX Recovery')
     app.setOrganizationName('MURDILIMAX')
     app.setStyle('Fusion')
+    # Use only a verified installed typeface: Qt QSS does not support browser CSS font stacks.
+    app.setFont(select_cyrillic_font())
+    validate_cyrillic_font(app.font())
     w=CrystalWindow();w.hero.animated=w.motion
     if '--smoke-test' in sys.argv:
         assert w.table.rowCount()==0 and not w.stop_btn.isEnabled()

@@ -27,6 +27,13 @@ jobs:
           $env:QT_QPA_PLATFORM = 'offscreen'
           python -m unittest discover -v
           if ($LASTEXITCODE -ne 0) { throw 'Recovery or Qt UI tests failed' }
+      - name: Verify Russian font glyphs on Windows
+        working-directory: price-aggregator/desktop
+        shell: pwsh
+        run: |
+          $env:QT_QPA_PLATFORM='offscreen'
+          python -m unittest test_fontguard -v
+          if ($LASTEXITCODE -ne 0) { throw 'Russian/Cyrillic glyph validation failed' }
       - name: Synthetic byte-for-byte recovery quality gate
         working-directory: price-aggregator/desktop
         run: python murdilimax_qualitygate.py --out QUALITY-REPORT.json
@@ -75,25 +82,25 @@ jobs:
           Set-Location 'price-aggregator/desktop'
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'windows-installer.iss'
           if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
-          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.2.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.3.exe'
           if (!(Test-Path $setup)) { throw 'Installer not created' }
       - name: Generate SHA256 checksums
         shell: pwsh
         run: |
           Set-Location 'price-aggregator/desktop'
           $portable='dist/MURDILIMAX-Recovery.exe'
-          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.2.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.3.exe'
           $portableHash=(Get-FileHash $portable -Algorithm SHA256).Hash.ToLowerInvariant()
           $setupHash=(Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$setupHash  MURDILIMAX-Recovery-Setup-0.10.2.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
+          "$setupHash  MURDILIMAX-Recovery-Setup-0.10.3.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
           "$portableHash  MURDILIMAX-Recovery.exe" | Add-Content -Encoding ascii 'SHA256SUMS.txt'
       - name: Upload tested installer and quality report
         uses: actions/upload-artifact@v4
         with:
-          name: MURDILIMAX-Recovery-0.10.2-Windows
+          name: MURDILIMAX-Recovery-0.10.3-Windows
           path: |
             price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe
-            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.2.exe
+            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.3.exe
             price-aggregator/desktop/SHA256SUMS.txt
             price-aggregator/desktop/QUALITY-REPORT.json
             price-aggregator/desktop/CRYSTAL-UI.png
@@ -102,20 +109,19 @@ jobs:
         if: github.ref == 'refs/heads/price-aggregator-mvp'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.10.2
+          tag_name: v0.10.3
           target_commitish: ${{ github.sha }}
-          name: MURDILIMAX Recovery 0.10.2 — Crystal Session Safety / RU EN
+          name: MURDILIMAX Recovery 0.10.3 — Crystal Session Safety / RU EN
           prerelease: true
           make_latest: false
           body: |
             A real Qt 6 Windows x64 desktop UI (PySide6) matching the MURDILIMAX crystal website style, with Russian/English switching, vector art, real scan progress and real filesystem recovery results. Includes source/image selection, preview, selective recovery, safe imaging, experimental RAID builder, local wallet filename discovery and audit reports.
-            0.10.2 adds metadata-only local scan session saving and view-only importing, plus invalidation of all previous candidates on source switch. Imported sessions cannot authorize recovery or preview. No cloud uploads, no private-key extraction. Installer bundles Qt/Python.
+            0.10.3 fixes Russian glyph tofu: uses real system fonts verified through Qt physical glyph coverage, and CI fails closed when Cyrillic rendering is not available. Scan sessions and source-switch safety remain unchanged.
             WARNING: unsigned experimental build; not field validated on failing physical disks or vendor RAID. Do not write outputs to the source disk. Never claim superiority to R-Studio or DMDE without independent tests.
           files: |
             price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe
-            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.2.exe
+            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.3.exe
             price-aggregator/desktop/SHA256SUMS.txt
             price-aggregator/desktop/QUALITY-REPORT.json
-            price-aggregator/desktop/CRYSTAL-UI.png
           fail_on_unmatched_files: true
           overwrite_files: true
