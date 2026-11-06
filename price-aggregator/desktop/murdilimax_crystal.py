@@ -33,12 +33,13 @@ from murdilimax_wallets import discover_wallet_backups
 from murdilimax_preview import preview_bytes, decode_preview
 from murdilimax_md import inspect_md_set, extract_md_member
 from murdilimax_deepcheck import assess_deep
+from murdilimax_session import make_session, save_session as store_view_session, load_session as load_view_session
 from murdilimax_crystal_logic import (
     CATEGORIES, file_size, validate_source, safe_destination,
     normalize_categories, supported_preview, recommendation_color, selected_items, read_visible_photo,
 )
 
-VERSION='0.10.1'
+VERSION='0.10.2'
 BG='#070B20'
 PANEL='#111937'
 VIOLET='#B87AFF'
@@ -87,6 +88,11 @@ TR={
  'folder_mode':'Обычные файлы в папке','deep_mode':'Поиск потерянных разделов (медленнее)',
  'mft_mode':'Поиск повреждённых записей NTFS (экспериментально)',
  'device_select':'Выберите физический диск Windows','local_advice':'Локальные рекомендации, не диагноз и не ИИ.',
+ 'save_session':'↓  СОХРАНИТЬ СЕССИЮ','open_session':'▤  ОТКРЫТЬ СЕССИЮ',
+ 'session_saved':'Сводка сканирования сохранена локально. Она не содержит файлов или данных для восстановления.',
+ 'session_view':'СОХРАНЁННАЯ СЕССИЯ · ТОЛЬКО ПРОСМОТР',
+ 'session_rescan':'Для восстановления и предпросмотра выберите исходный носитель и выполните новое сканирование.',
+ 'session_sensitive':'Файл сессии содержит имена и пути файлов. Храните его в защищённом месте.',
 },
 'en':{
  'title':'Data recovery','subtitle':'Bring important files back. Transparent offline analysis, no cloud.',
@@ -127,6 +133,11 @@ TR={
  'folder_mode':'Visible files in a folder','deep_mode':'Find lost partitions (slower)',
  'mft_mode':'Damaged NTFS record salvage (experimental)',
  'device_select':'Select Windows physical disk','local_advice':'Local rule-based guidance, not AI or diagnosis.',
+ 'save_session':'↓  SAVE SESSION','open_session':'▤  OPEN SESSION',
+ 'session_saved':'Scan summary saved locally. It contains no recovered bytes or information authorizing recovery.',
+ 'session_view':'SAVED SESSION · VIEW ONLY',
+ 'session_rescan':'To preview or recover files, choose the original source again and run a fresh scan.',
+ 'session_sensitive':'Session files contain filenames and paths. Keep them private.',
 }}
 
 
@@ -327,6 +338,7 @@ class CrystalWindow(QMainWindow):
         self.lang=saved if saved in ('ru','en') else 'ru'
         self.motion=self.cfg.value('motion','true')!='false'
         self.source='';self.mode='metadata';self.entries=[];self.last_report='';self.worker=None
+        self.session_snapshot=None;self.scan_complete=False;self.scan_total=0;self.scan_errors=[]
         self.filtered=[]
         self.setWindowTitle('MURDILIMAX Recovery · Crystal '+VERSION)
         self.resize(1430,910);self.setMinimumSize(1070,770)
@@ -358,7 +370,7 @@ class CrystalWindow(QMainWindow):
         sv.addStretch()
         ornament=QLabel('✧    ◇    ✧');ornament.setAlignment(Qt.AlignmentFlag.AlignCenter)
         ornament.setStyleSheet('color:#77DEFF; font-size:26px; margin-bottom:10px');sv.addWidget(ornament)
-        sv.addWidget(self.label('0.10.1  ·  LOCAL / READ ONLY','tagline'))
+        sv.addWidget(self.label(VERSION+'  ·  LOCAL / READ ONLY','tagline'))
         outer=QScrollArea();outer.setWidgetResizable(True);outer.setFrameShape(QFrame.Shape.NoFrame)
         outer.setStyleSheet('QScrollArea{border:0;background:#070B20;} QScrollBar{background:#151732}')
         full.addWidget(outer,1)
@@ -420,7 +432,10 @@ class CrystalWindow(QMainWindow):
         result_panel=self.panel();middle.addWidget(result_panel,4)
         rv=QVBoxLayout(result_panel);rv.setContentsMargins(13,14,13,13);rv.setSpacing(10)
         rh=QHBoxLayout();self.results_title=self.label('','section');rh.addWidget(self.results_title)
-        rh.addStretch();self.search=QLineEdit();self.search.setFixedWidth(218)
+        rh.addStretch()
+        self.session_save_btn=self.button('',self.save_scan_session);rh.addWidget(self.session_save_btn)
+        self.session_open_btn=self.button('',self.open_scan_session);rh.addWidget(self.session_open_btn)
+        self.search=QLineEdit();self.search.setFixedWidth(218)
         self.search.textChanged.connect(self.apply_filter);rh.addWidget(self.search);rv.addLayout(rh)
         self.table=QTableWidget(0,5);self.table.setAlternatingRowColors(True)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -483,13 +498,18 @@ class CrystalWindow(QMainWindow):
         self.restore_btn.setText(self.t('restore_selected'))
         self.advisor_btn.setText(self.t('advisor'))
         self.report_btn.setText(self.t('report_button'))
+        self.session_save_btn.setText(self.t('save_session'));self.session_open_btn.setText(self.t('open_session'))
         self.privacy.setText(self.t('privacy'))
     def switch_language(self):
         self.lang='en' if self.lang=='ru' else 'ru'
         self.cfg.setValue('language',self.lang);self.retranslate()
     def set_busy(self,busy):
         for b in (self.start_btn,self.btn_image,self.btn_folder,self.btn_device,self.image_btn,
-                  self.raid_btn,self.restore_btn,self.preview_btn,self.advisor_btn):b.setEnabled(not busy)
+                  self.raid_btn):b.setEnabled(not busy)
+        for b in (self.restore_btn,self.preview_btn,self.advisor_btn):
+            b.setEnabled(not busy and self.session_snapshot is None)
+        self.session_save_btn.setEnabled(not busy and self.scan_complete and self.session_snapshot is None)
+        self.session_open_btn.setEnabled(not busy)
         self.stop_btn.setEnabled(busy)
     def mode_changed(self):
         if self.mode in ('metadata','carve'):
@@ -499,11 +519,13 @@ class CrystalWindow(QMainWindow):
     def pick_image(self):
         if self.worker:return
         path,_=QFileDialog.getOpenFileName(self,self.t('choose_source'),'','Raw images (*.img *.dd *.bin *.raw);;All files (*)')
-        if path:self.source=path;self.mode=self.scan_mode.currentData();self.source_text.setText('◈  '+path)
+        if path:
+            self.invalidate_results();self.source=path;self.mode=self.scan_mode.currentData();self.source_text.setText('◈  '+path)
     def pick_folder(self):
         if self.worker:return
         path=QFileDialog.getExistingDirectory(self,self.t('choose_source'))
-        if path:self.source=path;self.mode='folder';self.source_text.setText('▤  '+path)
+        if path:
+            self.invalidate_results();self.source=path;self.mode='folder';self.source_text.setText('▤  '+path)
     def pick_device(self):
         if self.worker:return
         drives=enumerate_drives()
@@ -513,7 +535,7 @@ class CrystalWindow(QMainWindow):
         choice,ok=QInputDialog.getItem(self,self.t('device_select'),self.t('choose_source'),choices,0,False)
         if ok:
             if QMessageBox.warning(self,'READ ONLY',self.t('confirm_physical'),QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
-            i=choices.index(choice);self.source=drives[i]['path'];self.mode='physical' if self.scan_mode.currentIndex()==0 else 'physical-carve'
+            i=choices.index(choice);self.invalidate_results();self.source=drives[i]['path'];self.mode='physical' if self.scan_mode.currentIndex()==0 else 'physical-carve'
             self.source_text.setText('▣  '+choice)
     def current_categories(self):
         return normalize_categories(k for k,c in self.checkboxes.items() if c.isChecked())
@@ -539,8 +561,8 @@ class CrystalWindow(QMainWindow):
                 raise ValueError('Signature carving supports JPG/PNG/PDF/ZIP only')
         except Exception as exc:
             QMessageBox.warning(self,self.t('error'),str(exc));return
-        self.entries.clear();self.table.setRowCount(0);self.preview_image.setPixmap(QPixmap());self.preview_image.setText(self.t('preview_empty'))
-        self.count_label.setText('0');self.status_label.setText(self.t('scanning'))
+        self.invalidate_results()
+        self.status_label.setText(self.t('scanning'))
         self.launch('scan',{'source':self.source,'mode':self.mode,'categories':categories,'deep':self.deep.isChecked(),'mft':self.mft.isChecked()})
     def handle_job(self,key,obj):
         if key=='progress':
@@ -563,6 +585,9 @@ class CrystalWindow(QMainWindow):
             self.count_label.setText(str(len(self.entries)))
             if len(self.entries)%100==0:self.status_detail.setText(self.t('found')+': '+str(len(self.entries)))
         elif key=='scan_done':
+            self.scan_complete=not bool(obj['cancelled'])
+            self.scan_total=int(obj['found']);self.scan_errors=list(obj.get('errors',[]))
+            self.set_busy(False if not self.worker else True)
             extra=(' · '.join(obj.get('errors',[])[:2]))
             self.status_label.setText(self.t('scan_finished'))
             self.status_detail.setText(f"{self.t('found')}: {obj['found']}  |  {self.table.rowCount()} visible"+(' · '+extra if extra else ''))
@@ -571,7 +596,7 @@ class CrystalWindow(QMainWindow):
             done,total,bad=obj;self.progress.setValue(int(100*done/max(1,total)))
             self.status_detail.setText(f'{file_size(done)} / {file_size(total)} · unreadable: {file_size(bad)}')
         elif key=='image_done':
-            self.source=obj['path'];self.mode='metadata';self.source_text.setText('◈  '+self.source)
+            self.invalidate_results();self.source=obj['path'];self.mode='metadata';self.source_text.setText('◈  '+self.source)
             self.status_label.setText(self.t('complete'));self.status_detail.setText('SHA-256: '+obj['sha256_image'][:22]+'…')
             QMessageBox.information(self,self.t('complete'),f"{obj['path']}\nSHA-256: {obj['sha256_image']}\nUnreadable bytes: {obj['unreadable_bytes']}")
         elif key=='recover_done':
@@ -589,14 +614,68 @@ class CrystalWindow(QMainWindow):
             QMessageBox.information(self,self.t('complete'),obj['output']+'\nSHA-256: '+obj['sha256'])
         elif key=='raid_done':
             self.status_label.setText(self.t('complete'))
-            out=obj['output'];self.source=out;self.mode='metadata';self.source_text.setText('◈  '+out)
+            out=obj['output'];self.invalidate_results();self.source=out;self.mode='metadata';self.source_text.setText('◈  '+out)
             self.status_detail.setText(out);QMessageBox.information(self,self.t('complete'),out)
         elif key=='paused':
             self.status_label.setText(self.t('idle'));self.status_detail.setText('Stopped: '+str(obj))
         elif key=='failed':
             self.status_label.setText(self.t('error'));self.status_detail.setText(str(obj));QMessageBox.warning(self,self.t('error'),str(obj))
+    def invalidate_results(self):
+        """A new source invalidates ALL earlier candidates and any imported view-only summary."""
+        self.session_snapshot=None;self.scan_complete=False;self.scan_total=0;self.scan_errors=[]
+        self.entries.clear();self.table.setRowCount(0)
+        self.search.clear();self.count_label.setText('0')
+        self.preview_image.setPixmap(QPixmap());self.preview_image.setText(self.t('preview_empty'))
+        self.file_detail.setText('')
+        if not self.worker:self.set_busy(False)
+
+    def save_scan_session(self):
+        if self.worker or self.session_snapshot is not None or not self.scan_complete:return
+        filename,_=QFileDialog.getSaveFileName(self,self.t('save_session'),
+            'MURDILIMAX-scan-'+datetime.now(timezone.utc).strftime('%Y%m%d-%H%M')+'.mrd-session.json',
+            'MURDILIMAX sessions (*.mrd-session.json);;JSON files (*.json)')
+        if not filename:return
+        try:
+            doc=make_session(source=self.source,mode=self.mode,entries=self.entries,
+                total=self.scan_total,scan_errors=self.scan_errors)
+            store_view_session(filename,doc)
+        except (OSError,ValueError) as exc:
+            QMessageBox.warning(self,self.t('error'),str(exc));return
+        QMessageBox.information(self,self.t('complete'),self.t('session_saved')+'\n\n'+self.t('session_sensitive'))
+
+    def open_scan_session(self):
+        if self.worker:return
+        filename,_=QFileDialog.getOpenFileName(self,self.t('open_session'),'','MURDILIMAX sessions (*.mrd-session.json);;JSON files (*.json)')
+        if not filename:return
+        try:
+            doc=load_view_session(filename)
+        except (OSError,ValueError) as exc:
+            QMessageBox.warning(self,self.t('error'),str(exc));return
+        self.invalidate_results()
+        self.source=''  # Never allow recovery/preview from an untrusted cached scan.
+        self.session_snapshot=doc
+        self.source_text.setText(self.t('session_view')+' · '+doc['source'])
+        for row,record in enumerate(doc['entries']):
+            self.table.insertRow(row)
+            for col,value in enumerate((record['name'],record['path'],file_size(record['size']),
+                                        self.t(record['category']),record['state'])):
+                cell=QTableWidgetItem(str(value))
+                if col==4:cell.setForeground(QColor(recommendation_color(record['state'])))
+                self.table.setItem(row,col,cell)
+        self.count_label.setText(str(doc['total_found']))
+        self.status_label.setText(self.t('session_view'))
+        msg=self.t('session_rescan')
+        if doc['truncated']:msg+=' · '+str(len(doc['entries']))+' / '+str(doc['total_found'])
+        self.status_detail.setText(msg)
+        self.set_busy(False)
+        QMessageBox.information(self,self.t('session_view'),self.t('session_rescan'))
+
     def apply_filter(self,text):
         q=text.casefold().strip()
+        if self.session_snapshot is not None:
+            for row,record in enumerate(self.session_snapshot['entries']):
+                self.table.setRowHidden(row,q not in record['path'].casefold())
+            return
         for row,item in enumerate(self.entries):
             path=item.path if isinstance(item,Candidate) else item.label
             self.table.setRowHidden(row,q not in path.casefold())
@@ -604,6 +683,13 @@ class CrystalWindow(QMainWindow):
         rows=self.table.selectionModel().selectedRows() if self.table.selectionModel() else []
         if not rows:return
         row=rows[0].row()
+        if self.session_snapshot is not None:
+            records=self.session_snapshot['entries']
+            if row>=len(records):return
+            record=records[row]
+            self.preview_image.setPixmap(QPixmap());self.preview_image.setText(self.t('session_view'))
+            self.file_detail.setText(record['path']+'\n'+file_size(record['size'])+' · '+record['state']+'\n\n'+self.t('session_rescan'))
+            return
         if row>=len(self.entries):return
         item=self.entries[row]
         self.preview_image.setPixmap(QPixmap());self.preview_image.setText(self.t('preview_empty'))
@@ -615,6 +701,8 @@ class CrystalWindow(QMainWindow):
             for i in range(len(self.entries)) if self.table.item(i,0))
     def recover_selected(self):
         if self.worker:return
+        if self.session_snapshot is not None:
+            QMessageBox.information(self,self.t('session_view'),self.t('session_rescan'));return
         items=self.checked()
         if not items:QMessageBox.information(self,self.t('restore'),self.t('no_file'));return
         dest=QFileDialog.getExistingDirectory(self,self.t('choose_output'))
@@ -627,6 +715,8 @@ class CrystalWindow(QMainWindow):
         self.launch('recover',{'items':items,'destination':dest,'source':self.source})
     def preview_selected(self):
         if self.worker:return
+        if self.session_snapshot is not None:
+            QMessageBox.information(self,self.t('session_view'),self.t('session_rescan'));return
         rows=self.table.selectionModel().selectedRows() if self.table.selectionModel() else []
         if len(rows)!=1:
             QMessageBox.information(self,self.t('preview'),self.t('no_preview'));return
@@ -636,6 +726,8 @@ class CrystalWindow(QMainWindow):
             QMessageBox.information(self,self.t('preview'),self.t('no_preview'));return
         self.launch('preview',{'source':self.source,'mode':self.mode,'item':item})
     def advise_selected(self):
+        if self.session_snapshot is not None:
+            QMessageBox.information(self,self.t('session_view'),self.t('session_rescan'));return
         rows=self.table.selectionModel().selectedRows() if self.table.selectionModel() else []
         if len(rows)!=1:
             QMessageBox.information(self,self.t('advisor'),self.t('no_file'));return
