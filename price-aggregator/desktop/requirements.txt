@@ -1,2 +1,1 @@
-# Runtime: only Python 3.11+ standard library.
-# Optional Windows executable builder: pip install pyinstaller
+pillow>=11,<13

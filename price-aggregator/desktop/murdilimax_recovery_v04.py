@@ -13,13 +13,14 @@ from murdilimax_devices import is_physical, enumerate_drives, destination_is_dif
 from murdilimax_raid import assemble
 from murdilimax_imager import image_source, ImagingCancelled, SourceReadLimitExceeded
 from murdilimax_validate import assess_file
+from murdilimax_preview import preview_bytes, decode_preview
 from murdilimax_recovery_alpha import scan_folder, carve_image, restore as restore_carved, Hit
 
 CATEGORIES=('Photos','Documents','Archives','Video','Audio','Crypto backups','Other')
 
 class App(tk.Tk):
     def __init__(self):
-        super().__init__();self.title('MURDILIMAX Recovery v0.4 — NTFS · exFAT · HDD/USB · RAID · Safe imaging')
+        super().__init__();self.title('MURDILIMAX Recovery v0.6 — NTFS · exFAT · Photo Preview · Safe imaging')
         self.geometry('1180x800');self.minsize(900,650)
         self.busy=False
         self.configure(bg='#0b1121')
@@ -39,7 +40,7 @@ class App(tk.Tk):
     def layout(self):
         top=ttk.Frame(self,padding=(24,20,24,8));top.pack(fill='x')
         ttk.Label(top,text='◈  MURDILIMAX   RECOVERY',font=('Segoe UI',22,'bold')).pack(anchor='w')
-        ttk.Label(top,text='Recovery Engine 0.5    ·    NTFS / exFAT    ·    safe imaging with resume    ·    lost partitions    ·    RAID 0 / 1 / 5',font=('Segoe UI',10)).pack(anchor='w',pady=3)
+        ttk.Label(top,text='Recovery Engine 0.6    ·    NTFS / exFAT    ·    deleted folders    ·    photo preview    ·    safe imaging',font=('Segoe UI',10)).pack(anchor='w',pady=3)
         area=ttk.Frame(self,padding=(24,8));area.pack(fill='x')
         ttk.Label(area,text='SCAN MODE',font=('Segoe UI',9,'bold')).pack(anchor='w')
         modes=[('metadata','Deleted files: NTFS / exFAT image'),('carve','Signature scan: JPG / PNG / PDF / ZIP'),('folder','Existing files / wallet backup filenames'),('physical','Physical HDD/USB (metadata)'),('physical-carve','Physical HDD/USB (signatures)')]
@@ -61,6 +62,7 @@ class App(tk.Tk):
         ttk.Button(actions,text='CANCEL / PAUSE',command=lambda:self.stop_event.set()).pack(side='left',padx=(8,0))
         self.image_button=ttk.Button(actions,text='SAFE DISK IMAGE…',command=self.safe_image);self.image_button.pack(side='left',padx=(9,0))
         self.restore_button=ttk.Button(actions,text='RECOVER SELECTED →',command=self.recover_selected);self.restore_button.pack(side='right')
+        self.preview_button=ttk.Button(actions,text='PREVIEW PHOTO…',command=self.preview_selected);self.preview_button.pack(side='right',padx=(0,10))
         self.raid_button=ttk.Button(actions,text='RAID BUILDER…',command=self.raid_builder);self.raid_button.pack(side='right',padx=(0,10))
         tableframe=ttk.Frame(self,padding=(24,8));tableframe.pack(fill='both',expand=True)
         cols=('fs','kind','name','bytes','state','reason')
@@ -97,7 +99,7 @@ class App(tk.Tk):
 
     def set_busy(self, busy: bool):
         self.busy=busy
-        for button in (self.start_button,self.image_button,self.restore_button,self.raid_button):
+        for button in (self.start_button,self.image_button,self.restore_button,self.preview_button,self.raid_button):
             button.state(['disabled'] if busy else ['!disabled'])
 
     def safe_image(self):
@@ -231,6 +233,15 @@ class App(tk.Tk):
                 elif kind in ('image_error','image_paused'):
                     self.set_busy(False);self.note.set(('Imaging paused: ' if kind=='image_paused' else 'Imaging error: ')+obj)
                     if kind=='image_error':messagebox.showwarning('Image incomplete',obj)
+                elif kind=='preview_done':
+                    self.set_busy(False)
+                    label,state,picture=obj
+                    self.note.set('Photo preview loaded. Source remains read-only.')
+                    self.display_photo_preview(label,state,picture)
+                elif kind=='preview_error':
+                    self.set_busy(False)
+                    self.note.set('Preview unavailable: '+obj)
+                    messagebox.showwarning('Photo preview',obj)
                 elif kind=='restore_progress':
                     current,total=obj;self.progress['value']=int(current*100/max(1,total))
                 elif kind=='restore_done':
@@ -240,6 +251,40 @@ class App(tk.Tk):
                     messagebox.showinfo('Recovery results',f'Saved: {len(saved)}\nFailed: {len(failed)}\nCancelled: {cancelled}\nReport: {reportpath}\n\n'+'\n'.join(failed[:4]))
         except queue.Empty:pass
         self.after(85,self.process_events)
+    def preview_selected(self):
+        """Preview a limited image candidate without saving to disk."""
+        if self.busy:return
+        selected=self.tree.selection()
+        if len(selected)!=1:
+            messagebox.showinfo('Preview','Select one filesystem metadata photo first.');return
+        candidate=self.items[int(selected[0])]
+        if not isinstance(candidate,Candidate):
+            messagebox.showinfo('Preview','Photo preview supports NTFS/exFAT metadata results only.');return
+        source=self.source.get().strip()
+        self.set_busy(True);self.note.set('Reading local photo preview, max 12 MiB…')
+        def worker():
+            try:
+                data=preview_bytes(source,candidate)
+                picture=decode_preview(data)
+                self.post('preview_done',(candidate.path,candidate.state,picture))
+            except Exception as exc:self.post('preview_error',str(exc))
+        threading.Thread(target=worker,daemon=True).start()
+
+    def display_photo_preview(self,label,state,picture):
+        from PIL import ImageTk
+        dialog=tk.Toplevel(self)
+        dialog.title('MURDILIMAX · Photo Preview — UNVERIFIED FILE')
+        dialog.geometry('790x590');dialog.minsize(560,400)
+        dialog.configure(bg='#111b31')
+        ttk.Label(dialog,text='PREVIEW ONLY · FILE NOT SAVED',font=('Segoe UI',13,'bold')).pack(padx=18,pady=(18,4))
+        ttk.Label(dialog,text='File: '+label,wraplength=740).pack(padx=18,pady=3)
+        ttk.Label(dialog,text='Allocation: '+state+' · preview does not prove complete recovery',wraplength=740).pack(padx=18,pady=3)
+        thumbnail=ImageTk.PhotoImage(picture,master=dialog)
+        panel=tk.Label(dialog,image=thumbnail,bg='#111b31')
+        panel.image=thumbnail
+        panel.pack(fill='both',expand=True,padx=20,pady=18)
+        ttk.Button(dialog,text='Close',command=dialog.destroy).pack(pady=(0,16))
+
     def recover_selected(self):
         if self.busy:return
         indices=self.tree.selection()
@@ -276,7 +321,7 @@ class App(tk.Tk):
             try:
                 stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
                 reportpath=str(d/('MURDILIMAX-recovery-'+stamp+'.json'))
-                report={'application':'MURDILIMAX Recovery 0.5','created_utc':stamp,
+                report={'application':'MURDILIMAX Recovery 0.6','created_utc':stamp,
                         'source':str(src),'saved':saved,'errors':failed,'cancelled':cancelled,
                         'note':'Recovery report contains filenames and hashes; keep it private if filenames are sensitive.'}
                 with open(reportpath,'x',encoding='utf-8') as f:

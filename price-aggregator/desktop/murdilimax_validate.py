@@ -73,11 +73,22 @@ def assess_file(filename: str) -> dict:
         if head[:4]!=b'PK\x03\x04':
             return {'result':'signature_mismatch','detail':'ZIP container header missing'}
         try:
+            total_uncompressed=0
             with zipfile.ZipFile(path) as archive:
-                count=len(archive.infolist())
-            return {'result':'plausible','detail':f'ZIP directory parsed ({count} entries), member contents not decompressed'}
-        except (zipfile.BadZipFile,OSError,ValueError) as exc:
-            return {'result':'possibly_truncated','detail':f'ZIP central directory invalid: {exc}'}
+                infos=archive.infolist()
+                if len(infos)>100000:
+                    return {'result':'inconclusive','detail':'Too many ZIP members for bounded validation'}
+                for info in infos:
+                    if info.flag_bits & 1:
+                        return {'result':'inconclusive','detail':'Encrypted ZIP member: CRC requires the key'}
+                    if info.file_size>64*1024*1024 or total_uncompressed+info.file_size>256*1024*1024:
+                        return {'result':'inconclusive','detail':'ZIP expansion exceeds safety limit'}
+                    total_uncompressed+=info.file_size
+                    with archive.open(info) as member:
+                        while member.read(1024*1024):pass  # bounded member CRC verification
+            return {'result':'validated_structure','detail':f'ZIP directory and CRC verified ({len(infos)} members)'}
+        except (zipfile.BadZipFile,zipfile.LargeZipFile,OSError,ValueError,EOFError,RuntimeError,zlib.error) as exc:
+            return {'result':'possibly_truncated','detail':f'ZIP member or central directory invalid: {exc}'}
 
     if ext in ('.sqlite','.sqlite3','.db'):
         return ({'result':'plausible','detail':'SQLite header present; DB integrity not verified'}

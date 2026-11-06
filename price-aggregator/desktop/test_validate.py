@@ -29,7 +29,7 @@ class ValidationTests(unittest.TestCase):
         with TemporaryDirectory() as d:
             p=Path(d)/'a.zip'
             with zipfile.ZipFile(p,'w') as z:z.writestr('x.txt','sample')
-            self.assertEqual(assess_file(str(p))['result'],'plausible')
+            self.assertEqual(assess_file(str(p))['result'],'validated_structure')
     def test_unknown_is_not_false_validated(self):
         with TemporaryDirectory() as d:
             p=Path(d)/'key.dat';p.write_bytes(b'private')

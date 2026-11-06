@@ -246,11 +246,11 @@ def ntfs_scan(fp, part:Partition, image_size:int, limit:int=MAX_RECORDS, progres
                 namelen=value[64];ns=value[65]
                 if 66+namelen*2<=len(value) and ns in (0,1,2,3) and (3 if ns in (1,3) else 1)>best_ns:
                     name=value[66:66+namelen*2].decode('utf-16le','replace')
-                    best=(name,u64(value,0)&0xffffffffffff);best_ns=3 if ns in (1,3) else 1
+                    best=(name,u64(value,0));best_ns=3 if ns in (1,3) else 1
             if typ==0x80 and raw[9]==0:
                 data=(value,nr,raw)
         if i==6 and data and data[1]:bitmap_attr=data[2]
-        if best:records[i]=(best[0],best[1])
+        if best:records[i]=(best[0],best[1],u16(rec,16))
         if in_use or data is None or not best or best[0].startswith('$') or dirflag:continue
         val,nr,raw=data
         try:
@@ -264,13 +264,19 @@ def ntfs_scan(fp, part:Partition, image_size:int, limit:int=MAX_RECORDS, progres
             candidates.append(Candidate('NTFS',best[0],best[0],size,part.offset,extents,resident,'unknown',reason,True,False,i,best[1],unsupported))
         except (ValueError,EOFError):continue
         if progress and i%1024==0:progress(i,max(1,count))
-    def make_path(parent,name):
-        chain=[name];seen=set()
-        while parent in records and parent not in seen and len(chain)<64:
+    def make_path(parent_reference,name):
+        # NTFS parent references include a 16-bit sequence number. When the
+        # MFT slot has been reused, do not attach an old file to a new parent.
+        chain=[name];seen=set();reference=parent_reference
+        while len(chain)<64:
+            parent=reference & 0xffffffffffff
+            expected_sequence=reference >> 48
+            if parent==5 or parent in seen or parent not in records:break
             seen.add(parent)
-            if parent==5:break
-            parname,parent=records[parent]
-            if parname and parname not in ('.',): chain.append(parname)
+            parname,next_ref,actual_sequence=records[parent]
+            if expected_sequence and expected_sequence!=actual_sequence:break
+            if parname and parname!='.':chain.append(parname)
+            reference=next_ref
         return '/'.join(reversed(chain))
     for c in candidates:c.path=make_path(c.parent_id,c.name)
     # Check each candidate's cluster allocation from $Bitmap: reallocated data is not recovered.
@@ -344,18 +350,30 @@ def exfat_scan(fp,part:Partition,image_size:int,limit:int=100000,progress:Callab
             first=u32(e,20);length=u64(e,24)
             if 2<=first<count+2 and length>0:bitmap_extent=(first,length)
             break
+    # The exFAT bitmap may span noncontiguous FAT-linked clusters.
+    bitmap_clusters=[]
+    if bitmap_extent is not None:
+        first,byte_length=bitmap_extent
+        need=(byte_length+cluster-1)//cluster
+        if 0<need<=min(2_000_000,count):
+            bitmap_clusters=list(chain(first,max_clusters=need))
+            if len(bitmap_clusters)!=need:bitmap_clusters=[]
     bitmap_cache={}
     def used_cluster(c):
-        if bitmap_extent is None:return None
+        if not 2<=c<count+2 or not bitmap_clusters:return None
         byte=(c-2)//8
         if byte>=bitmap_extent[1]:return None
-        first, blength=bitmap_extent
-        off=cluster_off(first)+byte
-        if off>=image_size or byte>=cluster:return None  # fragmented allocation bitmap not yet supported
-        return bool(read_at(fp,off,1,image_size)[0] & (1<<((c-2)%8)))
-    out=[];dirs=[(root,'')];seen_dirs=set()
+        chain_index=byte//cluster
+        if chain_index>=len(bitmap_clusters):return None
+        off=cluster_off(bitmap_clusters[chain_index])+(byte%cluster)
+        if off not in bitmap_cache:
+            if len(bitmap_cache)>512:bitmap_cache.clear()
+            bitmap_cache[off]=read_at(fp,off,1,image_size)[0]
+        return bool(bitmap_cache[off] & (1<<((c-2)%8)))
+    from collections import deque
+    out=[];dirs=deque([(root,'',False)]);seen_dirs=set()
     while dirs and len(out)<limit:
-        first,prefix=dirs.pop(0)
+        first,prefix,parent_deleted=dirs.popleft()
         if first in seen_dirs:continue
         seen_dirs.add(first)
         entries=root_records if first==root else list(directory(first))
@@ -378,9 +396,12 @@ def exfat_scan(fp,part:Partition,image_size:int,limit:int=100000,progress:Callab
             attr=u16(e,4);dirflag=bool(attr&0x10); deleted=(typ==0x05)
             length=u64(stream,24);firstcl=u32(stream,20);contiguous=bool(stream[1]&2)
             path=prefix+'/'+name if prefix else name
-            if dirflag and not deleted and 2<=firstcl<count+2 and len(seen_dirs)<4096:
-                dirs.append((firstcl,path))
-            if not deleted or dirflag or length>MAX_FILE:continue
+            if dirflag and 2<=firstcl<count+2 and len(seen_dirs)<4096:
+                # Avoid reused deleted directories; inspect their surviving
+                # first cluster only if the bitmap confirms it is free.
+                if not deleted:dirs.append((firstcl,path,parent_deleted))
+                elif used_cluster(firstcl) is False:dirs.append((firstcl,path,True))
+            if (not deleted and not parent_deleted) or dirflag or length>MAX_FILE:continue
             if not length:
                 extents=[];state='free';why='Empty file'
             else:
@@ -400,6 +421,9 @@ def exfat_scan(fp,part:Partition,image_size:int,limit:int=100000,progress:Callab
                 st=[used_cluster(c) for c in checked]
                 state='reallocated' if True in st else 'unknown' if None in st or len(clusters)>8192 else 'free'
                 why='Cluster bitmap indicates reuse' if state=='reallocated' else 'Allocation status incomplete' if state=='unknown' else ''
+            if not deleted and parent_deleted:
+                why=(why+'; ' if why else '')+'Record from deleted directory; metadata unverified'
+                if state=='free':state='unknown'
             out.append(Candidate('exFAT',name,path,length,part.offset,extents,None,state,why,True,False))
         if progress:progress(len(seen_dirs),len(seen_dirs)+len(dirs))
     return out
