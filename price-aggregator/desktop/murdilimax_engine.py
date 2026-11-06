@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MURDILIMAX Recovery 0.3 — read-only NTFS/exFAT evidence-based recovery.
+"""MURDILIMAX Recovery 0.8 — read-only NTFS/exFAT recovery and ext4 browsing.
 
 Supports images; optional Windows physical disks require administrator access. Unsupported cases are explicitly rejected.
 Avoid use as a forensic reference without independent validation.
@@ -92,7 +92,10 @@ def partition_list(fp, filesize):
     def detect(off):
         if off < 0 or off+512>filesize:return ''
         b=read_at(fp,off,512,filesize)
-        return 'NTFS' if b[3:11]==b'NTFS    ' else 'exFAT' if b[3:11]==b'EXFAT   ' else ''
+        if b[3:11]==b'NTFS    ':return 'NTFS'
+        if b[3:11]==b'EXFAT   ':return 'exFAT'
+        from murdilimax_ext4 import probe_ext4
+        return 'ext4' if probe_ext4(fp,off,filesize) is not None else ''
     def probe(off,length,how,allow_backup=True):
         if off < 0 or off+512>filesize:return
         if any(p.offset==off for p in candidates):return
@@ -265,8 +268,8 @@ def ntfs_scan(fp, part:Partition, image_size:int, limit:int=MAX_RECORDS, progres
         except (ValueError,EOFError):continue
         if progress and i%1024==0:progress(i,max(1,count))
     def make_path(parent_reference,name):
-        # NTFS parent references include a 16-bit sequence number. When the
-        # MFT slot has been reused, do not attach an old file to a new parent.
+        # NTFS file references include a 16-bit sequence number. A reused MFT
+        # record must NOT become the deleted file's parent by record ID alone.
         chain=[name];seen=set();reference=parent_reference
         while len(chain)<64:
             parent=reference & 0xffffffffffff
@@ -274,7 +277,9 @@ def ntfs_scan(fp, part:Partition, image_size:int, limit:int=MAX_RECORDS, progres
             if parent==5 or parent in seen or parent not in records:break
             seen.add(parent)
             parname,next_ref,actual_sequence=records[parent]
-            if expected_sequence and expected_sequence!=actual_sequence:break
+            if expected_sequence and expected_sequence!=actual_sequence:
+                # Stale reference: preserve basename, do not attach a new parent.
+                break
             if parname and parname!='.':chain.append(parname)
             reference=next_ref
         return '/'.join(reversed(chain))
@@ -350,7 +355,9 @@ def exfat_scan(fp,part:Partition,image_size:int,limit:int=100000,progress:Callab
             first=u32(e,20);length=u64(e,24)
             if 2<=first<count+2 and length>0:bitmap_extent=(first,length)
             break
-    # The exFAT bitmap may span noncontiguous FAT-linked clusters.
+    # exFAT's allocation bitmap may span multiple, noncontiguous clusters.
+    # Follow its FAT chain for the advertised length rather than treating all
+    # bitmaps larger than one cluster as allocation status 'unknown'.
     bitmap_clusters=[]
     if bitmap_extent is not None:
         first,byte_length=bitmap_extent
@@ -365,7 +372,8 @@ def exfat_scan(fp,part:Partition,image_size:int,limit:int=100000,progress:Callab
         if byte>=bitmap_extent[1]:return None
         chain_index=byte//cluster
         if chain_index>=len(bitmap_clusters):return None
-        off=cluster_off(bitmap_clusters[chain_index])+(byte%cluster)
+        block=bitmap_clusters[chain_index]
+        off=cluster_off(block)+(byte%cluster)
         if off not in bitmap_cache:
             if len(bitmap_cache)>512:bitmap_cache.clear()
             bitmap_cache[off]=read_at(fp,off,1,image_size)[0]
@@ -397,10 +405,14 @@ def exfat_scan(fp,part:Partition,image_size:int,limit:int=100000,progress:Callab
             length=u64(stream,24);firstcl=u32(stream,20);contiguous=bool(stream[1]&2)
             path=prefix+'/'+name if prefix else name
             if dirflag and 2<=firstcl<count+2 and len(seen_dirs)<4096:
-                # Avoid reused deleted directories; inspect their surviving
-                # first cluster only if the bitmap confirms it is free.
-                if not deleted:dirs.append((firstcl,path,parent_deleted))
-                elif used_cluster(firstcl) is False:dirs.append((firstcl,path,True))
+                # A deleted directory's FAT chain is often cleared. Only
+                # inspect the first surviving cluster when allocation bitmap
+                # confirms it has NOT been reused by another file. We never
+                # assume the contents of a reallocated directory are valid.
+                if not deleted:
+                    dirs.append((firstcl,path,parent_deleted))
+                elif used_cluster(firstcl) is False:
+                    dirs.append((firstcl,path,True))
             if (not deleted and not parent_deleted) or dirflag or length>MAX_FILE:continue
             if not length:
                 extents=[];state='free';why='Empty file'
@@ -422,7 +434,9 @@ def exfat_scan(fp,part:Partition,image_size:int,limit:int=100000,progress:Callab
                 state='reallocated' if True in st else 'unknown' if None in st or len(clusters)>8192 else 'free'
                 why='Cluster bitmap indicates reuse' if state=='reallocated' else 'Allocation status incomplete' if state=='unknown' else ''
             if not deleted and parent_deleted:
-                why=(why+'; ' if why else '')+'Record from deleted directory; metadata unverified'
+                why=(why+'; ' if why else '')+'Record from a deleted directory; metadata consistency unverified'
+                # An active entry inside an unlinked deleted directory may be
+                # stale; require explicit consent before recovering contents.
                 if state=='free':state='unknown'
             out.append(Candidate('exFAT',name,path,length,part.offset,extents,None,state,why,True,False))
         if progress:progress(len(seen_dirs),len(seen_dirs)+len(dirs))
@@ -447,6 +461,9 @@ def scan_image(image_path, limit=100000, progress=None, deep_partitions=False, p
                 continue
             raw=read_at(fp,start,512,filesize)
             fs='NTFS' if raw[3:11]==b'NTFS    ' else 'exFAT' if raw[3:11]==b'EXFAT   ' else ''
+            if not fs:
+                from murdilimax_ext4 import probe_ext4
+                if probe_ext4(fp,start,filesize) is not None:fs='ext4'
             if fs:
                 parts.append(Partition(start,fs,length,origin));known.add(start)
         if deep_partitions or not parts:
@@ -454,10 +471,19 @@ def scan_image(image_path, limit=100000, progress=None, deep_partitions=False, p
                 if start not in known:
                     parts.append(Partition(start,fs,length,origin));known.add(start)
         if not parts:
-            raise ValueError('No supported NTFS/exFAT volume found. Try file carving on an image.')
+            from murdilimax_crypto import find_locked_volumes, locked_guidance
+            locked=find_locked_volumes(fp,filesize)
+            if locked:raise ValueError(locked_guidance(locked))
+            raise ValueError('No supported NTFS/exFAT/ext4 volume found. Try file carving on an image.')
         for part in parts:
             try:
-                entries=(ntfs_scan if part.fs=='NTFS' else exfat_scan)(fp,part,filesize,limit,progress)
+                if part.fs=='NTFS':scanner=ntfs_scan
+                elif part.fs=='exFAT':scanner=exfat_scan
+                elif part.fs=='ext4':
+                    from murdilimax_ext4 import ext4_scan
+                    scanner=ext4_scan
+                else:raise ValueError('Unsupported filesystem')
+                entries=scanner(fp,part,filesize,limit,progress)
                 found.extend(entries)
             except (ValueError,EOFError,OSError) as exc:
                 if part.fs=='NTFS' and salvage_mft:
@@ -525,10 +551,10 @@ def recover(fp_path, candidate:Candidate, destination, allow_unknown=False, canc
 
 def main():
     import argparse
-    cli=argparse.ArgumentParser(description='MURDILIMAX Recovery 0.3 · NTFS/exFAT image/physical source reader. Source stays read-only.')
+    cli=argparse.ArgumentParser(description='MURDILIMAX Recovery 0.8 · NTFS/exFAT deleted-file recovery, ext4 existing-file export. Source stays read-only.')
     cli.add_argument('image',help='Raw disk image (.img/.dd) or explicit \\\\.\\PhysicalDriveN path on Windows')
     cli.add_argument('--deep-partitions',action='store_true',help='Search aligned locations for lost NTFS/exFAT volume boot sectors')
-    cli.add_argument('--salvage-mft',action='store_true',help='When primary MFT cannot be parsed, search for surviving deleted MFT records (allocation status unknown)')
+    cli.add_argument('--salvage-mft',action='store_true',help='When primary NTFS MFT cannot be parsed, search surviving deleted MFT records (unverified allocation)')
     cli.add_argument('--report',help='Write JSON scan report to this path')
     cli.add_argument('--max-records',type=int,default=100000)
     cli.add_argument('--recover',nargs='*',type=int,help='Zero-based candidate indices to recover')
@@ -536,7 +562,7 @@ def main():
     cli.add_argument('--allow-unknown',action='store_true',help='Allow files whose cluster allocation could not be checked')
     args=cli.parse_args()
     candidates,volumes,errors=scan_image(args.image,max(1,min(MAX_RECORDS,args.max_records)),deep_partitions=args.deep_partitions,salvage_mft=args.salvage_mft)
-    print(f'Volumes: {len(volumes)}; Deleted file candidates: {len(candidates)}')
+    print(f'Volumes: {len(volumes)}; File candidates: {len(candidates)} (ext4: active files only)')
     for idx,c in enumerate(candidates):
         print(f'{idx:5} {c.fs:5} {c.state:12} {c.size:>12,} {c.path}')
     if errors:

@@ -46,7 +46,7 @@ jobs:
           Set-Location 'price-aggregator/desktop'
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'windows-installer.iss'
           if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
-          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.7.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.8.exe'
           if (!(Test-Path $setup)) { throw 'Installer not created' }
           Get-FileHash $setup -Algorithm SHA256 | Format-List
       - name: Generate SHA-256 checksums
@@ -54,37 +54,37 @@ jobs:
         run: |
           Set-Location 'price-aggregator/desktop'
           $portable = 'dist/MURDILIMAX-Recovery.exe'
-          $setup = 'installer-output/MURDILIMAX-Recovery-Setup-0.7.exe'
+          $setup = 'installer-output/MURDILIMAX-Recovery-Setup-0.8.exe'
           $portableHash = (Get-FileHash $portable -Algorithm SHA256).Hash.ToLowerInvariant()
           $setupHash = (Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$setupHash  MURDILIMAX-Recovery-Setup-0.7.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
+          "$setupHash  MURDILIMAX-Recovery-Setup-0.8.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
           "$portableHash  MURDILIMAX-Recovery.exe" | Add-Content -Encoding ascii 'SHA256SUMS.txt'
       - name: Upload installers as downloadable artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: MURDILIMAX-Recovery-0.7-Windows
+          name: MURDILIMAX-Recovery-0.8-Windows
           path: |
             price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe
-            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.7.exe
+            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.8.exe
             price-aggregator/desktop/SHA256SUMS.txt
           if-no-files-found: error
       - name: Publish direct-download release
         if: github.ref == 'refs/heads/price-aggregator-mvp'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.7.0
+          tag_name: v0.8.0
           target_commitish: ${{ github.sha }}
-          name: MURDILIMAX Recovery 0.7.0 — Windows Alpha
+          name: MURDILIMAX Recovery 0.8.0 — Windows Alpha
           prerelease: true
           make_latest: false
           body: |
-            Experimental Windows x64 recovery tool. Stage 3: RAID5 six parity layouts; experimental RAID6 fixed P/Q and RAID10 near-2; Linux md 1.2 read-only inspection and safe data slicing; parity checks and atomic image output. Setup EXE is installer; other EXE portable.
-            Does not require Python. Includes read-only NTFS/exFAT, limited RAID image reconstruction and safe-imaging experiments. RAID6 fixed-pq-last only: NOT generic NAS or Linux md layouts. RAID10 near-2 only.
-            WARNING: unsigned Windows build, not validated on real damaged devices. Windows SmartScreen may show a warning.
+            Experimental Windows x64 recovery tool. Stage 4: read-only ext4 exploration and selective extraction of EXISTING extent-backed files from disk images, with directory structure and sparse-file support. Identifies locked LUKS 1/2 and BitLocker containers and requires owner-authorized unlocking with official OS utilities. Previously available NTFS/exFAT undelete, safe imaging and experimental RAID0/1/5/6/10 remain available. Setup EXE is installer; other EXE portable.
+            Does not require Python. Includes read-only NTFS/exFAT deleted-file candidates, ext4 existing-file export only, limited RAID image reconstruction and safe-imaging experiments. RAID6 fixed-pq-last only: NOT generic NAS or Linux md layouts. RAID10 near-2 only.
+            WARNING: unsigned Windows build, not validated on real damaged devices or real-world ext4 corpora. Windows SmartScreen may show a warning. EXT4 UNDELETE, fscrypt decryption and BitLocker/LUKS password bypass are NOT implemented.
             Save recovered data to a different physical drive. Never scan a physically failing drive without professional guidance.
           files: |
             price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe
-            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.7.exe
+            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.8.exe
             price-aggregator/desktop/SHA256SUMS.txt
           fail_on_unmatched_files: true
           overwrite_files: true

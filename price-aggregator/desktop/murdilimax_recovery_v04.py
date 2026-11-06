@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""MURDILIMAX Recovery v0.7 graphical launcher (requires standard Python Tkinter).
+"""MURDILIMAX Recovery v0.8 graphical launcher (requires standard Python Tkinter).
 All scans local; no internet, accounts, payments or direct physical-device writing.
 """
 from __future__ import annotations
@@ -21,7 +21,7 @@ CATEGORIES=('Photos','Documents','Archives','Video','Audio','Crypto backups','Ot
 
 class App(tk.Tk):
     def __init__(self):
-        super().__init__();self.title('MURDILIMAX Recovery v0.7 — NTFS · exFAT · RAID6/10 · Safe imaging')
+        super().__init__();self.title('MURDILIMAX Recovery v0.8 — NTFS · exFAT · ext4 · RAID · Safe imaging')
         self.geometry('1180x800');self.minsize(900,650)
         self.busy=False
         self.configure(bg='#0b1121')
@@ -41,10 +41,10 @@ class App(tk.Tk):
     def layout(self):
         top=ttk.Frame(self,padding=(24,20,24,8));top.pack(fill='x')
         ttk.Label(top,text='◈  MURDILIMAX   RECOVERY',font=('Segoe UI',22,'bold')).pack(anchor='w')
-        ttk.Label(top,text='Recovery Engine 0.7    ·    NTFS / exFAT    ·    RAID 0/1/5/6/10    ·    safe imaging',font=('Segoe UI',10)).pack(anchor='w',pady=3)
+        ttk.Label(top,text='Recovery Engine 0.8    ·    NTFS / exFAT / ext4    ·    RAID 0/1/5/6/10    ·    safe imaging',font=('Segoe UI',10)).pack(anchor='w',pady=3)
         area=ttk.Frame(self,padding=(24,8));area.pack(fill='x')
         ttk.Label(area,text='SCAN MODE',font=('Segoe UI',9,'bold')).pack(anchor='w')
-        modes=[('metadata','Deleted files: NTFS / exFAT image'),('carve','Signature scan: JPG / PNG / PDF / ZIP'),('folder','Existing files / wallet backup filenames'),('physical','Physical HDD/USB (metadata)'),('physical-carve','Physical HDD/USB (signatures)')]
+        modes=[('metadata','NTFS/exFAT deleted files + ext4 existing files (image)'),('carve','Signature scan: JPG / PNG / PDF / ZIP'),('folder','Existing files / wallet backup filenames'),('physical','Physical HDD/USB (metadata)'),('physical-carve','Physical HDD/USB (signatures)')]
         for group in (modes[:3],modes[3:]):
             row=ttk.Frame(area);row.pack(fill='x',pady=(5,1))
             for value,label in group:
@@ -137,7 +137,7 @@ class App(tk.Tk):
     def raid_builder(self):
         if self.busy: return
         dialog=tk.Toplevel(self)
-        dialog.title('MURDILIMAX · Experimental RAID image builder 0.7')
+        dialog.title('MURDILIMAX · Experimental RAID image builder 0.8')
         dialog.geometry('780x670')
         dialog.transient(self)
         ttk.Label(dialog,text='Experimental RAID 0 / 1 / 5 / 6 / 10 image reconstruction',
@@ -417,7 +417,7 @@ class App(tk.Tk):
             try:
                 stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
                 reportpath=str(d/('MURDILIMAX-recovery-'+stamp+'.json'))
-                report={'application':'MURDILIMAX Recovery 0.6','created_utc':stamp,
+                report={'application':'MURDILIMAX Recovery 0.8','created_utc':stamp,
                         'source':str(src),'saved':saved,'errors':failed,'cancelled':cancelled,
                         'note':'Recovery report contains filenames and hashes; keep it private if filenames are sensitive.'}
                 with open(reportpath,'x',encoding='utf-8') as f:

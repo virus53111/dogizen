@@ -19,10 +19,15 @@ def _read_at(fp, offset, length, size):
 
 def _vbr(fp, at, size, sector=512):
     if at<0 or at+512>size:return None
+    # ext4 has no NTFS-style 0x55AA VBR signature. Inspect the superblock
+    # at the partition's +1024 offset before applying VBR-specific checks.
+    from murdilimax_ext4 import probe_ext4
+    length=probe_ext4(fp,at,size)
+    if length is not None:return ('ext4',length)
     buf=_read_at(fp,at,512,size)
     if buf[510:512]!=b'\x55\xaa':return None
     fs = 'NTFS' if buf[3:11]==b'NTFS    ' else 'exFAT' if buf[3:11]==b'EXFAT   ' else None
-    if not fs: return None
+    if not fs:return None
     if fs=='NTFS':
         sector_size=struct.unpack_from('<H',buf,11)[0]
         sectors_per_cluster=buf[13]
