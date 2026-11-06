@@ -1,398 +1,803 @@
 #!/usr/bin/env python3
-"""MURDILIMAX Crystal Qt desktop. Real read-only scanner, not a website demo."""
-from __future__ import annotations
-import os,sys,json,threading,subprocess,math
-from pathlib import Path
-from datetime import datetime,timezone
-from io import BytesIO
-from PySide6.QtCore import Qt,QSettings,QThread,Signal,QTimer,QPointF,QRectF
-from PySide6.QtGui import QColor,QPainter,QLinearGradient,QPen,QPolygonF,QPixmap
-from PySide6.QtWidgets import (QApplication,QMainWindow,QWidget,QFrame,QVBoxLayout,QHBoxLayout,QLabel,
- QPushButton,QCheckBox,QProgressBar,QTableWidget,QTableWidgetItem,QLineEdit,QComboBox,
- QFileDialog,QMessageBox,QInputDialog,QHeaderView,QAbstractItemView,QScrollArea)
-from murdilimax_engine import scan_image,recover,Candidate,ScanCancelled
-from murdilimax_recovery_alpha import scan_folder,carve_image,restore as restore_hit
-from murdilimax_preview import preview_bytes,decode_preview
-from murdilimax_devices import is_physical,enumerate_drives,destination_is_different_disk
-from murdilimax_deepcheck import assess_deep
-import murdilimax_recovery_v04
+"""MURDILIMAX Crystal Desktop (Qt 6). Real read-only recovery engine, no demo data.
 
-VERSION='0.10.0'
-CATS=('Photos','Documents','Archives','Video','Audio','Crypto backups','Other')
-WORDS={
-'ru':{'title':'Восстановление данных','intro':'Найдите потерянные файлы · локально и только для чтения',
-'choose':'ВЫБЕРИТЕ ИСТОЧНИК','image':'Образ диска','folder':'Папка','physical':'HDD / USB','none':'Источник не выбран',
-'types':'ТИПЫ ФАЙЛОВ','Photos':'Фото','Documents':'Документы','Archives':'Архивы','Video':'Видео','Audio':'Аудио','Crypto backups':'Кошельки','Other':'Другие',
-'start':'НАЧАТЬ СКАНИРОВАНИЕ','stop':'ОСТАНОВИТЬ','expert':'ЭКСПЕРТНЫЕ ФУНКЦИИ','results':'РЕЗУЛЬТАТЫ СКАНИРОВАНИЯ',
-'preview':'ПРЕДПРОСМОТР','recover':'ВОССТАНОВИТЬ ОТМЕЧЕННОЕ','photo':'ПОКАЗАТЬ ФОТО','name':'Имя файла','path':'Путь',
-'size':'Размер','type':'Тип','state':'Состояние','ready':'ГОТОВО К РАБОТЕ','working':'СКАНИРОВАНИЕ','done':'ЗАВЕРШЕНО',
-'search':'Поиск по файлам…','empty_preview':'Выберите файл в списке. Предпросмотр фото загружается локально.',
-'privacy':'Исходный диск только для чтения · Сохранение на другой носитель · Без облака',
-'meta':'NTFS / exFAT / ext4','carve':'JPG / PNG / PDF / ZIP','deep':'Искать потерянные разделы',
-'mft':'Поиск повреждённой MFT','select':'Выберите образ или папку','no_source':'Сначала выберите источник',
-'no_files':'Отметьте файлы галочками','output':'Сохраните файлы на другой физический диск',
-'warning':'Чтение физического диска может ухудшить неисправность. Для важных данных сначала снимите образ. Продолжить?',
-'unknown':'Состояние кластеров неизвестно, данные могут быть повреждены. Продолжить?',
-'error':'Ошибка','lang':'RU / EN','scan':'Сканирование','disks':'Диски','raid':'RAID / NAS','wallet':'Кошельки'},
-'en':{'title':'Data recovery','intro':'Recover important files · local and read-only',
-'choose':'CHOOSE SOURCE','image':'Disk image','folder':'Folder','physical':'HDD / USB','none':'No source selected',
-'types':'FILE CATEGORIES','Photos':'Photos','Documents':'Documents','Archives':'Archives','Video':'Video','Audio':'Audio','Crypto backups':'Wallet backups','Other':'Other',
-'start':'START SCANNING','stop':'STOP','expert':'EXPERT TOOLS','results':'SCAN RESULTS',
-'preview':'PREVIEW','recover':'RECOVER CHECKED','photo':'PREVIEW PHOTO','name':'Filename','path':'Path',
-'size':'Size','type':'Type','state':'Status','ready':'READY','working':'SCANNING','done':'COMPLETE',
-'search':'Search files…','empty_preview':'Select a file. Photo preview loads locally.',
-'privacy':'Read-only source · Recover to another device · No cloud',
-'meta':'NTFS / exFAT / ext4','carve':'JPG / PNG / PDF / ZIP','deep':'Find lost partitions',
-'mft':'Salvage damaged MFT','select':'Select an image or folder','no_source':'Choose a source first',
-'no_files':'Check at least one file','output':'Recover files to another physical device',
-'warning':'Reading an unstable drive can worsen failure. Image important disks first. Continue?',
-'unknown':'Some clusters have unknown state; output may be damaged. Continue?',
-'error':'Error','lang':'EN / RU','scan':'Scan','disks':'Disks','raid':'RAID / NAS','wallet':'Wallets'}}
-STYLE="""
-QWidget{font:12px 'Segoe UI';color:#EAF0FF;}
-QMainWindow,QWidget#root{background:#070B20;}
-QFrame#sidebar{background:#0A1130;border-right:1px solid #4B4E8B;}
-QFrame#panel{background:#131B3C;border:1px solid #5C589B;border-radius:15px;}
-QLabel#logo{font-size:19px;font-weight:900;color:#F5E8FF;}
-QLabel#heading{font-size:18px;font-weight:900;}
-QLabel#small{font-size:11px;font-weight:800;color:#B8C5EB;}
-QLabel#muted{color:#A2AFD1;}
-QPushButton{background:#1B2856;border:1px solid #6B73B4;color:white;font-weight:750;border-radius:11px;padding:9px;}
-QPushButton:hover{background:#35447E;border-color:#7CEBFF;}
-QPushButton#primary{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #7531D1,stop:.5 #9857E8,stop:1 #0B94B9);border:2px solid #C28DFF;font-size:15px;padding:12px;}
-QPushButton#primary:disabled{background:#282842;color:#999;}
-QPushButton#source{background:#171F4A;border:1px solid #7361AC;font-size:14px;padding:17px;}
-QPushButton#nav{text-align:left;background:transparent;border:0;padding:13px;}
-QPushButton#nav[selected='true']{background:#402871;border:1px solid #B37EFF;}
-QLineEdit,QComboBox{background:#0B1433;border:1px solid #535A9B;border-radius:8px;padding:8px;}
-QCheckBox{spacing:6px;}
-QCheckBox::indicator{width:15px;height:15px;border:1px solid #A084E4;border-radius:4px;background:#15234D;}
-QCheckBox::indicator:checked{background:#9C5FEA;border-color:#85F1FF;}
-QProgressBar{height:14px;background:#091339;border:1px solid #4853A1;border-radius:7px;text-align:center;}
-QProgressBar::chunk{background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #9A45EF,stop:1 #31DAF5);border-radius:7px;}
-QTableWidget{background:#101937;alternate-background-color:#182145;border:1px solid #414986;gridline-color:#25325B;selection-background-color:#53328A;}
-QHeaderView::section{background:#202956;color:#DFE9FF;padding:8px;border:0;}
-QScrollBar:vertical{background:#0F1735;width:10px;} QScrollBar::handle:vertical{background:#5D54A0;border-radius:5px;}
+New visual shell around the existing tested recovery modules. Windows x64 installer
+bundles Qt; users do not need to install Python. No network, telemetry, or secrets.
 """
-def display_size(n):
- n=float(n)
- for unit in ('B','KiB','MiB','GiB','TiB'):
-  if n<1024 or unit=='TiB':return f'{int(n)} B' if unit=='B' else f'{n:.1f} {unit}'
-  n/=1024
+from __future__ import annotations
+import json
+import math
+import os
+import sys
+import threading
+from datetime import datetime, timezone
+from io import BytesIO
+from pathlib import Path
 
-class Hero(QWidget):
- def __init__(self):
-  super().__init__();self.setMinimumHeight(150);self.tick=0
-  self.timer=QTimer(self);self.timer.timeout.connect(self.move);self.timer.start(120)
- def move(self):
-  if self.isVisible():self.tick+=.07;self.update()
- def paintEvent(self,event):
-  p=QPainter(self);p.setRenderHint(QPainter.RenderHint.Antialiasing)
-  w=self.width();h=self.height();g=QLinearGradient(0,0,w,h)
-  g.setColorAt(0,QColor('#1C164B'));g.setColorAt(.6,QColor('#0D3662'));g.setColorAt(1,QColor('#300F50'))
-  p.setPen(Qt.PenStyle.NoPen);p.setBrush(g);p.drawRoundedRect(QRectF(0,0,w,h),17,17)
-  for i in range(26):
-   x=(i*179+31)%max(w,1);y=(i*79+13)%max(h,1)
-   p.setOpacity(.3+.3*abs(math.sin(self.tick+i)))
-   p.setBrush(QColor('#E2C9FF' if i%2 else '#91F5FF'));p.drawEllipse(QPointF(x,y),1.4,1.4)
-  p.setOpacity(1)
-  for dx,c,d,hh in [(-77,'#9F51F1','#F6BAFF',93),(18,'#229EE2','#B8F7FF',132),(106,'#8B2CC8','#FAD6FF',86)]:
-   x=w*.81+dx;y=h*.94;r=hh*.35
-   top=QPointF(x,y-hh);left=QPointF(x-r,y-hh*.53);right=QPointF(x+r,y-hh*.56);mid=QPointF(x,y-hh*.38)
-   for points,col in [([top,left,mid],c),([top,mid,right],d),([left,QPointF(x-r*.6,y),mid],d),([right,mid,QPointF(x+r*.6,y)],c)]:
-    p.setPen(QPen(QColor('#E4BFFF'),1));p.setBrush(QColor(col));p.drawPolygon(QPolygonF(points))
-  p.end()
+from PySide6.QtCore import Qt, QSettings, Signal, QThread, QTimer, QPointF, QRectF
+from PySide6.QtGui import (QColor, QFont, QLinearGradient, QPainter, QPainterPath,
+                           QPen, QPixmap, QPolygonF, QBrush)
+from PySide6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QFrame, QVBoxLayout, QHBoxLayout, QLabel,
+    QPushButton, QCheckBox, QProgressBar, QLineEdit, QTableWidget, QTableWidgetItem,
+    QFileDialog, QMessageBox, QInputDialog, QDialog, QComboBox, QPlainTextEdit,
+    QHeaderView, QAbstractItemView, QScrollArea, QSizePolicy, QGraphicsDropShadowEffect,
+)
 
-class Worker(QThread):
- event=Signal(str,object)
- def __init__(self,kind,source,categories,deep=False,mft=False,selected=None,output=None):
-  super().__init__();self.kind=kind;self.source=source;self.categories=categories
-  self.deep=deep;self.mft=mft;self.selected=selected or [];self.output=output;self.stop=threading.Event()
- def run(self):
-  try:
-   if self.kind=='restore':
-    saved=[];errors=[]
-    for n,c in enumerate(self.selected):
-     if self.stop.is_set():break
-     try:
-      if isinstance(c,Candidate):
-       report=recover(self.source,c,self.output,allow_unknown=True,cancel=self.stop.is_set)
-       saved.append({'source':c.path,'result':report,'check':assess_deep(report['path'])})
-      else:
-       name,sha=restore_hit(c,self.output)
-       saved.append({'source':c.label,'result':{'path':name,'sha256':sha},'check':assess_deep(name)})
-     except ScanCancelled:self.stop.set();break
-     except Exception as e:errors.append(str(e))
-     self.event.emit('progress',int(100*(n+1)/len(self.selected)))
-    stamp=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
-    target=Path(self.output)/('MURDILIMAX-recovery-'+stamp+'.json')
-    target.write_text(json.dumps({'version':VERSION,'saved':saved,'errors':errors,'cancelled':self.stop.is_set()},ensure_ascii=False,indent=2),encoding='utf8')
-    self.event.emit('done',f'{len(saved)} saved; {len(errors)} errors. Report: {target}')
-   elif self.kind=='preview':
-    pic=decode_preview(preview_bytes(self.source,self.selected[0]))
-    buf=BytesIO();pic.save(buf,format='PNG');self.event.emit('preview',buf.getvalue())
-   elif self.kind in ('metadata','physical'):
-    def progress(a,b):
-     if self.stop.is_set():raise ScanCancelled('Cancelled')
-     self.event.emit('progress',int(a*100/max(1,b)))
-    found,vol,errors=scan_image(self.source,progress=progress,deep_partitions=self.deep,salvage_mft=self.mft)
-    count=0
-    for c in found:
-     if self.stop.is_set():break
-     if not c.is_dir and c.kind in self.categories:
-      count+=1
-      if count<=12000:self.event.emit('hit',c)
-    self.event.emit('done',f'{count} candidates · {len(vol)} volumes · '+'; '.join(errors[:2]))
-   else:
-    count=[0]
-    def bridge(typ,obj):
-     if typ=='hit':
-      category='Crypto backups' if obj.kind=='Crypto' else obj.kind
-      if category in self.categories:
-       count[0]+=1
-       if count[0]<=12000:self.event.emit('hit',obj)
-     elif typ=='progress':self.event.emit('progress',int(obj))
-    if self.kind=='folder':
-     chosen={'Crypto' if c=='Crypto backups' else c for c in self.categories}
-     scan_folder(self.source,chosen,self.stop,bridge)
-    else:carve_image(self.source,self.categories,self.stop,bridge)
-    self.event.emit('done',f'{count[0]} candidates')
-  except Exception as e:self.event.emit('error',str(e))
-  finally:self.event.emit('end',None)
+from murdilimax_engine import scan_image, recover, Candidate, ScanCancelled
+from murdilimax_recovery_alpha import scan_folder, carve_image, restore as restore_hit, Hit
+from murdilimax_devices import is_physical, enumerate_drives
+from murdilimax_imager import image_source, ImagingCancelled, SourceReadLimitExceeded
+from murdilimax_raid import assemble, RAID5_LAYOUTS
+from murdilimax_wallets import discover_wallet_backups
+from murdilimax_preview import preview_bytes, decode_preview
+from murdilimax_md import inspect_md_set, extract_md_member
+from murdilimax_deepcheck import assess_deep
+from murdilimax_crystal_logic import (
+    CATEGORIES, file_size, validate_source, safe_destination,
+    normalize_categories, supported_preview, recommendation_color, selected_items, read_visible_photo,
+)
 
-class Window(QMainWindow):
- def __init__(self):
-  super().__init__();self.store=QSettings('MURDILIMAX','Crystal')
-  self.lang=self.store.value('language','ru');self.lang=self.lang if self.lang in WORDS else 'ru'
-  self.source='';self.mode='metadata';self.entries=[];self.worker=None
-  self.setWindowTitle('MURDILIMAX Recovery — Crystal '+VERSION);self.resize(1390,870);self.setMinimumSize(1000,730)
-  self.build();self.translate()
- def t(self,k):return WORDS[self.lang].get(k,k)
- def label(self,s='',name=None):
-  l=QLabel(s)
-  if name:l.setObjectName(name)
-  return l
- def button(self,s,fn,name=None):
-  b=QPushButton(s);b.clicked.connect(fn)
-  if name:b.setObjectName(name)
-  return b
- def panel(self):
-  f=QFrame();f.setObjectName('panel');return f
- def build(self):
-  root=QWidget();root.setObjectName('root');self.setCentralWidget(root)
-  main=QHBoxLayout(root);main.setContentsMargins(0,0,0,0);main.setSpacing(0)
-  side=QFrame();side.setObjectName('sidebar');side.setFixedWidth(213);main.addWidget(side)
-  sv=QVBoxLayout(side);sv.setContentsMargins(14,24,14,19)
-  sv.addWidget(self.label('◇  MURDILIMAX','logo'))
-  sv.addWidget(self.label('     CRYSTAL RECOVERY','muted'));sv.addSpacing(33)
-  self.nav=[]
-  for symbol,key,fn in [('⌕','scan',lambda:None),('▣','disks',self.image_source),
-                         ('↺','recover',self.restore_checked),('◇','raid',self.expert_tools),
-                         ('▧','preview',self.preview_file),('♧','wallet',self.expert_tools)]:
-   b=self.button('',fn,'nav');self.nav.append((b,symbol,key));sv.addWidget(b)
-  self.nav[0][0].setProperty('selected','true')
-  sv.addStretch();sv.addWidget(self.label('✦    ◇    ✦','muted'));sv.addWidget(self.label('0.10.0 · OFFLINE','muted'))
-  scroll=QScrollArea();scroll.setWidgetResizable(True);scroll.setFrameShape(QFrame.Shape.NoFrame);main.addWidget(scroll,1)
-  page=QWidget();page.setObjectName('root');scroll.setWidget(page)
-  body=QVBoxLayout(page);body.setContentsMargins(19,17,19,13);body.setSpacing(13)
-  art=Hero();body.addWidget(art)
-  h=QVBoxLayout(art);h.setContentsMargins(25,25,25,22)
-  self.head=self.label();self.head.setStyleSheet('font-size:32px;font-weight:900;color:white;background:transparent')
-  self.intro=self.label();self.intro.setStyleSheet('color:#C6D8F7;background:transparent')
-  h.addWidget(self.head);h.addWidget(self.intro);h.addStretch()
-  src=self.panel();body.addWidget(src)
-  s=QVBoxLayout(src);s.setContentsMargins(17,12,17,15)
-  top=QHBoxLayout();self.srctitle=self.label('','small');top.addWidget(self.srctitle);top.addStretch()
-  self.langbtn=self.button('',self.change_lang);top.addWidget(self.langbtn);s.addLayout(top)
-  choices=QHBoxLayout();self.imagebtn=self.button('',self.image_source,'source')
-  self.folderbtn=self.button('',self.folder_source,'source');self.physicalbtn=self.button('',self.device_source,'source')
-  for b in (self.imagebtn,self.folderbtn,self.physicalbtn):choices.addWidget(b)
-  s.addLayout(choices)
-  self.source_label=self.label('','muted');self.source_label.setWordWrap(True);s.addWidget(self.source_label)
-  options=QHBoxLayout();self.modecombo=QComboBox();self.modecombo.addItem('',userData='metadata');self.modecombo.addItem('',userData='carve')
-  self.modecombo.currentIndexChanged.connect(self.mode_changed);options.addWidget(self.modecombo)
-  self.deep=QCheckBox();self.deep.setChecked(True);options.addWidget(self.deep)
-  self.mft=QCheckBox();self.mft.setChecked(True);options.addWidget(self.mft);options.addStretch();s.addLayout(options)
-  self.cathead=self.label('','small');s.addWidget(self.cathead)
-  catrow=QHBoxLayout();self.categories={}
-  for cat in CATS:
-   cb=QCheckBox();cb.setChecked(cat in ('Photos','Documents','Archives','Crypto backups'))
-   cb.setStyleSheet('QCheckBox{background:#2A235B;border:1px solid #7A55A9;border-radius:12px;padding:7px}')
-   self.categories[cat]=cb;catrow.addWidget(cb)
-  s.addLayout(catrow)
-  buttons=QHBoxLayout();self.scanbtn=self.button('',self.scan,'primary');buttons.addWidget(self.scanbtn,3)
-  self.stopbtn=self.button('',self.stop);buttons.addWidget(self.stopbtn)
-  self.expertbtn=self.button('',self.expert_tools);buttons.addWidget(self.expertbtn);s.addLayout(buttons)
-  progress_panel=self.panel();body.addWidget(progress_panel)
-  ps=QHBoxLayout(progress_panel)
-  gem=self.label('◇');gem.setStyleSheet('font-size:42px;color:#75E8FF');ps.addWidget(gem)
-  pv=QVBoxLayout();self.state_label=self.label('','small');pv.addWidget(self.state_label)
-  self.progress=QProgressBar();pv.addWidget(self.progress)
-  self.detail=self.label('','muted');self.detail.setWordWrap(True);pv.addWidget(self.detail);ps.addLayout(pv,1)
-  self.count=self.label('0','heading');ps.addWidget(self.count)
-  mid=QHBoxLayout();body.addLayout(mid,1)
-  result_panel=self.panel();mid.addWidget(result_panel,4)
-  rv=QVBoxLayout(result_panel);rh=QHBoxLayout();self.resulttitle=self.label('','small');rh.addWidget(self.resulttitle)
-  rh.addStretch();self.search=QLineEdit();self.search.setFixedWidth(200);self.search.textChanged.connect(self.filter);rh.addWidget(self.search);rv.addLayout(rh)
-  self.table=QTableWidget(0,5);self.table.setAlternatingRowColors(True);self.table.verticalHeader().hide()
-  self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
-  self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-  self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-  self.table.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
-  for i,width in enumerate((220,170,75,100,95)):
-   if i:self.table.setColumnWidth(i,width)
-  self.table.setMinimumHeight(210);self.table.itemSelectionChanged.connect(self.describe);rv.addWidget(self.table,1)
-  pre=self.panel();pre.setMinimumWidth(230);mid.addWidget(pre,2)
-  vp=QVBoxLayout(pre);self.previewtitle=self.label('','small');vp.addWidget(self.previewtitle)
-  self.photo=QLabel();self.photo.setAlignment(Qt.AlignmentFlag.AlignCenter);self.photo.setWordWrap(True)
-  self.photo.setMinimumHeight(170);self.photo.setStyleSheet('background:#0B1536;border:1px solid #46578E;border-radius:10px;padding:10px')
-  vp.addWidget(self.photo,3);self.info=self.label('','muted');self.info.setWordWrap(True);vp.addWidget(self.info,1)
-  self.photobtn=self.button('',self.preview_file);vp.addWidget(self.photobtn)
-  footer=QHBoxLayout();body.addLayout(footer)
-  self.restorebtn=self.button('',self.restore_checked,'primary');footer.addWidget(self.restorebtn,3)
-  self.advbtn=self.button('',self.expert_tools);footer.addWidget(self.advbtn)
-  self.privacy=self.label('','muted');self.privacy.setAlignment(Qt.AlignmentFlag.AlignCenter);body.addWidget(self.privacy)
-  self.setStyleSheet(STYLE);self.busy(False)
- def translate(self):
-  self.head.setText(self.t('title'));self.intro.setText(self.t('intro'))
-  for b,sym,key in self.nav:b.setText(sym+'   '+self.t(key))
-  self.srctitle.setText(self.t('choose'));self.langbtn.setText(self.t('lang'))
-  self.imagebtn.setText('◈  '+self.t('image'));self.folderbtn.setText('▤  '+self.t('folder'))
-  self.physicalbtn.setText('▣  '+self.t('physical'))
-  if not self.source:self.source_label.setText(self.t('none'))
-  self.modecombo.setItemText(0,self.t('meta'));self.modecombo.setItemText(1,self.t('carve'))
-  self.deep.setText(self.t('deep'));self.mft.setText(self.t('mft'));self.cathead.setText(self.t('types'))
-  for cat,cb in self.categories.items():cb.setText(self.t(cat))
-  self.scanbtn.setText('◈  '+self.t('start'));self.stopbtn.setText(self.t('stop'))
-  self.expertbtn.setText(self.t('expert'));self.advbtn.setText(self.t('expert'))
-  if self.worker is None:self.state_label.setText(self.t('ready'))
-  self.resulttitle.setText(self.t('results'));self.search.setPlaceholderText(self.t('search'))
-  for i,k in enumerate(('name','path','size','type','state')):self.table.setHorizontalHeaderItem(i,QTableWidgetItem(self.t(k)))
-  self.previewtitle.setText(self.t('preview'));self.photobtn.setText(self.t('photo'))
-  if not self.entries:self.photo.setText(self.t('empty_preview'))
-  self.restorebtn.setText('↺  '+self.t('recover'));self.privacy.setText(self.t('privacy'))
- def change_lang(self):
-  self.lang='en' if self.lang=='ru' else 'ru';self.store.setValue('language',self.lang);self.translate()
- def busy(self,flag):
-  for b in (self.scanbtn,self.imagebtn,self.folderbtn,self.physicalbtn,self.expertbtn,self.restorebtn,self.photobtn,self.advbtn):b.setEnabled(not flag)
-  self.stopbtn.setEnabled(flag)
- def mode_changed(self):
-  if self.mode=='folder':return
-  if self.mode.startswith('physical'):self.mode='physical' if self.modecombo.currentIndex()==0 else 'physical-carve'
-  else:self.mode=self.modecombo.currentData()
- def image_source(self):
-  if self.worker:return
-  p,_=QFileDialog.getOpenFileName(self,self.t('select'),'','Raw images (*.img *.dd *.bin *.raw);;All files (*)')
-  if p:self.source=p;self.mode=self.modecombo.currentData();self.source_label.setText('◈ '+p)
- def folder_source(self):
-  if self.worker:return
-  p=QFileDialog.getExistingDirectory(self,self.t('select'))
-  if p:self.source=p;self.mode='folder';self.source_label.setText('▤ '+p)
- def device_source(self):
-  if self.worker:return
-  drives=enumerate_drives()
-  if not drives:QMessageBox.information(self,'HDD/USB','No available Windows physical disks');return
-  names=[d['path']+' · '+display_size(d['size']) for d in drives]
-  name,ok=QInputDialog.getItem(self,self.t('physical'),self.t('select'),names,0,False)
-  if not ok:return
-  if QMessageBox.warning(self,'READ ONLY',self.t('warning'),QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
-  self.source=drives[names.index(name)]['path']
-  self.mode='physical' if self.modecombo.currentIndex()==0 else 'physical-carve'
-  self.source_label.setText('▣ '+name)
- def selected_cats(self):return {k for k,v in self.categories.items() if v.isChecked()}
- def run_worker(self,job):
-  self.worker=job;job.event.connect(self.on_event);job.finished.connect(self.task_end)
-  self.busy(True);self.progress.setRange(0,100);self.progress.setValue(0);job.start()
- def task_end(self):
-  w=self.worker;self.worker=None;self.busy(False)
-  if w:w.deleteLater()
- def stop(self):
-  if self.worker:self.worker.stop.set()
- def scan(self):
-  if self.worker:return
-  if not self.source:QMessageBox.warning(self,self.t('error'),self.t('no_source'));return
-  valid=Path(self.source).is_dir() if self.mode=='folder' else is_physical(self.source) if self.mode.startswith('physical') else Path(self.source).is_file()
-  if not valid:QMessageBox.warning(self,self.t('error'),'Source does not exist');return
-  if not self.selected_cats():QMessageBox.warning(self,self.t('error'),self.t('types'));return
-  self.entries.clear();self.table.setRowCount(0);self.count.setText('0')
-  self.photo.clear();self.photo.setText(self.t('empty_preview'));self.state_label.setText(self.t('working'))
-  self.run_worker(Worker(self.mode,self.source,self.selected_cats(),self.deep.isChecked(),self.mft.isChecked()))
- def on_event(self,key,obj):
-  if key=='hit':
-   if len(self.entries)>=12000:return
-   i=len(self.entries);self.entries.append(obj);self.table.insertRow(i)
-   if isinstance(obj,Candidate):name,path,kind,state=obj.name,obj.path,obj.kind,obj.state
-   else:name,path,kind,state=Path(obj.label).name,obj.label,obj.kind,'candidate'
-   for j,value in enumerate((name,path,display_size(obj.size),self.t(kind),state)):
-    cell=QTableWidgetItem(value)
-    if j==0:
-     cell.setFlags(cell.flags()|Qt.ItemFlag.ItemIsUserCheckable)
-     cell.setCheckState(Qt.CheckState.Unchecked)
-    if j==4:cell.setForeground(QColor('#79F1D1' if state=='free' else '#E8C68C'))
-    self.table.setItem(i,j,cell)
-   self.count.setText(str(len(self.entries)))
-  elif key=='progress':self.progress.setValue(max(0,min(100,int(obj))))
-  elif key=='done':
-   self.state_label.setText(self.t('done'));self.detail.setText(str(obj));self.progress.setValue(100)
-  elif key=='preview':
-   pix=QPixmap();pix.loadFromData(obj,'PNG')
-   self.photo.setPixmap(pix.scaled(320,240,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
-  elif key=='error':
-   self.detail.setText(str(obj));QMessageBox.warning(self,self.t('error'),str(obj))
- def filter(self,text):
-  q=text.casefold()
-  for i,item in enumerate(self.entries):
-   name=item.path if isinstance(item,Candidate) else item.label
-   self.table.setRowHidden(i,q not in name.casefold())
- def describe(self):
-  indexes=self.table.selectionModel().selectedRows() if self.table.selectionModel() else []
-  if not indexes:return
-  i=indexes[0].row()
-  if i>=len(self.entries):return
-  c=self.entries[i];self.photo.setPixmap(QPixmap());self.photo.setText(self.t('empty_preview'))
-  self.info.setText((c.path if isinstance(c,Candidate) else c.label)+'\n'+display_size(c.size)+
-                    (' · '+c.state if isinstance(c,Candidate) else ''))
- def preview_file(self):
-  if self.worker:return
-  rows=self.table.selectionModel().selectedRows() if self.table.selectionModel() else []
-  if len(rows)!=1:return
-  item=self.entries[rows[0].row()]
-  if not isinstance(item,Candidate) or Path(item.name).suffix.lower() not in ('.jpg','.jpeg','.png','.gif','.webp'):
-   QMessageBox.information(self,self.t('preview'),'Select one photo found via filesystem metadata');return
-  self.run_worker(Worker('preview',self.source,set(),selected=[item]))
- def restore_checked(self):
-  if self.worker:return
-  selected=[c for i,c in enumerate(self.entries) if self.table.item(i,0) and self.table.item(i,0).checkState()==Qt.CheckState.Checked]
-  if not selected:QMessageBox.information(self,self.t('recover'),self.t('no_files'));return
-  out=QFileDialog.getExistingDirectory(self,self.t('output'))
-  if not out:return
-  if is_physical(self.source):
-   if not destination_is_different_disk(self.source,out):
-    QMessageBox.warning(self,self.t('error'),'Different destination disk cannot be verified; blocked');return
-  else:
-   src=Path(self.source).resolve();dst=Path(out).resolve()
-   if (src.is_dir() and (src==dst or src in dst.parents)) or (src.is_file() and dst==src.parent):
-    QMessageBox.warning(self,self.t('error'),'Output must not overwrite source');return
-  if any(isinstance(c,Candidate) and c.state=='unknown' for c in selected):
-   if QMessageBox.warning(self,self.t('recover'),self.t('unknown'),QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
-  self.state_label.setText(self.t('recover'))
-  self.run_worker(Worker('restore',self.source,set(),selected=selected,output=out))
- def expert_tools(self):
-  if self.worker:return
-  args=[sys.executable]
-  if not getattr(sys,'frozen',False):args.append(str(Path(__file__).resolve()))
-  args.append('--legacy')
-  try:subprocess.Popen(args)
-  except OSError as e:QMessageBox.warning(self,self.t('error'),str(e))
- def closeEvent(self,e):
-  if self.worker and self.worker.isRunning():
-   QMessageBox.warning(self,self.t('error'),self.t('stop'));e.ignore()
-  else:e.accept()
+VERSION='0.10.1'
+BG='#070B20'
+PANEL='#111937'
+VIOLET='#B87AFF'
+CYAN='#55E5FF'
+TEXT='#F1F2FF'
+MUTED='#9FA9D2'
+MAX_VISIBLE=12000
+
+TR={
+'ru':{
+ 'title':'Восстановление данных','subtitle':'Верни важные файлы. Прозрачный локальный анализ без облака.',
+ 'scan':'Сканирование','disks':'Диски','restore':'Восстановление','raid':'RAID / NAS',
+ 'preview':'Предпросмотр','wallet':'Кошельки','reports':'Отчёты','settings':'Настройки',
+ 'source_title':'ВЫБЕРИТЕ ИСТОЧНИК ДЛЯ АНАЛИЗА','image_card':'Образ диска','folder_card':'Папка','physical_card':'HDD / USB',
+ 'source_empty':'Источник ещё не выбран','refresh':'Выбрать другой','categories':'ТИПЫ ФАЙЛОВ ДЛЯ ПОИСКА',
+ 'Photos':'Фото','Documents':'Документы','Archives':'Архивы','Video':'Видео','Audio':'Аудио',
+ 'Crypto backups':'Криптокошельки','Other':'Другие','start':'◈  НАЧАТЬ СКАНИРОВАНИЕ',
+ 'stop':'■  ОСТАНОВИТЬ','image_action':'▣  СОЗДАТЬ ОБРАЗ','raid_action':'◇  СОБРАТЬ RAID',
+ 'scan_status':'Ожидание источника','scan_sub':'Результаты появятся после настоящего сканирования',
+ 'scanning':'СКАНИРОВАНИЕ ИСТОЧНИКА','imaging':'СОЗДАНИЕ ОБРАЗА','recovering':'ВОССТАНОВЛЕНИЕ ФАЙЛОВ',
+ 'idle':'ГОТОВО К РАБОТЕ','found':'НАЙДЕНО ФАЙЛОВ','results':'РЕЗУЛЬТАТЫ СКАНИРОВАНИЯ',
+ 'search':'Поиск по результатам…','name':'Имя файла','location':'Путь / расположение',
+ 'size':'Размер','type':'Тип','condition':'Состояние','preview_title':'ПРЕДПРОСМОТР',
+ 'preview_empty':'Выберите фотографию из списка.\nИзображение загрузится локально.',
+ 'preview_note':'Предпросмотр не гарантирует целостность файла.',
+ 'restore_selected':'↺  ВОССТАНОВИТЬ ОТМЕЧЕННОЕ','advisor':'✧  СОВЕТ ПО ВОССТАНОВЛЕНИЮ',
+ 'report_button':'▤  ОТКРЫТЬ ОТЧЁТ','privacy':'◈  Только чтение источника  ·  Результаты на другой диск  ·  Без передачи данных',
+ 'confirm_physical':'Чтение физического диска может ухудшить состояние неисправного оборудования. Используйте образ для важных данных. Продолжить?',
+ 'confirm_unknown':'Некоторые файлы имеют неизвестное состояние кластеров. Они могут быть повреждены. Всё равно попробовать?',
+ 'choose_source':'Выберите образ / диск / папку','choose_output':'Выберите папку на ДРУГОМ физическом носителе',
+ 'choose_image_output':'Сохраните новый образ на ДРУГОМ физическом диске',
+ 'no_file':'Отметьте хотя бы один файл в результатах.','no_source':'Сначала выберите источник.',
+ 'no_categories':'Выберите хотя бы одну категорию файлов.','error':'Ошибка','complete':'Операция завершена',
+ 'no_preview':'Выберите одну фотографию из результатов или из выбранной папки.',
+ 'wallet_title':'ПОИСК РЕЗЕРВНЫХ КОПИЙ КОШЕЛЬКОВ','wallet_warning':'Проверяются только названия файлов, без чтения ключей и seed-фраз.',
+ 'start_wallet':'Искать названия в выбранной папке','settings_title':'Настройки интерфейса',
+ 'language':'Язык','motion':'Анимированный фон','warnings':'Данные могут быть повреждены: используйте копии и проверяйте восстановленные файлы.',
+ 'confirm_reset':'Выйти сейчас нельзя: операция ещё выполняется. Нажмите «Остановить» и дождитесь её окончания.',
+ 'no_report':'Отчёт ещё не создан. Сначала восстановите хотя бы один файл.',
+ 'scan_finished':'Сканирование завершено','recovery_finished':'Восстановление завершено',
+ 'validating':'Проверка файлов и создание локального отчёта…','selected':'Выбрано','working':'Операция выполняется…',
+ 'raid_help':'Используйте только заранее созданные ОБРАЗЫ участников, не физические HDD. Порядок дисков и размер блока должны быть известны. RAID6 — только фиксированные P/Q, RAID10 — только near-2.',
+ 'raid_members':'Пути образов по порядку, по одному на строку. «-» — отсутствующий диск:',
+ 'add_member':'Добавить образ','build_raid':'Собрать новый образ','cancel':'Отмена','ok':'ОК',
+ 'source_mode':'Режим сканирования','metadata_mode':'По метаданным NTFS/exFAT/ext4','carve_mode':'По сигнатурам JPG/PNG/PDF/ZIP',
+ 'folder_mode':'Обычные файлы в папке','deep_mode':'Поиск потерянных разделов (медленнее)',
+ 'mft_mode':'Поиск повреждённых записей NTFS (экспериментально)',
+ 'device_select':'Выберите физический диск Windows','local_advice':'Локальные рекомендации, не диагноз и не ИИ.',
+},
+'en':{
+ 'title':'Data recovery','subtitle':'Bring important files back. Transparent offline analysis, no cloud.',
+ 'scan':'Scan','disks':'Disks','restore':'Recovery','raid':'RAID / NAS',
+ 'preview':'Preview','wallet':'Wallets','reports':'Reports','settings':'Settings',
+ 'source_title':'CHOOSE A SOURCE TO ANALYZE','image_card':'Disk image','folder_card':'Folder','physical_card':'HDD / USB',
+ 'source_empty':'No source selected','refresh':'Choose another','categories':'SEARCH FILE CATEGORIES',
+ 'Photos':'Photos','Documents':'Documents','Archives':'Archives','Video':'Video','Audio':'Audio',
+ 'Crypto backups':'Crypto backups','Other':'Other','start':'◈  START SCANNING',
+ 'stop':'■  STOP','image_action':'▣  MAKE DISK IMAGE','raid_action':'◇  RAID BUILDER',
+ 'scan_status':'Waiting for source','scan_sub':'Actual results will appear after a real scan',
+ 'scanning':'SCANNING SOURCE','imaging':'ACQUIRING DISK IMAGE','recovering':'RECOVERING FILES',
+ 'idle':'READY','found':'FILES FOUND','results':'SCAN RESULTS',
+ 'search':'Search results…','name':'File name','location':'Path / location',
+ 'size':'Size','type':'Type','condition':'Condition','preview_title':'PREVIEW',
+ 'preview_empty':'Select a photo result.\nThe preview is loaded locally.',
+ 'preview_note':'A preview is not proof of full file integrity.',
+ 'restore_selected':'↺  RECOVER CHECKED FILES','advisor':'✧  RECOVERY GUIDANCE',
+ 'report_button':'▤  OPEN REPORT','privacy':'◈  Source read only  ·  Recover to a different disk  ·  No data uploads',
+ 'confirm_physical':'Reading a physical disk can worsen hardware failure. Image important drives first. Continue?',
+ 'confirm_unknown':'Some candidates have unknown allocation status and may be damaged. Recover anyway?',
+ 'choose_source':'Select disk image / physical device / folder','choose_output':'Choose output folder on ANOTHER physical disk',
+ 'choose_image_output':'Save a NEW image on a DIFFERENT physical disk',
+ 'no_file':'Check at least one file in the results.','no_source':'Choose a source first.',
+ 'no_categories':'Choose at least one file category.','error':'Error','complete':'Operation complete',
+ 'no_preview':'Choose one found photo or an existing photo from a selected folder.',
+ 'wallet_title':'WALLET BACKUP FILENAME FINDER','wallet_warning':'Only filenames are inspected; no seed phrases or keys are accessed.',
+ 'start_wallet':'Search filenames in selected folder','settings_title':'Interface settings',
+ 'language':'Language','motion':'Animated backdrop','warnings':'Recovery results may be corrupt; work from a copy and verify extracted files.',
+ 'confirm_reset':'An operation is still running. Press Stop and wait for it to finish before exiting.',
+ 'no_report':'No report created yet. Recover a file first.',
+ 'scan_finished':'Scan complete','recovery_finished':'Recovery finished',
+ 'validating':'Checking files and writing a local report…','selected':'Selected','working':'Operation in progress…',
+ 'raid_help':'Use previously acquired member IMAGES only, never physical disks. Member order and chunk size must be known. RAID6 fixed P/Q only, RAID10 near-2 only.',
+ 'raid_members':'Member image paths in physical order, one per line. Use "-" for a missing member:',
+ 'add_member':'Add image','build_raid':'Build new image','cancel':'Cancel','ok':'OK',
+ 'source_mode':'Scan mode','metadata_mode':'NTFS/exFAT/ext4 metadata','carve_mode':'JPG/PNG/PDF/ZIP signatures',
+ 'folder_mode':'Visible files in a folder','deep_mode':'Find lost partitions (slower)',
+ 'mft_mode':'Damaged NTFS record salvage (experimental)',
+ 'device_select':'Select Windows physical disk','local_advice':'Local rule-based guidance, not AI or diagnosis.',
+}}
+
+
+def tr(lang:str,key:str)->str:
+    return TR.get(lang,TR['ru']).get(key,key)
+
+
+class CrystalBanner(QWidget):
+    """Vector crystal art, resolution independent, optional low-power shimmer."""
+    def __init__(self,parent=None):
+        super().__init__(parent)
+        self.setMinimumHeight(150)
+        self.phase=0.0
+        self.animated=True
+        self.timer=QTimer(self)
+        self.timer.timeout.connect(self.advance)
+        self.timer.start(95)
+    def advance(self):
+        if self.animated and self.isVisible():
+            self.phase+=.07
+            self.update()
+    def paintEvent(self,event):
+        p=QPainter(self);p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        r=self.rect();w=r.width();h=r.height()
+        g=QLinearGradient(0,0,w,h)
+        g.setColorAt(0,QColor('#1A1A53'));g.setColorAt(.6,QColor('#112C60'));g.setColorAt(1,QColor('#2C1058'))
+        p.setBrush(g);p.setPen(Qt.PenStyle.NoPen);p.drawRoundedRect(QRectF(r),22,22)
+        p.setClipPath(self.rounded_path(w,h))
+        for k in range(32):
+            x=(k*157+45)%max(1,w);y=(k*71+12)%max(1,h)
+            opacity=.29+.21*math.sin(self.phase+k)
+            p.setOpacity(opacity)
+            p.setBrush(QColor('#9FEAFF') if k%2 else QColor('#FFE5FF'))
+            rr=1+(k%3)
+            p.drawEllipse(QPointF(x,y),rr,rr)
+        p.setOpacity(1)
+        cx=w*.82;by=h*.91
+        self.crystal(p,cx-95,by,54,108,'#5535E9','#A46EFF','#F4D9FF')
+        self.crystal(p,cx+12,by,80,146,'#1672CC','#50E7FF','#F5FFFF')
+        self.crystal(p,cx+105,by,48,92,'#8A26BB','#E077FF','#FFE5FF')
+        ring=QPen(QColor(116,237,255,170),2);p.setPen(ring);p.setBrush(Qt.BrushStyle.NoBrush)
+        p.drawEllipse(QRectF(cx-145,by-90,270,66))
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(92,222,255,40));p.drawEllipse(QRectF(cx-150,by-38,300,66))
+        p.end()
+    def crystal(self,p,x,y,w,h,dark,light,shine):
+        a=QPointF(x,y-h);b=QPointF(x-w*.56,y-h*.55);c=QPointF(x+w*.54,y-h*.55)
+        d=QPointF(x-w*.4,y);e=QPointF(x+w*.4,y);mid=QPointF(x,y-h*.42)
+        for poly,color in [([a,b,mid],light),([a,mid,c],shine),([b,d,mid],dark),([mid,d,e],light),([mid,e,c],dark)]:
+            p.setPen(QPen(QColor(221,190,255,185),1))
+            p.setBrush(QColor(color));p.drawPolygon(QPolygonF(poly))
+    def rounded_path(self,w,h):
+        path=QPainterPath();path.addRoundedRect(QRectF(0,0,w,h),22,22);return path
+
+
+class Job(QThread):
+    message=Signal(str,object)
+    def __init__(self,kind:str,payload:dict,parent=None):
+        super().__init__(parent);self.kind=kind;self.payload=payload;self.stop=threading.Event()
+    def send(self,key,obj):
+        self.message.emit(key,obj)
+    def run(self):
+        p=self.payload
+        try:
+            if self.kind=='scan':
+                chosen=p['categories'];mode=p['mode'];src=p['source'];seen=0
+                if mode in ('metadata','physical'):
+                    def progress(a,b):
+                        if self.stop.is_set():raise ScanCancelled('Cancelled')
+                        self.send('progress',int(a*100/max(1,b)))
+                    candidates,volumes,errors=scan_image(src,progress=progress,
+                        deep_partitions=p['deep'],salvage_mft=p['mft'])
+                    for item in candidates:
+                        if self.stop.is_set():break
+                        if item.kind in chosen and not item.is_dir:
+                            seen+=1
+                            if seen<=MAX_VISIBLE:self.send('found',item)
+                    self.send('scan_done',{'found':seen,'volumes':len(volumes),'errors':errors,'cancelled':self.stop.is_set()})
+                else:
+                    def bridge(event,obj):
+                        nonlocal seen
+                        if event=='hit':
+                            category='Crypto backups' if obj.kind=='Crypto' else obj.kind
+                            if category in chosen:
+                                seen+=1
+                                if seen<=MAX_VISIBLE:self.send('found',obj)
+                        elif event=='progress':self.send('progress',int(obj))
+                    if mode=='folder':
+                        chosen={'Crypto' if x=='Crypto backups' else x for x in chosen}
+                        scan_folder(src,chosen,self.stop,bridge)
+                    else:
+                        carve_image(src,chosen,self.stop,bridge)
+                    self.send('scan_done',{'found':seen,'volumes':0,'errors':[],'cancelled':self.stop.is_set()})
+            elif self.kind=='recover':
+                saved=[];errors=[];items=p['items'];dst=p['destination'];src=p['source']
+                for index,item in enumerate(items):
+                    if self.stop.is_set():break
+                    try:
+                        if isinstance(item,Candidate):
+                            result=recover(src,item,dst,allow_unknown=True,cancel=self.stop.is_set)
+                            path=result['path'];saved.append({'source':item.path,'result':result,'validation':assess_deep(path)})
+                        else:
+                            path,sha=restore_hit(item,dst)
+                            saved.append({'source':item.label,'result':{'path':path,'sha256':sha},'validation':assess_deep(path)})
+                    except ScanCancelled:
+                        self.stop.set();break
+                    except Exception as exc:
+                        errors.append(f'{getattr(item,"name",getattr(item,"label","file"))}: {exc}')
+                    self.send('progress',int((index+1)*100/max(1,len(items))))
+                now=datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+                report=Path(dst)/('MURDILIMAX-recovery-'+now+'.json')
+                content={'application':f'MURDILIMAX Recovery {VERSION}','created_utc':now,'source':src,
+                    'saved':saved,'errors':errors,'cancelled':self.stop.is_set(),
+                    'note':'Local report; filenames and hashes may be sensitive. No cloud upload.'}
+                try:
+                    with report.open('x',encoding='utf-8') as f:json.dump(content,f,ensure_ascii=False,indent=2)
+                except OSError as exc:errors.append('Report: '+str(exc));report=None
+                self.send('recover_done',{'saved':len(saved),'errors':errors,'report':str(report) if report else '',
+                    'cancelled':self.stop.is_set()})
+            elif self.kind=='image':
+                result=image_source(p['source'],p['destination'],cancel=self.stop,
+                    progress=lambda done,total,bad:self.send('image_progress',(done,total,bad)),
+                    allow_resume_physical=p.get('resume_physical',False))
+                self.send('image_done',result)
+            elif self.kind=='preview':
+                item=p['item']
+                if isinstance(item,Candidate):
+                    raw=preview_bytes(p['source'],item)
+                elif isinstance(item,Hit) and not item.carved and p.get('mode')=='folder':
+                    raw=read_visible_photo(item.source,item.size)
+                else:
+                    raise ValueError('Preview is supported for discovered photos only')
+                pic=decode_preview(raw,width=700,height=540)
+                output=BytesIO();pic.save(output,format='PNG')
+                self.send('preview_done',output.getvalue())
+            elif self.kind=='wallet':
+                result=discover_wallet_backups(p['source'],cancelled=self.stop.is_set)
+                self.send('wallet_done',result)
+            elif self.kind=='md_extract':
+                result=extract_md_member(p['source'],p['destination'])
+                self.send('md_extract_done',result)
+            elif self.kind=='raid':
+                out=assemble(p['members'],p['destination'],p['level'],p['chunk'],
+                    p['verify'],layout=p['layout'],progress=lambda a,b:self.send('progress',int(100*a/max(1,b))))
+                self.send('raid_done',out)
+        except (ScanCancelled,ImagingCancelled) as exc:
+            self.send('paused',str(exc))
+        except (Exception,SourceReadLimitExceeded) as exc:
+            self.send('failed',str(exc))
+        finally:
+            self.send('task_end',None)
+
+
+QSS=r"""
+QWidget { color: #F1F2FF; font-family: 'Segoe UI', 'Arial'; font-size: 12px; }
+QMainWindow, QWidget#root { background: #070B20; }
+QFrame#sidebar { background: #0A102C; border-right: 1px solid #353D82; }
+QLabel#brand { font-size: 21px; font-weight: 900; color: #F9F0FF; }
+QLabel#tagline { color: #9DCAFF; font-size: 11px; }
+QPushButton#nav { text-align: left; background: transparent; color:#C5CCEE; border: 0; border-radius: 12px; padding: 13px 16px; font-weight:650; }
+QPushButton#nav:hover { background:#202455; color:white; }
+QPushButton#nav[active="true"] { background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #6132A7,stop:.6 #363D98,stop:1 #135E95); border:1px solid #B47AFF; color:white; }
+QFrame#panel { background:#111936; border:1px solid #3D4A88; border-radius:17px; }
+QFrame#smallpanel { background:#121B3E; border:1px solid #474E92; border-radius:13px; }
+QLabel#section { color:#B9C5EF; font-weight:800; letter-spacing:1.1px; }
+QLabel#muted { color: #A7B3D6; }
+QLabel#counter { color: #E8D3FF; font-size: 20px; font-weight:900; }
+QPushButton#source { background:qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #27215A,stop:1 #10274A); border:1px solid #55599B; border-radius:13px; padding:17px 9px; font-weight:800; font-size:15px; }
+QPushButton#source:hover { border:2px solid #67EAFF; background:#26377D; }
+QPushButton#primary { color:#FAF7FF; background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #7F3BD8,stop:.5 #9F62F0,stop:1 #148DC0); border:2px solid #C99AFF; border-radius:14px; padding:12px 20px; font-size:16px; font-weight:900; }
+QPushButton#primary:hover { background:#8E57DE; border:2px solid #82EDFF; }
+QPushButton#primary:disabled { color:#7787AD; border-color:#55577B; background:#252744; }
+QPushButton#secondary { color:#DEF0FF; background:#1A2550; border:1px solid #688BCC; border-radius:12px; padding:10px 13px; font-weight:800; }
+QPushButton#secondary:hover { border-color:#74E7FF; background:#29386D; }
+QPushButton#secondary:disabled { color:#7C84A1; background:#1A1C35; }
+QPushButton#danger { color:#F8C5D9; border:1px solid #A15378; background:#2B183A; border-radius:12px; padding:10px 13px; font-weight:800; }
+QPushButton#danger:disabled { color:#686A89; }
+QLineEdit, QComboBox, QPlainTextEdit { color:#F0F3FF; background:#0A1230; border:1px solid #4D548C; border-radius:9px; padding:7px; selection-background-color:#6437AA; }
+QCheckBox { color:#C4C9E9; spacing:7px; }
+QCheckBox::indicator { width:16px; height:16px; border:1px solid #A080E8; border-radius:5px; background:#17244A; }
+QCheckBox::indicator:checked { background:#8755DF; border:2px solid #80E9FF; }
+QProgressBar { border:1px solid #515C9E; border-radius:8px; background:#0A1233; height:16px; text-align:center; font-weight:800; }
+QProgressBar::chunk { background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #923AE1,stop:.5 #A866FA,stop:1 #34DBF1); border-radius:8px; }
+QTableWidget { background:#0D1633; alternate-background-color:#151E40; color:#DCE7FF; border:1px solid #4A568B; border-radius:12px; gridline-color:#29385D; selection-background-color:#4B3384; selection-color:#FFF; }
+QHeaderView::section { background:#1D2853; color:#C8D9FF; border:0; border-right:1px solid #303D67; padding:9px; font-weight:800; }
+QScrollBar:vertical { background:#101635; width:12px; }
+QScrollBar::handle:vertical { background:#5F52A2; min-height:35px; border-radius:6px; }
+QDialog { background:#0D1431; }
+QMessageBox { background:#0E1737; }
+"""
+
+
+class CrystalWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.cfg=QSettings('MURDILIMAX','Recovery-Crystal')
+        saved=self.cfg.value('language','ru')
+        self.lang=saved if saved in ('ru','en') else 'ru'
+        self.motion=self.cfg.value('motion','true')!='false'
+        self.source='';self.mode='metadata';self.entries=[];self.last_report='';self.worker=None
+        self.filtered=[]
+        self.setWindowTitle('MURDILIMAX Recovery · Crystal '+VERSION)
+        self.resize(1430,910);self.setMinimumSize(1070,770)
+        self.build_ui();self.retranslate()
+    def t(self,key):return tr(self.lang,key)
+    def label(self,text,kind=None):
+        lbl=QLabel(text)
+        if kind:lbl.setObjectName(kind)
+        return lbl
+    def button(self,text,fn,kind='secondary'):
+        b=QPushButton(text);b.setObjectName(kind);b.clicked.connect(fn);b.setCursor(Qt.CursorShape.PointingHandCursor);return b
+    def panel(self):
+        f=QFrame();f.setObjectName('panel');return f
+    def build_ui(self):
+        root=QWidget();root.setObjectName('root');self.setCentralWidget(root)
+        full=QHBoxLayout(root);full.setContentsMargins(0,0,0,0);full.setSpacing(0)
+        sidebar=QFrame();sidebar.setObjectName('sidebar');sidebar.setFixedWidth(223);full.addWidget(sidebar)
+        sv=QVBoxLayout(sidebar);sv.setContentsMargins(15,24,15,20);sv.setSpacing(8)
+        self.brand=self.label('◇  MURDILIMAX','brand');sv.addWidget(self.brand)
+        sv.addWidget(self.label('     CRYSTAL RECOVERY','tagline'))
+        sv.addSpacing(36)
+        self.nav=[]
+        for sym,key,fn in [
+          ('⌕','scan',lambda:None),('▣','disks',self.pick_image),('↺','restore',self.recover_selected),
+          ('◇','raid',self.raid_builder),('▧','preview',self.preview_selected),
+          ('♧','wallet',self.wallet_finder),('▤','reports',self.open_report),('⚙','settings',self.open_settings)]:
+            b=self.button('',fn,'nav');b.setProperty('active','true' if key=='scan' else 'false')
+            self.nav.append((b,sym,key));sv.addWidget(b)
+        sv.addStretch()
+        ornament=QLabel('✧    ◇    ✧');ornament.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        ornament.setStyleSheet('color:#77DEFF; font-size:26px; margin-bottom:10px');sv.addWidget(ornament)
+        sv.addWidget(self.label('0.10.1  ·  LOCAL / READ ONLY','tagline'))
+        outer=QScrollArea();outer.setWidgetResizable(True);outer.setFrameShape(QFrame.Shape.NoFrame)
+        outer.setStyleSheet('QScrollArea{border:0;background:#070B20;} QScrollBar{background:#151732}')
+        full.addWidget(outer,1)
+        content=QWidget();content.setObjectName('root');outer.setWidget(content)
+        cv=QVBoxLayout(content);cv.setContentsMargins(20,18,21,13);cv.setSpacing(14)
+        hero=CrystalBanner();self.hero=hero;cv.addWidget(hero)
+        hl=QVBoxLayout(hero);hl.setContentsMargins(29,23,29,23)
+        self.hero_title=self.label('','');self.hero_title.setStyleSheet('font-size:33px;font-weight:950;color:white;background:transparent')
+        self.hero_sub=self.label('');self.hero_sub.setWordWrap(True)
+        self.hero_sub.setStyleSheet('font-size:13px;color:#CFDDFC;background:transparent')
+        hl.addWidget(self.hero_title);hl.addWidget(self.hero_sub);hl.addStretch()
+        source_panel=self.panel();cv.addWidget(source_panel)
+        sp=QVBoxLayout(source_panel);sp.setContentsMargins(17,13,17,16);sp.setSpacing(10)
+        header=QHBoxLayout();self.source_title=self.label('','section');header.addWidget(self.source_title);header.addStretch()
+        self.language=self.button('RU / EN',self.switch_language);header.addWidget(self.language);sp.addLayout(header)
+        cards=QHBoxLayout();cards.setSpacing(9)
+        self.btn_image=self.button('',self.pick_image,'source')
+        self.btn_folder=self.button('',self.pick_folder,'source')
+        self.btn_device=self.button('',self.pick_device,'source')
+        for btn in (self.btn_image,self.btn_folder,self.btn_device):
+            btn.setMinimumHeight(65);cards.addWidget(btn)
+        sp.addLayout(cards)
+        self.source_text=self.label('','muted');self.source_text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        self.source_text.setWordWrap(True);sp.addWidget(self.source_text)
+        opts=QHBoxLayout();opts.setSpacing(8)
+        self.scan_mode=QComboBox();self.scan_mode.setMaximumWidth(365)
+        self.scan_mode.addItem('NTFS/exFAT/ext4',userData='metadata');self.scan_mode.addItem('JPG/PNG/PDF/ZIP',userData='carve')
+        self.scan_mode.currentIndexChanged.connect(self.mode_changed)
+        opts.addWidget(self.scan_mode)
+        self.deep=QCheckBox();self.deep.setChecked(True);opts.addWidget(self.deep)
+        self.mft=QCheckBox();self.mft.setChecked(True);opts.addWidget(self.mft)
+        opts.addStretch();sp.addLayout(opts)
+        self.cat_title=self.label('','section');sp.addWidget(self.cat_title)
+        catrow=QHBoxLayout();catrow.setSpacing(8)
+        self.checkboxes={}
+        for category in CATEGORIES:
+            c=QCheckBox();c.setChecked(category in ('Photos','Documents','Archives','Crypto backups'))
+            c.setStyleSheet('QCheckBox{background:#242051;border:1px solid #7654AB;border-radius:14px;padding:6px 8px;font-size:11px;font-weight:700;} QCheckBox:checked{background:#3A285F;border-color:#84DDF7;} QCheckBox::indicator{width:12px;height:12px;}')
+            self.checkboxes[category]=c;catrow.addWidget(c)
+        catrow.addStretch();sp.addLayout(catrow)
+        actions=QHBoxLayout();actions.setSpacing(10)
+        self.start_btn=self.button('',self.scan,'primary');actions.addWidget(self.start_btn,2)
+        self.stop_btn=self.button('',self.cancel,'danger');actions.addWidget(self.stop_btn)
+        self.image_btn=self.button('',self.make_image);actions.addWidget(self.image_btn)
+        self.raid_btn=self.button('',self.raid_builder);actions.addWidget(self.raid_btn)
+        sp.addLayout(actions)
+        status_panel=self.panel();cv.addWidget(status_panel)
+        prog=QHBoxLayout(status_panel);prog.setContentsMargins(18,12,18,12);prog.setSpacing(17)
+        gem=self.label('◇');gem.setStyleSheet('font-size:46px;color:#75E3FF;')
+        prog.addWidget(gem)
+        pb=QVBoxLayout();pb.setSpacing(6)
+        self.status_label=self.label('','section');pb.addWidget(self.status_label)
+        self.progress=QProgressBar();self.progress.setRange(0,100);self.progress.setValue(0);self.progress.setFormat('%p%')
+        pb.addWidget(self.progress)
+        self.status_detail=self.label('','muted');self.status_detail.setWordWrap(True);pb.addWidget(self.status_detail)
+        prog.addLayout(pb,1)
+        self.count_label=self.label('0','counter');prog.addWidget(self.count_label)
+        middle=QHBoxLayout();middle.setSpacing(13);cv.addLayout(middle,1)
+        result_panel=self.panel();middle.addWidget(result_panel,4)
+        rv=QVBoxLayout(result_panel);rv.setContentsMargins(13,14,13,13);rv.setSpacing(10)
+        rh=QHBoxLayout();self.results_title=self.label('','section');rh.addWidget(self.results_title)
+        rh.addStretch();self.search=QLineEdit();self.search.setFixedWidth(218)
+        self.search.textChanged.connect(self.apply_filter);rh.addWidget(self.search);rv.addLayout(rh)
+        self.table=QTableWidget(0,5);self.table.setAlternatingRowColors(True)
+        self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.table.verticalHeader().setVisible(False)
+        self.table.setShowGrid(False)
+        self.table.horizontalHeader().setStretchLastSection(False)
+        self.table.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+        self.table.setColumnWidth(1,170);self.table.setColumnWidth(2,94);self.table.setColumnWidth(3,95);self.table.setColumnWidth(4,116)
+        self.table.itemSelectionChanged.connect(self.show_selection)
+        self.table.setMinimumHeight(220);rv.addWidget(self.table,1)
+        preview_panel=self.panel();preview_panel.setMinimumWidth(240);middle.addWidget(preview_panel,2)
+        pv=QVBoxLayout(preview_panel);pv.setContentsMargins(14,14,14,14)
+        self.preview_header=self.label('','section');pv.addWidget(self.preview_header)
+        self.preview_image=QLabel();self.preview_image.setMinimumHeight(150)
+        self.preview_image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.preview_image.setStyleSheet('background:#0A1435;border:1px solid #3D5489;border-radius:12px;color:#B1C2E9;padding:12px')
+        pv.addWidget(self.preview_image,3)
+        self.file_detail=self.label('','muted');self.file_detail.setWordWrap(True)
+        self.file_detail.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        pv.addWidget(self.file_detail,2)
+        self.preview_note=self.label('','muted');self.preview_note.setWordWrap(True);pv.addWidget(self.preview_note)
+        self.preview_btn=self.button('',self.preview_selected);pv.addWidget(self.preview_btn)
+        bottom=QHBoxLayout();bottom.setSpacing(12);cv.addLayout(bottom)
+        self.restore_btn=self.button('',self.recover_selected,'primary');bottom.addWidget(self.restore_btn,2)
+        self.advisor_btn=self.button('',self.advise_selected);bottom.addWidget(self.advisor_btn)
+        self.report_btn=self.button('',self.open_report);bottom.addWidget(self.report_btn)
+        self.privacy=self.label('','muted');self.privacy.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.privacy.setWordWrap(True);cv.addWidget(self.privacy)
+        self.setStyleSheet(QSS)
+        shadow=QGraphicsDropShadowEffect(self.start_btn);shadow.setBlurRadius(25)
+        shadow.setColor(QColor(157,80,255,120));shadow.setOffset(0,4);self.start_btn.setGraphicsEffect(shadow)
+        self.set_busy(False)
+    def retranslate(self):
+        self.hero_title.setText(self.t('title'));self.hero_sub.setText(self.t('subtitle'))
+        for b,sym,key in self.nav:b.setText(sym+'   '+self.t(key))
+        self.source_title.setText(self.t('source_title'))
+        self.btn_image.setText('◈   '+self.t('image_card'))
+        self.btn_folder.setText('▤   '+self.t('folder_card'))
+        self.btn_device.setText('▣   '+self.t('physical_card'))
+        if not self.source:self.source_text.setText(self.t('source_empty'))
+        self.language.setText('RU / EN' if self.lang=='ru' else 'EN / RU')
+        self.cat_title.setText(self.t('categories'))
+        for key,cb in self.checkboxes.items():cb.setText(self.t(key))
+        self.scan_mode.setItemText(0,self.t('metadata_mode'))
+        self.scan_mode.setItemText(1,self.t('carve_mode'))
+        self.deep.setText(self.t('deep_mode'));self.mft.setText(self.t('mft_mode'))
+        self.start_btn.setText(self.t('start'));self.stop_btn.setText(self.t('stop'))
+        self.image_btn.setText(self.t('image_action'));self.raid_btn.setText(self.t('raid_action'))
+        if not self.worker:self.status_label.setText(self.t('idle'));self.status_detail.setText(self.t('scan_sub'))
+        self.results_title.setText(self.t('results'))
+        self.search.setPlaceholderText(self.t('search'))
+        for i,key in enumerate(['name','location','size','type','condition']):
+            self.table.setHorizontalHeaderItem(i,QTableWidgetItem(self.t(key)))
+        self.preview_header.setText(self.t('preview_title'))
+        if not self.entries:self.preview_image.setText(self.t('preview_empty'))
+        self.preview_note.setText(self.t('preview_note'))
+        self.preview_btn.setText(self.t('preview'))
+        self.restore_btn.setText(self.t('restore_selected'))
+        self.advisor_btn.setText(self.t('advisor'))
+        self.report_btn.setText(self.t('report_button'))
+        self.privacy.setText(self.t('privacy'))
+    def switch_language(self):
+        self.lang='en' if self.lang=='ru' else 'ru'
+        self.cfg.setValue('language',self.lang);self.retranslate()
+    def set_busy(self,busy):
+        for b in (self.start_btn,self.btn_image,self.btn_folder,self.btn_device,self.image_btn,
+                  self.raid_btn,self.restore_btn,self.preview_btn,self.advisor_btn):b.setEnabled(not busy)
+        self.stop_btn.setEnabled(busy)
+    def mode_changed(self):
+        if self.mode in ('metadata','carve'):
+            self.mode=self.scan_mode.currentData()
+        elif self.mode in ('physical','physical-carve'):
+            self.mode='physical' if self.scan_mode.currentIndex()==0 else 'physical-carve'
+    def pick_image(self):
+        if self.worker:return
+        path,_=QFileDialog.getOpenFileName(self,self.t('choose_source'),'','Raw images (*.img *.dd *.bin *.raw);;All files (*)')
+        if path:self.source=path;self.mode=self.scan_mode.currentData();self.source_text.setText('◈  '+path)
+    def pick_folder(self):
+        if self.worker:return
+        path=QFileDialog.getExistingDirectory(self,self.t('choose_source'))
+        if path:self.source=path;self.mode='folder';self.source_text.setText('▤  '+path)
+    def pick_device(self):
+        if self.worker:return
+        drives=enumerate_drives()
+        if not drives:
+            QMessageBox.information(self,'Windows HDD/USB','Physical Windows devices are not available, or access is denied.');return
+        choices=[f"{d['path']}   ·   {file_size(d['size'])}" for d in drives]
+        choice,ok=QInputDialog.getItem(self,self.t('device_select'),self.t('choose_source'),choices,0,False)
+        if ok:
+            if QMessageBox.warning(self,'READ ONLY',self.t('confirm_physical'),QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
+            i=choices.index(choice);self.source=drives[i]['path'];self.mode='physical' if self.scan_mode.currentIndex()==0 else 'physical-carve'
+            self.source_text.setText('▣  '+choice)
+    def current_categories(self):
+        return normalize_categories(k for k,c in self.checkboxes.items() if c.isChecked())
+    def launch(self,kind,kwargs):
+        if self.worker:return
+        self.worker=Job(kind,kwargs,self);self.worker.message.connect(self.handle_job)
+        self.worker.finished.connect(self.job_finished)
+        self.set_busy(True);self.progress.setRange(0,100);self.progress.setValue(0)
+        self.status_detail.setText(self.t('working'))
+        self.worker.start()
+    def job_finished(self):
+        old=self.worker;self.worker=None;self.set_busy(False)
+        if old:old.deleteLater()
+    def cancel(self):
+        if self.worker:self.worker.stop.set()
+    def scan(self):
+        if self.worker:return
+        try:
+            validate_source(self.source,self.mode)
+            categories=self.current_categories()
+            if not categories:raise ValueError(self.t('no_categories'))
+            if self.mode in ('carve','physical-carve') and not categories.intersection({'Photos','Documents','Archives'}):
+                raise ValueError('Signature carving supports JPG/PNG/PDF/ZIP only')
+        except Exception as exc:
+            QMessageBox.warning(self,self.t('error'),str(exc));return
+        self.entries.clear();self.table.setRowCount(0);self.preview_image.setPixmap(QPixmap());self.preview_image.setText(self.t('preview_empty'))
+        self.count_label.setText('0');self.status_label.setText(self.t('scanning'))
+        self.launch('scan',{'source':self.source,'mode':self.mode,'categories':categories,'deep':self.deep.isChecked(),'mft':self.mft.isChecked()})
+    def handle_job(self,key,obj):
+        if key=='progress':
+            self.progress.setRange(0,100);self.progress.setValue(max(0,min(100,int(obj))))
+        elif key=='found':
+            self.entries.append(obj)
+            row=len(self.entries)-1;self.table.insertRow(row)
+            if isinstance(obj,Candidate):
+                name=obj.name;path=obj.path;kind=obj.kind;state=obj.state;size=obj.size
+            else:
+                name=Path(obj.label).name;path=obj.label;kind=obj.kind;state='candidate';size=obj.size
+            values=[name,path,file_size(size),self.t(kind),state]
+            for col,value in enumerate(values):
+                cell=QTableWidgetItem(value)
+                if col==0:
+                    cell.setFlags(cell.flags()|Qt.ItemFlag.ItemIsUserCheckable)
+                    cell.setCheckState(Qt.CheckState.Unchecked)
+                if col==4:cell.setForeground(QColor(recommendation_color(state)))
+                self.table.setItem(row,col,cell)
+            self.count_label.setText(str(len(self.entries)))
+            if len(self.entries)%100==0:self.status_detail.setText(self.t('found')+': '+str(len(self.entries)))
+        elif key=='scan_done':
+            extra=(' · '.join(obj.get('errors',[])[:2]))
+            self.status_label.setText(self.t('scan_finished'))
+            self.status_detail.setText(f"{self.t('found')}: {obj['found']}  |  {self.table.rowCount()} visible"+(' · '+extra if extra else ''))
+            self.progress.setValue(100 if not obj['cancelled'] else self.progress.value())
+        elif key=='image_progress':
+            done,total,bad=obj;self.progress.setValue(int(100*done/max(1,total)))
+            self.status_detail.setText(f'{file_size(done)} / {file_size(total)} · unreadable: {file_size(bad)}')
+        elif key=='image_done':
+            self.source=obj['path'];self.mode='metadata';self.source_text.setText('◈  '+self.source)
+            self.status_label.setText(self.t('complete'));self.status_detail.setText('SHA-256: '+obj['sha256_image'][:22]+'…')
+            QMessageBox.information(self,self.t('complete'),f"{obj['path']}\nSHA-256: {obj['sha256_image']}\nUnreadable bytes: {obj['unreadable_bytes']}")
+        elif key=='recover_done':
+            self.last_report=obj['report'];self.status_label.setText(self.t('recovery_finished'))
+            self.status_detail.setText(f"{obj['saved']} saved · {len(obj['errors'])} errors · {obj['report']}")
+            QMessageBox.information(self,self.t('complete'),self.status_detail.text())
+        elif key=='preview_done':
+            px=QPixmap();px.loadFromData(obj,'PNG')
+            self.preview_image.setText('');self.preview_image.setPixmap(px.scaled(330,235,Qt.AspectRatioMode.KeepAspectRatio,Qt.TransformationMode.SmoothTransformation))
+        elif key=='wallet_done':
+            findings,stats=obj;self.wallet_results(findings,stats)
+        elif key=='md_extract_done':
+            self.status_label.setText(self.t('complete'))
+            self.status_detail.setText(obj['output']+' · SHA-256: '+obj['sha256'][:20]+'…')
+            QMessageBox.information(self,self.t('complete'),obj['output']+'\nSHA-256: '+obj['sha256'])
+        elif key=='raid_done':
+            self.status_label.setText(self.t('complete'))
+            out=obj['output'];self.source=out;self.mode='metadata';self.source_text.setText('◈  '+out)
+            self.status_detail.setText(out);QMessageBox.information(self,self.t('complete'),out)
+        elif key=='paused':
+            self.status_label.setText(self.t('idle'));self.status_detail.setText('Stopped: '+str(obj))
+        elif key=='failed':
+            self.status_label.setText(self.t('error'));self.status_detail.setText(str(obj));QMessageBox.warning(self,self.t('error'),str(obj))
+    def apply_filter(self,text):
+        q=text.casefold().strip()
+        for row,item in enumerate(self.entries):
+            path=item.path if isinstance(item,Candidate) else item.label
+            self.table.setRowHidden(row,q not in path.casefold())
+    def show_selection(self):
+        rows=self.table.selectionModel().selectedRows() if self.table.selectionModel() else []
+        if not rows:return
+        row=rows[0].row()
+        if row>=len(self.entries):return
+        item=self.entries[row]
+        self.preview_image.setPixmap(QPixmap());self.preview_image.setText(self.t('preview_empty'))
+        name=item.path if isinstance(item,Candidate) else item.label
+        size=item.size;state=item.state if isinstance(item,Candidate) else 'candidate'
+        self.file_detail.setText(f'{name}\n\n{self.t("size")}: {file_size(size)}\n{self.t("condition")}: {state}\n'+(item.reason if isinstance(item,Candidate) else ''))
+    def checked(self):
+        return selected_items((self.table.item(i,0).checkState()==Qt.CheckState.Checked,self.entries[i])
+            for i in range(len(self.entries)) if self.table.item(i,0))
+    def recover_selected(self):
+        if self.worker:return
+        items=self.checked()
+        if not items:QMessageBox.information(self,self.t('restore'),self.t('no_file'));return
+        dest=QFileDialog.getExistingDirectory(self,self.t('choose_output'))
+        if not dest:return
+        try:safe_destination(self.source,dest,self.mode)
+        except ValueError as exc:QMessageBox.warning(self,self.t('error'),str(exc));return
+        if any(isinstance(item,Candidate) and item.state=='unknown' for item in items):
+            if QMessageBox.warning(self,'Allocation unknown',self.t('confirm_unknown'),QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
+        self.status_label.setText(self.t('recovering'))
+        self.launch('recover',{'items':items,'destination':dest,'source':self.source})
+    def preview_selected(self):
+        if self.worker:return
+        rows=self.table.selectionModel().selectedRows() if self.table.selectionModel() else []
+        if len(rows)!=1:
+            QMessageBox.information(self,self.t('preview'),self.t('no_preview'));return
+        item=self.entries[rows[0].row()]
+        name=item.name if isinstance(item,Candidate) else item.label
+        if not supported_preview(name) or (isinstance(item,Hit) and (self.mode!='folder' or item.carved)):
+            QMessageBox.information(self,self.t('preview'),self.t('no_preview'));return
+        self.launch('preview',{'source':self.source,'mode':self.mode,'item':item})
+    def advise_selected(self):
+        rows=self.table.selectionModel().selectedRows() if self.table.selectionModel() else []
+        if len(rows)!=1:
+            QMessageBox.information(self,self.t('advisor'),self.t('no_file'));return
+        item=self.entries[rows[0].row()]
+        state=item.state if isinstance(item,Candidate) else 'unknown'
+        notes=[]
+        if is_physical(self.source):
+            notes.append('⚠ Физический HDD/USB: предпочтительно сначала снять образ. / Prefer imaging a physical disk first.')
+        if state=='unknown':notes.append('⚠ Неизвестное состояние секторов. Проверьте предпросмотр и целостность извлечённого файла.')
+        elif state in ('reallocated','allocated','occupied','overwritten'):
+            notes.append('⛔ Кластеры могли быть перезаписаны. Не доверяйте содержимому без проверки.')
+        else:notes.append('✓ Метаданные доступны, но это не гарантия целостности файла.')
+        if (item.kind if isinstance(item,Candidate) else item.kind)=='Crypto backups':
+            notes.append('🔒 Никогда не отправляйте seed-фразы и ключи на сторонние сайты.')
+        notes.append('✓ Восстанавливайте только на другой физический носитель.')
+        QMessageBox.information(self,self.t('advisor'),self.t('local_advice')+'\n\n'+'\n'.join(notes))
+    def make_image(self):
+        if self.worker:return
+        if self.mode=='folder' or not self.source:
+            QMessageBox.warning(self,self.t('error'),self.t('no_source'));return
+        if is_physical(self.source):
+            if QMessageBox.warning(self,'READ ONLY',self.t('confirm_physical'),QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
+        dest,_=QFileDialog.getSaveFileName(self,self.t('choose_image_output'),'','Raw disk image (*.img);;All files (*)')
+        if not dest:return
+        if is_physical(self.source) and Path(dest+'.mrd-state.json').exists():
+            QMessageBox.warning(self,self.t('error'),'Cannot resume physical device in this UI without explicit hardware identity confirmation. Use the original verified imaging tool.');return
+        self.status_label.setText(self.t('imaging'))
+        self.launch('image',{'source':self.source,'destination':dest})
+    def wallet_finder(self):
+        if self.worker:return
+        folder=self.source if self.mode=='folder' and Path(self.source).is_dir() else QFileDialog.getExistingDirectory(self,self.t('wallet_title'))
+        if not folder:return
+        QMessageBox.information(self,self.t('wallet_title'),self.t('wallet_warning'))
+        self.launch('wallet',{'source':folder})
+    def wallet_results(self,findings,stats):
+        dialog=QDialog(self);dialog.setWindowTitle(self.t('wallet_title'));dialog.resize(800,520)
+        l=QVBoxLayout(dialog);l.addWidget(self.label(self.t('wallet_warning')))
+        l.addWidget(self.label(f"{stats['matches']} candidates · {stats['visited']} filenames"))
+        table=QTableWidget(len(findings),3);table.setHorizontalHeaderLabels([self.t('name'),self.t('type'),self.t('size')])
+        table.horizontalHeader().setSectionResizeMode(0,QHeaderView.ResizeMode.Stretch)
+        for i,f in enumerate(findings):
+            for j,value in enumerate((f.relative_path,f.label,file_size(f.size_bytes))):table.setItem(i,j,QTableWidgetItem(value))
+        l.addWidget(table);b=self.button(self.t('ok'),dialog.accept);l.addWidget(b);dialog.exec()
+    def raid_builder(self):
+        if self.worker:return
+        d=QDialog(self);d.setWindowTitle('RAID IMAGE BUILDER · '+VERSION);d.resize(780,540)
+        l=QVBoxLayout(d);note=QLabel(self.t('raid_help'));note.setWordWrap(True);l.addWidget(note)
+        bar=QHBoxLayout();bar.addWidget(self.label('RAID'))
+        level=QComboBox();level.addItems(['0','1','5','6','10']);level.setCurrentText('5');bar.addWidget(level)
+        bar.addWidget(self.label('Chunk KiB'))
+        chunk=QComboBox();chunk.addItems(['4','8','16','32','64','128','256','512','1024']);chunk.setCurrentText('64');bar.addWidget(chunk)
+        bar.addWidget(self.label('Layout'))
+        layout=QComboBox();bar.addWidget(layout)
+        l.addLayout(bar)
+        def set_layout():
+            lay=list(RAID5_LAYOUTS) if level.currentText()=='5' else (['fixed-pq-last'] if level.currentText()=='6' else ['near-2'] if level.currentText()=='10' else ['default'])
+            layout.clear();layout.addItems(lay)
+        level.currentTextChanged.connect(set_layout);set_layout()
+        verify=QCheckBox('Verify parity / mirrors');verify.setChecked(True);l.addWidget(verify)
+        label=QLabel(self.t('raid_members'));label.setWordWrap(True);l.addWidget(label)
+        paths=QPlainTextEdit();l.addWidget(paths,1)
+        add=self.button(self.t('add_member'),lambda:None)
+        def select_member():
+            filename,_=QFileDialog.getOpenFileName(d,self.t('add_member'))
+            if filename:paths.appendPlainText(filename)
+        add.clicked.disconnect();add.clicked.connect(select_member);l.addWidget(add)
+        md_row=QHBoxLayout()
+        def md_members():
+            return [v.strip() for v in paths.toPlainText().splitlines() if v.strip() and v.strip()!='-']
+        def inspect_md():
+            members=md_members()
+            if not members:
+                QMessageBox.warning(d,self.t('error'),'Add Linux MD v1.2 member images first.');return
+            try:
+                details=inspect_md_set(members)
+                lines=[f"UUID: {details['array_uuid']}",f"RAID: {details['level']}",
+                       f"Chunk: {details['chunk_bytes']} bytes",f"Expected members: {details['expected_members']}"]
+                for row in details['members']:
+                    lines.append(f"{Path(row['path']).name}: role={row['role']} offset={row['data_offset_bytes']} bytes")
+                lines.append('\\nREAD ONLY: this does not confirm member order or layout.')
+                QMessageBox.information(d,'Linux MD 1.2 — READ ONLY','\\n'.join(lines))
+            except Exception as exc:QMessageBox.warning(d,self.t('error'),str(exc))
+        md_check=self.button('▣  Linux MD 1.2 · '+('Проверить' if self.lang=='ru' else 'Inspect'),inspect_md)
+        md_row.addWidget(md_check)
+        def export_md():
+            members=md_members()
+            if len(members)!=1:
+                QMessageBox.warning(d,self.t('error'),'Enter exactly one Linux MD member to export its data section.');return
+            try: inspect_md_set(members)
+            except Exception as exc:QMessageBox.warning(d,self.t('error'),str(exc));return
+            dest,_=QFileDialog.getSaveFileName(d,self.t('choose_image_output'),'','Raw disk image (*.img)')
+            if not dest:return
+            if Path(dest).exists():
+                QMessageBox.warning(d,self.t('error'),'Destination already exists.');return
+            d.accept();self.status_label.setText('Linux MD 1.2 · data export')
+            self.launch('md_extract',{'source':members[0],'destination':dest})
+        md_export=self.button('⇣  '+('Извлечь данные MD' if self.lang=='ru' else 'Extract MD data'),export_md)
+        md_row.addWidget(md_export)
+        l.addLayout(md_row)
+        do=self.button(self.t('build_raid'),lambda:None,'primary')
+        def submit():
+            names=[s.strip() for s in paths.toPlainText().splitlines() if s.strip()]
+            if len(names)<2:
+                QMessageBox.warning(d,self.t('error'),'Select at least two members; use - for missing.');return
+            members=[None if v=='-' else v for v in names]
+            dest,_=QFileDialog.getSaveFileName(d,self.t('choose_image_output'),'','Raw disk image (*.img)')
+            if not dest:return
+            d.accept()
+            self.status_label.setText('RAID reconstruction (experimental)')
+            self.launch('raid',{'members':members,'destination':dest,'level':int(level.currentText()),
+                'chunk':int(chunk.currentText())*1024,'layout':layout.currentText(),'verify':verify.isChecked()})
+        do.clicked.disconnect();do.clicked.connect(submit);l.addWidget(do);d.exec()
+    def open_report(self):
+        if not self.last_report:
+            QMessageBox.information(self,self.t('reports'),self.t('no_report'));return
+        from PySide6.QtGui import QDesktopServices
+        from PySide6.QtCore import QUrl
+        QDesktopServices.openUrl(QUrl.fromLocalFile(self.last_report))
+    def open_settings(self):
+        d=QDialog(self);d.setWindowTitle(self.t('settings_title'))
+        v=QVBoxLayout(d);v.addWidget(self.label(self.t('language')))
+        lang=QComboBox();lang.addItems(['Русский','English']);lang.setCurrentIndex(0 if self.lang=='ru' else 1)
+        v.addWidget(lang);anim=QCheckBox(self.t('motion'));anim.setChecked(self.motion);v.addWidget(anim)
+        def save():
+            self.lang='ru' if lang.currentIndex()==0 else 'en';self.motion=anim.isChecked()
+            self.hero.animated=self.motion
+            self.cfg.setValue('language',self.lang);self.cfg.setValue('motion','true' if self.motion else 'false')
+            self.retranslate();d.accept()
+        v.addWidget(self.button(self.t('ok'),save,'primary'));d.exec()
+    def closeEvent(self,event):
+        if self.worker and self.worker.isRunning():
+            QMessageBox.warning(self,self.t('working'),self.t('confirm_reset'))
+            event.ignore();return
+        event.accept()
+
 
 def main():
- if '--legacy' in sys.argv:
-  murdilimax_recovery_v04.App().mainloop();return 0
- app=QApplication(sys.argv);app.setStyle('Fusion')
- app.setApplicationName('MURDILIMAX Recovery');app.setOrganizationName('MURDILIMAX')
- w=Window();w.show();return app.exec()
+    capture=None
+    launch_args=sys.argv[:]
+    if '--capture-ui' in launch_args:
+        pos=launch_args.index('--capture-ui')
+        if pos+1 >= len(launch_args):raise ValueError('Missing screenshot output path')
+        capture=Path(launch_args[pos+1]);del launch_args[pos:pos+2]
+    launch_args=[arg for arg in launch_args if arg!='--smoke-test']
+    app=QApplication(launch_args)
+    app.setApplicationName('MURDILIMAX Recovery')
+    app.setOrganizationName('MURDILIMAX')
+    app.setStyle('Fusion')
+    w=CrystalWindow();w.hero.animated=w.motion
+    if '--smoke-test' in sys.argv:
+        assert w.table.rowCount()==0 and not w.stop_btn.isEnabled()
+        w.lang='ru';w.retranslate();assert 'Восстановление' in w.hero_title.text()
+        w.switch_language();assert 'Data recovery' in w.hero_title.text()
+        w.close();return 0
+    w.show()
+    if capture is not None:
+        # Genuine EMPTY Qt app screenshot, no fabricated recovered files.
+        app.processEvents()
+        ok=w.grab().save(str(capture),'PNG')
+        w.close()
+        if not ok:raise IOError('Could not capture the Qt interface')
+        return 0
+    return app.exec()
+
 if __name__=='__main__':raise SystemExit(main())

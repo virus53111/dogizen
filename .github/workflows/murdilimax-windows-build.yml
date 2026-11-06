@@ -18,80 +18,103 @@ jobs:
         with:
           python-version: '3.12'
           architecture: 'x64'
-      - name: Install Qt 6, Pillow and PyInstaller
+      - name: Install Qt 6, image preview and PyInstaller
         run: python -m pip install --disable-pip-version-check "PySide6-Essentials==6.8.3" "pillow>=11,<13" "pyinstaller==6.16.0"
-      - name: Test recovery engine and Qt startup (offscreen)
+      - name: Run full recovery regression suite including Qt UI smoke tests
+        working-directory: price-aggregator/desktop
+        shell: pwsh
+        run: |
+          $env:QT_QPA_PLATFORM = 'offscreen'
+          python -m unittest discover -v
+          if ($LASTEXITCODE -ne 0) { throw 'Recovery or Qt UI tests failed' }
+      - name: Synthetic byte-for-byte recovery quality gate
+        working-directory: price-aggregator/desktop
+        run: python murdilimax_qualitygate.py --out QUALITY-REPORT.json
+      - name: Verify synthetic results and avoid unearned real-world claims
+        working-directory: price-aggregator/desktop
+        shell: pwsh
+        run: |
+          $r = Get-Content 'QUALITY-REPORT.json' -Raw | ConvertFrom-Json
+          if (!$r.summary.passed) { throw 'Synthetic quality gate failed' }
+          if ($r.real_world_validated -or $r.competitor_comparison_performed) { throw 'Unsupported field validation claim' }
+          Write-Output "Synthetic tests: $($r.summary.cases_passed)/$($r.summary.cases_total)"
+      - name: Capture real empty Qt UI for release preview
         working-directory: price-aggregator/desktop
         shell: pwsh
         run: |
           $env:QT_QPA_PLATFORM='offscreen'
-          python -m unittest discover -v
-          if ($LASTEXITCODE -ne 0) { throw 'Recovery engine or Qt UI smoke tests failed' }
-      - name: Synthetic recovery quality gate
-        working-directory: price-aggregator/desktop
-        run: python murdilimax_qualitygate.py --out QUALITY-REPORT.json
-      - name: Validate quality report
-        working-directory: price-aggregator/desktop
-        shell: pwsh
-        run: |
-          $r=Get-Content 'QUALITY-REPORT.json' -Raw | ConvertFrom-Json
-          if (!$r.summary.passed) { throw 'Synthetic quality gate failed' }
-          if ($r.real_world_validated -or $r.competitor_comparison_performed) { throw 'Unsupported real-world validation claim' }
-      - name: Package Crystal Qt Windows app
+          python murdilimax_crystal.py --capture-ui CRYSTAL-UI.png
+          if ($LASTEXITCODE -ne 0 -or !(Test-Path 'CRYSTAL-UI.png')) { throw 'UI screenshot test failed' }
+      - name: Package real Qt 6 Windows desktop application
         working-directory: price-aggregator/desktop
         shell: pwsh
         run: |
           python -m PyInstaller --clean --noconfirm --onefile --windowed --noupx --name MURDILIMAX-Recovery --icon assets/murdilimax.ico --paths . murdilimax_crystal.py
           if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed' }
-          if (!(Test-Path 'dist/MURDILIMAX-Recovery.exe')) { throw 'Missing EXE' }
+      - name: Check packaged application exists
+        shell: pwsh
+        run: |
+          $app = 'price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe'
+          if (!(Test-Path $app) -or (Get-Item $app).Length -lt 1000000) { throw 'Qt executable not produced' }
+      - name: Launch packaged Qt EXE in offscreen smoke test
+        shell: pwsh
+        run: |
+          $env:QT_QPA_PLATFORM='offscreen'
+          & 'price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe' --smoke-test
+          if ($LASTEXITCODE -ne 0) { throw "Packaged Qt app startup failed: $LASTEXITCODE" }
       - name: Install Inno Setup if needed
         shell: pwsh
         run: |
           $iscc='C:\Program Files (x86)\Inno Setup 6\ISCC.exe'
           if (!(Test-Path $iscc)) { choco install innosetup --yes --no-progress --limit-output }
-          if (!(Test-Path $iscc)) { throw 'Inno Setup not found' }
-      - name: Compile Windows setup installer
+          if (!(Test-Path $iscc)) { throw 'Inno Setup compiler not available' }
+      - name: Compile Windows installer
         shell: pwsh
         run: |
           Set-Location 'price-aggregator/desktop'
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'windows-installer.iss'
           if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
-          if (!(Test-Path 'installer-output/MURDILIMAX-Recovery-Setup-0.10.0.exe')) { throw 'Installer missing' }
-      - name: Generate SHA256SUMS
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.1.exe'
+          if (!(Test-Path $setup)) { throw 'Installer not created' }
+      - name: Generate SHA256 checksums
         shell: pwsh
         run: |
           Set-Location 'price-aggregator/desktop'
-          $a=(Get-FileHash 'installer-output/MURDILIMAX-Recovery-Setup-0.10.0.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
-          $b=(Get-FileHash 'dist/MURDILIMAX-Recovery.exe' -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$a  MURDILIMAX-Recovery-Setup-0.10.0.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
-          "$b  MURDILIMAX-Recovery.exe" | Add-Content -Encoding ascii 'SHA256SUMS.txt'
-      - name: Upload packaged app and quality report
+          $portable='dist/MURDILIMAX-Recovery.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.1.exe'
+          $portableHash=(Get-FileHash $portable -Algorithm SHA256).Hash.ToLowerInvariant()
+          $setupHash=(Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$setupHash  MURDILIMAX-Recovery-Setup-0.10.1.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
+          "$portableHash  MURDILIMAX-Recovery.exe" | Add-Content -Encoding ascii 'SHA256SUMS.txt'
+      - name: Upload tested installer and quality report
         uses: actions/upload-artifact@v4
         with:
-          name: MURDILIMAX-Recovery-0.10.0-Windows
+          name: MURDILIMAX-Recovery-0.10.1-Windows
           path: |
             price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe
-            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.0.exe
+            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.1.exe
             price-aggregator/desktop/SHA256SUMS.txt
             price-aggregator/desktop/QUALITY-REPORT.json
+            price-aggregator/desktop/CRYSTAL-UI.png
           if-no-files-found: error
-      - name: Publish direct-download EXE release
+      - name: Publish direct download after all gates pass
         if: github.ref == 'refs/heads/price-aggregator-mvp'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.10.0
-          target_commitish: price-aggregator-mvp
-          name: MURDILIMAX Recovery 0.10.0 — Crystal Qt RU/EN
+          tag_name: v0.10.1
+          target_commitish: ${{ github.sha }}
+          name: MURDILIMAX Recovery 0.10.1 — Crystal UI / RU EN
           prerelease: true
           make_latest: false
           body: |
-            Real Qt 6 / PySide6 Windows desktop with new Crystal neon UI and RU/EN switch. Existing read-only recovery engine, actual scan results, metadata scanning, carving, photo preview and selective recovery.
-            Advanced tools remain in a separate technical window.
-            Unsigned experimental software, not field validated for failing physical media. Recover only to a different physical disk. Does not claim to outperform R-Studio/DMDE.
+            A real Qt 6 Windows x64 desktop UI (PySide6) matching the MURDILIMAX crystal website style, with Russian/English switching, vector art, real scan progress and real filesystem recovery results. Includes source/image selection, preview, selective recovery, safe imaging, experimental RAID builder, local wallet filename discovery and audit reports.
+            Existing recovery engine unchanged. No fake findings, no cloud uploads, no private-key extraction. Installer bundles Qt/Python.
+            WARNING: unsigned experimental build; not field validated on failing physical disks or vendor RAID. Do not write outputs to the source disk. Never claim superiority to R-Studio or DMDE without independent tests.
           files: |
             price-aggregator/desktop/dist/MURDILIMAX-Recovery.exe
-            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.0.exe
+            price-aggregator/desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.1.exe
             price-aggregator/desktop/SHA256SUMS.txt
             price-aggregator/desktop/QUALITY-REPORT.json
+            price-aggregator/desktop/CRYSTAL-UI.png
           fail_on_unmatched_files: true
           overwrite_files: true

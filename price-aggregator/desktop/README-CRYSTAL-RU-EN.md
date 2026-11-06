@@ -1,17 +1,27 @@
-# MURDILIMAX Recovery 0.10.0 — CRYSTAL (РУССКИЙ / ENGLISH)
+# MURDILIMAX Recovery Crystal 0.10.1 — Windows interface
 
-## Русский
+## RU
 
-Это первый рабочий выпуск новой графической оболочки **Qt 6 / PySide6**: тёмно-синее окно, нарисованные векторами кристаллы, неоновые кнопки, меню, перевод RU/EN, работающая таблица результатов сканирования, локальный предпросмотр фото и сохранение выбранных файлов. Не макет, не браузерная игра. В таблице НЕ отображаются вымышленные результаты — записи поступают из имеющегося движка восстановления.
+**Новый интерфейс построен на PySide6 / Qt 6**, а не на старом Tkinter. Windows-установщик включает Python и Qt — вручную ставить их не нужно.
 
-**Как пользоваться:** установи EXE на исправный диск. Выбери «Образ диска» (.img/.dd/.bin), «Папка» или «HDD / USB» (только Windows, может требоваться администратор). Выбери категории, нажми «Начать сканирование». Для восстановления отметь файлы галочками и выбери папку НА ДРУГОМ диске. Выбери фото в списке и нажми «Показать фото» для локального предпросмотра (до 12 МиБ).
+* Откройте MURDILIMAX Recovery. По умолчанию интерфейс на русском. Переключить язык можно кнопкой `RU / EN` или в настройках.
+* Нажмите «Образ диска» для ранее снятого raw `.img/.dd/.bin`, «Папка» для обычных доступных файлов или «HDD / USB» для физического устройства Windows. Для физического чтения могут требоваться права администратора; исходный носитель может быть нестабилен.
+* Выберите категории и режим: метаданные NTFS/exFAT/ext4 либо сигнатурное сканирование JPG/PNG/PDF/ZIP. Результаты и прогресс отображаются только при РЕАЛЬНОЙ операции, фальшивого демо в программе нет.
+* Отметьте файлы галочками в таблице. Для одного фото, найденного по метаданным, нажмите «Предпросмотр» (максимум 12 МиБ). Для сохранения нажмите «Восстановить отмеченное» и выберите **другой физический диск**.
+* «Создать образ» делает безопасное чтение с журналом, ошибочными участками и SHA-256. «Собрать RAID» поддерживает ограниченные конфигурации массива по ранее созданным образам. Найденные результаты можно проверить локальным отчётом.
+* «Кошельки» ищет **только имена** существующих резервных файлов в выбранной папке, не открывая ключи или seed-фразы.
 
-**Экспертные функции:** пока доступны в отдельном старом техническом окне по кнопке «Экспертные функции», в том числе RAID, создание побитовых образов с контролем секторов, поиск по именам резервных копий кошельков. Полный перенос всех этих окон на новый стиль ещё не завершён. Некоторая экспертная терминология пока на английском.
+**Ограничения:** программа остаётся экспериментальной и не подтверждена на повреждённых физических HDD/NAS. Не доказано превосходство над профессиональными продуктами. Не используйте на единственном экземпляре критичных данных. При щелчках/отключениях HDD немедленно остановитесь и обратитесь к специалисту. Прямое чтение физических устройств даже без записи может усугубить поломку. Исходные файлы не загружаются в облако.
 
-**Безопасность:** программа экспериментальная; прямое чтение повреждённых физических устройств не прошло полевых испытаний. Даже чтение неисправного диска способно усугубить отказ. Программа не гарантирует восстановление перезаписанных или TRIM-очищенных данных и не превзошла профессиональные аналоги по независимым испытаниям. Не используй эту альфу на единственном экземпляре ценных файлов. Для неисправного HDD остановись и обратись в лабораторию. Восстанавливай файлы на другой физический носитель.
+Для разработчиков: `pip install PySide6-Essentials pillow`; запуск `python murdilimax_crystal.py`. Автотесты: `python -m unittest discover -v`. Qt smoke-тест запускается через offscreen при наличии Qt.
 
-**Для разработчиков:** pip install "PySide6-Essentials==6.8.3" "pillow>=11,<13"; python murdilimax_crystal.py. Предыдущая Tkinter-программа доступна с ключом --legacy. Windows установщик содержит Python и Qt.
+## EN
 
-## English
+**Crystal 0.10.1 is a real PySide6/Qt 6 desktop shell** for the existing read-only recovery engine. The Windows EXE bundles Qt/Python. RU/EN switch is available. Select a disk image, a visible folder or an explicit Windows physical disk (caution), choose metadata or limited signature scan, review real candidates, and recover selected results to a different physical device. Photo preview, local wallet filename finder, read-only disk imaging, experimental RAID image builder and local reports remain available. No fabricated scan data. Physical-drive safety and reliability on genuine failing media have not been field validated. Do not risk irreplaceable originals. No cloud upload or credential collection.
 
-Real Qt 6/PySide6 Windows desktop interface, with RU/EN switch, animated vector crystal header, genuine read-only NTFS/exFAT/ext4 scan results and limited signature carving, selective recovery and photo preview. Advanced RAID, imaging and wallet filename tools remain accessible through a separate legacy technical window. The installer bundles Python and Qt. This is an unsigned experimental tool, not field-validated for failing HDDs or NAS. Do not use on irreplaceable originals; save results to another drive. No online uploads or secret collection.
+
+## Crystal 0.10.1 / Дополнения
+- Preview existing photos in Folder mode (12 MiB bounded read, size and symlink checks). No secret-wallet file contents are read in this feature.
+- RAID window includes read-only Linux MD 1.2 superblock inspection and optional safe extraction of data-only member slices to a NEW image. This is not automatic NAS assembly.
+- Windows CI additionally checks installed Qt tests, a packaged EXE startup and a genuine empty-window screenshot, plus synthetic filesystem recovery tests.
+- Experimental only; hardware-failing disks and vendor RAID performance are not field validated.
