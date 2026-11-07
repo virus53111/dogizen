@@ -23,7 +23,7 @@ class CrystalGuiSmoke(unittest.TestCase):
     def tearDown(self):
         self.window.close();self.window.deleteLater()
     def test_version_and_window(self):
-        self.assertEqual(VERSION,'0.10.5')
+        self.assertEqual(VERSION,'0.10.6')
         self.assertEqual(self.window.table.rowCount(),0)
         self.assertFalse(self.window.stop_btn.isEnabled())
         self.assertEqual(len(self.window.checkboxes),7)
