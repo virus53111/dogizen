@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#06071c">
+<meta name="description" content="MURDILIMAX Recovery 0.10.7: experimental NTFS/exFAT recovery, read-only ext4 existing-file extraction, BitLocker/LUKS detection, safe imaging and limited RAID. Free Windows installer.">
+<title>MURDILIMAX Recovery — возвращаем важное</title>
+<link rel="canonical" href="https://murdilimax.com/recovery/">
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<meta property="og:type" content="website">
+<meta property="og:title" content="MURDILIMAX Recovery — возвращаем важное">
+<meta property="og:url" content="https://murdilimax.com/recovery/">
+<meta property="og:description" content="Бесплатная экспериментальная программа восстановления файлов для Windows. Работа локально, без загрузки файлов в облако.">
+<meta name="robots" content="index,follow">
+<style>
+:root{color-scheme:dark;--dark:#06071b;--deep:#0a0d27;--panel:#121433;--lav:#b379ff;--pink:#f270ff;--cyan:#4ae3ff;--blue:#4e92ff;--gold:#ffe187;--ink:#f8f8ff;--muted:#b5b8dc;--stroke:#55529066}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#070818;color:var(--ink);font:16px/1.55 system-ui,-apple-system,'Segoe UI',Arial,sans-serif;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+body:before{content:"";position:fixed;inset:0;background:radial-gradient(ellipse at 12% 5%,#2c215e77,transparent 42%),radial-gradient(ellipse at 85% 55%,#123f7055,transparent 40%);pointer-events:none;z-index:-1}
+a{color:inherit;text-decoration:none}button{font:inherit;cursor:pointer}button:focus-visible,a:focus-visible{outline:3px solid #8af1ff;outline-offset:4px}
+.wrap{width:min(1330px,calc(100% - 60px));margin:auto}
+.topline{height:3px;background:linear-gradient(90deg,#432477,#55e5ff,#cf59ff,#432477);box-shadow:0 0 20px #c561ff}
+.nav-shell{position:relative;z-index:40}.nav{height:90px;display:flex;justify-content:space-between;align-items:center;gap:20px}
+.logo{display:flex;align-items:center;gap:12px;white-space:nowrap;font-weight:950;letter-spacing:1.1px;font-size:18px}
+.logo-mark{display:grid;place-items:center;height:48px;width:48px;border-radius:15px;position:relative;isolation:isolate;transform:rotate(-7deg);color:#fff;background:linear-gradient(138deg,#6cedff 0%,#6985f5 38%,#bc56f7 82%);box-shadow:0 0 0 2px #af85ff77,0 4px 22px #b353ff99,inset 0 3px 8px #ffffff78}
+.logo-mark:before{position:absolute;inset:7px;content:"";z-index:-1;background:linear-gradient(155deg,#91eaff,#9d50f2);clip-path:polygon(8% 80%,27% 12%,50% 47%,72% 12%,94% 80%,71% 80%,62% 51%,50% 68%,38% 51%,29% 80%);filter:drop-shadow(0 2px 4px #241765)}
+.logo-mark span{font-size:0}
+.logo small{display:block;color:#80dfff;font-weight:800;letter-spacing:3.6px;font-size:10px;margin-top:-5px}
+.navlinks{display:flex;align-items:center;gap:32px;font-weight:750;font-size:13px;color:#d9d6f4}
+.navlinks a:hover{color:#7beaff}.navcontrols{display:flex;align-items:center;gap:10px}
+.lang, .motion{background:#10152edc;border:1px solid #6663b688;color:#e5e9ff;border-radius:12px;min-height:40px;padding:8px 13px;font-weight:850;font-size:12px}
+.motion{padding:8px 11px;font-size:17px;line-height:1}.lang:hover,.motion:hover{border-color:#7fe2ff}
+.button{display:inline-flex;align-items:center;justify-content:center;gap:11px;font-weight:900;letter-spacing:.1px;border:0;border-radius:16px;padding:16px 22px;transition:transform .2s ease,filter .2s ease,box-shadow .2s ease}
+.button:hover{transform:translateY(-3px);filter:brightness(1.10)}.button:active{transform:translateY(0)}
+.button-primary{color:#1e103b;background:linear-gradient(115deg,#71f1ff 0%,#a67dff 52%,#f4a0fb 100%);box-shadow:0 9px 30px #a460ff77,inset 0 2px 2px #fff7;border:1px solid #d5ccff}
+.button-ghost{color:#f4f1ff;background:#121638d9;border:1px solid #8b7bcc88;box-shadow:inset 0 1px #fff2}
+.button-small{padding:11px 16px;font-size:13px;border-radius:12px}
+.navtoggle{display:none;background:#151630;border:1px solid #7562ae77;color:white;border-radius:12px;padding:9px 12px}
+.hero{position:relative;min-height:min(840px,calc(100svh - 90px));display:flex;align-items:center;isolation:isolate;overflow:hidden}
+.hero:before{position:absolute;content:"";z-index:-1;inset:0;background:linear-gradient(90deg,#060918fa 0%,#090a22ed 29%,#08092370 52%,#08092300 78%),linear-gradient(0deg,#0b0b23 0%,transparent 23%);pointer-events:none}
+.hero-scene{position:absolute;z-index:-2;inset:0 0 0 34%;overflow:hidden;background:radial-gradient(ellipse at 60% 65%,#4e2670aa,transparent 44%),radial-gradient(ellipse at 50% 28%,#11365dbd,transparent 54%),#080b28}
+.hero-scene canvas{display:block;width:100%;height:100%}
+.hero-content{width:100%;position:relative;z-index:3;padding:64px 0 90px}
+.hero-copy{max-width:680px}.chip{display:inline-flex;align-items:center;gap:9px;font-size:12px;font-weight:950;letter-spacing:1.5px;text-transform:uppercase;color:#f3ceff;border:1px solid #c685ef80;background:linear-gradient(90deg,#4c256785,#1b2256bb);box-shadow:0 0 25px #b861ed44,inset 0 1px #fff4;border-radius:99px;padding:9px 15px}
+.chip .bulb{width:9px;height:9px;border-radius:100%;background:#7dfff0;box-shadow:0 0 15px #54f9e9;animation:breathe 2.4s ease-in-out infinite}
+@keyframes breathe{50%{opacity:.52;transform:scale(.72)}}
+h1,h2,h3,p{margin-top:0}h1{font-size:clamp(45px,6.1vw,88px);line-height:1.025;letter-spacing:-4px;font-weight:950;margin:26px 0;text-shadow:0 5px 25px #040414}
+h1 .white{display:block}h1 .shine{display:block;background:linear-gradient(100deg,#63eaff 3%,#c07bff 56%,#f290ff 100%);color:transparent;background-clip:text;filter:drop-shadow(0 0 20px #995bff55)}
+.lead{max-width:540px;color:#d1d3f0;font-size:clamp(16px,1.5vw,20px);line-height:1.65;text-shadow:0 2px 12px #000b}
+.herobuttons{display:flex;gap:13px;flex-wrap:wrap;margin:33px 0 25px}.micro{display:flex;gap:17px;flex-wrap:wrap;align-items:center;color:#b5b8db;font-size:13px}.micro strong{color:#91f1ed}
+.hero-hud{position:absolute;right:max(2vw,25px);z-index:5;pointer-events:none;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);background:#0a1238ad;border:1px solid #a574fa66;border-radius:16px;box-shadow:0 10px 25px #0008,inset 0 1px #fff2;color:#e2d9ff}
+.hero-hud-top{top:50px;padding:12px 17px;min-width:200px;right:max(5vw,50px);animation:float 5s ease-in-out infinite}
+.hero-hud-bottom{bottom:75px;padding:13px 18px;right:max(5vw,55px);min-width:230px;animation:float 6s ease-in-out infinite reverse}
+.hud-header{display:flex;align-items:center;gap:9px;font-size:11px;color:#c5dbff;font-weight:900;letter-spacing:1px}.hud-header .orb{height:10px;width:10px;display:inline-block;border-radius:50%;background:#66efff;box-shadow:0 0 15px #4ddfff}
+.hero-hud b{display:block;font-size:21px;color:#fff;text-shadow:0 0 12px #79c8ff;margin-top:3px;letter-spacing:.5px}
+.hud-track{background:#1d2a5c;height:5px;border-radius:5px;margin-top:11px;overflow:hidden}.hud-track i{display:block;width:48%;height:100%;border-radius:5px;background:linear-gradient(90deg,#71f1ff,#b478ff);animation:scanbar 3.4s ease-in-out infinite alternate}
+@keyframes scanbar{from{width:18%}to{width:85%}}@keyframes float{50%{transform:translateY(-12px)}}
+.hero-footer{position:absolute;left:0;right:0;bottom:0;border-top:1px solid #8675d54a;background:linear-gradient(90deg,#15123d99,#111c42a9,#15123d99);backdrop-filter:blur(9px);z-index:6}
+.hero-footer-inner{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:14px 0;flex-wrap:wrap}
+.trust-item{font-size:12px;color:#d5d6f7;font-weight:850;display:flex;gap:8px;align-items:center;letter-spacing:.3px}.trust-item svg{width:17px;height:17px;color:#64e5f6}
+.section{padding:98px 0}.section-title{max-width:760px;margin:0 auto 45px;text-align:center}.eyebrow{font-weight:1000;font-size:12px;letter-spacing:2.4px;color:#65eaff;text-transform:uppercase;margin-bottom:11px}
+h2{font-size:clamp(32px,4vw,53px);letter-spacing:-2px;line-height:1.13;font-weight:950;margin:13px 0 19px}h2 em{font-style:normal;color:#b08bff}p{color:#aab1d3;line-height:1.7}
+.section-title p{font-size:17px;max-width:640px;margin:auto}
+.category-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:16px}
+.category-card{position:relative;overflow:hidden;min-height:235px;background:linear-gradient(155deg,#171c43,#0f1330);border:1px solid #6365a366;border-radius:21px;padding:27px 18px 23px;transition:transform .25s ease,border .25s ease,box-shadow .25s ease}
+.category-card:before{content:"";position:absolute;inset:-80px 0 40%;background:radial-gradient(circle at 50% 50%,var(--glow),transparent 69%);opacity:.38;transition:opacity .2s}.category-card:hover{transform:translateY(-8px);border-color:var(--edge);box-shadow:0 25px 65px #0009,0 0 40px var(--glow)}.category-card:hover:before{opacity:.65}
+.category-icon{height:87px;width:87px;display:grid;place-items:center;margin:0 auto 21px;position:relative;transform:translateZ(0);animation:cardbob 5s ease-in-out infinite;filter:drop-shadow(0 12px 12px #0008)}
+.category-icon svg{width:83px;height:83px;overflow:visible}
+@keyframes cardbob{50%{transform:translateY(-9px) rotate(5deg)}}
+.category-card:nth-child(2) .category-icon{animation-delay:-1s}.category-card:nth-child(3) .category-icon{animation-delay:-2s}.category-card:nth-child(4) .category-icon{animation-delay:-3s}.category-card:nth-child(5) .category-icon{animation-delay:-4s}
+.category-card h3{text-align:center;margin:0;font-size:18px;font-weight:930}.category-card p{text-align:center;margin:7px 0 0;font-size:12px;color:#a6b0d8}
+.features-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.feature-card{position:relative;border-radius:20px;overflow:hidden;padding:31px;background:linear-gradient(155deg,#161b3d,#0d122c 75%);border:1px solid #6165a866;box-shadow:inset 0 1px #fff1;min-height:247px;transition:transform .2s,border .2s}
+.feature-card:hover{transform:translateY(-6px);border-color:#a881fc}
+.feature-icon{font-size:30px;width:57px;height:57px;display:grid;place-items:center;border-radius:15px;background:linear-gradient(135deg,#264e88,#6d3689);box-shadow:0 0 27px #7f6af755}
+.feature-card h3{font-size:20px;margin:22px 0 7px}.feature-card p{font-size:14px;margin:0;color:#aab7d9}
+.feature-card:nth-child(2n) .feature-icon{background:linear-gradient(135deg,#155f7b,#5359b0)}
+.cta-wrap{position:relative;overflow:hidden;border-radius:32px;background:radial-gradient(ellipse at 80% 10%,#6140a099,transparent 46%),linear-gradient(120deg,#161c4c,#261343 75%,#0d1536);padding:60px 65px;border:1px solid #ae75e899;box-shadow:0 0 75px #814de72b;display:grid;grid-template-columns:1.2fr .8fr;align-items:center;gap:25px}
+.cta-wrap:after{content:"";position:absolute;width:340px;height:340px;right:-100px;bottom:-200px;border-radius:50%;border:70px solid #c466f722;box-shadow:0 0 70px #a97eff}
+.cta-wrap h2{font-size:clamp(34px,3.7vw,52px)}.cta-wrap p{max-width:600px;color:#d0c8ee}.cta-aside{display:grid;gap:13px;position:relative;z-index:1}
+.cta-point{background:#13173fc9;border:1px solid #a780df66;border-radius:13px;padding:13px 17px;color:#e8dffc;font-weight:770;font-size:14px;display:flex;gap:10px;align-items:center}
+.notice{margin-top:30px;background:#27213b;border:1px solid #9270b077;padding:20px 26px;border-radius:17px;color:#dac9ed;font-size:13px}
+.footer{margin-top:94px;border-top:1px solid #47436b88;padding:35px 0 45px;display:flex;justify-content:space-between;align-items:center;gap:18px;color:#9ca4cb;font-size:12px}
+.footer a{color:#a7dbfb}.footer span{max-width:600px}
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}.reveal.visible{opacity:1;transform:none}
+@media(min-width:1900px){.wrap{width:min(1680px,calc(100% - 120px))}.hero{min-height:910px}.hero-copy{max-width:750px}.hero-content{padding:100px 0}h1{font-size:clamp(90px,4.6vw,112px)}.lead{font-size:22px;max-width:620px}.category-card{min-height:290px;padding-top:37px}.showgrid{gap:100px}}
+@media(max-width:1100px){.navlinks{gap:15px}.hero-scene{inset:0 0 0 22%}.hero-copy{max-width:600px}.hero-hud-top{right:18px}.hero-hud-bottom{right:18px}.category-grid{grid-template-columns:repeat(3,1fr)}.feature-card{padding:23px}}
+@media(max-width:800px){.wrap{width:min(100% - 36px,720px)}.nav{height:76px}.navtoggle{display:block}.navlinks{display:none;position:absolute;left:18px;right:18px;top:72px;z-index:60;background:#101235f9;border:1px solid #b077ea66;box-shadow:0 25px 60px #000a;border-radius:17px;padding:18px;flex-direction:column;align-items:stretch;gap:0}.navlinks.open{display:flex}.navlinks a{padding:11px 6px;border-bottom:1px solid #655b9150}.navcontrols .button{display:none}.hero{min-height:815px;align-items:start}.hero-scene{inset:0 0 0 12%;opacity:.9}.hero:before{background:linear-gradient(90deg,#08091be8 0%,#070b23b8 50%,#06092131 100%),linear-gradient(0deg,#0b0b23 0%,transparent 30%)}.hero-content{padding:68px 0 245px}.hero-copy{max-width:520px}.hero-hud-top{top:auto;bottom:140px;right:18px}.hero-hud-bottom{display:none}.category-grid{grid-template-columns:repeat(2,1fr)}.features-grid{grid-template-columns:repeat(2,1fr)}.cta-wrap{grid-template-columns:1fr;padding:35px}.section{padding:75px 0}}
+@media(max-width:530px){.wrap{width:calc(100% - 28px)}.logo{font-size:14px;letter-spacing:.2px;gap:8px}.logo-mark{width:39px;height:39px;border-radius:12px}.logo small{font-size:9px}.navcontrols{gap:6px}.lang,.motion{padding:7px 9px}.nav{height:70px}.navlinks{top:65px}.hero{min-height:760px}.hero-scene{inset:0 0 0 2%;opacity:.82}.hero-content{padding:45px 0 250px}.hero-hud-top{right:12px;bottom:136px;min-width:175px}.hero-hud b{font-size:17px}.chip{letter-spacing:1px;font-size:10px}h1{font-size:clamp(42px,12vw,59px);letter-spacing:-2.2px;margin:23px 0}.lead{font-size:15px;max-width:365px}.herobuttons{gap:9px;margin:22px 0}.button{padding:13px 14px;font-size:13px}.micro{font-size:11px;gap:8px}.hero-footer-inner{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 0}.trust-item{font-size:10px}.trust-item:last-child{grid-column:span 2}.category-grid{gap:10px}.category-card{padding:18px 9px;min-height:200px}.category-card h3{font-size:15px}.category-icon{width:70px;height:70px;margin-bottom:17px}.category-icon svg{width:67px;height:67px}.category-card:nth-child(5){grid-column:span 2}.features-grid{grid-template-columns:1fr}.cta-wrap{padding:26px 20px}.footer{flex-direction:column;align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*:before,*:after{animation:none!important;transition-duration:.01ms!important}.reveal{opacity:1;transform:none}}
+body.motion-off *,body.motion-off *:before,body.motion-off *:after{animation:none!important;transition-duration:.01ms!important}
+</style></head>
+<body>
+<div class="topline"></div>
+<header class="nav-shell wrap"><div class="nav">
+<a href="#" class="logo" aria-label="MURDILIMAX Recovery"><span class="logo-mark"><span>M</span></span><span>MURDILIMAX<small>RECOVERY LAB</small></span></a>
+<nav class="navlinks" id="navlinks" aria-label="Navigation">
+<a href="#possibilities" data-i="nav1">Возможности</a>
+
+<a href="#technology" data-i="nav3">Технологии</a>
+<a href="#download" data-i="nav4">Скачать</a>
+</nav><div class="navcontrols">
+<button class="motion" id="motion" type="button" aria-label="Отключить анимацию" title="Анимация">✦</button>
+<button class="lang" id="lang" type="button" aria-label="Switch language">RU / EN</button>
+<a class="button button-primary button-small" href="https://github.com/virus53111/dogizen/releases/download/v0.10.7/MURDILIMAX-Recovery-Setup-0.10.7.exe" data-i="navbutton">Скачать ↓</a>
+<button class="navtoggle" type="button" id="navtoggle" aria-label="Open menu" aria-expanded="false">☰</button></div>
+</div></header>
+<main>
+<section class="hero" id="home">
+<div class="hero-scene" aria-hidden="true"><canvas id="crystalWorld"></canvas></div>
+<div class="wrap hero-content"><div class="hero-copy">
+<div class="chip"><span class="bulb"></span><span data-i="chip">БЕСПЛАТНАЯ ALPHA 0.10.7 · WINDOWS</span></div>
+<h1><span class="white" data-i="heroA">Потерянные файлы.</span><span class="shine" data-i="heroB">Новый шанс.</span></h1>
+<p class="lead" data-i="heroText">Ищи удалённые фотографии, документы и архивы на поддерживаемых дисках и образах. Всё локально: без облака и передачи файлов. Результат сохраняется отдельно от источника.</p>
+<div class="herobuttons"><a class="button button-primary" href="https://github.com/virus53111/dogizen/releases/download/v0.10.7/MURDILIMAX-Recovery-Setup-0.10.7.exe" download><span>⬇</span><span data-i="heroDownload">Скачать для Windows</span></a></div>
+<div class="micro"><span><strong>✓</strong> <span data-i="trustA">Бесплатно</span></span><span><strong>✓</strong> <span data-i="trustB">Только на компьютере</span></span><span><strong>✓</strong> <span data-i="trustC">Без загрузки файлов в интернет</span></span></div>
+</div></div>
+<div class="hero-footer"><div class="wrap hero-footer-inner">
+<div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 6v6c0 6 4 9 9 10 5-1 9-4 9-10V6L12 2Z"/><path d="m8 12 3 3 5-6"/></svg><span data-i="strip1">Источник без записи</span></div>
+<div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8 12 3 3 5-6"/></svg><span data-i="strip2">Выборочное восстановление</span></div>
+<div class="trust-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14v6h16v-6M12 3v13M7 11l5 5 5-5"/></svg><span data-i="strip3">Программа для Windows</span></div></div></div></section>
+<section class="section wrap" id="possibilities">
+<div class="section-title reveal"><div class="eyebrow" data-i="catsSmall">ВЫБЕРИ СВОЮ ЦЕЛЬ</div><h2 data-i="catsTitle">Выбирай <em>нужные файлы.</em></h2><p data-i="catsDesc">Фото, документы, видео, архивы и резервные копии кошельков. Выбирай категории и восстанавливай только нужное.</p></div>
+<div class="category-grid">
+<article class="category-card reveal" style="--glow:#ac65ff;--edge:#bf7dff"><div class="category-icon"><svg viewBox="0 0 100 100"><defs><linearGradient id="cc1" x2="0" y2="1"><stop stop-color="#fff3ff"/><stop offset=".45" stop-color="#a980ff"/><stop offset="1" stop-color="#7133dc"/></linearGradient></defs><polygon points="50,4 83,26 93,67 50,96 7,67 17,26" fill="url(#cc1)" stroke="#f3d1ff" stroke-width="3"/><polygon points="50,4 50,96 17,26" fill="#663ff1" opacity=".68"/><polygon points="50,4 83,26 50,96" fill="#f1aaff" opacity=".58"/><polygon points="7,67 50,96 93,67 72,76 25,75" fill="#e487ff" opacity=".4"/></svg></div><h3 data-i="photos">Фотографии</h3><p>JPG / PNG / HEIC</p></article>
+<article class="category-card reveal" style="--glow:#35cfff;--edge:#55eaff"><div class="category-icon"><svg viewBox="0 0 100 100"><defs><linearGradient id="cc2"><stop stop-color="#e8faff"/><stop offset="1" stop-color="#2189f4"/></linearGradient></defs><path d="M18 20 51 7 83 26 88 77 50 95 13 75Z" fill="url(#cc2)" stroke="#b0f7ff" stroke-width="3"/><path d="M51 7 50 95 18 20M83 26 50 95 88 77" fill="none" stroke="#fff" stroke-opacity=".6" stroke-width="3"/><path d="m20 68 24-21 12 9 22-23" fill="none" stroke="#002c81" stroke-width="5"/></svg></div><h3 data-i="videos">Видео</h3><p>MP4 / MOV / MKV</p></article>
+<article class="category-card reveal" style="--glow:#ed7ffe;--edge:#f8a0f4"><div class="category-icon"><svg viewBox="0 0 100 100"><defs><linearGradient id="cc3" x2="0" y2="1"><stop stop-color="#ffcfff"/><stop offset="1" stop-color="#b844dc"/></linearGradient></defs><path d="M23 8h38l17 19v65H23Z" fill="url(#cc3)" stroke="#ffd7ff" stroke-width="3"/><path d="M61 8v22h17" fill="#f3a5ff" stroke="#fff" stroke-width="2"/><path d="M34 49h36M34 61h36M34 73h26" stroke="#632d93" stroke-width="5" stroke-linecap="round"/></svg></div><h3 data-i="docs">Документы</h3><p>PDF / DOCX / XLSX</p></article>
+<article class="category-card reveal" style="--glow:#f5b23e;--edge:#ffd96d"><div class="category-icon"><svg viewBox="0 0 100 100"><defs><linearGradient id="cc4" x2="0" y2="1"><stop stop-color="#fff6b2"/><stop offset="1" stop-color="#ec9b14"/></linearGradient></defs><path d="M10 29 50 9 90 29v51L50 96 10 80Z" fill="url(#cc4)" stroke="#fff5c3" stroke-width="3"/><path d="m10 29 40 22 40-22M50 51v45" fill="none" stroke="#8e4c12" stroke-width="4"/><path d="m25 21 43 26" stroke="#fff6bc" stroke-width="5"/></svg></div><h3 data-i="archives">Архивы</h3><p>ZIP / RAR / 7Z</p></article>
+<article class="category-card reveal" style="--glow:#78eea9;--edge:#a5ffa9"><div class="category-icon"><svg viewBox="0 0 100 100"><defs><linearGradient id="cc5" x2="0" y2="1"><stop stop-color="#d4ffd0"/><stop offset="1" stop-color="#1aa58e"/></linearGradient></defs><path d="M50 5 88 25v50L50 96 12 75V25Z" fill="url(#cc5)" stroke="#d6ffea" stroke-width="3"/><path d="M50 6v90M12 25l38 25 38-25M12 75l38-25 38 25" stroke="#0c767a" stroke-width="3" fill="none"/><path d="M50 30 66 49 50 68 34 49Z" fill="#d0fff3"/></svg></div><h3 data-i="crypto">Crypto Backup</h3><p>Wallet files / Backups</p></article>
+</div>
+</section>
+<section class="section wrap" id="technology"><div class="section-title reveal"><div class="eyebrow" data-i="techSmall">ТЕХНОЛОГИИ 0.10.7</div><h2 data-i="techTitle">Что умеет <em>программа.</em></h2><p data-i="techDesc">Основные возможности текущей версии. Физически неисправные диски пока не прошли полевые испытания.</p></div>
+<div class="features-grid">
+<article class="feature-card reveal"><div class="feature-icon">▣</div><h3 data-i="feat1h">NTFS / exFAT</h3><p data-i="feat1p">Поиск удалённых записей и восстановление файлов по уцелевшим метаданным в поддерживаемых ситуациях.</p></article>
+<article class="feature-card reveal"><div class="feature-icon">⌕</div><h3 data-i="feat2h">Потерянные разделы</h3><p data-i="feat2p">Поиск сохранившихся NTFS/exFAT томов и резервных таблиц GPT в образах накопителей.</p></article>
+<article class="feature-card reveal"><div class="feature-icon">⟁</div><h3 data-i="feat3h">RAID 0 / 1 / 5 / 6 / 10</h3><p data-i="feat3p">Шесть схем RAID 5, RAID 6 с фиксированными P/Q, RAID 10 near-2 и осмотр Linux MD 1.2. Только из образов дисков; точные параметры задаются вручную.</p></article>
+<article class="feature-card reveal"><div class="feature-icon">✥</div><h3 data-i="feat4h">File Carving</h3><p data-i="feat4p">Поиск JPG, PNG, PDF и ZIP по сигнатурам даже при потере информации об имени файла.</p></article>
+<article class="feature-card reveal"><div class="feature-icon">⚿</div><h3 data-i="feat5h">Crypto Backup</h3><p data-i="feat5p">Отдельный Wallet Backup Finder ищет названия существующих резервных копий Bitcoin Core, Electrum и keystore. Содержимое, seed-фразы и ключи не читаются.</p></article>
+<article class="feature-card reveal"><div class="feature-icon">⛨</div><h3 data-i="feat6h">Read-only</h3><p data-i="feat6p">Исходные данные открываются для чтения. Результаты восстановления записываются отдельно.</p></article>
+</div></section>
+<section class="wrap" id="download">
+<div class="cta-wrap reveal"><div><div class="eyebrow" data-i="ctaSmall">БЕСПЛАТНО ДЛЯ WINDOWS</div><h2 data-i="ctaTitle">Скачать <em>MURDILIMAX Recovery.</em></h2><p data-i="ctaDesc">Бесплатный установщик для Windows 10/11 (64-bit). Нажмите «Весь диск (C:, D:)», выберите накопитель и начните сканирование — без перехода по папкам. Для чтения диска программа запросит права администратора. Версия 0.10.7 экспериментальная.</p><div class="herobuttons"><a class="button button-primary" href="https://github.com/virus53111/dogizen/releases/download/v0.10.7/MURDILIMAX-Recovery-Setup-0.10.7.exe" download><span>⬇</span><span data-i="ctaDownload">Скачать установщик 0.10.7</span></a><a class="button button-ghost" target="_blank" rel="noopener" href="https://github.com/virus53111/dogizen/tree/main/desktop"><span data-i="ctaGuide">Код и инструкция</span> ↗</a></div></div>
+<div class="cta-aside"><div class="cta-point"><span style="color:#76f7fa">✓</span><span data-i="ctaPoint1">Без регистрации и платежей</span></div><div class="cta-point"><span style="color:#76f7fa">✓</span><span data-i="ctaPoint2">RU / EN на сайте</span></div><div class="cta-point"><span style="color:#76f7fa">✓</span><span data-i="ctaPoint3">Исходники доступны в GitHub</span></div></div>
+</div>
+<div class="notice" data-i="warning">⚠ Экспериментальная версия. Для ценных данных сначала создай образ диска и сохраняй восстановленные файлы на другой носитель. Работа с неисправными HDD/RAID не прошла полевые испытания.</div>
+</section>
+</main>
+<footer class="wrap footer"><div>© 2026 MURDILIMAX · RECOVERY LAB</div><span data-i="footer">Работа только с собственными носителями или с разрешения владельца. Восстанавливай файлы на другой диск.</span><a href="https://github.com/virus53111/dogizen/tree/main/desktop" target="_blank" rel="noopener">GitHub ↗</a></footer>
+<script>
+(function(){
+'use strict';
+var words={
+ru:{nav1:'Возможности',nav2:'Демо',nav3:'Технологии',nav4:'Скачать',navbutton:'Скачать ↓',chip:'БЕСПЛАТНАЯ ALPHA 0.10.7 · WINDOWS',heroA:'Потерянные файлы.',heroB:'Новый шанс.',heroText:'Ищи удалённые фотографии, документы и архивы на поддерживаемых дисках и образах. Всё локально: без облака и передачи файлов. Результат сохраняется отдельно от источника.',heroDownload:'Скачать для Windows',trustA:'Бесплатно',trustB:'Только на компьютере',trustC:'Без загрузки файлов в интернет',hudA:'КРИСТАЛЛИЧЕСКОЕ ЯДРО',hudB:'ЗАЩИТА ДАННЫХ',strip1:'Источник без записи',strip2:'Выборочное восстановление',strip3:'Программа для Windows',catsSmall:'ВЫБЕРИ СВОЮ ЦЕЛЬ',catsTitle:'Выбирай <em>нужные файлы.</em>',catsDesc:'Фото, документы, видео, архивы и резервные копии кошельков. Выбирай категории и восстанавливай только нужное.',photos:'Фотографии',videos:'Видео',docs:'Документы',archives:'Архивы',crypto:'Crypto Backup',techSmall:'ТЕХНОЛОГИИ 0.10.7',techTitle:'Что умеет <em>программа.</em>',techDesc:'Основные возможности текущей версии. Физически неисправные диски пока не прошли полевые испытания.',feat1h:'NTFS / exFAT',feat1p:'Поиск удалённых записей и восстановление файлов по уцелевшим метаданным в поддерживаемых ситуациях.',feat2h:'Потерянные разделы',feat2p:'Поиск сохранившихся NTFS/exFAT томов и резервных таблиц GPT в образах накопителей.',feat3h:'RAID 0 / 1 / 5 / 6 / 10',feat3p:'Шесть схем RAID 5, RAID 6 только fixed-P/Q, RAID 10 near-2 и осмотр Linux MD 1.2. Порядок дисков и параметры нужно задавать вручную.',feat4h:'File Carving',feat4p:'Поиск JPG, PNG, PDF и ZIP по сигнатурам даже при потере информации об имени файла.',feat5h:'Crypto Backup',feat5p:'Отдельный Wallet Backup Finder ищет названия существующих резервных копий Bitcoin Core, Electrum и keystore. Содержимое, seed-фразы и ключи не читаются.',feat6h:'Read-only',feat6p:'Исходные данные открываются для чтения. Результаты восстановления записываются отдельно.',ctaSmall:'БЕСПЛАТНО ДЛЯ WINDOWS',ctaTitle:'Скачать <em>MURDILIMAX Recovery.</em>',ctaDesc:'Бесплатный установщик для Windows 10/11 (64-bit). Нажмите «Весь диск (C:, D:)», выберите накопитель и начните сканирование — без перехода по папкам. Для чтения диска программа запросит права администратора. Версия 0.10.7 экспериментальная.',ctaDownload:'Скачать установщик 0.10.7',ctaGuide:'Код и инструкция',ctaPoint1:'Без регистрации и платежей',ctaPoint2:'RU / EN на сайте',ctaPoint3:'Исходники доступны в GitHub',warning:'⚠ Экспериментальная версия. Для ценных данных сначала создай образ диска и сохраняй восстановленные файлы на другой носитель. Работа с неисправными HDD/RAID не прошла полевые испытания.',footer:'Работа только с собственными носителями или с разрешения владельца. Восстанавливай файлы на другой диск.'},
+en:{nav1:'Capabilities',nav2:'Live UI demo',nav3:'Technology',nav4:'Download',navbutton:'Download ↓',chip:'FREE ALPHA 0.10.7 · WINDOWS',heroA:'Lost files.',heroB:'A new chance.',heroText:'Find deleted photos, documents and archives on supported drives and disk images. Everything runs locally, with no cloud uploads. Save recovered files separately.',heroDownload:'Download for Windows',trustA:'Free alpha',trustB:'Runs on your PC',trustC:'No cloud file uploads',hudA:'CRYSTAL ENGINE',hudB:'DATA PROTECTION',strip1:'Read-only source',strip2:'Selective recovery',strip3:'Windows desktop application',catsSmall:'CHOOSE YOUR TARGET',catsTitle:'Choose the <em>files you need.</em>',catsDesc:'Photos, documents, videos, archives and wallet backups. Filter results and recover only what you need.',photos:'Photos',videos:'Videos',docs:'Documents',archives:'Archives',crypto:'Crypto Backup',techSmall:'TECHNOLOGY 0.10.7',techTitle:'What the <em>app can do.</em>',techDesc:'Key features of the current alpha. Physically damaged drives have not been field-tested.',feat1h:'NTFS / exFAT',feat1p:'Find deleted records and recover files from surviving filesystem metadata in supported cases.',feat2h:'Lost partitions',feat2p:'Search for surviving NTFS/exFAT volumes and backup GPT structures within drive images.',feat3h:'RAID 0 / 1 / 5 / 6 / 10',feat3p:'Six RAID5 layouts, RAID6 fixed P/Q only, RAID10 near-2 and Linux MD 1.2 metadata inspection. Requires explicit drive order and settings.',feat4h:'File carving',feat4p:'Search for JPG, PNG, PDF and ZIP signatures even when original filenames are gone.',feat5h:'Crypto Backup',feat5p:'Dedicated local Wallet Backup Finder checks visible filenames for known wallet backup patterns. It never reads secrets, seed phrases or keys.',feat6h:'Read-only',feat6p:'The source is opened read-only. Recovery output is written separately.',ctaSmall:'FREE FOR WINDOWS',ctaTitle:'Download <em>MURDILIMAX Recovery.</em>',ctaDesc:'Free installer for Windows 10/11 (64-bit). Choose Whole drive (C:, D:), select a drive and start scanning without browsing folders. Windows administrator permission is requested for disk access. Version 0.10.7 is experimental.',ctaDownload:'Download installer 0.10.7',ctaGuide:'Code & instructions',ctaPoint1:'No registration or payments',ctaPoint2:'RU / EN website',ctaPoint3:'Source available on GitHub',warning:'⚠ Experimental software. For valuable data, make a disk image first and recover to a different drive. Damaged HDD/RAID scenarios have not been field-tested.',footer:'Only use with devices you own or are authorized to access. Recover files to another drive.'}
+};
+var lang='ru';try{lang=localStorage.getItem('murdilimax-lang')||((navigator.language||'ru').startsWith('ru')?'ru':'en')}catch(e){}
+function translate(){lang=lang==='en'?'en':'ru';document.documentElement.lang=lang;document.querySelectorAll('[data-i]').forEach(function(el){var val=words[lang][el.dataset.i];if(val===undefined)return;if(['catsTitle','showTitle','techTitle','ctaTitle'].includes(el.dataset.i))el.innerHTML=val;else el.textContent=val;});document.getElementById('lang').textContent=lang==='ru'?'RU / EN':'EN / RU';document.title=lang==='ru'?'MURDILIMAX Recovery — возвращаем важное':'MURDILIMAX Recovery — A new chance for your files';}
+document.getElementById('lang').addEventListener('click',function(){lang=lang==='ru'?'en':'ru';try{localStorage.setItem('murdilimax-lang',lang)}catch(e){}translate()});translate();
+var navlinks=document.getElementById('navlinks'),toggle=document.getElementById('navtoggle');
+toggle.addEventListener('click',function(){var open=navlinks.classList.toggle('open');toggle.setAttribute('aria-expanded',String(open))});
+navlinks.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){navlinks.classList.remove('open');toggle.setAttribute('aria-expanded','false')})});
+var revealObserver='IntersectionObserver' in window?new IntersectionObserver(function(entries){entries.forEach(function(en){if(en.isIntersecting){en.target.classList.add('visible');revealObserver.unobserve(en.target)}})},{threshold:.12}):null;
+document.querySelectorAll('.reveal').forEach(function(e){if(revealObserver)revealObserver.observe(e);else e.classList.add('visible')});
+var canvas=document.getElementById('crystalWorld'),ctx=canvas.getContext('2d',{alpha:false}),motionOn=!window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var motion=document.getElementById('motion');var view={w:0,h:0,dpr:1};var mouse={x:0,y:0},stars=[],sparks=[];var seed=33719;
+function rand(){seed=(seed*1664525+1013904223)>>>0;return seed/4294967296}
+for(var k=0;k<155;k++)stars.push({x:rand(),y:rand()*.78,r:.3+rand()*1.6,s:rand()*6.28,c:rand()});
+for(var j=0;j<64;j++)sparks.push({x:rand(),y:rand(),r:1+rand()*2,v:.12+rand()*.65,s:rand()*6.28});
+function resize(){var rect=canvas.getBoundingClientRect();view.w=Math.max(1,rect.width);view.h=Math.max(1,rect.height);view.dpr=Math.min(window.devicePixelRatio||1,1.8);canvas.width=Math.ceil(view.w*view.dpr);canvas.height=Math.ceil(view.h*view.dpr);ctx.setTransform(view.dpr,0,0,view.dpr,0,0)}
+if('ResizeObserver' in window)new ResizeObserver(resize).observe(canvas);else window.addEventListener('resize',resize);resize();
+var sceneActive=true,frame=0,last=0;
+if('IntersectionObserver' in window)new IntersectionObserver(function(entries){sceneActive=entries[0].isIntersecting},{threshold:0}).observe(canvas);
+window.addEventListener('pointermove',function(ev){if(!motionOn)return;mouse.x=(ev.clientX/window.innerWidth-.5)*22;mouse.y=(ev.clientY/window.innerHeight-.5)*14},{passive:true});
+motion.addEventListener('click',function(){motionOn=!motionOn;document.body.classList.toggle('motion-off',!motionOn);motion.textContent=motionOn?'✦':'⏸';motion.title=motionOn?(lang==='ru'?'Отключить движение':'Disable motion'):(lang==='ru'?'Включить движение':'Enable motion');draw(performance.now()/1000)});
+function polygon(points,color,stroke,blur){ctx.beginPath();ctx.moveTo(points[0][0],points[0][1]);for(var z=1;z<points.length;z++)ctx.lineTo(points[z][0],points[z][1]);ctx.closePath();ctx.fillStyle=color;ctx.fill();if(stroke){ctx.strokeStyle=stroke;ctx.lineWidth=1.7;ctx.shadowBlur=blur||0;ctx.shadowColor=stroke;ctx.stroke();ctx.shadowBlur=0}}
+function glow(x,y,r,rgb,a){var g=ctx.createRadialGradient(x,y,0,x,y,r);g.addColorStop(0,'rgba('+rgb+','+a+')');g.addColorStop(.32,'rgba('+rgb+','+(a*.27)+')');g.addColorStop(1,'rgba('+rgb+',0)');ctx.fillStyle=g;ctx.fillRect(x-r,y-r,r*2,r*2)}
+function crystal(x,y,w,h,kind,phase,t){
+var lift=motionOn?Math.sin(t*1.23+phase)*4:0;y+=lift;
+var shades=kind==='cyan'?['#c5ffff','#5deaff','#218dcc','#2960a7','#d6ffff']:kind==='pink'?['#ffdcff','#ef80ff','#af3ed9','#71358d','#fff0ff']:['#fdd5ff','#bb76ff','#7d3be5','#50219e','#ffe9ff'];
+glow(x,y-h*.55,w*1.8,kind==='cyan'?'75,208,255':'190,74,255',.26);
+var tip=[x,y-h],l=[x-w*.57,y-h*.59],r=[x+w*.54,y-h*.60],bl=[x-w*.41,y],br=[x+w*.43,y],mid=[x-w*.05,y-h*.48],cent=[x,y-h*.17];
+ctx.save();ctx.shadowBlur=25;ctx.shadowColor=shades[1];
+polygon([tip,l,mid],shades[0],shades[4],11);
+polygon([tip,mid,r],shades[1],shades[4],12);
+polygon([l,bl,cent,mid],shades[2],shades[1],6);
+polygon([mid,cent,br,r],shades[3],shades[1],6);
+polygon([bl,br,cent],shades[2],shades[1],6);
+polygon([tip,mid,cent],shades[4]);ctx.restore();
+ctx.save();ctx.globalAlpha=.7;ctx.strokeStyle=shades[4];ctx.shadowBlur=12;ctx.shadowColor=shades[4];ctx.lineWidth=1.6;ctx.beginPath();ctx.moveTo(tip[0],tip[1]);ctx.lineTo(mid[0],mid[1]);ctx.lineTo(cent[0],cent[1]);ctx.stroke();ctx.restore();
+glow(tip[0],tip[1],17,'255,250,255',.65)
+}
+function draw(tt){if(!ctx)return;var w=view.w,h=view.h;if(w<=0||h<=0)return;
+var t=motionOn?tt:12;var mx=motionOn?mouse.x:0,my=motionOn?mouse.y:0;
+var bg=ctx.createLinearGradient(0,0,w,h);bg.addColorStop(0,'#111745');bg.addColorStop(.48,'#0e153b');bg.addColorStop(1,'#270d49');ctx.fillStyle=bg;ctx.fillRect(0,0,w,h);
+glow(w*.71,h*.29,w*.67,'80,55,158',.36);glow(w*.64,h*.65,w*.41,'161,56,219',.18);
+stars.forEach(function(s){var tw=.35+.65*Math.sin(t*.9+s.s)*Math.sin(t*.9+s.s);ctx.globalAlpha=.28+tw*.54;ctx.fillStyle=s.c>.8?'#b7ffff':'#f6dcff';ctx.beginPath();ctx.arc(s.x*w+mx*.3,s.y*h+my*.3,s.r*(.75+.3*tw),0,Math.PI*2);ctx.fill()});ctx.globalAlpha=1;
+// distant cliffs and turquoise waterfalls
+polygon([[0,h*.57],[w*.07,h*.47],[w*.17,h*.54],[w*.3,h*.4],[w*.45,h*.55],[w*.53,h*.49],[w*.62,h*.56],[w*.73,h*.46],[w*.88,h*.54],[w,h*.4],[w,h],[0,h]],'#17234d');
+polygon([[0,h*.64],[w*.13,h*.51],[w*.29,h*.59],[w*.36,h*.52],[w*.44,h*.63],[w*.57,h*.55],[w*.74,h*.61],[w*.88,h*.51],[w,h*.66],[w,h],[0,h]],'#162042');
+for(var n=0;n<3;n++){var wx=w*(.11+n*.31);var wy=h*(.54+n*.02);var wg=ctx.createLinearGradient(wx,wy,wx,wy+h*.2);wg.addColorStop(0,'#4adfff99');wg.addColorStop(.2,'#97d5ff4a');wg.addColorStop(1,'#7d69ff00');ctx.fillStyle=wg;ctx.fillRect(wx,wy,w*.013,h*.24)}
+// ground, neon floor grid
+var gy=h*.73;
+var gr=ctx.createLinearGradient(0,gy,0,h);gr.addColorStop(0,'#262153');gr.addColorStop(1,'#090c29');ctx.fillStyle=gr;ctx.fillRect(0,gy,w,h-gy);
+ctx.save();ctx.strokeStyle='#815bca33';ctx.lineWidth=1;for(var p=1;p<=8;p++){var frac=p/8;var yy=gy+Math.pow(frac,1.85)*(h-gy);ctx.beginPath();ctx.moveTo(0,yy);ctx.lineTo(w,yy);ctx.stroke()}for(var q=-7;q<=7;q++){ctx.beginPath();ctx.moveTo(w*.58,gy);ctx.lineTo(w*.58+q*w*.115,h);ctx.stroke()}ctx.restore();
+var cx=w*.6+mx*.33,cy=h*.52+my*.23;
+glow(cx,cy,w*.30,'93,111,254',.13);
+// distant portal rings
+for(var ring=0;ring<3;ring++){ctx.save();ctx.globalAlpha=.8-ring*.22;ctx.shadowBlur=25;ctx.shadowColor=ring===1?'#e777ff':'#57d7ff';ctx.strokeStyle=ring===1?'#b875ff':'#69ecff';ctx.lineWidth=ring===0?5:2;ctx.beginPath();ctx.ellipse(cx,cy,w*(.21+ring*.018),h*(.29+ring*.017),-.13,0,Math.PI*2);ctx.stroke();ctx.restore()}
+glow(cx,cy,h*.22,'133,50,224',.12);
+// orbiting glints
+for(var o=0;o<18;o++){var ang=o*6.283/18+t*.18;var px=cx+Math.cos(ang)*w*.23,py=cy+Math.sin(ang)*h*.3;glow(px,py,9,o%3===0?'250,112,252':'97,229,255',.5)}
+// podium
+ctx.save();ctx.shadowBlur=45;ctx.shadowColor='#a657ff';ctx.strokeStyle='#ba82ff';ctx.lineWidth=7;ctx.beginPath();ctx.ellipse(cx,gy+h*.074,w*.31,h*.067,0,0,Math.PI*2);ctx.stroke();ctx.restore();
+ctx.strokeStyle='#71ffffaa';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(cx,gy+h*.074,w*.28,h*.057,0,0,Math.PI*2);ctx.stroke();
+// floating crystals cluster
+crystal(cx-w*.17,gy+h*.028,w*.10,h*.25,'cyan',1,t);
+crystal(cx+w*.14,gy+h*.02,w*.125,h*.30,'pink',2,t);
+crystal(cx-w*.07,gy+h*.025,w*.13,h*.34,'pink',3,t);
+crystal(cx+w*.045,gy+h*.025,w*.15,h*.42,'cyan',4,t);
+crystal(cx+mx*.03,gy+h*.04,w*.17,h*.49,'pink',5,t);
+// fractured ground side crystals
+crystal(w*.13,gy+h*.12,w*.10,h*.20,'pink',2,t);
+crystal(w*.89,gy+h*.12,w*.10,h*.23,'cyan',4,t);
+// motes
+sparks.forEach(function(s){var px=(s.x*w+t*12*s.v)%(w+80)-30,py=(s.y*h-t*20*s.v)%(h+80);if(py<0)py+=h+80;glow(px,py,s.r*7,s.x>.5?'255,118,239':'90,223,255',.33);ctx.globalAlpha=.56;ctx.fillStyle='#f4ecff';ctx.fillRect(px,py,s.r,s.r);ctx.globalAlpha=1});
+}
+function loop(tm){if(sceneActive&&motionOn&&(!document.hidden)&&tm-last>25){draw(tm/1000);last=tm}requestAnimationFrame(loop)}requestAnimationFrame(loop);draw(0);
+})();
+</script>
+</body></html>
