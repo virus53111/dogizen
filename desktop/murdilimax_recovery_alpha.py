@@ -58,12 +58,16 @@ def raw_kind_to_group(kind: str) -> str:
     return {"JPG":"Photos", "PNG":"Photos", "PDF":"Documents", "ZIP":"Archives"}[kind]
 
 
-def find_end(fp, start: int, kind: str, file_size: int) -> int | None:
+def find_end(fp, start: int, kind: str, file_size: int, cancelled=None) -> int | None:
     """Heuristic validation, not a guarantee the recovered file is intact."""
+    if cancelled is not None and cancelled():
+        return None
     hard_end = min(file_size, start + MAX_CARVE)
     if kind == "PNG":
         pos = start + 8
         while pos + 12 <= hard_end:
+            if cancelled is not None and cancelled():
+                return None
             fp.seek(pos)
             chunk_head = fp.read(8)
             if len(chunk_head) < 8:
@@ -82,6 +86,8 @@ def find_end(fp, start: int, kind: str, file_size: int) -> int | None:
     fp.seek(start + len(SIGS[kind]))
     cursor = start + len(SIGS[kind]); carry = b''
     while cursor < hard_end:
+        if cancelled is not None and cancelled():
+            return None
         block = fp.read(min(1024*1024, hard_end-cursor))
         if not block:
             break
@@ -126,7 +132,7 @@ def carve_image(path: str, chosen: set[str], stop: threading.Event, post) -> Non
                     if off < 0 or off in reported:
                         continue
                     reported.add(off)
-                    length = find_end(fp, off, typ, total)
+                    length = find_end(fp, off, typ, total, stop.is_set)
                     if length is not None and length > len(sig):
                         post('hit', Hit(raw_kind_to_group(typ), f'{typ} @ 0x{off:X}', path, off, length, True))
             cursor += len(chunk)
