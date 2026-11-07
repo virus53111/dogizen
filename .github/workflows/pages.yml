@@ -1,4 +1,4 @@
-name: Publish MURDILIMAX Recovery
+name: Publish MURDIWORLD
 on:
   push:
     branches: [main]
@@ -11,6 +11,9 @@ on:
       - 'sitemap.xml'
       - 'CNAME'
       - 'tools/check_site.mjs'
+      - 'guide/**'
+      - 'recovery/**'
+      - 'downloads/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 permissions:
@@ -31,13 +34,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Validate recovery site
+      - name: Validate game, guide, ZIP and preserved recovery site
         run: node tools/check_site.mjs
       - uses: actions/configure-pages@v5
       - name: Stage only public website files
         run: |
-          mkdir -p _site
+          mkdir -p _site/guide _site/recovery _site/downloads
           cp index.html download.html 404.html favicon.svg robots.txt sitemap.xml CNAME _site/
+          cp guide/index.html _site/guide/
+          cp recovery/index.html _site/recovery/
+          cp downloads/MURDIWORLD_Prototype_0.1.zip _site/downloads/
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
