@@ -2,6 +2,7 @@
 
 All disk inputs are synthetic. These tests never open real hardware.
 """
+import io
 import os
 import tempfile
 import unittest
@@ -12,6 +13,7 @@ from unittest.mock import MagicMock, patch
 import murdilimax_devices as devices
 from murdilimax_engine import Candidate, MAX_RECORDS, scan_image
 from test_engine import ntfs_fixture
+from murdilimax_recovery_alpha import find_end
 
 
 class PhysicalEnumerationTests(unittest.TestCase):
@@ -93,6 +95,32 @@ class ScanCoverageTests(unittest.TestCase):
                 scan_image(path)
             self.assertEqual(reader.call_args.args[3], MAX_RECORDS)
             self.assertGreater(MAX_RECORDS, 100000)
+
+    def test_progress_never_goes_backwards_during_deep_scan(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / 'ntfs.img'
+            ntfs_fixture(path)
+            events = []
+            found, parts, errors = scan_image(
+                path, deep_partitions=True, probe_cap=512,
+                progress=lambda done,total: events.append(int(done*100/max(1,total))))
+        self.assertFalse(errors)
+        self.assertEqual(len(parts), 1)
+        self.assertEqual(len(found), 1)
+        self.assertTrue(events)
+        self.assertTrue(all(a <= b for a,b in zip(events,events[1:])), events)
+        self.assertEqual(events[-1], 100)
+
+    def test_carving_signature_validation_can_be_cancelled(self):
+        raw = io.BytesIO(b'%PDF-' + b'A' * (4 * 1024 * 1024))
+        calls = [0]
+        def cancelled():
+            calls[0] += 1
+            return calls[0] >= 3
+        self.assertIsNone(find_end(raw, 0, 'PDF',
+                                   len(raw.getbuffer()), cancelled))
+        self.assertGreaterEqual(calls[0], 3)
+        self.assertLess(raw.tell(), 3 * 1024 * 1024)
 
     def test_audio_candidates_are_searchable(self):
         item = Candidate('NTFS', 'track.mp3', 'music/track.mp3', 10, 0)
