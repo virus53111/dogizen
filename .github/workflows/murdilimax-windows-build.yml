@@ -96,46 +96,46 @@ jobs:
           Set-Location 'desktop'
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'windows-installer.iss'
           if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
-          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.5.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.6.exe'
           if (!(Test-Path $setup)) { throw 'Installer not created' }
       - name: Generate SHA256 checksums
         shell: pwsh
         run: |
           Set-Location 'desktop'
           $portable='dist/MURDILIMAX-Recovery.exe'
-          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.5.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.6.exe'
           $portableHash=(Get-FileHash $portable -Algorithm SHA256).Hash.ToLowerInvariant()
           $setupHash=(Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$setupHash  MURDILIMAX-Recovery-Setup-0.10.5.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
+          "$setupHash  MURDILIMAX-Recovery-Setup-0.10.6.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
           "$portableHash  MURDILIMAX-Recovery.exe" | Add-Content -Encoding ascii 'SHA256SUMS.txt'
       - name: Upload tested installer and quality report
         uses: actions/upload-artifact@v4
         with:
-          name: MURDILIMAX-Recovery-0.10.5-Windows
+          name: MURDILIMAX-Recovery-0.10.6-Windows
           path: |
             desktop/dist/MURDILIMAX-Recovery.exe
-            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.5.exe
+            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.6.exe
             desktop/SHA256SUMS.txt
             desktop/QUALITY-REPORT.json
             desktop/CRYSTAL-UI.png
           if-no-files-found: error
-      - name: Publish verified Recovery 0.10.5 downloads
+      - name: Publish verified Recovery 0.10.6 downloads
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.10.5
+          tag_name: v0.10.6
           target_commitish: ${{ github.sha }}
-          name: MURDILIMAX Recovery 0.10.5 — Clearer desktop layout / RU EN
+          name: MURDILIMAX Recovery 0.10.6 — disk detection and scan reliability
           prerelease: true
           make_latest: false
           overwrite_files: false
           body: |
-            Simplifies the desktop layout, removes unsupported symbol glyphs and separates advanced search options. Includes a dedicated whole-drive picker with drive letters (C:, D:), volume labels, sizes and filesystems. Selecting a drive never opens folders and passes the raw read-only volume to the recovery engine.
+            Fixes Windows physical-disk discovery using metadata-only handles, increases the NTFS scan cap, reports progress even with no recovered entries, includes Audio and all search categories by default, and adds actionable zero-result guidance. Existing whole-volume support for drive letters remains available.
             Administrator permission is requested at startup for raw disk access. Recovery to the same physical disk is blocked, even if it has another drive letter.
             Windows may still write to a mounted volume. This is experimental software, not a consistent offline snapshot; recovery is not guaranteed. Existing physical system-disk imaging safeguards remain enabled.
           files: |
             desktop/dist/MURDILIMAX-Recovery.exe
-            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.5.exe
+            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.6.exe
             desktop/SHA256SUMS.txt
             desktop/QUALITY-REPORT.json
             desktop/CRYSTAL-UI.png
