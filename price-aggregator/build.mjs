@@ -1,8 +1,7 @@
-import { mkdirSync, rmSync, copyFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 rmSync('dist',{recursive:true,force:true});
-mkdirSync('dist/downloads',{recursive:true});
-copyFileSync('public/recovery.html','dist/index.html');
-copyFileSync('desktop/README-v091-RU-EN.md','dist/downloads/README-v05-RU-EN.md');
-writeFileSync('dist/robots.txt','User-agent: *\nAllow: /\nSitemap: https://cenaradar.online/sitemap.xml\n');
-writeFileSync('dist/sitemap.xml','<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>https://cenaradar.online/</loc></url></urlset>');
-console.log('MURDILIMAX Recovery 0.9.1 quality site ready');
+mkdirSync('dist',{recursive:true});
+writeFileSync('dist/index.html',"<!doctype html><html lang=\"ru\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta http-equiv=\"refresh\" content=\"0;url=https://murdilimax.com/\"><link rel=\"canonical\" href=\"https://murdilimax.com/\"><meta name=\"robots\" content=\"noindex,follow\"><title>MURDILIMAX Recovery — новый адрес</title><script>location.replace(\"https://murdilimax.com/\"+location.hash);</script></head><body><p>MURDILIMAX Recovery переехал на <a href=\"https://murdilimax.com/\">murdilimax.com</a>.</p></body></html>");
+writeFileSync('dist/404.html',"<!doctype html><html lang=\"ru\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta http-equiv=\"refresh\" content=\"0;url=https://murdilimax.com/\"><link rel=\"canonical\" href=\"https://murdilimax.com/\"><meta name=\"robots\" content=\"noindex,follow\"><title>MURDILIMAX Recovery — новый адрес</title><script>location.replace(\"https://murdilimax.com/\"+location.hash);</script></head><body><p>MURDILIMAX Recovery переехал на <a href=\"https://murdilimax.com/\">murdilimax.com</a>.</p></body></html>");
+writeFileSync('dist/robots.txt','User-agent: *\nAllow: /\nSitemap: https://murdilimax.com/sitemap.xml\n');
+console.log('CenaRadar domain migration: redirect visitors to https://murdilimax.com/');
