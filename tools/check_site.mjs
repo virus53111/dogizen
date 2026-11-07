@@ -11,7 +11,7 @@ for(const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/g)) new vm.Scr
 const links=[...html.matchAll(/href=["']([^"']+)["']/g)].map(m=>m[1]);
 const installers=links.filter(s=>s.includes('/releases/download/'));
 assert(installers.length>=3);
-assert(installers.every(s=>s==='https://github.com/virus53111/dogizen/releases/download/v0.10.4/MURDILIMAX-Recovery-Setup-0.10.4.exe'));
+assert(installers.every(s=>s==='https://github.com/virus53111/dogizen/releases/download/v0.10.5/MURDILIMAX-Recovery-Setup-0.10.5.exe'));
 assert(fs.readFileSync('CNAME','utf8').trim()==='murdilimax.com');
 assert(fs.readFileSync('robots.txt','utf8').includes('Sitemap: https://murdilimax.com/sitemap.xml'));
 assert(fs.readFileSync('sitemap.xml','utf8').includes('<loc>https://murdilimax.com/</loc>'));
