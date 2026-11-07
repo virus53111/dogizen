@@ -320,7 +320,7 @@ QFrame#smallpanel { background:#121B3E; border:1px solid #474E92; border-radius:
 QLabel#section { color:#B9C5EF; font-weight:800; letter-spacing:1.1px; }
 QLabel#muted { color: #A7B3D6; }
 QLabel#counter { color: #E8D3FF; font-size: 20px; font-weight:900; }
-QPushButton#source { background:qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #27215A,stop:1 #10274A); border:1px solid #55599B; border-radius:13px; padding:17px 9px; font-weight:800; font-size:15px; }
+QPushButton#source { background:qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #27215A,stop:1 #10274A); border:1px solid #55599B; border-radius:13px; padding:10px 9px; font-weight:800; font-size:13px; }
 QPushButton#source:hover { border:2px solid #67EAFF; background:#26377D; }
 QPushButton#primary { color:#FAF7FF; background:qlineargradient(x1:0,y1:0,x2:1,y2:0,stop:0 #7F3BD8,stop:.5 #9F62F0,stop:1 #148DC0); border:2px solid #C99AFF; border-radius:14px; padding:12px 20px; font-size:16px; font-weight:900; }
 QPushButton#primary:hover { background:#8E57DE; border:2px solid #82EDFF; }
@@ -438,7 +438,7 @@ class CrystalWindow(QMainWindow):
         self.image_btn=self.button('',self.make_image);actions.addWidget(self.image_btn)
         self.raid_btn=self.button('',self.raid_builder)
         extra_actions=QHBoxLayout();extra_actions.addWidget(self.image_btn);extra_actions.addWidget(self.raid_btn)
-        sp.addLayout(actions);sp.addLayout(extra_actions)
+        sp.addLayout(actions);advanced_layout.addLayout(extra_actions)
         status_panel=self.panel();cv.addWidget(status_panel)
         prog=QHBoxLayout(status_panel);prog.setContentsMargins(18,12,18,12);prog.setSpacing(17)
         gem=self.label('');gem.setStyleSheet('font-size:46px;color:#75E3FF;')
@@ -459,7 +459,7 @@ class CrystalWindow(QMainWindow):
         self.session_save_btn=self.button('',self.save_scan_session);rh.addWidget(self.session_save_btn)
         self.session_open_btn=self.button('',self.open_scan_session);rh.addWidget(self.session_open_btn)
         self.search=QLineEdit();self.search.setMinimumWidth(120)
-        self.search.textChanged.connect(self.apply_filter);rh.addWidget(self.search);rv.addLayout(rh)
+        self.search.textChanged.connect(self.apply_filter);rv.addLayout(rh);rv.addWidget(self.search)
         self.table=QTableWidget(0,5);self.table.setAlternatingRowColors(True)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
