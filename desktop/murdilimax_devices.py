@@ -73,14 +73,22 @@ def enumerate_volumes():
         label = ctypes.create_unicode_buffer(261)
         fs = ctypes.create_unicode_buffer(64)
         serial, maximum, flags = wintypes.DWORD(), wintypes.DWORD(), wintypes.DWORD()
-        if not k.GetVolumeInformationW(root, label, len(label), ctypes.byref(serial),
-                ctypes.byref(maximum), ctypes.byref(flags), fs, len(fs)):
-            continue  # no media / locked volume / unavailable
+        # A failure to query a name / filesystem MUST NOT hide a drive letter.
+        # Windows Explorer may display a perfectly selectable D: while a metadata
+        # request fails (BitLocker, transient storage conditions, permissions).
+        # This strategy follows the fault-tolerant drive discovery of Halim
+        # Recovery (MIT, Halim Toklu, 2026; see THIRD_PARTY_NOTICES.md).
+        metadata_ok = bool(k.GetVolumeInformationW(
+            root, label, len(label), ctypes.byref(serial),
+            ctypes.byref(maximum), ctypes.byref(flags), fs, len(fs)))
         free, total, unused = ctypes.c_ulonglong(), ctypes.c_ulonglong(), ctypes.c_ulonglong()
-        if not k.GetDiskFreeSpaceExW(root, ctypes.byref(free), ctypes.byref(total), ctypes.byref(unused)):
-            continue
+        size_ok = bool(k.GetDiskFreeSpaceExW(
+            root, ctypes.byref(free), ctypes.byref(total), ctypes.byref(unused)))
         result.append({'path': volume_device(letter), 'letter': letter,
-                       'label': label.value, 'fs': fs.value, 'size': total.value})
+                       'label': label.value if metadata_ok else '',
+                       'fs': fs.value if metadata_ok and fs.value else 'UNKNOWN',
+                       'size': total.value if size_ok else 0,
+                       'ready': metadata_ok and size_ok})
     return result
 
 
