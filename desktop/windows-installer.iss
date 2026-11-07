@@ -35,4 +35,4 @@ Source: "README-CRYSTAL-0105-RU-EN.md"; DestDir: "{app}"; Flags: ignoreversion
 Name: "{group}\MURDILIMAX Recovery"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 Name: "{autodesktop}\MURDILIMAX Recovery"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Verb: "runas"; Flags: nowait postinstall skipifsilent shellexec
