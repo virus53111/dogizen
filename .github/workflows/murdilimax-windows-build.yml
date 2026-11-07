@@ -6,6 +6,11 @@ on:
     paths:
       - 'desktop/**'
       - '.github/workflows/murdilimax-windows-build.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/murdilimax-windows-build.yml'
 permissions:
   contents: write
 jobs:
