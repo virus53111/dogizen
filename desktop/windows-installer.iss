@@ -1,5 +1,5 @@
 #define MyAppName "MURDILIMAX Recovery"
-#define MyAppVersion "0.10.6"
+#define MyAppVersion "0.10.7"
 #define MyAppExeName "MURDILIMAX-Recovery.exe"
 [Setup]
 AppId={{F3129D3B-56CB-4A41-8B0D-74D632EDA564}
@@ -14,7 +14,7 @@ DefaultGroupName=MURDILIMAX Recovery
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir=installer-output
-OutputBaseFilename=MURDILIMAX-Recovery-Setup-0.10.6
+OutputBaseFilename=MURDILIMAX-Recovery-Setup-0.10.7
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -30,9 +30,12 @@ Name: "en"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 [Files]
 Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "halim-output\HalimRecovery.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "halim-src\LICENSE"; DestDir: "{app}\third-party"; DestName: "HALIM-LICENSE.txt"; Flags: ignoreversion
+Source: "THIRD_PARTY_NOTICES.md"; DestDir: "{app}\third-party"; Flags: ignoreversion
 Source: "README-CRYSTAL-0105-RU-EN.md"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{group}\MURDILIMAX Recovery"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 Name: "{autodesktop}\MURDILIMAX Recovery"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon
 [Run]
-Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Flags: nowait postinstall skipifsilent
+Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}"; Verb: "runas"; Flags: nowait postinstall skipifsilent shellexec

@@ -16,6 +16,47 @@ from test_engine import ntfs_fixture
 from murdilimax_recovery_alpha import find_end
 
 
+class VolumeEnumerationTests(unittest.TestCase):
+    def test_explorer_visible_d_drive_survives_failed_metadata_query(self):
+        # Regression: Windows Explorer showed C: and D:, but the picker omitted D:
+        # because GetVolumeInformationW could not be queried at that moment.
+        k = MagicMock()
+        k.GetLogicalDrives.return_value = (1 << 2) | (1 << 3)
+        k.GetDriveTypeW.return_value = 3
+        def get_metadata(root, label, _n, _serial, _max, _flags, fs, _fssize):
+            if root.startswith('C:'):
+                label.value = 'Windows'
+                fs.value = 'NTFS'
+                return True
+            return False
+        def get_capacity(root, _free, total, _unused):
+            total._obj.value = (232 if root.startswith('C:') else 928) * 1024**3
+            return True
+        k.GetVolumeInformationW.side_effect = get_metadata
+        k.GetDiskFreeSpaceExW.side_effect = get_capacity
+        with patch.object(devices, 'os', SimpleNamespace(name='nt')), \
+             patch.object(devices, '_kernel', return_value=k):
+            disks = devices.enumerate_volumes()
+        self.assertEqual([d['letter'] for d in disks], ['C:','D:'])
+        self.assertEqual(disks[0]['fs'],'NTFS')
+        self.assertEqual(disks[1]['fs'],'UNKNOWN')
+        self.assertEqual(disks[1]['size'],928*1024**3)
+        self.assertEqual(disks[1]['path'],r'\\.\D:')
+
+    def test_metadata_and_capacity_failures_do_not_hide_a_drive_letter(self):
+        k = MagicMock()
+        k.GetLogicalDrives.return_value = 1 << 4
+        k.GetDriveTypeW.return_value = 2
+        k.GetVolumeInformationW.return_value = False
+        k.GetDiskFreeSpaceExW.return_value = False
+        with patch.object(devices, 'os', SimpleNamespace(name='nt')), \
+             patch.object(devices, '_kernel', return_value=k):
+            rows = devices.enumerate_volumes()
+        self.assertEqual([d['letter'] for d in rows], ['E:'])
+        self.assertEqual(rows[0]['fs'],'UNKNOWN')
+        self.assertEqual(rows[0]['size'],0)
+
+
 class PhysicalEnumerationTests(unittest.TestCase):
     def test_discovery_does_not_require_raw_data_read_permission(self):
         k = MagicMock()

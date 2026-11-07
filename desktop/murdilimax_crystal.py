@@ -9,6 +9,7 @@ import json
 import math
 import os
 import sys
+import subprocess
 import threading
 from datetime import datetime, timezone
 from io import BytesIO
@@ -40,7 +41,7 @@ from murdilimax_crystal_logic import (
     normalize_categories, supported_preview, recommendation_color, selected_items, read_visible_photo,
 )
 
-VERSION='0.10.6'
+VERSION='0.10.7'
 BG='#070B20'
 PANEL='#111937'
 VIOLET='#B87AFF'
@@ -88,7 +89,7 @@ TR={
  'confirm_reset':'Выйти сейчас нельзя: операция ещё выполняется. Нажмите «Остановить» и дождитесь её окончания.',
  'no_report':'Отчёт ещё не создан. Сначала восстановите хотя бы один файл.',
  'scan_finished':'Сканирование завершено','recovery_finished':'Восстановление завершено',
-  'no_results':'Удалённые файлы по метаданным не найдены. Это не означает, что диск пуст. Попробуйте «По сигнатурам» в расширенных настройках: JPG/PNG/PDF/ZIP. Для повреждённых дисков сначала создайте образ.',
+  'no_results':'Удалённые файлы по метаданным не найдены. Это НЕ означает, что диск пуст. Для более широкого поиска переключите режим над кнопкой запуска или откройте расширенный движок Halim Recovery ниже.',
  'validating':'Проверка файлов и создание локального отчёта…','selected':'Выбрано','working':'Операция выполняется…',
  'raid_help':'Используйте только заранее созданные ОБРАЗЫ участников, не физические HDD. Порядок дисков и размер блока должны быть известны. RAID6 — только фиксированные P/Q, RAID10 — только near-2.',
  'raid_members':'Пути образов по порядку, по одному на строку. «-» — отсутствующий диск:',
@@ -141,7 +142,7 @@ TR={
  'confirm_reset':'An operation is still running. Press Stop and wait for it to finish before exiting.',
  'no_report':'No report created yet. Recover a file first.',
  'scan_finished':'Scan complete','recovery_finished':'Recovery finished',
-  'no_results':'No deleted-file metadata candidates found. The drive is not necessarily empty. Try signature carving (JPG/PNG/PDF/ZIP) in Advanced. For failing drives, image first.',
+  'no_results':'No deleted metadata candidates found. This does NOT mean the drive is empty. Switch scan modes above Start or use the extended Halim Recovery engine below.',
  'validating':'Checking files and writing a local report…','selected':'Selected','working':'Operation in progress…',
  'raid_help':'Use previously acquired member IMAGES only, never physical disks. Member order and chunk size must be known. RAID6 fixed P/Q only, RAID10 near-2 only.',
  'raid_members':'Member image paths in physical order, one per line. Use "-" for a missing member:',
@@ -344,6 +345,16 @@ QScrollBar:vertical { background:#101635; width:12px; }
 QScrollBar::handle:vertical { background:#5F52A2; min-height:35px; border-radius:6px; }
 QDialog { background:#0D1431; }
 QMessageBox { background:#0E1737; }
+QInputDialog { background:#0E1737; min-width:550px; }
+QDialog QLabel, QInputDialog QLabel { color:#EDF1FF; }
+QDialog QPushButton, QMessageBox QPushButton, QInputDialog QPushButton {
+    color:#FFFFFF; background:#2B376B; border:1px solid #7998E8;
+    border-radius:8px; min-width:90px; min-height:26px; padding:5px 13px;
+    font-size:12px; font-weight:700;
+}
+QDialog QPushButton:hover, QMessageBox QPushButton:hover, QInputDialog QPushButton:hover {
+    background:#4452A0; border-color:#82EDFF;
+}
 """
 
 
@@ -422,7 +433,8 @@ class CrystalWindow(QMainWindow):
         self.scan_mode=QComboBox();self.scan_mode.setMaximumWidth(365)
         self.scan_mode.addItem('NTFS/exFAT/ext4',userData='metadata');self.scan_mode.addItem('JPG/PNG/PDF/ZIP',userData='carve')
         self.scan_mode.currentIndexChanged.connect(self.mode_changed)
-        opts.addWidget(self.scan_mode)
+        # A basic scan must never silently masquerade as a full deep scan.
+        sp.addWidget(self.scan_mode)
         self.deep=QCheckBox();self.deep.setChecked(False);opts.addWidget(self.deep)
         self.mft=QCheckBox();self.mft.setChecked(False);opts.addWidget(self.mft)
         advanced_layout.addLayout(opts)
@@ -441,6 +453,8 @@ class CrystalWindow(QMainWindow):
         self.raid_btn=self.button('',self.raid_builder)
         extra_actions=QHBoxLayout();extra_actions.addWidget(self.image_btn);extra_actions.addWidget(self.raid_btn)
         sp.addLayout(actions);advanced_layout.addLayout(extra_actions)
+        self.halim_btn=self.button('',self.open_halim_recovery)
+        sp.addWidget(self.halim_btn)
         status_panel=self.panel();cv.addWidget(status_panel)
         prog=QHBoxLayout(status_panel);prog.setContentsMargins(18,12,18,12);prog.setSpacing(17)
         gem=self.label('');gem.setStyleSheet('font-size:46px;color:#75E3FF;')
@@ -514,6 +528,7 @@ class CrystalWindow(QMainWindow):
         self.scan_mode.setItemText(1,self.t('carve_mode'))
         self.deep.setText(self.t('deep_mode'));self.mft.setText(self.t('mft_mode'))
         self.start_btn.setText(self.t('start'));self.stop_btn.setText(self.t('stop'))
+        self.halim_btn.setText('Расширенное восстановление (Halim Recovery · MIT)' if self.lang=='ru' else 'Advanced recovery (Halim Recovery · MIT)')
         self.image_btn.setText(self.t('image_action'));self.raid_btn.setText(self.t('raid_action'))
         if not self.worker:self.status_label.setText(self.t('idle'));self.status_detail.setText(self.t('scan_sub'))
         self.results_title.setText(self.t('results'))
@@ -534,7 +549,7 @@ class CrystalWindow(QMainWindow):
         self.cfg.setValue('language',self.lang);self.retranslate()
     def set_busy(self,busy):
         for b in (self.start_btn,self.btn_volume,self.btn_image,self.btn_folder,self.btn_device,self.image_btn,
-                  self.raid_btn):b.setEnabled(not busy)
+                  self.raid_btn,self.halim_btn):b.setEnabled(not busy)
         for b in (self.restore_btn,self.preview_btn,self.advisor_btn):
             b.setEnabled(not busy and self.session_snapshot is None)
         self.session_save_btn.setEnabled(not busy and self.scan_complete and self.session_snapshot is None)
@@ -561,12 +576,15 @@ class CrystalWindow(QMainWindow):
         choice,ok=QInputDialog.getItem(self,self.t('volume_select'),self.t('volume_help'),choices,0,False)
         if not ok:return
         drive=drives[choices.index(choice)]
-        if drive['fs'].upper() not in ('NTFS','EXFAT'):
-            QMessageBox.information(self,self.t('volume_card'),self.t('unsupported_volume'));return
+        # Never refuse D: just because the filesystem metadata query failed.
+        unsupported = drive['fs'].upper() not in ('NTFS','EXFAT','UNKNOWN')
+        if unsupported and self.scan_mode.currentIndex()==0:
+            self.scan_mode.setCurrentIndex(1)
         self.invalidate_results()
         self.source=drive['path']
         self.mode='volume' if self.scan_mode.currentIndex()==0 else 'volume-carve'
-        self.source_text.setText(''+choice+'\n'+self.t('volume_selected'))
+        note=(' · Signature scan selected for unsupported filesystem.' if self.lang=='en' else ' · Для этой файловой системы выбран поиск по сигнатурам.') if unsupported else ''
+        self.source_text.setText(''+choice+'\n'+self.t('volume_selected')+note)
         self.set_busy(False)
     def pick_image(self):
         if self.worker:return
@@ -580,6 +598,18 @@ class CrystalWindow(QMainWindow):
         if path:
             self.invalidate_results();self.source=path;self.mode='folder';self.source_text.setText(''+path)
             self.set_busy(False)
+    def open_halim_recovery(self):
+        """Launch MIT-licensed recovery engine under its original credited name."""
+        if self.worker:return
+        target=Path(sys.executable if getattr(sys,'frozen',False) else __file__).resolve().parent/'HalimRecovery.exe'
+        if not target.is_file():
+            QMessageBox.information(self,'Halim Recovery',
+                'Advanced recovery engine is not installed. Install the full Windows package. / Расширенный движок отсутствует; установите полную Windows-сборку.')
+            return
+        try:
+            subprocess.Popen([str(target)],cwd=str(target.parent))
+        except OSError as exc:
+            QMessageBox.warning(self,self.t('error'),f'Halim Recovery: {exc}')
     def pick_device(self):
         if self.worker:return
         drives=enumerate_drives()

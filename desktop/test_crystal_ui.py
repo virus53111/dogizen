@@ -23,7 +23,7 @@ class CrystalGuiSmoke(unittest.TestCase):
     def tearDown(self):
         self.window.close();self.window.deleteLater()
     def test_version_and_window(self):
-        self.assertEqual(VERSION,'0.10.6')
+        self.assertEqual(VERSION,'0.10.7')
         self.assertEqual(self.window.table.rowCount(),0)
         self.assertFalse(self.window.stop_btn.isEnabled())
         self.assertEqual(len(self.window.checkboxes),7)
@@ -108,7 +108,7 @@ class CrystalGuiSmoke(unittest.TestCase):
         self.window.retranslate()
         self.window.handle_job('scan_done',
                                {'found': 0, 'volumes': 1, 'errors': [], 'cancelled': False})
-        self.assertIn('По сигнатурам', self.window.status_detail.text())
+        self.assertIn('Halim Recovery', self.window.status_detail.text())
 
     def test_worker_cancel_signal(self):
         w=Job('preview',{'source':'not_exist','item':None})
@@ -131,6 +131,31 @@ class CrystalGuiSmoke(unittest.TestCase):
             self.window.scan()
         self.assertEqual(launch.call_args.args[1]['source'],r'\\.\C:')
         self.assertEqual(launch.call_args.args[1]['mode'],'volume')
+
+    def test_unknown_drive_letter_is_selectable(self):
+        drives=[
+            {'letter':'C:','label':'System','size':230*1024**3,'fs':'NTFS','path':r'\\.\C:'},
+            {'letter':'D:','label':'','size':928*1024**3,'fs':'UNKNOWN','path':r'\\.\D:'},
+        ]
+        with patch('murdilimax_crystal.enumerate_volumes',return_value=drives), \
+             patch('murdilimax_crystal.QInputDialog.getItem',
+                   side_effect=lambda *args: (args[3][1],True)):
+            self.window.pick_volume()
+        self.assertEqual(self.window.source,r'\\.\D:')
+        self.assertEqual(self.window.mode,'volume')
+        self.assertIn('D:',self.window.source_text.text())
+        self.assertFalse(self.window.halim_btn.text()=='')
+        self.assertFalse(self.window.scan_mode.isHidden())
+
+    def test_unsupported_filesystem_switches_to_signature_mode(self):
+        drives=[{'letter':'F:','label':'Flash','size':100,'fs':'FAT32','path':r'\\.\F:'}]
+        with patch('murdilimax_crystal.enumerate_volumes',return_value=drives), \
+             patch('murdilimax_crystal.QInputDialog.getItem',
+                   side_effect=lambda *args: (args[3][0],True)):
+            self.window.pick_volume()
+        self.assertEqual(self.window.source,r'\\.\F:')
+        self.assertEqual(self.window.mode,'volume-carve')
+        self.assertEqual(self.window.scan_mode.currentIndex(),1)
 
     def test_drive_cancel_keeps_previous_source(self):
         self.window.source='old.img';self.window.mode='metadata'
