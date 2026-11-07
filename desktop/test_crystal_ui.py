@@ -23,7 +23,7 @@ class CrystalGuiSmoke(unittest.TestCase):
     def tearDown(self):
         self.window.close();self.window.deleteLater()
     def test_version_and_window(self):
-        self.assertEqual(VERSION,'0.10.3')
+        self.assertEqual(VERSION,'0.10.4')
         self.assertEqual(self.window.table.rowCount(),0)
         self.assertFalse(self.window.stop_btn.isEnabled())
         self.assertEqual(len(self.window.checkboxes),7)
@@ -81,5 +81,38 @@ class CrystalGuiSmoke(unittest.TestCase):
         w=Job('preview',{'source':'not_exist','item':None})
         self.assertFalse(w.stop.is_set())
         w.stop.set();self.assertTrue(w.stop.is_set())
+
+    def test_whole_drive_selection_never_opens_a_folder(self):
+        drive={'letter':'C:','label':'Windows','size':256*1024**3,'fs':'NTFS','path':r'\\.\C:'}
+        with patch('murdilimax_crystal.enumerate_volumes',return_value=[drive]), \
+             patch('murdilimax_crystal.QInputDialog.getItem',side_effect=lambda *args: (args[3][0],True)), \
+             patch('murdilimax_crystal.QFileDialog.getExistingDirectory') as folders:
+            self.window.pick_volume()
+        folders.assert_not_called()
+        self.assertEqual(self.window.source,r'\\.\C:')
+        self.assertEqual(self.window.mode,'volume')
+        self.assertIn('C:',self.window.source_text.text())
+        self.assertFalse(self.window.image_btn.isEnabled())
+        with patch.object(self.window,'launch') as launch, \
+             patch('murdilimax_crystal.QMessageBox.warning',return_value=__import__('PySide6.QtWidgets',fromlist=['QMessageBox']).QMessageBox.StandardButton.Yes):
+            self.window.scan()
+        self.assertEqual(launch.call_args.args[1]['source'],r'\\.\C:')
+        self.assertEqual(launch.call_args.args[1]['mode'],'volume')
+
+    def test_drive_cancel_keeps_previous_source(self):
+        self.window.source='old.img';self.window.mode='metadata'
+        with patch('murdilimax_crystal.enumerate_volumes',return_value=[{'letter':'D:','label':'Data','size':10,'fs':'NTFS','path':r'\\.\D:'}]), \
+             patch('murdilimax_crystal.QInputDialog.getItem',return_value=('',False)):
+            self.window.pick_volume()
+        self.assertEqual(self.window.source,'old.img')
+
+    def test_drive_mode_switch_and_busy_state(self):
+        self.window.source=r'\\.\D:';self.window.mode='volume'
+        self.window.scan_mode.setCurrentIndex(1)
+        self.assertEqual(self.window.mode,'volume-carve')
+        self.window.set_busy(True)
+        self.assertFalse(self.window.btn_volume.isEnabled())
+        self.window.set_busy(False)
+        self.assertTrue(self.window.btn_volume.isEnabled())
 
 if __name__=='__main__':unittest.main()

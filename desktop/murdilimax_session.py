@@ -15,7 +15,7 @@ VERSION = 1
 MAX_ENTRIES = 12_000
 MAX_JSON_BYTES = 16 * 1024 * 1024
 MAX_TEXT = 4096
-ALLOWED_MODES = {'metadata', 'carve', 'folder', 'physical', 'physical-carve'}
+ALLOWED_MODES = {'metadata', 'carve', 'folder', 'physical', 'physical-carve', 'volume', 'volume-carve'}
 
 
 def _clean_text(value, label: str, limit=MAX_TEXT) -> str:

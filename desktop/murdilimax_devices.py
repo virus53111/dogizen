@@ -27,6 +27,62 @@ def is_physical(path: str) -> bool:
     return DRIVE_RE.fullmatch(str(path)) is not None
 
 
+VOLUME_RE = re.compile(r'^\\\\\.\\([A-Za-z]):$')
+
+
+def is_volume(path: str) -> bool:
+    return VOLUME_RE.fullmatch(str(path)) is not None
+
+
+def is_device(path: str) -> bool:
+    return is_physical(path) or is_volume(path)
+
+
+def volume_device(letter: str) -> str:
+    """Accept a drive letter, never a folder or an arbitrary device namespace."""
+    if not re.fullmatch(r'[A-Za-z]:?', str(letter)):
+        raise ValueError('Expected one Windows drive letter')
+    return '\\\\.\\' + letter[0].upper() + ':'
+
+
+def enumerate_volumes():
+    """List local disk/USB volumes without opening them or browsing directories."""
+    if os.name != 'nt':
+        return []
+    k = _kernel()
+    k.GetLogicalDrives.restype = wintypes.DWORD
+    k.GetDriveTypeW.argtypes = [wintypes.LPCWSTR]
+    k.GetDriveTypeW.restype = wintypes.UINT
+    k.GetVolumeInformationW.argtypes = [wintypes.LPCWSTR, wintypes.LPWSTR, wintypes.DWORD,
+        ctypes.POINTER(wintypes.DWORD), ctypes.POINTER(wintypes.DWORD),
+        ctypes.POINTER(wintypes.DWORD), wintypes.LPWSTR, wintypes.DWORD]
+    k.GetVolumeInformationW.restype = wintypes.BOOL
+    k.GetDiskFreeSpaceExW.argtypes = [wintypes.LPCWSTR, ctypes.POINTER(ctypes.c_ulonglong),
+        ctypes.POINTER(ctypes.c_ulonglong), ctypes.POINTER(ctypes.c_ulonglong)]
+    k.GetDiskFreeSpaceExW.restype = wintypes.BOOL
+    mask = k.GetLogicalDrives()
+    result = []
+    for i in range(26):
+        if not mask & (1 << i):
+            continue
+        letter = chr(65 + i) + ':'
+        root = letter + '\\'
+        if k.GetDriveTypeW(root) not in (2, 3):  # removable or fixed; never network/CD-ROM
+            continue
+        label = ctypes.create_unicode_buffer(261)
+        fs = ctypes.create_unicode_buffer(64)
+        serial, maximum, flags = wintypes.DWORD(), wintypes.DWORD(), wintypes.DWORD()
+        if not k.GetVolumeInformationW(root, label, len(label), ctypes.byref(serial),
+                ctypes.byref(maximum), ctypes.byref(flags), fs, len(fs)):
+            continue  # no media / locked volume / unavailable
+        free, total, unused = ctypes.c_ulonglong(), ctypes.c_ulonglong(), ctypes.c_ulonglong()
+        if not k.GetDiskFreeSpaceExW(root, ctypes.byref(free), ctypes.byref(total), ctypes.byref(unused)):
+            continue
+        result.append({'path': volume_device(letter), 'letter': letter,
+                       'label': label.value, 'fs': fs.value, 'size': total.value})
+    return result
+
+
 def _kernel():
     if os.name != 'nt':
         raise OSError('Physical disk mode is only supported on Windows')
@@ -46,6 +102,10 @@ def _kernel():
     k.ReadFile.restype = wintypes.BOOL
     k.CloseHandle.argtypes = [wintypes.HANDLE]
     k.CloseHandle.restype = wintypes.BOOL
+    k.VirtualAlloc.argtypes = [ctypes.c_void_p, ctypes.c_size_t, wintypes.DWORD, wintypes.DWORD]
+    k.VirtualAlloc.restype = ctypes.c_void_p
+    k.VirtualFree.argtypes = [ctypes.c_void_p, ctypes.c_size_t, wintypes.DWORD]
+    k.VirtualFree.restype = wintypes.BOOL
     return k
 
 
@@ -53,7 +113,10 @@ def _open_readonly(k, device):
     h = k.CreateFileW(device, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
                       None, OPEN_EXISTING, 0, None)
     if h == INVALID_HANDLE_VALUE or h is None:
-        raise ctypes.WinError(ctypes.get_last_error())
+        error = ctypes.get_last_error()
+        if error == 5:
+            raise PermissionError('Нет доступа к диску. Запустите программу от имени администратора; разблокируйте BitLocker при необходимости. / Run as administrator and unlock BitLocker if needed.')
+        raise ctypes.WinError(error)
     return h
 
 
@@ -66,9 +129,11 @@ def _ioctl(k, h, code, outsize):
 
 
 class WindowsPhysicalDisk:
+    _valid_path = staticmethod(is_physical)
+
     def __init__(self, path: str):
-        if not is_physical(path):
-            raise ValueError('Only explicit \\\\.\\PhysicalDriveN device paths are allowed')
+        if not self._valid_path(path):
+            raise ValueError('Invalid explicit Windows disk or volume path')
         self.path = path
         self.k = _kernel()
         self.handle = _open_readonly(self.k, path)
@@ -110,12 +175,18 @@ class WindowsPhysicalDisk:
             if amount <= 0: raise IOError('Unaligned device request')
             if not self.k.SetFilePointerEx(self.handle, start, None, FILE_BEGIN):
                 raise ctypes.WinError(ctypes.get_last_error())
-            buf=(ctypes.c_ubyte*amount)()
-            got=wintypes.DWORD()
-            if not self.k.ReadFile(self.handle,buf,amount,ctypes.byref(got),None):
-                raise ctypes.WinError(ctypes.get_last_error())
-            if got.value != amount: raise IOError('Short physical disk read; stop and image damaged drive')
-            out.extend(buf[:got.value]); start += amount
+            # DASD handles can be noncached: buffer addresses must also be sector aligned.
+            buf = self.k.VirtualAlloc(None, amount, 0x3000, 0x04)
+            if not buf:
+                raise MemoryError('Could not allocate aligned disk read buffer')
+            try:
+                got=wintypes.DWORD()
+                if not self.k.ReadFile(self.handle,buf,amount,ctypes.byref(got),None):
+                    raise ctypes.WinError(ctypes.get_last_error())
+                if got.value != amount: raise IOError('Short physical disk read; stop and image damaged drive')
+                out.extend(ctypes.string_at(buf, got.value)); start += amount
+            finally:
+                self.k.VirtualFree(buf, 0, 0x8000)
         head=self.cursor-(self.cursor//sector)*sector
         self.cursor += count
         return bytes(out[head:head+count])
@@ -127,6 +198,11 @@ class WindowsPhysicalDisk:
 
     def __enter__(self): return self
     def __exit__(self,*exc): self.close()
+
+
+class WindowsVolume(WindowsPhysicalDisk):
+    """Read-only logical volume, e.g. \\\\.\\C:, not the C:\\ directory."""
+    _valid_path = staticmethod(is_volume)
 
 
 def enumerate_drives(max_index=24):
@@ -146,7 +222,7 @@ def destination_is_different_disk(source: str, destination: str) -> bool:
     """Fail closed if source and output could resolve to the same physical disk.
     Windows output must be on an assigned local volume with inspectable extents.
     """
-    if not is_physical(source): return True
+    if not is_device(source): return True
     if os.name != 'nt': return False
     output = Path(destination).resolve()
     drive = output.drive
@@ -159,15 +235,29 @@ def destination_is_different_disk(source: str, destination: str) -> bool:
         n=int.from_bytes(ext[:4],'little')
         if n<1 or len(ext)<8+n*24:return False
         disk_nums={int.from_bytes(ext[8+i*24:12+i*24],'little') for i in range(n)}
-        source_num=int(DRIVE_RE.fullmatch(source).group(1))
-        return source_num not in disk_nums
+        if is_physical(source):
+            source_nums = {int(DRIVE_RE.fullmatch(source).group(1))}
+        else:
+            src_handle = _open_readonly(k, source)
+            try:
+                from murdilimax_safety import parse_volume_disk_numbers
+                source_nums = parse_volume_disk_numbers(_ioctl(k, src_handle,
+                    IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 32768))
+            finally:
+                k.CloseHandle(src_handle)
+        return bool(source_nums) and source_nums.isdisjoint(disk_nums)
     finally:
         k.CloseHandle(h)
 
 
 @contextmanager
 def open_source(path: str):
-    if is_physical(path):
+    if is_volume(path):
+        # Explicit logical-volume scan is read-only, including the live C: volume.
+        # No lock, dismount or write IOCTL is issued. This is not an offline snapshot.
+        with WindowsVolume(path) as d:
+            yield d, d.length
+    elif is_physical(path):
         # Protect the running Windows OS disk even during direct scan.
         from murdilimax_safety import system_disk_numbers
         physical_number = int(DRIVE_RE.fullmatch(path).group(1))

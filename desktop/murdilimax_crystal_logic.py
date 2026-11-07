@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Iterable
-from murdilimax_devices import is_physical, destination_is_different_disk
+from murdilimax_devices import is_device, is_volume, destination_is_different_disk
 
 CATEGORIES = ('Photos','Video','Documents','Archives','Crypto backups','Audio','Other')
 
@@ -28,10 +28,13 @@ def validate_source(path: str, mode: str) -> None:
         if not Path(path).is_dir():
             raise ValueError('Selected folder does not exist')
     elif mode in ('physical','physical-carve'):
-        if not is_physical(path):
+        if not is_device(path) or is_volume(path):
             raise ValueError('Select an explicit Windows physical disk using the device picker')
+    elif mode in ('volume','volume-carve'):
+        if not is_volume(path):
+            raise ValueError('Choose a whole disk letter using the disk picker')
     elif mode in ('metadata','carve'):
-        if is_physical(path) or not Path(path).is_file():
+        if is_device(path) or not Path(path).is_file():
             raise ValueError('Choose an existing raw disk image')
     else:
         raise ValueError('Unsupported scan mode')
@@ -42,7 +45,7 @@ def safe_destination(source: str, destination: str, mode: str) -> None:
     if not destination or not Path(destination).is_dir():
         raise ValueError('Choose an existing destination directory')
     out = Path(destination).resolve()
-    if is_physical(source):
+    if is_device(source):
         if not destination_is_different_disk(source, str(out)):
             raise ValueError('Cannot prove destination is on a different physical disk. Blocked.')
         return

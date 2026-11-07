@@ -1,6 +1,11 @@
 name: Build MURDILIMAX Recovery installer for Windows
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/murdilimax-windows-build.yml'
 permissions:
   contents: write
 jobs:
@@ -22,6 +27,13 @@ jobs:
           $env:QT_QPA_PLATFORM = 'offscreen'
           python -m unittest discover -v
           if ($LASTEXITCODE -ne 0) { throw 'Recovery or Qt UI tests failed' }
+      - name: Verify real Windows volume enumeration and read-only access
+        working-directory: desktop
+        shell: pwsh
+        run: |
+          $env:MRD_VOLUME_SMOKE='1'
+          python -m unittest test_volume_selection.WindowsVolumeIntegration -v
+          if ($LASTEXITCODE -ne 0) { throw 'Windows volume access smoke test failed' }
       - name: Verify Russian font glyphs on Windows
         working-directory: desktop
         shell: pwsh
@@ -53,7 +65,7 @@ jobs:
         working-directory: desktop
         shell: pwsh
         run: |
-          python -m PyInstaller --clean --noconfirm --onefile --windowed --noupx --name MURDILIMAX-Recovery --icon assets/murdilimax.ico --paths . murdilimax_crystal.py
+          python -m PyInstaller --clean --noconfirm --onefile --windowed --uac-admin --noupx --name MURDILIMAX-Recovery --icon assets/murdilimax.ico --paths . murdilimax_crystal.py
           if ($LASTEXITCODE -ne 0) { throw 'PyInstaller failed' }
       - name: Check packaged application exists
         shell: pwsh
@@ -79,26 +91,47 @@ jobs:
           Set-Location 'desktop'
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'windows-installer.iss'
           if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
-          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.3.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.4.exe'
           if (!(Test-Path $setup)) { throw 'Installer not created' }
       - name: Generate SHA256 checksums
         shell: pwsh
         run: |
           Set-Location 'desktop'
           $portable='dist/MURDILIMAX-Recovery.exe'
-          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.3.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.4.exe'
           $portableHash=(Get-FileHash $portable -Algorithm SHA256).Hash.ToLowerInvariant()
           $setupHash=(Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$setupHash  MURDILIMAX-Recovery-Setup-0.10.3.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
+          "$setupHash  MURDILIMAX-Recovery-Setup-0.10.4.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
           "$portableHash  MURDILIMAX-Recovery.exe" | Add-Content -Encoding ascii 'SHA256SUMS.txt'
       - name: Upload tested installer and quality report
         uses: actions/upload-artifact@v4
         with:
-          name: MURDILIMAX-Recovery-0.10.3-Windows
+          name: MURDILIMAX-Recovery-0.10.4-Windows
           path: |
             desktop/dist/MURDILIMAX-Recovery.exe
-            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.3.exe
+            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.4.exe
             desktop/SHA256SUMS.txt
             desktop/QUALITY-REPORT.json
             desktop/CRYSTAL-UI.png
           if-no-files-found: error
+      - name: Publish verified Recovery 0.10.4 downloads
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v0.10.4
+          target_commitish: ${{ github.sha }}
+          name: MURDILIMAX Recovery 0.10.4 — Whole drive selection / RU EN
+          prerelease: true
+          make_latest: false
+          overwrite_files: false
+          body: |
+            Adds a dedicated whole-drive picker with drive letters (C:, D:), volume labels, sizes and filesystems. Selecting a drive never opens folders and passes the raw read-only volume to the recovery engine.
+            Administrator permission is requested at startup for raw disk access. Recovery to the same physical disk is blocked, even if it has another drive letter.
+            Windows may still write to a mounted volume. This is experimental software, not a consistent offline snapshot; recovery is not guaranteed. Existing physical system-disk imaging safeguards remain enabled.
+          files: |
+            desktop/dist/MURDILIMAX-Recovery.exe
+            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.4.exe
+            desktop/SHA256SUMS.txt
+            desktop/QUALITY-REPORT.json
+            desktop/CRYSTAL-UI.png
+          fail_on_unmatched_files: true

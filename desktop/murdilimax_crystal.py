@@ -26,7 +26,7 @@ from PySide6.QtWidgets import (
 
 from murdilimax_engine import scan_image, recover, Candidate, ScanCancelled
 from murdilimax_recovery_alpha import scan_folder, carve_image, restore as restore_hit, Hit
-from murdilimax_devices import is_physical, enumerate_drives
+from murdilimax_devices import is_physical, is_volume, enumerate_drives, enumerate_volumes
 from murdilimax_imager import image_source, ImagingCancelled, SourceReadLimitExceeded
 from murdilimax_raid import assemble, RAID5_LAYOUTS
 from murdilimax_wallets import discover_wallet_backups
@@ -40,7 +40,7 @@ from murdilimax_crystal_logic import (
     normalize_categories, supported_preview, recommendation_color, selected_items, read_visible_photo,
 )
 
-VERSION='0.10.3'
+VERSION='0.10.4'
 BG='#070B20'
 PANEL='#111937'
 VIOLET='#B87AFF'
@@ -51,6 +51,13 @@ MAX_VISIBLE=12000
 
 TR={
 'ru':{
+ 'volume_card':'Весь диск (C:, D:)','volume_select':'Выберите диск целиком',
+ 'volume_help':'Выберите диск из списка и нажмите ОК. Папки открывать не нужно.',
+ 'volume_selected':'Выбран весь диск. Нажмите «Начать сканирование». Источник открывается только для чтения.',
+ 'unnamed_volume':'Без метки','no_volumes':'Доступные локальные диски не найдены. Подключите диск или разблокируйте его в Windows.',
+ 'unsupported_volume':'Для поиска удалённых файлов на диске поддерживаются NTFS и exFAT. Другую файловую систему откройте как поддерживаемый образ.',
+ 'live_volume_warning':'Будет просканирован весь выбранный диск только для чтения. Windows и другие программы могут продолжать записывать на него: это не снимок диска и восстановление не гарантируется. Закройте лишние программы. Сохраняйте найденные файлы на другой физический накопитель. Продолжить?',
+ 'volume_image_help':'Для создания образа выберите физический HDD/USB. Снятие образа активного системного диска запрещено; используйте отдельную загрузочную среду.',
  'title':'Восстановление данных','subtitle':'Верни важные файлы. Прозрачный локальный анализ без облака.',
  'scan':'Сканирование','disks':'Диски','restore':'Восстановление','raid':'RAID / NAS',
  'preview':'Предпросмотр','wallet':'Кошельки','reports':'Отчёты','settings':'Настройки',
@@ -96,6 +103,13 @@ TR={
  'session_sensitive':'Файл сессии содержит имена и пути файлов. Храните его в защищённом месте.',
 },
 'en':{
+ 'volume_card':'Whole drive (C:, D:)','volume_select':'Select a whole drive',
+ 'volume_help':'Select a drive from the list and press OK. Do not open any folders.',
+ 'volume_selected':'Whole drive selected. Press Start scanning. The source is opened read-only.',
+ 'unnamed_volume':'Unnamed volume','no_volumes':'No available local drives found. Connect the drive or unlock it in Windows.',
+ 'unsupported_volume':'Deleted-file volume scanning supports NTFS and exFAT. Use a supported disk image for other filesystems.',
+ 'live_volume_warning':'The entire selected volume will be read, never written. Windows and other apps may still write to it: this is not a snapshot and recovery is not guaranteed. Close other apps. Recover to another physical disk. Continue?',
+ 'volume_image_help':'Choose a physical HDD/USB to acquire an image. Live system-disk imaging is blocked; use a separate recovery environment.',
  'title':'Data recovery','subtitle':'Bring important files back. Transparent offline analysis, no cloud.',
  'scan':'Scan','disks':'Disks','restore':'Recovery','raid':'RAID / NAS',
  'preview':'Preview','wallet':'Wallets','reports':'Reports','settings':'Settings',
@@ -205,7 +219,7 @@ class Job(QThread):
         try:
             if self.kind=='scan':
                 chosen=p['categories'];mode=p['mode'];src=p['source'];seen=0
-                if mode in ('metadata','physical'):
+                if mode in ('metadata','physical','volume'):
                     def progress(a,b):
                         if self.stop.is_set():raise ScanCancelled('Cancelled')
                         self.send('progress',int(a*100/max(1,b)))
@@ -363,7 +377,7 @@ class CrystalWindow(QMainWindow):
         sv.addSpacing(36)
         self.nav=[]
         for sym,key,fn in [
-          ('⌕','scan',lambda:None),('▣','disks',self.pick_image),('↺','restore',self.recover_selected),
+          ('⌕','scan',lambda:None),('▣','disks',self.pick_volume),('↺','restore',self.recover_selected),
           ('◇','raid',self.raid_builder),('▧','preview',self.preview_selected),
           ('♧','wallet',self.wallet_finder),('▤','reports',self.open_report),('⚙','settings',self.open_settings)]:
             b=self.button('',fn,'nav');b.setProperty('active','true' if key=='scan' else 'false')
@@ -388,10 +402,11 @@ class CrystalWindow(QMainWindow):
         header=QHBoxLayout();self.source_title=self.label('','section');header.addWidget(self.source_title);header.addStretch()
         self.language=self.button('RU / EN',self.switch_language);header.addWidget(self.language);sp.addLayout(header)
         cards=QHBoxLayout();cards.setSpacing(9)
+        self.btn_volume=self.button('',self.pick_volume,'source')
         self.btn_image=self.button('',self.pick_image,'source')
         self.btn_folder=self.button('',self.pick_folder,'source')
         self.btn_device=self.button('',self.pick_device,'source')
-        for btn in (self.btn_image,self.btn_folder,self.btn_device):
+        for btn in (self.btn_volume,self.btn_image,self.btn_folder,self.btn_device):
             btn.setMinimumHeight(65);cards.addWidget(btn)
         sp.addLayout(cards)
         self.source_text=self.label('','muted');self.source_text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -475,6 +490,8 @@ class CrystalWindow(QMainWindow):
         self.hero_title.setText(self.t('title'));self.hero_sub.setText(self.t('subtitle'))
         for b,sym,key in self.nav:b.setText(sym+'   '+self.t(key))
         self.source_title.setText(self.t('source_title'))
+        self.btn_volume.setText('▣   '+self.t('volume_card'))
+        self.btn_volume.setToolTip(self.t('volume_help'))
         self.btn_image.setText('◈   '+self.t('image_card'))
         self.btn_folder.setText('▤   '+self.t('folder_card'))
         self.btn_device.setText('▣   '+self.t('physical_card'))
@@ -505,28 +522,49 @@ class CrystalWindow(QMainWindow):
         self.lang='en' if self.lang=='ru' else 'ru'
         self.cfg.setValue('language',self.lang);self.retranslate()
     def set_busy(self,busy):
-        for b in (self.start_btn,self.btn_image,self.btn_folder,self.btn_device,self.image_btn,
+        for b in (self.start_btn,self.btn_volume,self.btn_image,self.btn_folder,self.btn_device,self.image_btn,
                   self.raid_btn):b.setEnabled(not busy)
         for b in (self.restore_btn,self.preview_btn,self.advisor_btn):
             b.setEnabled(not busy and self.session_snapshot is None)
         self.session_save_btn.setEnabled(not busy and self.scan_complete and self.session_snapshot is None)
         self.session_open_btn.setEnabled(not busy)
         self.stop_btn.setEnabled(busy)
+        self.image_btn.setEnabled(not busy and not is_volume(self.source))
     def mode_changed(self):
         if self.mode in ('metadata','carve'):
             self.mode=self.scan_mode.currentData()
         elif self.mode in ('physical','physical-carve'):
             self.mode='physical' if self.scan_mode.currentIndex()==0 else 'physical-carve'
+        elif self.mode in ('volume','volume-carve'):
+            self.mode='volume' if self.scan_mode.currentIndex()==0 else 'volume-carve'
+    def pick_volume(self):
+        if self.worker:return
+        drives=enumerate_volumes()
+        if not drives:
+            QMessageBox.information(self,self.t('volume_card'),self.t('no_volumes'));return
+        choices=[f"{d['letter']}   {d['label'] or self.t('unnamed_volume')}   ·   {file_size(d['size'])}   ·   {d['fs']}" for d in drives]
+        choice,ok=QInputDialog.getItem(self,self.t('volume_select'),self.t('volume_help'),choices,0,False)
+        if not ok:return
+        drive=drives[choices.index(choice)]
+        if drive['fs'].upper() not in ('NTFS','EXFAT'):
+            QMessageBox.information(self,self.t('volume_card'),self.t('unsupported_volume'));return
+        self.invalidate_results()
+        self.source=drive['path']
+        self.mode='volume' if self.scan_mode.currentIndex()==0 else 'volume-carve'
+        self.source_text.setText('▣  '+choice+'\n'+self.t('volume_selected'))
+        self.set_busy(False)
     def pick_image(self):
         if self.worker:return
         path,_=QFileDialog.getOpenFileName(self,self.t('choose_source'),'','Raw images (*.img *.dd *.bin *.raw);;All files (*)')
         if path:
             self.invalidate_results();self.source=path;self.mode=self.scan_mode.currentData();self.source_text.setText('◈  '+path)
+            self.set_busy(False)
     def pick_folder(self):
         if self.worker:return
         path=QFileDialog.getExistingDirectory(self,self.t('choose_source'))
         if path:
             self.invalidate_results();self.source=path;self.mode='folder';self.source_text.setText('▤  '+path)
+            self.set_busy(False)
     def pick_device(self):
         if self.worker:return
         drives=enumerate_drives()
@@ -538,6 +576,7 @@ class CrystalWindow(QMainWindow):
             if QMessageBox.warning(self,'READ ONLY',self.t('confirm_physical'),QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
             i=choices.index(choice);self.invalidate_results();self.source=drives[i]['path'];self.mode='physical' if self.scan_mode.currentIndex()==0 else 'physical-carve'
             self.source_text.setText('▣  '+choice)
+            self.set_busy(False)
     def current_categories(self):
         return normalize_categories(k for k,c in self.checkboxes.items() if c.isChecked())
     def launch(self,kind,kwargs):
@@ -558,10 +597,14 @@ class CrystalWindow(QMainWindow):
             validate_source(self.source,self.mode)
             categories=self.current_categories()
             if not categories:raise ValueError(self.t('no_categories'))
-            if self.mode in ('carve','physical-carve') and not categories.intersection({'Photos','Documents','Archives'}):
+            if self.mode in ('carve','physical-carve','volume-carve') and not categories.intersection({'Photos','Documents','Archives'}):
                 raise ValueError('Signature carving supports JPG/PNG/PDF/ZIP only')
         except Exception as exc:
             QMessageBox.warning(self,self.t('error'),str(exc));return
+        if is_volume(self.source):
+            if QMessageBox.warning(self,self.t('volume_card'),self.t('live_volume_warning'),
+                    QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
         self.invalidate_results()
         self.status_label.setText(self.t('scanning'))
         self.launch('scan',{'source':self.source,'mode':self.mode,'categories':categories,'deep':self.deep.isChecked(),'mft':self.mft.isChecked()})
@@ -746,6 +789,8 @@ class CrystalWindow(QMainWindow):
         notes.append('✓ Восстанавливайте только на другой физический носитель.')
         QMessageBox.information(self,self.t('advisor'),self.t('local_advice')+'\n\n'+'\n'.join(notes))
     def make_image(self):
+        if is_volume(self.source):
+            QMessageBox.information(self,self.t('image_action'),self.t('volume_image_help'));return
         if self.worker:return
         if self.mode=='folder' or not self.source:
             QMessageBox.warning(self,self.t('error'),self.t('no_source'));return

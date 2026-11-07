@@ -1,5 +1,5 @@
 #define MyAppName "MURDILIMAX Recovery"
-#define MyAppVersion "0.10.3"
+#define MyAppVersion "0.10.4"
 #define MyAppExeName "MURDILIMAX-Recovery.exe"
 [Setup]
 AppId={{F3129D3B-56CB-4A41-8B0D-74D632EDA564}
@@ -7,14 +7,14 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher=MURDILIMAX
-AppPublisherURL=https://cenaradar.online/
-AppSupportURL=https://cenaradar.online/
+AppPublisherURL=https://murdilimax.com/
+AppSupportURL=https://murdilimax.com/
 DefaultDirName={localappdata}\Programs\MURDILIMAX Recovery
 DefaultGroupName=MURDILIMAX Recovery
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 OutputDir=installer-output
-OutputBaseFilename=MURDILIMAX-Recovery-Setup-0.10.3
+OutputBaseFilename=MURDILIMAX-Recovery-Setup-0.10.4
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
@@ -30,7 +30,7 @@ Name: "en"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 [Files]
 Source: "dist\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "README-CRYSTAL-0103-RU-EN.md"; DestDir: "{app}"; Flags: ignoreversion
+Source: "README-CRYSTAL-0104-RU-EN.md"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{group}\MURDILIMAX Recovery"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"
 Name: "{autodesktop}\MURDILIMAX Recovery"; Filename: "{app}\{#MyAppExeName}"; WorkingDir: "{app}"; Tasks: desktopicon

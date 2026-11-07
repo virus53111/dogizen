@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 import os, struct, math, json, hashlib, re
 from typing import Callable
-from murdilimax_devices import open_source, is_physical, destination_is_different_disk
+from murdilimax_devices import open_source, is_device, destination_is_different_disk
 from murdilimax_partitions import backup_gpt_partitions, find_lost_volumes
 
 MAX_FILE = 64 * 1024**3
@@ -445,7 +445,7 @@ def exfat_scan(fp,part:Partition,image_size:int,limit:int=100000,progress:Callab
 
 def scan_image(image_path, limit=100000, progress=None, deep_partitions=False, probe_cap=5_000_000, salvage_mft=False):
     path=str(image_path)
-    if not is_physical(path) and not Path(path).is_file():
+    if not is_device(path) and not Path(path).is_file():
         raise FileNotFoundError(path)
     found=[];errors=[]
     with open_source(path) as (fp,filesize):
@@ -505,7 +505,7 @@ def recover(fp_path, candidate:Candidate, destination, allow_unknown=False, canc
     if not candidate.eligible: raise ValueError(f'Candidate not safely recoverable: {candidate.reason or candidate.state}')
     if candidate.state=='unknown' and not allow_unknown:
         raise ValueError('Allocation status unknown. Explicitly confirm recovery with --allow-unknown.')
-    physical=is_physical(str(fp_path))
+    physical=is_device(str(fp_path))
     src=str(fp_path) if physical else Path(fp_path).resolve()
     dst=Path(destination).resolve()
     if not physical and (dst==src or dst==src.parent):raise ValueError('Output must not overwrite source image')

@@ -15,7 +15,7 @@ import threading
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from dataclasses import dataclass
-from murdilimax_devices import open_source, is_physical, destination_is_different_disk
+from murdilimax_devices import open_source, is_device, destination_is_different_disk
 
 MAX_CARVE = 512 * 1024 * 1024
 CHUNK = 4 * 1024 * 1024
@@ -157,7 +157,7 @@ def scan_folder(folder: str, chosen: set[str], stop: threading.Event, post) -> N
 
 def restore(hit: Hit, destination: str) -> tuple[str, str]:
     output = Path(destination).resolve()
-    if is_physical(hit.source) and not destination_is_different_disk(hit.source, str(output)):
+    if is_device(hit.source) and not destination_is_different_disk(hit.source, str(output)):
         raise ValueError('Cannot verify output drive is different from source disk')
     output.mkdir(parents=True, exist_ok=True)
     extension = {'Photos':'.jpg', 'Documents':'.pdf', 'Archives':'.zip'}.get(hit.kind,'.bin') if hit.carved else Path(hit.source).suffix
