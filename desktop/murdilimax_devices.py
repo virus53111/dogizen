@@ -19,6 +19,7 @@ OPEN_EXISTING = 3
 FILE_BEGIN = 0
 IOCTL_DISK_GET_LENGTH_INFO = 0x0007405C
 IOCTL_DISK_GET_DRIVE_GEOMETRY = 0x00070000
+IOCTL_DISK_GET_DRIVE_GEOMETRY_EX = 0x000700A0
 IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS = 0x00560000
 INVALID_HANDLE_VALUE = ctypes.c_void_p(-1).value
 
@@ -206,15 +207,53 @@ class WindowsVolume(WindowsPhysicalDisk):
 
 
 def enumerate_drives(max_index=24):
+    """Discover physical disks without requesting data-read access.
+
+    Enumeration must work for non-admin users too: the raw read handle needed
+    for a scan is opened *later*, with an explicit permission error if denied.
+    Drives without a mount letter are included when Windows exposes metadata.
+    """
     if os.name != 'nt': return []
-    disks=[]
+    k = _kernel()
+    disks = []
     for i in range(max_index):
-        path=rf'\\.\PhysicalDrive{i}'
-        try:
-            with WindowsPhysicalDisk(path) as d:
-                disks.append({'path':path,'size':d.length,'sector':d.sector_size})
-        except OSError:
+        path = rf'\\.\PhysicalDrive{i}'
+        h = k.CreateFileW(path, 0, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                          None, OPEN_EXISTING, 0, None)
+        if h in (INVALID_HANDLE_VALUE, None):
             continue
+        try:
+            size = 0
+            sector = 512
+            geometry_ex = b''
+            try:
+                info = _ioctl(k, h, IOCTL_DISK_GET_LENGTH_INFO, 8)
+                if len(info) >= 8:
+                    size = int.from_bytes(info[:8], 'little')
+            except OSError:
+                pass
+            try:
+                geometry = _ioctl(k, h, IOCTL_DISK_GET_DRIVE_GEOMETRY, 24)
+                if len(geometry) >= 24:
+                    reported = int.from_bytes(geometry[20:24], 'little')
+                    if reported in (512, 1024, 2048, 4096):
+                        sector = reported
+            except OSError:
+                pass
+            if not size:
+                try:
+                    geometry_ex = _ioctl(k, h, IOCTL_DISK_GET_DRIVE_GEOMETRY_EX, 32)
+                    if len(geometry_ex) >= 32:
+                        size = int.from_bytes(geometry_ex[24:32], 'little')
+                        reported = int.from_bytes(geometry_ex[20:24], 'little')
+                        if reported in (512, 1024, 2048, 4096):
+                            sector = reported
+                except OSError:
+                    pass
+            if size > 0:
+                disks.append({'path': path, 'size': size, 'sector': sector})
+        finally:
+            k.CloseHandle(h)
     return disks
 
 

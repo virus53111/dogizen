@@ -65,6 +65,7 @@ class Candidate:
         if suffix in {'.mp4','.mov','.mkv','.avi','.webm'}: return 'Video'
         if suffix in {'.pdf','.doc','.docx','.xls','.xlsx','.txt','.ppt','.pptx','.odt'}: return 'Documents'
         if suffix in {'.zip','.7z','.rar','.gz','.tar'}: return 'Archives'
+        if suffix in {'.mp3','.wav','.flac','.aac','.m4a','.ogg','.wma','.opus'}: return 'Audio'
         return 'Other'
 
     def summary(self):
@@ -239,6 +240,10 @@ def ntfs_scan(fp, part:Partition, image_size:int, limit:int=MAX_RECORDS, progres
     count=min(limit,mft_bytes//recordsize)
     records={};candidates=[];bitmap_attr=None
     for i in range(count):
+        # Report progress even when a record is in use or malformed. Previously
+        # progress fired only for deleted-file candidates, appearing frozen.
+        if progress and (i % 1024 == 0 or i == count-1):
+            progress(i+1,max(1,count))
         try:
             rec=fixup(stream_read(fp,mft_extents,i*recordsize,recordsize,image_size),sec)
         except (ValueError,EOFError):continue
@@ -266,7 +271,6 @@ def ntfs_scan(fp, part:Partition, image_size:int, limit:int=MAX_RECORDS, progres
             reason='Compressed or encrypted NTFS stream not supported' if unsupported else ''
             candidates.append(Candidate('NTFS',best[0],best[0],size,part.offset,extents,resident,'unknown',reason,True,False,i,best[1],unsupported))
         except (ValueError,EOFError):continue
-        if progress and i%1024==0:progress(i,max(1,count))
     def make_path(parent_reference,name):
         # NTFS file references include a 16-bit sequence number. A reused MFT
         # record must NOT become the deleted file's parent by record ID alone.
@@ -443,11 +447,21 @@ def exfat_scan(fp,part:Partition,image_size:int,limit:int=100000,progress:Callab
     return out
 
 
-def scan_image(image_path, limit=100000, progress=None, deep_partitions=False, probe_cap=5_000_000, salvage_mft=False):
+def scan_image(image_path, limit=MAX_RECORDS, progress=None, deep_partitions=False, probe_cap=5_000_000, salvage_mft=False):
     path=str(image_path)
     if not is_device(path) and not Path(path).is_file():
         raise FileNotFoundError(path)
     found=[];errors=[]
+    last_percent = 0
+    def report_percent(percent):
+        """One monotonic progress scale across discovery and every partition."""
+        nonlocal last_percent
+        if progress is None:
+            return
+        value = max(0, min(100, int(percent)))
+        if value > last_percent:
+            last_percent = value
+            progress(value, 100)
     with open_source(path) as (fp,filesize):
         if filesize<512:raise ValueError('Source too small')
         parts=partition_list(fp,filesize)
@@ -466,16 +480,26 @@ def scan_image(image_path, limit=100000, progress=None, deep_partitions=False, p
                 if probe_ext4(fp,start,filesize) is not None:fs='ext4'
             if fs:
                 parts.append(Partition(start,fs,length,origin));known.add(start)
-        if deep_partitions or not parts:
-            for start,fs,length,origin in find_lost_volumes(fp,filesize,known,probe_cap,progress):
+        discover = deep_partitions or not parts
+        discovery_weight = 25 if discover else 0
+        if discover:
+            discovery_progress = lambda done,total: report_percent(
+                discovery_weight * done / max(1,total))
+            for start,fs,length,origin in find_lost_volumes(
+                    fp,filesize,known,probe_cap,discovery_progress):
                 if start not in known:
                     parts.append(Partition(start,fs,length,origin));known.add(start)
+            report_percent(discovery_weight)
         if not parts:
             from murdilimax_crypto import find_locked_volumes, locked_guidance
             locked=find_locked_volumes(fp,filesize)
             if locked:raise ValueError(locked_guidance(locked))
             raise ValueError('No supported NTFS/exFAT/ext4 volume found. Try file carving on an image.')
-        for part in parts:
+        for idx,part in enumerate(parts):
+            def partition_progress(done,total):
+                fraction = max(0.0, min(1.0, done / max(1,total)))
+                report_percent(discovery_weight +
+                    (100-discovery_weight)*(idx+fraction)/len(parts))
             try:
                 if part.fs=='NTFS':scanner=ntfs_scan
                 elif part.fs=='exFAT':scanner=exfat_scan
@@ -483,19 +507,20 @@ def scan_image(image_path, limit=100000, progress=None, deep_partitions=False, p
                     from murdilimax_ext4 import ext4_scan
                     scanner=ext4_scan
                 else:raise ValueError('Unsupported filesystem')
-                entries=scanner(fp,part,filesize,limit,progress)
+                entries=scanner(fp,part,filesize,limit,partition_progress)
                 found.extend(entries)
             except (ValueError,EOFError,OSError) as exc:
                 if part.fs=='NTFS' and salvage_mft:
                     try:
                         from murdilimax_salvage import salvage_mft as _salvage
-                        recovered=_salvage(fp,part,filesize,progress=progress)
+                        recovered=_salvage(fp,part,filesize,progress=partition_progress)
                         found.extend(recovered)
                         errors.append(f'Primary MFT unavailable at {part.offset}; salvage scanned surviving records: {len(recovered)} candidates; allocation unverified')
                         continue
                     except (ValueError,EOFError,OSError) as rescue_error:
                         errors.append(f'NTFS salvage failed @ {part.offset}: {rescue_error}')
                 errors.append(f'{part.fs} @ {part.offset}: {exc}')
+            report_percent(discovery_weight + (100-discovery_weight)*(idx+1)/len(parts))
     if not found and errors:raise ValueError('; '.join(errors))
     return found,parts,errors
 

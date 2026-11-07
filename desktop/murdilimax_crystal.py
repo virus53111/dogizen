@@ -40,7 +40,7 @@ from murdilimax_crystal_logic import (
     normalize_categories, supported_preview, recommendation_color, selected_items, read_visible_photo,
 )
 
-VERSION='0.10.5'
+VERSION='0.10.6'
 BG='#070B20'
 PANEL='#111937'
 VIOLET='#B87AFF'
@@ -88,13 +88,14 @@ TR={
  'confirm_reset':'Выйти сейчас нельзя: операция ещё выполняется. Нажмите «Остановить» и дождитесь её окончания.',
  'no_report':'Отчёт ещё не создан. Сначала восстановите хотя бы один файл.',
  'scan_finished':'Сканирование завершено','recovery_finished':'Восстановление завершено',
+  'no_results':'Удалённые файлы по метаданным не найдены. Это не означает, что диск пуст. Попробуйте «По сигнатурам» в расширенных настройках: JPG/PNG/PDF/ZIP. Для повреждённых дисков сначала создайте образ.',
  'validating':'Проверка файлов и создание локального отчёта…','selected':'Выбрано','working':'Операция выполняется…',
  'raid_help':'Используйте только заранее созданные ОБРАЗЫ участников, не физические HDD. Порядок дисков и размер блока должны быть известны. RAID6 — только фиксированные P/Q, RAID10 — только near-2.',
  'raid_members':'Пути образов по порядку, по одному на строку. «-» — отсутствующий диск:',
  'add_member':'Добавить образ','build_raid':'Собрать новый образ','cancel':'Отмена','ok':'ОК',
  'source_mode':'Режим сканирования','metadata_mode':'По метаданным NTFS/exFAT/ext4','carve_mode':'По сигнатурам JPG/PNG/PDF/ZIP',
- 'folder_mode':'Обычные файлы в папке','deep_mode':'Потерянные разделы',
- 'mft_mode':'Повреждённые записи NTFS',
+ 'folder_mode':'Обычные файлы в папке (не поиск удалённых)','deep_mode':'Искать потерянные разделы (медленно)',
+ 'mft_mode':'Поиск в повреждённой MFT (медленно)',
  'device_select':'Выберите физический диск Windows','local_advice':'Локальные рекомендации, не диагноз и не ИИ.',
  'save_session':'СОХРАНИТЬ СЕССИЮ','open_session':'ОТКРЫТЬ СЕССИЮ',
  'session_saved':'Сводка сканирования сохранена локально. Она не содержит файлов или данных для восстановления.',
@@ -140,13 +141,14 @@ TR={
  'confirm_reset':'An operation is still running. Press Stop and wait for it to finish before exiting.',
  'no_report':'No report created yet. Recover a file first.',
  'scan_finished':'Scan complete','recovery_finished':'Recovery finished',
+  'no_results':'No deleted-file metadata candidates found. The drive is not necessarily empty. Try signature carving (JPG/PNG/PDF/ZIP) in Advanced. For failing drives, image first.',
  'validating':'Checking files and writing a local report…','selected':'Selected','working':'Operation in progress…',
  'raid_help':'Use previously acquired member IMAGES only, never physical disks. Member order and chunk size must be known. RAID6 fixed P/Q only, RAID10 near-2 only.',
  'raid_members':'Member image paths in physical order, one per line. Use "-" for a missing member:',
  'add_member':'Add image','build_raid':'Build new image','cancel':'Cancel','ok':'OK',
  'source_mode':'Scan mode','metadata_mode':'NTFS/exFAT/ext4 metadata','carve_mode':'JPG/PNG/PDF/ZIP signatures',
- 'folder_mode':'Visible files in a folder','deep_mode':'Lost partitions',
- 'mft_mode':'Damaged NTFS records',
+ 'folder_mode':'Existing files in folder (not undelete)','deep_mode':'Search lost partitions (slow)',
+ 'mft_mode':'Search damaged NTFS MFT (slow)',
  'device_select':'Select Windows physical disk','local_advice':'Local rule-based guidance, not AI or diagnosis.',
  'save_session':'SAVE SESSION','open_session':'OPEN SESSION',
  'session_saved':'Scan summary saved locally. It contains no recovered bytes or information authorizing recovery.',
@@ -377,7 +379,7 @@ class CrystalWindow(QMainWindow):
         sv.addSpacing(36)
         self.nav=[]
         for sym,key,fn in [
-          ('','scan',lambda:None),('','disks',self.pick_volume),('','restore',self.recover_selected),
+          ('','scan',self.show_scan),('','disks',self.pick_volume),('','restore',self.recover_selected),
           ('','raid',self.raid_builder),('','preview',self.preview_selected),
           ('','wallet',self.wallet_finder),('','reports',self.open_report),('','settings',self.open_settings)]:
             b=self.button('',fn,'nav');b.setProperty('active','true' if key=='scan' else 'false')
@@ -386,7 +388,7 @@ class CrystalWindow(QMainWindow):
         ornament=QLabel('');ornament.setAlignment(Qt.AlignmentFlag.AlignCenter)
         ornament.setStyleSheet('color:#77DEFF; font-size:26px; margin-bottom:10px');sv.addWidget(ornament)
         sv.addWidget(self.label(VERSION+'·  LOCAL / READ ONLY','tagline'))
-        outer=QScrollArea();outer.setWidgetResizable(True);outer.setFrameShape(QFrame.Shape.NoFrame)
+        outer=QScrollArea();self.page_scroll=outer;outer.setWidgetResizable(True);outer.setFrameShape(QFrame.Shape.NoFrame)
         outer.setStyleSheet('QScrollArea{border:0;background:#070B20;} QScrollBar{background:#151732}')
         full.addWidget(outer,1)
         content=QWidget();content.setObjectName('root');outer.setWidget(content)
@@ -421,14 +423,14 @@ class CrystalWindow(QMainWindow):
         self.scan_mode.addItem('NTFS/exFAT/ext4',userData='metadata');self.scan_mode.addItem('JPG/PNG/PDF/ZIP',userData='carve')
         self.scan_mode.currentIndexChanged.connect(self.mode_changed)
         opts.addWidget(self.scan_mode)
-        self.deep=QCheckBox();self.deep.setChecked(True);opts.addWidget(self.deep)
-        self.mft=QCheckBox();self.mft.setChecked(True);opts.addWidget(self.mft)
+        self.deep=QCheckBox();self.deep.setChecked(False);opts.addWidget(self.deep)
+        self.mft=QCheckBox();self.mft.setChecked(False);opts.addWidget(self.mft)
         advanced_layout.addLayout(opts)
         self.cat_title=self.label('','section');advanced_layout.addWidget(self.cat_title)
         catrow=QGridLayout();catrow.setSpacing(8)
         self.checkboxes={}
         for i,category in enumerate(CATEGORIES):
-            c=QCheckBox();c.setChecked(category in ('Photos','Documents','Archives','Crypto backups'))
+            c=QCheckBox();c.setChecked(True)
             c.setStyleSheet('QCheckBox{background:#242051;border:1px solid #7654AB;border-radius:14px;padding:6px 8px;font-size:11px;font-weight:700;} QCheckBox:checked{background:#3A285F;border-color:#84DDF7;} QCheckBox::indicator{width:12px;height:12px;}')
             self.checkboxes[category]=c;catrow.addWidget(c,i//4,i%4)
         advanced_layout.addLayout(catrow)
@@ -539,6 +541,10 @@ class CrystalWindow(QMainWindow):
         self.session_open_btn.setEnabled(not busy)
         self.stop_btn.setEnabled(busy)
         self.image_btn.setEnabled(not busy and not is_volume(self.source))
+    def show_scan(self):
+        """The Scan sidebar item navigates to the source and scan controls."""
+        self.page_scroll.verticalScrollBar().setValue(0)
+
     def mode_changed(self):
         if self.mode in ('metadata','carve'):
             self.mode=self.scan_mode.currentData()
@@ -642,8 +648,12 @@ class CrystalWindow(QMainWindow):
             self.scan_total=int(obj['found']);self.scan_errors=list(obj.get('errors',[]))
             self.set_busy(False if not self.worker else True)
             extra=(' · '.join(obj.get('errors',[])[:2]))
-            self.status_label.setText(self.t('scan_finished'))
-            self.status_detail.setText(f"{self.t('found')}: {obj['found']}  |  {self.table.rowCount()} visible"+(' · '+extra if extra else ''))
+            self.status_label.setText(self.t('idle') if obj['cancelled'] else self.t('scan_finished'))
+            if not obj['cancelled'] and not obj['found']:
+                detail=self.t('no_results')
+            else:
+                detail=f"{self.t('found')}: {obj['found']}  |  {self.table.rowCount()} visible"
+            self.status_detail.setText(detail+(' · '+extra if extra else ''))
             self.progress.setValue(100 if not obj['cancelled'] else self.progress.value())
         elif key=='image_progress':
             done,total,bad=obj;self.progress.setValue(int(100*done/max(1,total)))
