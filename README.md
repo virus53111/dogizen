@@ -14,6 +14,6 @@ Free experimental Windows file-recovery application, version 0.10.3. Website cop
 
 ## Migration and rollback
 
-The browser site, desktop/browser code and browser build workflows were removed from the active main branch. Previous main is retained at `backup/murdilimax-browser-before-recovery-20261107` (dd0fb0da91b8d72bb5bad2fe92ec9e1b4e295a24). The source branch `price-aggregator-mvp` is unchanged.
+The browser site, desktop/browser code and browser build workflows were removed from the active main branch. Previous main is retained at `backup/murdilimax-browser-before-recovery-20261107` (dd0fb0da91b8d72bb5bad2fe92ec9e1b4e295a24). The Recovery application source in `price-aggregator-mvp` is preserved; its website build now redirects the former cenaradar.online address to murdilimax.com.
 
 Run `node tools/check_site.mjs` before publishing. Do not promise recovery from physically failing disks or real-world RAID without field validation.
