@@ -45,7 +45,9 @@ class CrystalGuiSmoke(unittest.TestCase):
             for width in (900,1180):
                 self.window.resize(width,700);self.app.processEvents()
                 scroll=self.window.findChild(QScrollArea)
-                self.assertEqual(scroll.horizontalScrollBar().maximum(),0,(language,width))
+                from PySide6.QtWidgets import QWidget
+                sizing=sorted([(c.minimumSizeHint().width(),c.objectName(),getattr(c,'text',lambda:'' )()[:80]) for c in scroll.widget().findChildren(QWidget)],reverse=True)[:15]
+                self.assertEqual(scroll.horizontalScrollBar().maximum(),0,(language,width,sizing))
                 self.assertFalse(self.window.btn_volume.geometry().intersects(self.window.btn_image.geometry()))
         self.assertTrue(self.window.advanced.isHidden())
         self.window.advanced_btn.click();self.app.processEvents()
