@@ -1,25 +1,19 @@
-# Murdilimax Forms
+# MURDILIMAX Recovery
 
-Official website: https://murdilimax.com
+Official website: https://murdilimax.com/
 
-This repository serves the public, static landing page for **Murdilimax Forms**, an independent online form builder.
+Free experimental Windows file-recovery application, version 0.10.3. Website copied from the deployed Recovery landing page at cenaradar.online on 2026-11-07. Russian/English UI and animated crystal artwork are preserved.
 
-- **Marketing website:** GitHub Pages from `main` (root folder) with domain `murdilimax.com` in `CNAME`
-- **Application:** https://murdilimax-forms.hatchable.site
-- **Application dashboard:** https://hatchable.com/console/projects/murdilimax-forms
+## Source and publishing
 
-## Application features (early access)
+- `index.html`: self-contained bilingual website.
+- `desktop/`: complete Recovery application source and tests, copied byte-for-byte from `price-aggregator-mvp/price-aggregator/desktop`.
+- `.github/workflows/pages.yml`: validates and publishes an explicit website-only artifact to GitHub Pages. Desktop source is not copied to the website.
+- Windows build workflow is manual and produces tested artifacts; it does not overwrite the existing v0.10.3 release.
+- Existing installer remains at https://github.com/virus53111/dogizen/releases/tag/v0.10.3.
 
-Passwordless accounts, editable forms with nine field types, publishable form links, answer collection, owner-scoped responses and CSV export.
+## Migration and rollback
 
-## Important: public access
+The browser site, desktop/browser code and browser build workflows were removed from the active main branch. Previous main is retained at `backup/murdilimax-browser-before-recovery-20261107` (dd0fb0da91b8d72bb5bad2fe92ec9e1b4e295a24). The source branch `price-aggregator-mvp` is unchanged.
 
-The application is hosted separately from the landing page. It must be set to **Public** in the Hatchable project Settings for visitors to access login and published forms. The marketing site being publicly accessible does not automatically make the application public.
-
-## Rollback
-
-The original cinema site was preserved before replacement on the branch `backup/cinema-before-forms-2026-10-25` at commit `a1d8ba83421d981310fe96f13c6492b4646308dc`.
-
-To restore the cinema, revert commit `b3581edb62ee09366014de4384ca132f5fbb0ae8` or restore the previous `index.html` from that backup branch. Do not remove `CNAME` when restoring the website.
-
-The old site is intentionally retained in backup history and has not been permanently deleted.
+Run `node tools/check_site.mjs` before publishing. Do not promise recovery from physically failing disks or real-world RAID without field validation.

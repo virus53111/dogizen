@@ -1,17 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-labelledby="title"><title>Murdilimax Browser</title><defs>
-<linearGradient id="base" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#a800f5"/><stop offset=".44" stop-color="#5331ed"/><stop offset="1" stop-color="#066afa"/></linearGradient>
-<radialGradient id="pink"><stop stop-color="#ff4ce7" stop-opacity=".8"/><stop offset="1" stop-color="#ff4ce7" stop-opacity="0"/></radialGradient>
-<radialGradient id="blue"><stop stop-color="#17c9ff" stop-opacity=".75"/><stop offset="1" stop-color="#17c9ff" stop-opacity="0"/></radialGradient>
-<linearGradient id="orbit" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#ffdcff"/><stop offset=".35" stop-color="#fff"/><stop offset=".7" stop-color="#fff"/><stop offset="1" stop-color="#75edff"/></linearGradient>
-<linearGradient id="inner" x1="0" y1="1" x2="1" y2="0"><stop stop-color="#7d12ef"/><stop offset=".45" stop-color="#5227dd"/><stop offset="1" stop-color="#1592ff"/></linearGradient>
-<clipPath id="round"><rect width="1024" height="1024" rx="215"/></clipPath>
-</defs><g clip-path="url(#round)"><rect width="1024" height="1024" fill="url(#base)"/>
-<ellipse cx="140" cy="766" rx="515" ry="470" fill="url(#pink)"/><ellipse cx="890" cy="280" rx="530" ry="420" fill="url(#blue)"/>
-<path d="M-145 1015C230 1120 905 790 1135 185" stroke="#ee91ff" stroke-width="60" opacity=".22" fill="none"/>
-<path d="M-50 340C210 70 485 0 1120 42" stroke="#b3beff" stroke-width="70" opacity=".18" fill="none"/>
-<path d="M513 185 825 514 513 836 199 514Z" fill="none" stroke="white" stroke-width="67" stroke-linejoin="miter"/>
-<path d="M513 356 665 514 513 673 361 514Z" fill="url(#inner)" stroke="#f4f1ff" stroke-width="7" stroke-linejoin="round"/>
-<circle cx="513" cy="514" r="61" fill="#fff"/>
-<ellipse cx="512" cy="520" rx="445" ry="142" fill="none" stroke="url(#orbit)" stroke-width="38" transform="rotate(-22 512 520)" stroke-linecap="round"/>
-<path d="M815 329c112 43 131 96 113 130" fill="none" stroke="#a7efff" opacity=".75" stroke-width="12" stroke-linecap="round"/>
-</g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="16" fill="#0a0d27"/><path d="M10 49 22 15 32 32 42 15 54 49H42l-4-15-6 10-6-10-4 15Z" fill="#a67dff"/></svg>

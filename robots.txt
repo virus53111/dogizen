@@ -1,6 +1,3 @@
 User-agent: *
 Allow: /
-
-# The private account and mobile dashboard use HTML noindex. Crawlers may
-# fetch them in order to see noindex; do not block those URLs here.
 Sitemap: https://murdilimax.com/sitemap.xml
