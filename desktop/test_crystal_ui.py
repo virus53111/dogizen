@@ -93,6 +93,21 @@ class CrystalGuiSmoke(unittest.TestCase):
             self.assertNotIn('extents',text)
             self.assertIn('lost/photo.jpg',text)
 
+    def test_scan_navigation_and_zero_result_diagnostics(self):
+        self.assertEqual(len(self.window.current_categories()), 7)
+        self.window.resize(900, 560)
+        self.window.show()
+        self.app.processEvents()
+        scroll = self.window.page_scroll.verticalScrollBar()
+        scroll.setValue(scroll.maximum())
+        self.window.nav[0][0].click()
+        self.assertEqual(scroll.value(), 0)
+        self.window.lang = 'ru'
+        self.window.retranslate()
+        self.window.handle_job('scan_done',
+                               {'found': 0, 'volumes': 1, 'errors': [], 'cancelled': False})
+        self.assertIn('По сигнатурам', self.window.status_detail.text())
+
     def test_worker_cancel_signal(self):
         w=Job('preview',{'source':'not_exist','item':None})
         self.assertFalse(w.stop.is_set())
