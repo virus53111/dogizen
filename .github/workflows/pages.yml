@@ -14,6 +14,7 @@ on:
       - 'guide/**'
       - 'recovery/**'
       - 'downloads/**'
+      - 'assets/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 permissions:
@@ -39,11 +40,12 @@ jobs:
       - uses: actions/configure-pages@v5
       - name: Stage only public website files
         run: |
-          mkdir -p _site/guide _site/recovery _site/downloads
+          mkdir -p _site/guide _site/recovery _site/downloads _site/assets
           cp index.html download.html 404.html favicon.svg robots.txt sitemap.xml CNAME _site/
           cp guide/index.html _site/guide/
           cp recovery/index.html _site/recovery/
           cp downloads/MURDIWORLD_Prototype_0.1.zip _site/downloads/
+          cp assets/MURDIWORLD-logo.png _site/assets/
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
