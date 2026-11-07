@@ -66,6 +66,22 @@ jobs:
           $env:QT_QPA_PLATFORM='offscreen'
           python murdilimax_crystal.py --capture-ui CRYSTAL-UI.png
           if ($LASTEXITCODE -ne 0 -or !(Test-Path 'CRYSTAL-UI.png')) { throw 'UI screenshot test failed' }
+      - name: Set up .NET 9 for MIT-licensed advanced recovery engine
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+      - name: Build credited Halim Recovery engine from pinned public source
+        shell: pwsh
+        run: |
+          git clone --quiet https://github.com/htoklu/halim-recovery.git desktop/halim-src
+          if ($LASTEXITCODE -ne 0) { throw 'Could not fetch Halim Recovery source' }
+          git -C desktop/halim-src checkout --detach 3b5d66d8537432f54b76489e717387f9da198635
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned upstream source unavailable' }
+          dotnet publish desktop/halim-src/src/HalimRecovery.App/HalimRecovery.App.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -o desktop/halim-output
+          if ($LASTEXITCODE -ne 0) { throw 'Advanced engine publish failed' }
+          if (!(Test-Path 'desktop/halim-output/HalimRecovery.exe')) { throw 'Missing advanced engine EXE' }
+          if (!(Test-Path 'desktop/halim-src/LICENSE')) { throw 'Missing mandatory MIT license' }
+          if ((Get-Item 'desktop/halim-output/HalimRecovery.exe').Length -lt 1000000) { throw 'Advanced engine binary incomplete' }
       - name: Package real Qt 6 Windows desktop application
         working-directory: desktop
         shell: pwsh
@@ -96,46 +112,52 @@ jobs:
           Set-Location 'desktop'
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'windows-installer.iss'
           if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
-          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.6.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.7.exe'
           if (!(Test-Path $setup)) { throw 'Installer not created' }
       - name: Generate SHA256 checksums
         shell: pwsh
         run: |
           Set-Location 'desktop'
           $portable='dist/MURDILIMAX-Recovery.exe'
-          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.6.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.7.exe'
           $portableHash=(Get-FileHash $portable -Algorithm SHA256).Hash.ToLowerInvariant()
           $setupHash=(Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$setupHash  MURDILIMAX-Recovery-Setup-0.10.6.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
+          "$setupHash  MURDILIMAX-Recovery-Setup-0.10.7.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
           "$portableHash  MURDILIMAX-Recovery.exe" | Add-Content -Encoding ascii 'SHA256SUMS.txt'
       - name: Upload tested installer and quality report
         uses: actions/upload-artifact@v4
         with:
-          name: MURDILIMAX-Recovery-0.10.6-Windows
+          name: MURDILIMAX-Recovery-0.10.7-Windows
           path: |
             desktop/dist/MURDILIMAX-Recovery.exe
-            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.6.exe
+            desktop/halim-output/HalimRecovery.exe
+            desktop/halim-src/LICENSE
+            desktop/THIRD_PARTY_NOTICES.md
+            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.7.exe
             desktop/SHA256SUMS.txt
             desktop/QUALITY-REPORT.json
             desktop/CRYSTAL-UI.png
           if-no-files-found: error
-      - name: Publish verified Recovery 0.10.6 downloads
+      - name: Publish verified Recovery 0.10.7 downloads
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.10.6
+          tag_name: v0.10.7
           target_commitish: ${{ github.sha }}
-          name: MURDILIMAX Recovery 0.10.6 — disk detection and scan reliability
+          name: MURDILIMAX Recovery 0.10.7 — fixed drive selection and extended recovery engine
           prerelease: true
           make_latest: false
           overwrite_files: false
           body: |
-            Fixes Windows physical-disk discovery using metadata-only handles, increases the NTFS scan cap, reports progress even with no recovered entries, includes Audio and all search categories by default, and adds actionable zero-result guidance. Existing whole-volume support for drive letters remains available.
+            Fixes installer elevation error 740, shows Windows drive letters even when filesystem metadata queries fail, exposes deep scan modes, and ships a separate open-source Halim Recovery 0.5.1 application for NTFS/FAT32/exFAT quick/deep recovery. Halim Recovery (c) Halim Toklu is MIT licensed; see included THIRD_PARTY_NOTICES.md and LICENSE. Experimental: recovered data is not guaranteed.
             Administrator permission is requested at startup for raw disk access. Recovery to the same physical disk is blocked, even if it has another drive letter.
             Windows may still write to a mounted volume. This is experimental software, not a consistent offline snapshot; recovery is not guaranteed. Existing physical system-disk imaging safeguards remain enabled.
           files: |
             desktop/dist/MURDILIMAX-Recovery.exe
-            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.6.exe
+            desktop/halim-output/HalimRecovery.exe
+            desktop/halim-src/LICENSE
+            desktop/THIRD_PARTY_NOTICES.md
+            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.7.exe
             desktop/SHA256SUMS.txt
             desktop/QUALITY-REPORT.json
             desktop/CRYSTAL-UI.png
