@@ -41,7 +41,7 @@ from murdilimax_crystal_logic import (
     normalize_categories, supported_preview, recommendation_color, selected_items, read_visible_photo,
 )
 
-VERSION='0.10.6'
+VERSION='0.10.7'
 BG='#070B20'
 PANEL='#111937'
 VIOLET='#B87AFF'
