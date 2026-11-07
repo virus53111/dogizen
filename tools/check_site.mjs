@@ -33,7 +33,7 @@ const sitemap = fs.readFileSync('sitemap.xml', 'utf8');
 for (const path of ['/', '/guide/', '/recovery/']) {
   assert(sitemap.includes('https://murdilimax.com' + path));
 }
-const archive = fs.readFileSync('.site-build/MURDIWORLD_Prototype_0.1.zip');
+const archive = fs.readFileSync('downloads/MURDIWORLD_Prototype_0.1.zip');
 assert(archive.length >= 15000 && archive.length <= 150000);
 const actual = crypto.createHash('sha256').update(archive).digest('hex');
 assert.equal(actual, 'f3fbd194049b6bf9db681aac60da726f2fbc1c61ba87458efb871cdd3e6d93b2');
