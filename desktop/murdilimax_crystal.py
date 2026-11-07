@@ -345,6 +345,16 @@ QScrollBar:vertical { background:#101635; width:12px; }
 QScrollBar::handle:vertical { background:#5F52A2; min-height:35px; border-radius:6px; }
 QDialog { background:#0D1431; }
 QMessageBox { background:#0E1737; }
+QInputDialog { background:#0E1737; min-width:550px; }
+QDialog QLabel, QInputDialog QLabel { color:#EDF1FF; }
+QDialog QPushButton, QMessageBox QPushButton, QInputDialog QPushButton {
+    color:#FFFFFF; background:#2B376B; border:1px solid #7998E8;
+    border-radius:8px; min-width:90px; min-height:26px; padding:5px 13px;
+    font-size:12px; font-weight:700;
+}
+QDialog QPushButton:hover, QMessageBox QPushButton:hover, QInputDialog QPushButton:hover {
+    background:#4452A0; border-color:#82EDFF;
+}
 """
 
 
