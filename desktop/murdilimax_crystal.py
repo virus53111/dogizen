@@ -61,7 +61,7 @@ TR={
  'title':'Восстановление данных','subtitle':'Верни важные файлы. Прозрачный локальный анализ без облака.',
  'scan':'Сканирование','disks':'Диски','restore':'Восстановление','raid':'RAID / NAS',
  'preview':'Предпросмотр','wallet':'Кошельки','reports':'Отчёты','settings':'Настройки',
- 'source_title':'ВЫБЕРИТЕ ИСТОЧНИК ДЛЯ АНАЛИЗА','image_card':'Образ диска','folder_card':'Файлы в папке (не удалённые)','physical_card':'HDD / USB',
+ 'source_title':'ВЫБЕРИТЕ ИСТОЧНИК ДЛЯ АНАЛИЗА','image_card':'Образ диска','folder_card':'Файлы в папке','physical_card':'HDD / USB',
  'source_empty':'Источник ещё не выбран','refresh':'Выбрать другой','categories':'ТИПЫ ФАЙЛОВ ДЛЯ ПОИСКА',
  'Photos':'Фото','Documents':'Документы','Archives':'Архивы','Video':'Видео','Audio':'Аудио',
  'Crypto backups':'Криптокошельки','Other':'Другие','start':'НАЧАТЬ СКАНИРОВАНИЕ',
@@ -93,8 +93,8 @@ TR={
  'raid_members':'Пути образов по порядку, по одному на строку. «-» — отсутствующий диск:',
  'add_member':'Добавить образ','build_raid':'Собрать новый образ','cancel':'Отмена','ok':'ОК',
  'source_mode':'Режим сканирования','metadata_mode':'По метаданным NTFS/exFAT/ext4','carve_mode':'По сигнатурам JPG/PNG/PDF/ZIP',
- 'folder_mode':'Обычные файлы в папке','deep_mode':'Поиск потерянных разделов (медленнее)',
- 'mft_mode':'Поиск повреждённых записей NTFS (экспериментально)',
+ 'folder_mode':'Обычные файлы в папке','deep_mode':'Потерянные разделы',
+ 'mft_mode':'Повреждённые записи NTFS',
  'device_select':'Выберите физический диск Windows','local_advice':'Локальные рекомендации, не диагноз и не ИИ.',
  'save_session':'СОХРАНИТЬ СЕССИЮ','open_session':'ОТКРЫТЬ СЕССИЮ',
  'session_saved':'Сводка сканирования сохранена локально. Она не содержит файлов или данных для восстановления.',
@@ -113,7 +113,7 @@ TR={
  'title':'Data recovery','subtitle':'Bring important files back. Transparent offline analysis, no cloud.',
  'scan':'Scan','disks':'Disks','restore':'Recovery','raid':'RAID / NAS',
  'preview':'Preview','wallet':'Wallets','reports':'Reports','settings':'Settings',
- 'source_title':'CHOOSE A SOURCE TO ANALYZE','image_card':'Disk image','folder_card':'Existing folder files','physical_card':'HDD / USB',
+ 'source_title':'CHOOSE A SOURCE TO ANALYZE','image_card':'Disk image','folder_card':'Folder files','physical_card':'HDD / USB',
  'source_empty':'No source selected','refresh':'Choose another','categories':'SEARCH FILE CATEGORIES',
  'Photos':'Photos','Documents':'Documents','Archives':'Archives','Video':'Video','Audio':'Audio',
  'Crypto backups':'Crypto backups','Other':'Other','start':'START SCANNING',
@@ -145,8 +145,8 @@ TR={
  'raid_members':'Member image paths in physical order, one per line. Use "-" for a missing member:',
  'add_member':'Add image','build_raid':'Build new image','cancel':'Cancel','ok':'OK',
  'source_mode':'Scan mode','metadata_mode':'NTFS/exFAT/ext4 metadata','carve_mode':'JPG/PNG/PDF/ZIP signatures',
- 'folder_mode':'Visible files in a folder','deep_mode':'Find lost partitions (slower)',
- 'mft_mode':'Damaged NTFS record salvage (experimental)',
+ 'folder_mode':'Visible files in a folder','deep_mode':'Lost partitions',
+ 'mft_mode':'Damaged NTFS records',
  'device_select':'Select Windows physical disk','local_advice':'Local rule-based guidance, not AI or diagnosis.',
  'save_session':'SAVE SESSION','open_session':'OPEN SESSION',
  'session_saved':'Scan summary saved locally. It contains no recovered bytes or information authorizing recovery.',
@@ -501,6 +501,7 @@ class CrystalWindow(QMainWindow):
         self.btn_volume.setToolTip(self.t('volume_help'))
         self.btn_image.setText(' '+self.t('image_card'))
         self.btn_folder.setText(' '+self.t('folder_card'))
+        self.btn_folder.setToolTip('Только существующие файлы. Для поиска удалённых выберите весь диск.' if self.lang=='ru' else 'Existing files only. Choose Whole drive to search for deleted files.')
         self.btn_device.setText(' '+self.t('physical_card'))
         if not self.source:self.source_text.setText(self.t('source_empty'))
         self.language.setText('RU / EN' if self.lang=='ru' else 'EN / RU')
