@@ -27,6 +27,8 @@ class CrystalGuiSmoke(unittest.TestCase):
         self.assertEqual(self.window.table.rowCount(),0)
         self.assertFalse(self.window.stop_btn.isEnabled())
         self.assertEqual(len(self.window.checkboxes),7)
+        self.assertFalse(self.window.deep.isChecked(), 'Slow partition recovery must require opt-in')
+        self.assertFalse(self.window.mft.isChecked(), 'MFT salvage must require opt-in')
     def test_russian_english_switch(self):
         self.window.lang='ru';self.window.retranslate()
         self.assertIn('Восстановление',self.window.hero_title.text())
