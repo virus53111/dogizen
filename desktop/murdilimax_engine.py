@@ -65,6 +65,7 @@ class Candidate:
         if suffix in {'.mp4','.mov','.mkv','.avi','.webm'}: return 'Video'
         if suffix in {'.pdf','.doc','.docx','.xls','.xlsx','.txt','.ppt','.pptx','.odt'}: return 'Documents'
         if suffix in {'.zip','.7z','.rar','.gz','.tar'}: return 'Archives'
+        if suffix in {'.mp3','.wav','.flac','.aac','.m4a','.ogg','.wma','.opus'}: return 'Audio'
         return 'Other'
 
     def summary(self):
@@ -239,6 +240,10 @@ def ntfs_scan(fp, part:Partition, image_size:int, limit:int=MAX_RECORDS, progres
     count=min(limit,mft_bytes//recordsize)
     records={};candidates=[];bitmap_attr=None
     for i in range(count):
+        # Report progress even when a record is in use or malformed. Previously
+        # progress fired only for deleted-file candidates, appearing frozen.
+        if progress and (i % 1024 == 0 or i == count-1):
+            progress(i+1,max(1,count))
         try:
             rec=fixup(stream_read(fp,mft_extents,i*recordsize,recordsize,image_size),sec)
         except (ValueError,EOFError):continue
@@ -266,7 +271,6 @@ def ntfs_scan(fp, part:Partition, image_size:int, limit:int=MAX_RECORDS, progres
             reason='Compressed or encrypted NTFS stream not supported' if unsupported else ''
             candidates.append(Candidate('NTFS',best[0],best[0],size,part.offset,extents,resident,'unknown',reason,True,False,i,best[1],unsupported))
         except (ValueError,EOFError):continue
-        if progress and i%1024==0:progress(i,max(1,count))
     def make_path(parent_reference,name):
         # NTFS file references include a 16-bit sequence number. A reused MFT
         # record must NOT become the deleted file's parent by record ID alone.
@@ -443,7 +447,7 @@ def exfat_scan(fp,part:Partition,image_size:int,limit:int=100000,progress:Callab
     return out
 
 
-def scan_image(image_path, limit=100000, progress=None, deep_partitions=False, probe_cap=5_000_000, salvage_mft=False):
+def scan_image(image_path, limit=MAX_RECORDS, progress=None, deep_partitions=False, probe_cap=5_000_000, salvage_mft=False):
     path=str(image_path)
     if not is_device(path) and not Path(path).is_file():
         raise FileNotFoundError(path)
