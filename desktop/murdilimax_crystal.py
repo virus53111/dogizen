@@ -94,8 +94,8 @@ TR={
  'raid_members':'Пути образов по порядку, по одному на строку. «-» — отсутствующий диск:',
  'add_member':'Добавить образ','build_raid':'Собрать новый образ','cancel':'Отмена','ok':'ОК',
  'source_mode':'Режим сканирования','metadata_mode':'По метаданным NTFS/exFAT/ext4','carve_mode':'По сигнатурам JPG/PNG/PDF/ZIP',
- 'folder_mode':'Обычные файлы в папке','deep_mode':'Потерянные разделы',
- 'mft_mode':'Повреждённые записи NTFS',
+ 'folder_mode':'Обычные файлы в папке (не поиск удалённых)','deep_mode':'Искать потерянные разделы (медленно)',
+ 'mft_mode':'Поиск в повреждённой MFT (медленно)',
  'device_select':'Выберите физический диск Windows','local_advice':'Локальные рекомендации, не диагноз и не ИИ.',
  'save_session':'СОХРАНИТЬ СЕССИЮ','open_session':'ОТКРЫТЬ СЕССИЮ',
  'session_saved':'Сводка сканирования сохранена локально. Она не содержит файлов или данных для восстановления.',
@@ -147,8 +147,8 @@ TR={
  'raid_members':'Member image paths in physical order, one per line. Use "-" for a missing member:',
  'add_member':'Add image','build_raid':'Build new image','cancel':'Cancel','ok':'OK',
  'source_mode':'Scan mode','metadata_mode':'NTFS/exFAT/ext4 metadata','carve_mode':'JPG/PNG/PDF/ZIP signatures',
- 'folder_mode':'Visible files in a folder','deep_mode':'Lost partitions',
- 'mft_mode':'Damaged NTFS records',
+ 'folder_mode':'Existing files in folder (not undelete)','deep_mode':'Search lost partitions (slow)',
+ 'mft_mode':'Search damaged NTFS MFT (slow)',
  'device_select':'Select Windows physical disk','local_advice':'Local rule-based guidance, not AI or diagnosis.',
  'save_session':'SAVE SESSION','open_session':'OPEN SESSION',
  'session_saved':'Scan summary saved locally. It contains no recovered bytes or information authorizing recovery.',
@@ -423,8 +423,8 @@ class CrystalWindow(QMainWindow):
         self.scan_mode.addItem('NTFS/exFAT/ext4',userData='metadata');self.scan_mode.addItem('JPG/PNG/PDF/ZIP',userData='carve')
         self.scan_mode.currentIndexChanged.connect(self.mode_changed)
         opts.addWidget(self.scan_mode)
-        self.deep=QCheckBox();self.deep.setChecked(True);opts.addWidget(self.deep)
-        self.mft=QCheckBox();self.mft.setChecked(True);opts.addWidget(self.mft)
+        self.deep=QCheckBox();self.deep.setChecked(False);opts.addWidget(self.deep)
+        self.mft=QCheckBox();self.mft.setChecked(False);opts.addWidget(self.mft)
         advanced_layout.addLayout(opts)
         self.cat_title=self.label('','section');advanced_layout.addWidget(self.cat_title)
         catrow=QGridLayout();catrow.setSpacing(8)
