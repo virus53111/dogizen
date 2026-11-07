@@ -23,7 +23,7 @@ class CrystalGuiSmoke(unittest.TestCase):
     def tearDown(self):
         self.window.close();self.window.deleteLater()
     def test_version_and_window(self):
-        self.assertEqual(VERSION,'0.10.4')
+        self.assertEqual(VERSION,'0.10.5')
         self.assertEqual(self.window.table.rowCount(),0)
         self.assertFalse(self.window.stop_btn.isEnabled())
         self.assertEqual(len(self.window.checkboxes),7)
@@ -37,6 +37,20 @@ class CrystalGuiSmoke(unittest.TestCase):
     def test_no_fake_scan_results(self):
         self.assertEqual(self.window.entries,[])
         self.assertEqual(self.window.count_label.text(),'0')
+    def test_small_window_has_no_horizontal_page_scroll(self):
+        from PySide6.QtWidgets import QScrollArea
+        self.window.show()
+        for language in ('ru','en'):
+            self.window.lang=language;self.window.retranslate()
+            for width in (900,1180):
+                self.window.resize(width,700);self.app.processEvents()
+                scroll=self.window.findChild(QScrollArea)
+                self.assertEqual(scroll.horizontalScrollBar().maximum(),0,(language,width))
+                self.assertFalse(self.window.btn_volume.geometry().intersects(self.window.btn_image.geometry()))
+        self.assertTrue(self.window.advanced.isHidden())
+        self.window.advanced_btn.click();self.app.processEvents()
+        self.assertFalse(self.window.advanced.isHidden())
+        self.assertEqual(scroll.horizontalScrollBar().maximum(),0)
     def test_loaded_session_is_view_only_and_source_switch_invalidates(self):
         with tempfile.TemporaryDirectory() as temp:
             base=Path(temp)

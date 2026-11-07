@@ -77,7 +77,7 @@ jobs:
         run: |
           $env:QT_QPA_PLATFORM='offscreen'
           $app=(Resolve-Path 'desktop/dist/MURDILIMAX-Recovery.exe').Path
-          $process=Start-Process -FilePath $app -ArgumentList '--smoke-test' -PassThru -Wait
+          $process=Start-Process -FilePath $app -ArgumentList '--smoke-test' -PassThru -Wait -WindowStyle Hidden
           if ($process.ExitCode -ne 0) { throw "Packaged Qt app startup failed: $($process.ExitCode)" }
       - name: Install Inno Setup if needed
         shell: pwsh
@@ -91,46 +91,46 @@ jobs:
           Set-Location 'desktop'
           & 'C:\Program Files (x86)\Inno Setup 6\ISCC.exe' 'windows-installer.iss'
           if ($LASTEXITCODE -ne 0) { throw 'Inno Setup failed' }
-          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.4.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.5.exe'
           if (!(Test-Path $setup)) { throw 'Installer not created' }
       - name: Generate SHA256 checksums
         shell: pwsh
         run: |
           Set-Location 'desktop'
           $portable='dist/MURDILIMAX-Recovery.exe'
-          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.4.exe'
+          $setup='installer-output/MURDILIMAX-Recovery-Setup-0.10.5.exe'
           $portableHash=(Get-FileHash $portable -Algorithm SHA256).Hash.ToLowerInvariant()
           $setupHash=(Get-FileHash $setup -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$setupHash  MURDILIMAX-Recovery-Setup-0.10.4.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
+          "$setupHash  MURDILIMAX-Recovery-Setup-0.10.5.exe" | Set-Content -Encoding ascii 'SHA256SUMS.txt'
           "$portableHash  MURDILIMAX-Recovery.exe" | Add-Content -Encoding ascii 'SHA256SUMS.txt'
       - name: Upload tested installer and quality report
         uses: actions/upload-artifact@v4
         with:
-          name: MURDILIMAX-Recovery-0.10.4-Windows
+          name: MURDILIMAX-Recovery-0.10.5-Windows
           path: |
             desktop/dist/MURDILIMAX-Recovery.exe
-            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.4.exe
+            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.5.exe
             desktop/SHA256SUMS.txt
             desktop/QUALITY-REPORT.json
             desktop/CRYSTAL-UI.png
           if-no-files-found: error
-      - name: Publish verified Recovery 0.10.4 downloads
+      - name: Publish verified Recovery 0.10.5 downloads
         if: github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v0.10.4
+          tag_name: v0.10.5
           target_commitish: ${{ github.sha }}
-          name: MURDILIMAX Recovery 0.10.4 — Whole drive selection / RU EN
+          name: MURDILIMAX Recovery 0.10.5 — Clearer desktop layout / RU EN
           prerelease: true
           make_latest: false
           overwrite_files: false
           body: |
-            Adds a dedicated whole-drive picker with drive letters (C:, D:), volume labels, sizes and filesystems. Selecting a drive never opens folders and passes the raw read-only volume to the recovery engine.
+            Simplifies the desktop layout, removes unsupported symbol glyphs and separates advanced search options. Includes a dedicated whole-drive picker with drive letters (C:, D:), volume labels, sizes and filesystems. Selecting a drive never opens folders and passes the raw read-only volume to the recovery engine.
             Administrator permission is requested at startup for raw disk access. Recovery to the same physical disk is blocked, even if it has another drive letter.
             Windows may still write to a mounted volume. This is experimental software, not a consistent offline snapshot; recovery is not guaranteed. Existing physical system-disk imaging safeguards remain enabled.
           files: |
             desktop/dist/MURDILIMAX-Recovery.exe
-            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.4.exe
+            desktop/installer-output/MURDILIMAX-Recovery-Setup-0.10.5.exe
             desktop/SHA256SUMS.txt
             desktop/QUALITY-REPORT.json
             desktop/CRYSTAL-UI.png

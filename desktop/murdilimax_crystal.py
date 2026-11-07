@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QFrame, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QCheckBox, QProgressBar, QLineEdit, QTableWidget, QTableWidgetItem,
     QFileDialog, QMessageBox, QInputDialog, QDialog, QComboBox, QPlainTextEdit,
-    QHeaderView, QAbstractItemView, QScrollArea, QSizePolicy, QGraphicsDropShadowEffect,
+    QHeaderView, QAbstractItemView, QScrollArea, QSizePolicy, QGraphicsDropShadowEffect, QGridLayout,
 )
 
 from murdilimax_engine import scan_image, recover, Candidate, ScanCancelled
@@ -40,7 +40,7 @@ from murdilimax_crystal_logic import (
     normalize_categories, supported_preview, recommendation_color, selected_items, read_visible_photo,
 )
 
-VERSION='0.10.4'
+VERSION='0.10.5'
 BG='#070B20'
 PANEL='#111937'
 VIOLET='#B87AFF'
@@ -61,11 +61,11 @@ TR={
  'title':'Восстановление данных','subtitle':'Верни важные файлы. Прозрачный локальный анализ без облака.',
  'scan':'Сканирование','disks':'Диски','restore':'Восстановление','raid':'RAID / NAS',
  'preview':'Предпросмотр','wallet':'Кошельки','reports':'Отчёты','settings':'Настройки',
- 'source_title':'ВЫБЕРИТЕ ИСТОЧНИК ДЛЯ АНАЛИЗА','image_card':'Образ диска','folder_card':'Папка','physical_card':'HDD / USB',
+ 'source_title':'ВЫБЕРИТЕ ИСТОЧНИК ДЛЯ АНАЛИЗА','image_card':'Образ диска','folder_card':'Файлы в папке (не удалённые)','physical_card':'HDD / USB',
  'source_empty':'Источник ещё не выбран','refresh':'Выбрать другой','categories':'ТИПЫ ФАЙЛОВ ДЛЯ ПОИСКА',
  'Photos':'Фото','Documents':'Документы','Archives':'Архивы','Video':'Видео','Audio':'Аудио',
- 'Crypto backups':'Криптокошельки','Other':'Другие','start':'◈  НАЧАТЬ СКАНИРОВАНИЕ',
- 'stop':'■  ОСТАНОВИТЬ','image_action':'▣  СОЗДАТЬ ОБРАЗ','raid_action':'◇  СОБРАТЬ RAID',
+ 'Crypto backups':'Криптокошельки','Other':'Другие','start':'НАЧАТЬ СКАНИРОВАНИЕ',
+ 'stop':'ОСТАНОВИТЬ','image_action':'СОЗДАТЬ ОБРАЗ','raid_action':'СОБРАТЬ RAID',
  'scan_status':'Ожидание источника','scan_sub':'Результаты появятся после настоящего сканирования',
  'scanning':'СКАНИРОВАНИЕ ИСТОЧНИКА','imaging':'СОЗДАНИЕ ОБРАЗА','recovering':'ВОССТАНОВЛЕНИЕ ФАЙЛОВ',
  'idle':'ГОТОВО К РАБОТЕ','found':'НАЙДЕНО ФАЙЛОВ','results':'РЕЗУЛЬТАТЫ СКАНИРОВАНИЯ',
@@ -73,8 +73,8 @@ TR={
  'size':'Размер','type':'Тип','condition':'Состояние','preview_title':'ПРЕДПРОСМОТР',
  'preview_empty':'Выберите фотографию из списка.\nИзображение загрузится локально.',
  'preview_note':'Предпросмотр не гарантирует целостность файла.',
- 'restore_selected':'↺  ВОССТАНОВИТЬ ОТМЕЧЕННОЕ','advisor':'✧  СОВЕТ ПО ВОССТАНОВЛЕНИЮ',
- 'report_button':'▤  ОТКРЫТЬ ОТЧЁТ','privacy':'◈  Только чтение источника  ·  Результаты на другой диск  ·  Без передачи данных',
+ 'restore_selected':'ВОССТАНОВИТЬ ОТМЕЧЕННОЕ','advisor':'СОВЕТ ПО ВОССТАНОВЛЕНИЮ',
+ 'report_button':'ОТКРЫТЬ ОТЧЁТ','privacy':'Только чтение источника  ·  Результаты на другой диск  ·  Без передачи данных',
  'confirm_physical':'Чтение физического диска может ухудшить состояние неисправного оборудования. Используйте образ для важных данных. Продолжить?',
  'confirm_unknown':'Некоторые файлы имеют неизвестное состояние кластеров. Они могут быть повреждены. Всё равно попробовать?',
  'choose_source':'Выберите образ / диск / папку','choose_output':'Выберите папку на ДРУГОМ физическом носителе',
@@ -96,7 +96,7 @@ TR={
  'folder_mode':'Обычные файлы в папке','deep_mode':'Поиск потерянных разделов (медленнее)',
  'mft_mode':'Поиск повреждённых записей NTFS (экспериментально)',
  'device_select':'Выберите физический диск Windows','local_advice':'Локальные рекомендации, не диагноз и не ИИ.',
- 'save_session':'↓  СОХРАНИТЬ СЕССИЮ','open_session':'▤  ОТКРЫТЬ СЕССИЮ',
+ 'save_session':'СОХРАНИТЬ СЕССИЮ','open_session':'ОТКРЫТЬ СЕССИЮ',
  'session_saved':'Сводка сканирования сохранена локально. Она не содержит файлов или данных для восстановления.',
  'session_view':'СОХРАНЁННАЯ СЕССИЯ · ТОЛЬКО ПРОСМОТР',
  'session_rescan':'Для восстановления и предпросмотра выберите исходный носитель и выполните новое сканирование.',
@@ -113,11 +113,11 @@ TR={
  'title':'Data recovery','subtitle':'Bring important files back. Transparent offline analysis, no cloud.',
  'scan':'Scan','disks':'Disks','restore':'Recovery','raid':'RAID / NAS',
  'preview':'Preview','wallet':'Wallets','reports':'Reports','settings':'Settings',
- 'source_title':'CHOOSE A SOURCE TO ANALYZE','image_card':'Disk image','folder_card':'Folder','physical_card':'HDD / USB',
+ 'source_title':'CHOOSE A SOURCE TO ANALYZE','image_card':'Disk image','folder_card':'Existing folder files','physical_card':'HDD / USB',
  'source_empty':'No source selected','refresh':'Choose another','categories':'SEARCH FILE CATEGORIES',
  'Photos':'Photos','Documents':'Documents','Archives':'Archives','Video':'Video','Audio':'Audio',
- 'Crypto backups':'Crypto backups','Other':'Other','start':'◈  START SCANNING',
- 'stop':'■  STOP','image_action':'▣  MAKE DISK IMAGE','raid_action':'◇  RAID BUILDER',
+ 'Crypto backups':'Crypto backups','Other':'Other','start':'START SCANNING',
+ 'stop':'STOP','image_action':'MAKE DISK IMAGE','raid_action':'RAID BUILDER',
  'scan_status':'Waiting for source','scan_sub':'Actual results will appear after a real scan',
  'scanning':'SCANNING SOURCE','imaging':'ACQUIRING DISK IMAGE','recovering':'RECOVERING FILES',
  'idle':'READY','found':'FILES FOUND','results':'SCAN RESULTS',
@@ -125,8 +125,8 @@ TR={
  'size':'Size','type':'Type','condition':'Condition','preview_title':'PREVIEW',
  'preview_empty':'Select a photo result.\nThe preview is loaded locally.',
  'preview_note':'A preview is not proof of full file integrity.',
- 'restore_selected':'↺  RECOVER CHECKED FILES','advisor':'✧  RECOVERY GUIDANCE',
- 'report_button':'▤  OPEN REPORT','privacy':'◈  Source read only  ·  Recover to a different disk  ·  No data uploads',
+ 'restore_selected':'RECOVER CHECKED FILES','advisor':'RECOVERY GUIDANCE',
+ 'report_button':'OPEN REPORT','privacy':'Source read only  ·  Recover to a different disk  ·  No data uploads',
  'confirm_physical':'Reading a physical disk can worsen hardware failure. Image important drives first. Continue?',
  'confirm_unknown':'Some candidates have unknown allocation status and may be damaged. Recover anyway?',
  'choose_source':'Select disk image / physical device / folder','choose_output':'Choose output folder on ANOTHER physical disk',
@@ -148,7 +148,7 @@ TR={
  'folder_mode':'Visible files in a folder','deep_mode':'Find lost partitions (slower)',
  'mft_mode':'Damaged NTFS record salvage (experimental)',
  'device_select':'Select Windows physical disk','local_advice':'Local rule-based guidance, not AI or diagnosis.',
- 'save_session':'↓  SAVE SESSION','open_session':'▤  OPEN SESSION',
+ 'save_session':'SAVE SESSION','open_session':'OPEN SESSION',
  'session_saved':'Scan summary saved locally. It contains no recovered bytes or information authorizing recovery.',
  'session_view':'SAVED SESSION · VIEW ONLY',
  'session_rescan':'To preview or recover files, choose the original source again and run a fresh scan.',
@@ -164,7 +164,7 @@ class CrystalBanner(QWidget):
     """Vector crystal art, resolution independent, optional low-power shimmer."""
     def __init__(self,parent=None):
         super().__init__(parent)
-        self.setMinimumHeight(150)
+        self.setMinimumHeight(110)
         self.phase=0.0
         self.animated=True
         self.timer=QTimer(self)
@@ -356,7 +356,7 @@ class CrystalWindow(QMainWindow):
         self.session_snapshot=None;self.scan_complete=False;self.scan_total=0;self.scan_errors=[]
         self.filtered=[]
         self.setWindowTitle('MURDILIMAX Recovery · Crystal '+VERSION)
-        self.resize(1430,910);self.setMinimumSize(1070,770)
+        self.resize(1180,820);self.setMinimumSize(900,560)
         self.build_ui();self.retranslate()
     def t(self,key):return tr(self.lang,key)
     def label(self,text,kind=None):
@@ -370,22 +370,22 @@ class CrystalWindow(QMainWindow):
     def build_ui(self):
         root=QWidget();root.setObjectName('root');self.setCentralWidget(root)
         full=QHBoxLayout(root);full.setContentsMargins(0,0,0,0);full.setSpacing(0)
-        sidebar=QFrame();sidebar.setObjectName('sidebar');sidebar.setFixedWidth(223);full.addWidget(sidebar)
+        sidebar=QFrame();sidebar.setObjectName('sidebar');sidebar.setFixedWidth(180);full.addWidget(sidebar)
         sv=QVBoxLayout(sidebar);sv.setContentsMargins(15,24,15,20);sv.setSpacing(8)
-        self.brand=self.label('◇  MURDILIMAX','brand');sv.addWidget(self.brand)
-        sv.addWidget(self.label('     CRYSTAL RECOVERY','tagline'))
+        self.brand=self.label('MURDILIMAX','brand');sv.addWidget(self.brand)
+        sv.addWidget(self.label('   CRYSTAL RECOVERY','tagline'))
         sv.addSpacing(36)
         self.nav=[]
         for sym,key,fn in [
-          ('⌕','scan',lambda:None),('▣','disks',self.pick_volume),('↺','restore',self.recover_selected),
-          ('◇','raid',self.raid_builder),('▧','preview',self.preview_selected),
-          ('♧','wallet',self.wallet_finder),('▤','reports',self.open_report),('⚙','settings',self.open_settings)]:
+          ('','scan',lambda:None),('','disks',self.pick_volume),('','restore',self.recover_selected),
+          ('','raid',self.raid_builder),('','preview',self.preview_selected),
+          ('','wallet',self.wallet_finder),('','reports',self.open_report),('','settings',self.open_settings)]:
             b=self.button('',fn,'nav');b.setProperty('active','true' if key=='scan' else 'false')
             self.nav.append((b,sym,key));sv.addWidget(b)
         sv.addStretch()
-        ornament=QLabel('✧    ◇    ✧');ornament.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        ornament=QLabel('');ornament.setAlignment(Qt.AlignmentFlag.AlignCenter)
         ornament.setStyleSheet('color:#77DEFF; font-size:26px; margin-bottom:10px');sv.addWidget(ornament)
-        sv.addWidget(self.label(VERSION+'  ·  LOCAL / READ ONLY','tagline'))
+        sv.addWidget(self.label(VERSION+'·  LOCAL / READ ONLY','tagline'))
         outer=QScrollArea();outer.setWidgetResizable(True);outer.setFrameShape(QFrame.Shape.NoFrame)
         outer.setStyleSheet('QScrollArea{border:0;background:#070B20;} QScrollBar{background:#151732}')
         full.addWidget(outer,1)
@@ -393,7 +393,7 @@ class CrystalWindow(QMainWindow):
         cv=QVBoxLayout(content);cv.setContentsMargins(20,18,21,13);cv.setSpacing(14)
         hero=CrystalBanner();self.hero=hero;cv.addWidget(hero)
         hl=QVBoxLayout(hero);hl.setContentsMargins(29,23,29,23)
-        self.hero_title=self.label('','');self.hero_title.setStyleSheet('font-size:33px;font-weight:950;color:white;background:transparent')
+        self.hero_title=self.label('','');self.hero_title.setStyleSheet('font-size:27px;font-weight:950;color:white;background:transparent')
         self.hero_sub=self.label('');self.hero_sub.setWordWrap(True)
         self.hero_sub.setStyleSheet('font-size:13px;color:#CFDDFC;background:transparent')
         hl.addWidget(self.hero_title);hl.addWidget(self.hero_sub);hl.addStretch()
@@ -401,41 +401,47 @@ class CrystalWindow(QMainWindow):
         sp=QVBoxLayout(source_panel);sp.setContentsMargins(17,13,17,16);sp.setSpacing(10)
         header=QHBoxLayout();self.source_title=self.label('','section');header.addWidget(self.source_title);header.addStretch()
         self.language=self.button('RU / EN',self.switch_language);header.addWidget(self.language);sp.addLayout(header)
-        cards=QHBoxLayout();cards.setSpacing(9)
+        cards=QGridLayout();cards.setSpacing(9)
         self.btn_volume=self.button('',self.pick_volume,'source')
         self.btn_image=self.button('',self.pick_image,'source')
         self.btn_folder=self.button('',self.pick_folder,'source')
         self.btn_device=self.button('',self.pick_device,'source')
-        for btn in (self.btn_volume,self.btn_image,self.btn_folder,self.btn_device):
-            btn.setMinimumHeight(65);cards.addWidget(btn)
+        for i,btn in enumerate((self.btn_volume,self.btn_image,self.btn_folder,self.btn_device)):
+            btn.setMinimumHeight(48);cards.addWidget(btn,i//2,i%2)
         sp.addLayout(cards)
         self.source_text=self.label('','muted');self.source_text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.source_text.setWordWrap(True);sp.addWidget(self.source_text)
-        opts=QHBoxLayout();opts.setSpacing(8)
+        self.advanced_btn=self.button('',lambda: self.advanced.setVisible(not self.advanced.isVisible()))
+        sp.addWidget(self.advanced_btn)
+        self.advanced=QWidget();advanced_layout=QVBoxLayout(self.advanced)
+        advanced_layout.setContentsMargins(0,0,0,0)
+        sp.addWidget(self.advanced);self.advanced.hide()
+        opts=QVBoxLayout();opts.setSpacing(8)
         self.scan_mode=QComboBox();self.scan_mode.setMaximumWidth(365)
         self.scan_mode.addItem('NTFS/exFAT/ext4',userData='metadata');self.scan_mode.addItem('JPG/PNG/PDF/ZIP',userData='carve')
         self.scan_mode.currentIndexChanged.connect(self.mode_changed)
         opts.addWidget(self.scan_mode)
         self.deep=QCheckBox();self.deep.setChecked(True);opts.addWidget(self.deep)
         self.mft=QCheckBox();self.mft.setChecked(True);opts.addWidget(self.mft)
-        opts.addStretch();sp.addLayout(opts)
-        self.cat_title=self.label('','section');sp.addWidget(self.cat_title)
-        catrow=QHBoxLayout();catrow.setSpacing(8)
+        advanced_layout.addLayout(opts)
+        self.cat_title=self.label('','section');advanced_layout.addWidget(self.cat_title)
+        catrow=QGridLayout();catrow.setSpacing(8)
         self.checkboxes={}
-        for category in CATEGORIES:
+        for i,category in enumerate(CATEGORIES):
             c=QCheckBox();c.setChecked(category in ('Photos','Documents','Archives','Crypto backups'))
             c.setStyleSheet('QCheckBox{background:#242051;border:1px solid #7654AB;border-radius:14px;padding:6px 8px;font-size:11px;font-weight:700;} QCheckBox:checked{background:#3A285F;border-color:#84DDF7;} QCheckBox::indicator{width:12px;height:12px;}')
-            self.checkboxes[category]=c;catrow.addWidget(c)
-        catrow.addStretch();sp.addLayout(catrow)
+            self.checkboxes[category]=c;catrow.addWidget(c,i//4,i%4)
+        advanced_layout.addLayout(catrow)
         actions=QHBoxLayout();actions.setSpacing(10)
         self.start_btn=self.button('',self.scan,'primary');actions.addWidget(self.start_btn,2)
         self.stop_btn=self.button('',self.cancel,'danger');actions.addWidget(self.stop_btn)
         self.image_btn=self.button('',self.make_image);actions.addWidget(self.image_btn)
-        self.raid_btn=self.button('',self.raid_builder);actions.addWidget(self.raid_btn)
-        sp.addLayout(actions)
+        self.raid_btn=self.button('',self.raid_builder)
+        extra_actions=QHBoxLayout();extra_actions.addWidget(self.image_btn);extra_actions.addWidget(self.raid_btn)
+        sp.addLayout(actions);sp.addLayout(extra_actions)
         status_panel=self.panel();cv.addWidget(status_panel)
         prog=QHBoxLayout(status_panel);prog.setContentsMargins(18,12,18,12);prog.setSpacing(17)
-        gem=self.label('◇');gem.setStyleSheet('font-size:46px;color:#75E3FF;')
+        gem=self.label('');gem.setStyleSheet('font-size:46px;color:#75E3FF;')
         prog.addWidget(gem)
         pb=QVBoxLayout();pb.setSpacing(6)
         self.status_label=self.label('','section');pb.addWidget(self.status_label)
@@ -444,14 +450,15 @@ class CrystalWindow(QMainWindow):
         self.status_detail=self.label('','muted');self.status_detail.setWordWrap(True);pb.addWidget(self.status_detail)
         prog.addLayout(pb,1)
         self.count_label=self.label('0','counter');prog.addWidget(self.count_label)
-        middle=QHBoxLayout();middle.setSpacing(13);cv.addLayout(middle,1)
+        middle=QVBoxLayout();middle.setSpacing(13);cv.addLayout(middle,1)
         result_panel=self.panel();middle.addWidget(result_panel,4)
         rv=QVBoxLayout(result_panel);rv.setContentsMargins(13,14,13,13);rv.setSpacing(10)
-        rh=QHBoxLayout();self.results_title=self.label('','section');rh.addWidget(self.results_title)
+        self.results_title=self.label('','section');rv.addWidget(self.results_title)
+        rh=QHBoxLayout()
         rh.addStretch()
         self.session_save_btn=self.button('',self.save_scan_session);rh.addWidget(self.session_save_btn)
         self.session_open_btn=self.button('',self.open_scan_session);rh.addWidget(self.session_open_btn)
-        self.search=QLineEdit();self.search.setFixedWidth(218)
+        self.search=QLineEdit();self.search.setMinimumWidth(120)
         self.search.textChanged.connect(self.apply_filter);rh.addWidget(self.search);rv.addLayout(rh)
         self.table=QTableWidget(0,5);self.table.setAlternatingRowColors(True)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
@@ -464,7 +471,7 @@ class CrystalWindow(QMainWindow):
         self.table.setColumnWidth(1,170);self.table.setColumnWidth(2,94);self.table.setColumnWidth(3,95);self.table.setColumnWidth(4,116)
         self.table.itemSelectionChanged.connect(self.show_selection)
         self.table.setMinimumHeight(220);rv.addWidget(self.table,1)
-        preview_panel=self.panel();preview_panel.setMinimumWidth(240);middle.addWidget(preview_panel,2)
+        preview_panel=self.panel();preview_panel.setMinimumWidth(0);middle.addWidget(preview_panel,2)
         pv=QVBoxLayout(preview_panel);pv.setContentsMargins(14,14,14,14)
         self.preview_header=self.label('','section');pv.addWidget(self.preview_header)
         self.preview_image=QLabel();self.preview_image.setMinimumHeight(150)
@@ -476,7 +483,7 @@ class CrystalWindow(QMainWindow):
         pv.addWidget(self.file_detail,2)
         self.preview_note=self.label('','muted');self.preview_note.setWordWrap(True);pv.addWidget(self.preview_note)
         self.preview_btn=self.button('',self.preview_selected);pv.addWidget(self.preview_btn)
-        bottom=QHBoxLayout();bottom.setSpacing(12);cv.addLayout(bottom)
+        bottom=QVBoxLayout();bottom.setSpacing(12);cv.addLayout(bottom)
         self.restore_btn=self.button('',self.recover_selected,'primary');bottom.addWidget(self.restore_btn,2)
         self.advisor_btn=self.button('',self.advise_selected);bottom.addWidget(self.advisor_btn)
         self.report_btn=self.button('',self.open_report);bottom.addWidget(self.report_btn)
@@ -488,16 +495,17 @@ class CrystalWindow(QMainWindow):
         self.set_busy(False)
     def retranslate(self):
         self.hero_title.setText(self.t('title'));self.hero_sub.setText(self.t('subtitle'))
-        for b,sym,key in self.nav:b.setText(sym+'   '+self.t(key))
+        for b,sym,key in self.nav:b.setText(self.t(key))
         self.source_title.setText(self.t('source_title'))
-        self.btn_volume.setText('▣   '+self.t('volume_card'))
+        self.btn_volume.setText(' '+self.t('volume_card'))
         self.btn_volume.setToolTip(self.t('volume_help'))
-        self.btn_image.setText('◈   '+self.t('image_card'))
-        self.btn_folder.setText('▤   '+self.t('folder_card'))
-        self.btn_device.setText('▣   '+self.t('physical_card'))
+        self.btn_image.setText(' '+self.t('image_card'))
+        self.btn_folder.setText(' '+self.t('folder_card'))
+        self.btn_device.setText(' '+self.t('physical_card'))
         if not self.source:self.source_text.setText(self.t('source_empty'))
         self.language.setText('RU / EN' if self.lang=='ru' else 'EN / RU')
         self.cat_title.setText(self.t('categories'))
+        self.advanced_btn.setText('Параметры поиска / типы файлов' if self.lang=='ru' else 'Scan options / file types')
         for key,cb in self.checkboxes.items():cb.setText(self.t(key))
         self.scan_mode.setItemText(0,self.t('metadata_mode'))
         self.scan_mode.setItemText(1,self.t('carve_mode'))
@@ -551,19 +559,19 @@ class CrystalWindow(QMainWindow):
         self.invalidate_results()
         self.source=drive['path']
         self.mode='volume' if self.scan_mode.currentIndex()==0 else 'volume-carve'
-        self.source_text.setText('▣  '+choice+'\n'+self.t('volume_selected'))
+        self.source_text.setText(''+choice+'\n'+self.t('volume_selected'))
         self.set_busy(False)
     def pick_image(self):
         if self.worker:return
         path,_=QFileDialog.getOpenFileName(self,self.t('choose_source'),'','Raw images (*.img *.dd *.bin *.raw);;All files (*)')
         if path:
-            self.invalidate_results();self.source=path;self.mode=self.scan_mode.currentData();self.source_text.setText('◈  '+path)
+            self.invalidate_results();self.source=path;self.mode=self.scan_mode.currentData();self.source_text.setText(''+path)
             self.set_busy(False)
     def pick_folder(self):
         if self.worker:return
         path=QFileDialog.getExistingDirectory(self,self.t('choose_source'))
         if path:
-            self.invalidate_results();self.source=path;self.mode='folder';self.source_text.setText('▤  '+path)
+            self.invalidate_results();self.source=path;self.mode='folder';self.source_text.setText(''+path)
             self.set_busy(False)
     def pick_device(self):
         if self.worker:return
@@ -575,7 +583,7 @@ class CrystalWindow(QMainWindow):
         if ok:
             if QMessageBox.warning(self,'READ ONLY',self.t('confirm_physical'),QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)!=QMessageBox.StandardButton.Yes:return
             i=choices.index(choice);self.invalidate_results();self.source=drives[i]['path'];self.mode='physical' if self.scan_mode.currentIndex()==0 else 'physical-carve'
-            self.source_text.setText('▣  '+choice)
+            self.source_text.setText(''+choice)
             self.set_busy(False)
     def current_categories(self):
         return normalize_categories(k for k,c in self.checkboxes.items() if c.isChecked())
@@ -640,7 +648,7 @@ class CrystalWindow(QMainWindow):
             done,total,bad=obj;self.progress.setValue(int(100*done/max(1,total)))
             self.status_detail.setText(f'{file_size(done)} / {file_size(total)} · unreadable: {file_size(bad)}')
         elif key=='image_done':
-            self.invalidate_results();self.source=obj['path'];self.mode='metadata';self.source_text.setText('◈  '+self.source)
+            self.invalidate_results();self.source=obj['path'];self.mode='metadata';self.source_text.setText(''+self.source)
             self.status_label.setText(self.t('complete'));self.status_detail.setText('SHA-256: '+obj['sha256_image'][:22]+'…')
             QMessageBox.information(self,self.t('complete'),f"{obj['path']}\nSHA-256: {obj['sha256_image']}\nUnreadable bytes: {obj['unreadable_bytes']}")
         elif key=='recover_done':
@@ -658,7 +666,7 @@ class CrystalWindow(QMainWindow):
             QMessageBox.information(self,self.t('complete'),obj['output']+'\nSHA-256: '+obj['sha256'])
         elif key=='raid_done':
             self.status_label.setText(self.t('complete'))
-            out=obj['output'];self.invalidate_results();self.source=out;self.mode='metadata';self.source_text.setText('◈  '+out)
+            out=obj['output'];self.invalidate_results();self.source=out;self.mode='metadata';self.source_text.setText(''+out)
             self.status_detail.setText(out);QMessageBox.information(self,self.t('complete'),out)
         elif key=='paused':
             self.status_label.setText(self.t('idle'));self.status_detail.setText('Stopped: '+str(obj))
@@ -696,7 +704,7 @@ class CrystalWindow(QMainWindow):
         except (OSError,ValueError) as exc:
             QMessageBox.warning(self,self.t('error'),str(exc));return
         self.invalidate_results()
-        self.source=''  # Never allow recovery/preview from an untrusted cached scan.
+        self.source=''# Never allow recovery/preview from an untrusted cached scan.
         self.session_snapshot=doc
         self.source_text.setText(self.t('session_view')+' · '+doc['source'])
         for row,record in enumerate(doc['entries']):
@@ -856,7 +864,7 @@ class CrystalWindow(QMainWindow):
                 lines.append('\\nREAD ONLY: this does not confirm member order or layout.')
                 QMessageBox.information(d,'Linux MD 1.2 — READ ONLY','\\n'.join(lines))
             except Exception as exc:QMessageBox.warning(d,self.t('error'),str(exc))
-        md_check=self.button('▣  Linux MD 1.2 · '+('Проверить' if self.lang=='ru' else 'Inspect'),inspect_md)
+        md_check=self.button('Linux MD 1.2 · '+('Проверить' if self.lang=='ru' else 'Inspect'),inspect_md)
         md_row.addWidget(md_check)
         def export_md():
             members=md_members()
@@ -933,6 +941,7 @@ def main():
         w.close();return 0
     w.show()
     if capture is not None:
+        w.resize(int(os.environ.get('MRD_CAPTURE_WIDTH','1180')),700)
         # Genuine EMPTY Qt app screenshot, no fabricated recovered files.
         app.processEvents()
         ok=w.grab().save(str(capture),'PNG')
