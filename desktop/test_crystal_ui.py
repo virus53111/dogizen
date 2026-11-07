@@ -108,7 +108,7 @@ class CrystalGuiSmoke(unittest.TestCase):
         self.window.retranslate()
         self.window.handle_job('scan_done',
                                {'found': 0, 'volumes': 1, 'errors': [], 'cancelled': False})
-        self.assertIn('По сигнатурам', self.window.status_detail.text())
+        self.assertIn('Halim Recovery', self.window.status_detail.text())
 
     def test_worker_cancel_signal(self):
         w=Job('preview',{'source':'not_exist','item':None})
