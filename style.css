@@ -27,3 +27,8 @@
 .external-open span{font-size:15px}
 .external-card-link:hover .external-open{text-decoration:underline}
 @media(max-width:660px){.source-intro{padding:17px;border-radius:13px}.source-intro h3{font-size:17px}.source-intro p{font-size:10px}.external-unit{font-size:9px}.external-open{font-size:10px}}
+/* Crawlable, translated editorial category navigation */
+.seo-quicklinks{display:flex;flex-wrap:wrap;gap:9px;padding:20px 0 0}
+.seo-quicklinks a{font-size:11px;font-weight:800;border-radius:9px;border:1px solid #dce6f7;background:#f3f7ff;color:#3460b3;padding:10px 13px;transition:.15s}
+.seo-quicklinks a:hover{background:#e6efff;color:#164bc6}
+@media(max-width:560px){.seo-quicklinks{padding-top:18px;gap:7px}.seo-quicklinks a{font-size:10px;padding:9px}}
