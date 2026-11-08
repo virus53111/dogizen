@@ -4,6 +4,16 @@ Project: `proj_E4sXfkYysFlf` (`murdilimax.hatchable.site`).
 
 This directory stores the changed Hatchable files for code review. The actual deployed source and PostgreSQL database live in Hatchable, not on GitHub Pages. Do not treat these files as automatically deployed.
 
+## Changes in v30
+- `migrations/0014_source_liveness.sql`: add source checking state and verification index.
+- `api/jobs/verify-external.js`: scheduler-only check of a bounded 32 original SS.lv listing URLs per two-hour run; 404/410 hides them; a second confirmation marks gone. 200 restores availability; 403/429/5xx and network failure do not remove offers.
+- `hatchable.toml`: new two-hour URL-check cron; existing six-hour RSS cron unchanged.
+- `api/jobs/sync-external.js`: seven-day publication limit and source-health guard before physical cleanup.
+- `api/external.js`: hide source-missing rows; expose actual last RSS sighting and list valid latest offers.
+- `api/listings.js`: return updated_at for truthful sitemap lastmod on first-party ads.
+- `public/app.js`, `public/i18n.js`, `public/style.css`: show latest RSS sighting, source freshness and cleanup policy to RU/LV/EN users.
+- `scripts/generate-seo.mjs` (GitHub root): generate accurate sitemap lastmod, actual RSS counts, and clearly qualified price medians from a bounded recent sample, without indexing mirrored external listings.
+
 ## Changes in v29 (server update from v28)
 - `migrations/0013_user_favorites.sql`: private per-user favorites with a composite unique key and a limit of 100 enforced by API.
 - `api/favorites.js`: signed-in GET, add, remove and merge endpoints. Validates user input and SS.lv link hosts, scopes SQL to the authenticated account, rejects anonymous calls.

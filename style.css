@@ -140,6 +140,9 @@
 .favorites-sync-panel[hidden],.favorites-sync-button[hidden],.favorites-login-link[hidden]{display:none!important}
 @media(max-width:650px){.favorites-sync-panel{flex-direction:column;align-items:flex-start}.favorites-sync-button,.favorites-login-link{min-height:44px}}
 
+/* Verified RSS freshness: date of most recent successful feed observation, not a guarantee of availability. */
+.source-refreshed{margin:10px 0 0!important;color:#3768a4!important;font-size:11px!important;font-weight:800!important;letter-spacing:.05px}
+
 /* Publishing: touch-friendly photo manager. */
 #photo-preview.photo-preview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:7px 0 18px}
 .photo-preview .photo-count{grid-column:1/-1;margin:0;font-size:12px;font-weight:800;color:#587198}
