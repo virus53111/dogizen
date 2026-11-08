@@ -1,11 +1,19 @@
-# MURDILIMAX — Classifieds
-The previous MURDIWORLD / MURDILIMAX Recovery website was replaced with a new classified-ads and real-estate website for the existing custom domain `murdilimax.com`. All prior files are preserved only in Git branch `archive/murdilimax-before-classifieds-20261108`.
+# MURDILIMAX — объявления / sludinājumi / classifieds
 
-This public frontend is hosted on GitHub Pages (free) and talks to the managed Hatchable application (Postgres, email-code auth, photo uploads and moderator approval).
+Website: https://murdilimax.com/
 
-## Critical launch gate (no payment)
-The Hatchable project `murdilimax` is currently PERSONAL/PRIVATE. In https://hatchable.com/console/projects/murdilimax navigate Settings -> Visibility -> Public. Only the owner can do this, and until they do, API endpoints serve a platform sign-in wall to strangers. The frontend on GitHub Pages can load, but listing search and ad submission won't work for public visitors. **Do not claim that the backend is publicly operational until visibility is changed and verified.**
+Modern free classified ads board in Russian, Latvian and English. Responsive design, search and filtering by city/category/price, six photos per listing, custom approximate map pin, OpenStreetMap listing map, email-code registration, user listings and owner deletion, manual admin moderation.
 
-This is a purpose-built classified ads app, **not** the PHP/MySQL ShopClass engine. ShopClass required paid PHP/MySQL infrastructure which the user declined. Source of backend is held in connected Hatchable project.
+The original PHP/MySQL ShopClass was not deployed: it needs paid PHP and MariaDB hosting. User requested no payment. This is a purpose-built alternative: GitHub Pages static frontend plus hosted Hatchable Postgres backend.
 
-End-user listings require moderation. Payment and monetisation are disabled. No advertising content is pre-seeded, no fake listings. Do not give user personal admin credentials or embed API tokens in static files. The site stays on the existing GitHub Pages domain configuration and does not alter domain DNS.
+IMPORTANT: the Hatchable project murdilimax currently has visibility Personal. Anonymous visitors cannot access API/search/posting/sign-in until the OWNER opens https://hatchable.com/console/projects/murdilimax and selects Settings -> Visibility -> Public. This security setting cannot be toggled by the connector. Do not claim anonymous posting works before the owner changes it.
+
+Server routes: GET /api/listings, /api/listing/:id, /api/map; POST /api/create, /api/upload, /api/delete for signed-in users; GET /api/mine; GET/POST /api/admin for moderators. Public API GET endpoints allow CORS only from murdilimax.com and www.murdilimax.com.
+
+Photos are in private object storage; browse via expiring signed URLs. Up to 6 files x 4 MB. Coordinates are optional; encourage approximate pins, not exact private home locations. Paid listings and subscription processing remain disabled.
+
+Original archived site: archive/murdilimax-before-classifieds-20261108. First classifieds version: archive/classifieds-v1-before-trilingual-redesign-20261108.
+
+Launch hardening still needed before broad public traffic: captcha/rate limiting, GDPR pages, site contact for report abuse, transactional email verification in live environment, backups and restores, security review. Listing content stays in the language entered by seller.
+
+Map: Leaflet 1.9.4 / OpenStreetMap. https://leafletjs.com/ and https://www.openstreetmap.org/copyright. Only visible interactive tiles are loaded on demand, with attribution.

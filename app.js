@@ -1,162 +1,281 @@
 (()=>{
 "use strict";
 const HOST="https://murdilimax.hatchable.site";
-const ON_APP=/\.hatchable\.site$/.test(location.hostname);
+const ON_APP=location.hostname==="murdilimax.hatchable.site";
 const API=ON_APP?"":HOST;
-const $=s=>document.querySelector(s);
-const cats={realty:"Недвижимость",cars:"Автомобили",electronics:"Электроника",jobs:"Работа",services:"Услуги",home:"Дом и сад",other:"Разное"};
-const icons={realty:"⌂",cars:"🚗",electronics:"▣",jobs:"▤",services:"⚒",home:"◈",other:"✦"};
-const deals={sell:"Продажа",rent:"Аренда",buy:"Куплю",offer:"Предложение"};
-let currentPage=1,lastSearch="",backendReady=false;
-function escapeText(t){return String(t==null?"":t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-function euro(p){let n=Number(p);return Number.isFinite(n)?new Intl.NumberFormat("ru-RU",{maximumFractionDigits:0}).format(n)+" €":"Цена по запросу";}
-function stamp(x){try{return new Date(x).toLocaleDateString("ru-RU",{day:"numeric",month:"short",year:"numeric"});}catch{return "";}}
-function toast(s){const t=$("#toast");t.textContent=s;t.hidden=false;setTimeout(()=>t.hidden=true,4200);}
-function fail(text){return '<div class="fetch-error"><strong>Приём объявлений пока закрыт</strong><p>Новый сайт опубликован, но база объявлений пока недоступна посетителям. Открытие доступа завершает владелец сайта.</p><button id="retry" type="button">Проверить ещё раз</button></div>';}
-function qs(){return new URLSearchParams(location.search);}
-function appLink(view){return (ON_APP?"":HOST)+"/?view="+encodeURIComponent(view);}
-async function fetchJSON(path,opts={}){const r=await fetch(API+path,opts);let v;try{v=await r.json();}catch{v={error:"Сервер временно недоступен."};}if(!r.ok)throw Error(v.error||"Ошибка запроса ("+r.status+")");return v;}
-function setUrl(next){history.pushState({}, "",location.pathname+"?"+next);syncFromUrl();}
-function grabFilters(){
- const p=new URLSearchParams();p.set("view","home");
- const q=$("#hero-q").value.trim();if(q)p.set("q",q);
- const cat=$("#filter-category").value;if(cat!=="all")p.set("category",cat);
- const city=$("#filter-city").value.trim();if(city)p.set("city",city);
- const min=$("#filter-min").value;if(min)p.set("min",min);
- const max=$("#filter-max").value;if(max)p.set("max",max);
- const sort=$("#filter-sort").value;if(sort!=="new")p.set("sort",sort);
+const M=window.MURDI_I18N||{},LANGS=["ru","lv","en"];
+const urlLang=new URLSearchParams(location.search).get("lang");
+let lang=LANGS.includes(urlLang)?urlLang:LANGS.includes(localStorage.getItem("murdilimax_language"))?localStorage.getItem("murdilimax_language"):"ru";
+let backendReady=false,lastSearch=null,layout="list",listMap=null,listMarkers=null,postMap=null,postMarker=null,detailMap=null,toastTimer=null;
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const t=k=>M[lang]?.[k]||M.ru?.[k]||k;
+const catKeys={realty:"catRealty",cars:"catCars",electronics:"catElectronics",jobs:"catJobs",services:"catServices",home:"catHome",other:"catOther"};
+const catIcons={realty:"⌂",cars:"🚙",electronics:"▣",jobs:"▤",services:"⚒",home:"◈",other:"✦"};
+const dealKeys={sell:"sale",rent:"rent",buy:"buy",offer:"offer"};
+const localeTag={ru:"ru-RU",lv:"lv-LV",en:"en-GB"};
+function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function euro(n){const p=Number(n);return Number.isFinite(p)?new Intl.NumberFormat(localeTag[lang],{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(p):"—";}
+function date(x){return new Date(x).toLocaleDateString(localeTag[lang],{day:"numeric",month:"short",year:"numeric"});}
+function cat(k){return t(catKeys[k]||"catOther");}
+function params(){return new URLSearchParams(location.search);}
+function route(view,extra={}){const p=new URLSearchParams({view,lang});Object.entries(extra).forEach(([k,v])=>{if(v!==null&&v!==undefined)p.set(k,String(v));});return "/?"+p.toString();}
+function appLink(view,extra){return (ON_APP?"":HOST)+route(view,extra);}
+function go(view,extra={}){if(!ON_APP&&(view==="post"||view==="mine"||view==="admin")){if(!backendReady){toast(t("postNoSite"));return;}location.href=appLink(view,extra);return;}history.pushState({}, "",route(view,extra));sync();}
+function toast(text){const el=$("#toast");el.textContent=text;el.hidden=false;if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.hidden=true;},4700);}
+async function fetchJSON(path,options={}){const resp=await fetch(API+path,options);let data;try{data=await resp.json();}catch{data={error:t("errorDesc")};}if(!resp.ok)throw Error(data.error||t("unknownError"));return data;}
+function applyStatic(){
+  document.documentElement.lang=lang;
+  document.title="MURDILIMAX · "+t("navAll")+" · "+t("catRealty");
+  $$("[data-i18n]").forEach(x=>x.textContent=t(x.dataset.i18n));
+  $$("[data-i18n-html]").forEach(x=>x.innerHTML=t(x.dataset.i18nHtml));
+  $$("[data-i18n-placeholder]").forEach(x=>x.placeholder=t(x.dataset.i18nPlaceholder));
+  $$(".language").forEach(x=>{const active=x.dataset.lang===lang;x.classList.toggle("active",active);x.setAttribute("aria-pressed",String(active));});
+  $("#nav-all").href=route("home");$("#nav-realty").href=route("home",{category:"realty"});$("#nav-mine").href=appLink("mine");
+  $("#post-link").href=appLink("post");$$("[data-post-link]").forEach(a=>a.href=appLink("post"));
+  $("#promo-realty").href=route("home",{category:"realty"});
+  $("#footer-all").href=route("home");$("#footer-post").href=appLink("post");$("#footer-about").href=route("about");
+  $("#sign-in").href=(ON_APP?"":HOST)+"/login?next="+encodeURIComponent(route("post"))+"&lang="+lang;
+  $$(".cat").forEach(x=>x.classList.toggle("active",x.dataset.category===params().get("category")));
+}
+function setLanguage(next){if(!LANGS.includes(next)||next===lang)return;localStorage.setItem("murdilimax_language",next);const p=params();p.set("lang",next);location.search=p.toString();}
+function filterQuery(){
+ const p=new URLSearchParams({lang,view:"home"});
+ const q=$("#hero-q").value.trim(),cat=$("#filter-category").value,city=$("#filter-city").value.trim(),min=$("#filter-min").value,max=$("#filter-max").value,sort=$("#filter-sort").value;
+ if(q)p.set("q",q);if(cat!=="all")p.set("category",cat);if(city)p.set("city",city);
+ if(min!=="")p.set("min",min);if(max!=="")p.set("max",max);if(sort!=="new")p.set("sort",sort);
  return p;
 }
-function displayFilters(){
- const p=qs();const val=(id,name,def="")=>{if($(id))$(id).value=p.get(name)||def;};
- val("#hero-q","q");val("#filter-category","category","all");
- val("#filter-city","city");val("#filter-min","min");val("#filter-max","max");val("#filter-sort","sort","new");
- document.querySelectorAll(".category-card").forEach(b=>b.classList.toggle("active",b.dataset.category===(p.get("category")||"")));
- const cat=p.get("category");$("#results-title").textContent=cat&&cats[cat]?cats[cat]:"Свежие объявления";
+function readFilters(){
+ const p=params(),map={q:"#hero-q",category:"#filter-category",city:"#filter-city",min:"#filter-min",max:"#filter-max",sort:"#filter-sort"};
+ Object.entries(map).forEach(([key,sel])=>{const el=$(sel);if(el)el.value=p.get(key)||(key==="category"?"all":key==="sort"?"new":"");});
+ $$(".cat").forEach(el=>el.classList.toggle("active",el.dataset.category===(p.get("category")||"")));
+ const c=p.get("category");$("#results-title").textContent=catKeys[c]?cat(c):t("fresh");
 }
-function card(ad){
- const category=cats[ad.category]||"Объявление";
- const photo=ad.image_url?'<img src="'+escapeText(ad.image_url)+'" alt="" loading="lazy">':'<span>'+icons[ad.category]+'</span>';
- return '<article class="listing-card" tabindex="0" role="button" data-open-id="'+Number(ad.id)+'" aria-label="Открыть объявление: '+escapeText(ad.title)+'"><div class="thumb '+(!ad.image_url?"no-photo":"")+'">'+photo+'<em>'+category+'</em></div><div class="details"><div class="price">'+euro(ad.price)+'</div><h3>'+escapeText(ad.title)+'</h3><div class="meta"><span>⌖ '+escapeText(ad.city)+'</span><span>'+escapeText(stamp(ad.created_at))+'</span></div></div></article>';
+function loading(){return '<div class="loading"><span class="loading-spinner"></span>'+esc(t("loading"))+'</div>';}
+function errorState(){return '<div class="fetch-error"><strong>'+esc(t("errorTitle"))+'</strong><p>'+esc(t("errorDesc"))+'</p><button type="button" data-retry>'+esc(t("retry"))+'</button></div>';}
+function noResults(filtered){return '<div class="empty"><span class="empty-icon">✧</span><strong>'+esc(t(filtered?"emptyFiltered":"emptyTitle"))+'</strong><p>'+esc(t(filtered?"emptyFilteredDesc":"emptyDesc"))+'</p><a href="'+esc(appLink("post"))+'" data-post-link>'+esc(t("emptyAction"))+' ↗</a></div>';}
+function listingCard(a){
+ const photo=a.image_url?'<img loading="lazy" src="'+esc(a.image_url)+'" alt="'+esc(a.title)+'">':'<span class="no-photo-icon">'+(catIcons[a.category]||"✦")+'</span>';
+ return '<article class="listing-card" tabindex="0" role="button" data-open-id="'+Number(a.id)+'" aria-label="'+esc(a.title)+'"><div class="listing-thumb '+(!a.image_url?"no-photo":"")+'">'+photo+'<em>'+esc(cat(a.category))+'</em></div><div class="listing-info"><div class="listing-price">'+esc(euro(a.price))+'</div><h3>'+esc(a.title)+'</h3><div class="listing-meta"><span>⌖ '+esc(a.city)+'</span><span>'+esc(date(a.created_at))+'</span></div></div></article>';
 }
 async function loadListings(){
- const p=qs();const query=new URLSearchParams();
- for(const key of ["q","category","city","min","max","sort","page"])if(p.has(key))query.set(key,p.get(key));
- const qStr=query.toString();if(lastSearch===qStr)return;lastSearch=qStr;
- $("#cards").innerHTML='<div class="loading"><div class="loading-dot"></div><p>Загружаем объявления…</p></div>';$("#pagination").innerHTML="";
+ const p=params(),query=new URLSearchParams();
+ ["q","category","city","min","max","sort","page"].forEach(k=>{if(p.get(k))query.set(k,p.get(k));});
+ const signature=query.toString();
+ if(signature===lastSearch)return;
+ lastSearch=signature;
+ $("#cards").innerHTML=loading();$("#pagination").innerHTML="";
  try{
-  const data=await fetchJSON("/api/listings?"+query);backendReady=true;
-  $("#view-counter").textContent=data.total+" объявлений";
-  if(!data.items.length){
-   const custom=[...query.keys()].some(k=>!["page"].includes(k));
-   $("#cards").innerHTML='<div class="empty"><span>⌂</span><strong>'+(custom?"По этому запросу объявлений пока нет":"Здесь пока нет объявлений")+'</strong><p>'+(custom?"Попробуйте изменить условия поиска.":"Станьте первым, кто разместит объявление на MURDILIMAX.")+'</p><a href="'+appLink("post")+'">Подать объявление ↗</a></div>';
-  }else $("#cards").innerHTML=data.items.map(card).join("");
-  let page=data.page, maxPage=Math.ceil(data.total/24);
-  if(maxPage>1){let html="";if(page>1)html+='<button data-page="'+(page-1)+'">← Назад</button>';html+='<button disabled>Страница '+page+' из '+maxPage+'</button>';if(page<maxPage)html+='<button data-page="'+(page+1)+'">Далее →</button>';$("#pagination").innerHTML=html;}
- }catch(e){lastSearch="";backendReady=false;$("#cards").innerHTML=fail(e.message);$("#view-counter").textContent="";}
+  const result=await fetchJSON("/api/listings?"+signature);backendReady=true;
+  $("#view-counter").textContent=t("found")+": "+result.total;
+  const filtered=[...query.keys()].some(k=>k!=="page");
+  $("#cards").innerHTML=result.items.length?result.items.map(listingCard).join(""):noResults(filtered);
+  const pages=Math.ceil(result.total/24);
+  let html="";
+  if(pages>1){
+    if(result.page>1)html+='<button type="button" data-page="'+(result.page-1)+'">← '+esc(t("back"))+'</button>';
+    html+='<button disabled>'+esc(t("page"))+' '+result.page+' '+esc(t("of"))+' '+pages+'</button>';
+    if(result.page<pages)html+='<button type="button" data-page="'+(result.page+1)+'">'+esc(t("next"))+' →</button>';
+  }
+  $("#pagination").innerHTML=html;
+ }catch(e){backendReady=false;lastSearch=null;$("#cards").innerHTML=errorState();$("#view-counter").textContent="";}
 }
-function showDrawer(html){
- $("#drawer-body").innerHTML=html;$("#drawer").hidden=false;document.body.style.overflow="hidden";$("#drawer-close").focus();
+function setLayout(which){
+ layout=which;
+ $$(".view-choice").forEach(b=>b.classList.toggle("active",b.dataset.layout===which));
+ $("#cards").hidden=which==="map";$("#pagination").hidden=which==="map";$("#map-board").hidden=which!=="map";
+ if(which==="map")loadMap();
 }
-function closeDrawer(){ $("#drawer").hidden=true;document.body.style.overflow="";}
-async function requireSession(){
- if(!ON_APP){location.href=appLink(qs().get("view")||"post");return false;}
- const auth=window.hatchable&&window.hatchable.auth;
- if(!auth){toast("Авторизация пока недоступна.");return false;}
- try{let session=await auth.getSession();if(session?.user)return session.user;}
- catch(e){console.error("session failed",e);}
- location.href="/login?next="+encodeURIComponent(location.pathname+location.search);
- return false;
+function createTile(map){return L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'}).addTo(map);}
+function ensureListMap(){
+ if(!window.L){$("#map-message").textContent=t("unknownError");return false;}
+ if(!listMap){
+  listMap=L.map("map-canvas",{scrollWheelZoom:false}).setView([56.9496,24.1052],7);
+  createTile(listMap);listMarkers=L.layerGroup().addTo(listMap);
+ }
+ requestAnimationFrame(()=>listMap.invalidateSize());
+ return true;
 }
-function field(name,label,type="text",attrs=""){
- return '<label>'+label+'<input name="'+name+'" type="'+type+'" '+attrs+' required></label>';
+async function loadMap(){
+ const label=$("#map-message");label.textContent=t("mapLoading");
+ if(!ensureListMap())return;
+ const p=params(),query=new URLSearchParams();
+ ["q","category","city","min","max"].forEach(k=>{if(p.get(k))query.set(k,p.get(k));});
+ try{
+  const r=await fetchJSON("/api/map?"+query.toString());listMarkers.clearLayers();
+  const bounds=[];
+  for(const ad of r.items){
+   const lat=Number(ad.latitude),lng=Number(ad.longitude);
+   if(!Number.isFinite(lat)||!Number.isFinite(lng))continue;
+   const marker=L.marker([lat,lng],{icon:L.divIcon({className:"map-price-marker",html:"<span>"+esc(euro(ad.price))+"</span>",iconSize:[90,32],iconAnchor:[45,16]})});
+   marker.bindPopup('<div class="map-popup-title">'+esc(ad.title)+'</div><div>'+esc(ad.city)+'</div><div class="map-popup-price">'+esc(euro(ad.price))+'</div><button class="map-popup-link" data-open-id="'+Number(ad.id)+'" type="button">'+esc(t("mapViewAd"))+'</button>');
+   listMarkers.addLayer(marker);bounds.push([lat,lng]);
+  }
+  if(bounds.length===1)listMap.setView(bounds[0],12);
+  if(bounds.length>1)listMap.fitBounds(bounds,{padding:[30,30],maxZoom:12});
+  label.textContent=bounds.length?"":t("mapNoPins");
+ }catch(e){label.textContent=t("errorDesc");}
 }
+function cleanupModalMaps(){if(postMap){postMap.remove();postMap=null;postMarker=null;}if(detailMap){detailMap.remove();detailMap=null;}}
+function showDrawer(html){cleanupModalMaps();$("#drawer-body").innerHTML=html;$("#drawer").hidden=false;document.body.style.overflow="hidden";$("#drawer-close").focus();}
+function closeDrawer(){cleanupModalMaps();$("#drawer").hidden=true;document.body.style.overflow="";}
+async function session(){
+ if(!ON_APP){if(!backendReady){toast(t("postNoSite"));return null;}location.href=appLink(params().get("view")||"post");return null;}
+ const a=window.hatchable&&window.hatchable.auth;if(!a){toast(t("postNoSite"));return null;}
+ try{const sess=await a.getSession();if(sess?.user)return sess.user;}catch(e){}
+ const to=route(params().get("view")||"post");location.href="/login?next="+encodeURIComponent(to)+"&lang="+lang;return null;
+}
+function selectOptions(items){return items.map(([value,key])=>'<option value="'+value+'">'+esc(t(key))+'</option>').join("");}
+function formField(name,label,type="text",attrs=""){return '<label>'+esc(t(label))+'<input name="'+name+'" type="'+type+'" '+attrs+' required></label>';}
 async function openPost(){
- if(!(await requireSession()))return;
- showDrawer('<span class="section-kicker">НОВОЕ ОБЪЯВЛЕНИЕ</span><h2>Расскажите о своём предложении</h2><p class="hint">Публикация бесплатная. Все объявления проходят модерацию перед появлением на сайте.</p><form id="post-form" class="form-grid">'+
- '<label>Категория<select name="category" required><option value="realty">Недвижимость</option><option value="cars">Автомобили</option><option value="electronics">Электроника</option><option value="jobs">Работа</option><option value="services">Услуги</option><option value="home">Дом и сад</option><option value="other">Разное</option></select></label>'+
- '<label>Тип объявления<select name="deal_type"><option value="sell">Продам</option><option value="rent">Сдам в аренду</option><option value="buy">Куплю</option><option value="offer">Предложу услугу</option></select></label>'+
- '<label class="full">Название<input name="title" minlength="8" maxlength="110" placeholder="Например: Светлая двухкомнатная квартира" required></label>'+
- '<label class="full">Описание<textarea name="description" minlength="20" maxlength="4000" placeholder="Расскажите о состоянии, особенностях и условиях" required></textarea></label>'+
- field("city","Город")+field("price","Цена, €","number",'min="0" max="9999999999" step="1"')+
- '<label>Площадь, м² (если есть)<input name="area" type="number" min="0" max="999999" step=".1"></label><label>Комнат (если есть)<input name="rooms" type="number" min="0" max="100"></label>'+
- field("contact_name","Ваше имя")+ '<label>Телефон для связи (необязательно)<input name="contact_phone" type="tel" maxlength="35" placeholder="+371 …"></label>'+
- '<label class="full">Фотография (JPG, PNG, WebP — до 4 МБ)<input name="photo" type="file" accept="image/png,image/jpeg,image/webp" style="padding:9px"></label>'+
- '<p class="hint full">Размещайте только свои объявления. Номер телефона будет виден покупателям, если вы его укажете. Не публикуйте чужие личные данные.</p>'+
- '<button type="submit" class="full">Отправить на проверку →</button><div id="post-msg" class="full" role="status"></div></form>');
+ const user=await session();if(!user)return;
+ const html='<span class="kicker">'+esc(t("postKicker"))+'</span><h2>'+esc(t("postTitle"))+'</h2><p class="hint">'+esc(t("postDesc"))+'</p>'+
+ '<form id="post-form" class="form-grid">'+
+ '<label>'+esc(t("postCategory"))+'<select name="category">'+selectOptions(Object.entries(catKeys))+'</select></label>'+
+ '<label>'+esc(t("postType"))+'<select name="deal_type">'+selectOptions([["sell","postSell"],["rent","postRent"],["buy","postBuy"],["offer","postOffer"]])+'</select></label>'+
+ '<label class="full">'+esc(t("postName"))+'<input name="title" minlength="8" maxlength="110" required placeholder="'+esc(t("postNamePh"))+'"></label>'+
+ '<label class="full">'+esc(t("postDescription"))+'<textarea name="description" required minlength="20" maxlength="4000" placeholder="'+esc(t("postDescriptionPh"))+'"></textarea></label>'+
+ '<label>'+esc(t("postCity"))+'<input name="city" required maxlength="80" placeholder="'+esc(t("postCityPh"))+'"></label>'+
+ formField("price","postPrice","number",'min="0" max="9999999999" step="1"')+
+ '<label>'+esc(t("postArea"))+'<input type="number" name="area" min="0" max="999999" step=".1"></label>'+
+ '<label>'+esc(t("postRooms"))+'<input type="number" name="rooms" min="0" max="100"></label>'+
+ formField("contact_name","postContact","text",'maxlength="80"')+
+ '<label>'+esc(t("postPhone"))+'<input name="contact_phone" type="tel" maxlength="35" placeholder="'+esc(t("postPhonePh"))+'"></label>'+
+ '<label class="full">'+esc(t("postPhotos"))+'<input type="file" name="photos" id="photos" accept="image/jpeg,image/png,image/webp" multiple></label>'+
+ '<p class="hint full" style="margin:-10px 0 1px">'+esc(t("postPhotoHint"))+'</p><div id="photo-preview" class="photo-preview full"></div>'+
+ '<div class="full"><label>'+esc(t("postMapLabel"))+'</label><p class="hint">'+esc(t("postMapHint"))+'</p><div class="post-map-box"><div id="post-map"></div><div class="pin-footer"><span id="pin-status">'+esc(t("postPinNone"))+'</span><button type="button" id="pin-remove">'+esc(t("postPinRemove"))+'</button></div></div></div>'+
+ '<p class="full privacy-note">'+esc(t("postPrivacy"))+'</p>'+
+ '<button type="submit" class="primary-action full" id="post-submit">'+esc(t("postSubmit"))+' →</button><div id="post-msg" role="status" class="full"></div></form>';
+ showDrawer(html);
+ let previews=[];
+ $("#photos").addEventListener("change",e=>{
+  previews.forEach(x=>URL.revokeObjectURL(x));previews=[];
+  let files=[...e.target.files];if(files.length>6){toast(t("postFileError"));e.target.value="";return;}
+  const wrap=$("#photo-preview");wrap.replaceChildren();
+  files.forEach(f=>{if(f.type.startsWith("image/")){const u=URL.createObjectURL(f);previews.push(u);const img=document.createElement("img");img.src=u;img.alt=f.name;wrap.appendChild(img);}});
+ });
+ if(window.L){
+  requestAnimationFrame(()=>{
+   if(!$("#post-map"))return;
+   postMap=L.map("post-map",{scrollWheelZoom:false}).setView([56.9496,24.1052],7);createTile(postMap);
+   postMap.on("click",e=>{if(postMarker)postMarker.setLatLng(e.latlng);else{postMarker=L.marker(e.latlng,{draggable:true}).addTo(postMap);postMarker.on("dragend",()=>{$("#pin-status").textContent=t("postPinSelected");});}$("#pin-status").textContent=t("postPinSelected");});
+   postMap.invalidateSize();
+  });
+ }
+ $("#pin-remove").addEventListener("click",()=>{if(postMap&&postMarker){postMap.removeLayer(postMarker);postMarker=null;}$("#pin-status").textContent=t("postPinNone");});
  $("#post-form").addEventListener("submit",async e=>{
-  e.preventDefault();const form=e.target,fd=new FormData(form),btn=form.querySelector('button[type="submit"]'),msg=$("#post-msg");btn.disabled=true;btn.textContent="Публикуем…";
+  e.preventDefault();const f=e.target,fd=new FormData(f),btn=$("#post-submit"),status=$("#post-msg");
+  const images=[...($("#photos").files||[])];
+  if(images.length>6||images.some(x=>x.size>4*1024*1024||!["image/jpeg","image/png","image/webp"].includes(x.type))){status.innerHTML='<div class="notice error">'+esc(t("postFileError"))+'</div>';return;}
+  btn.disabled=true;btn.textContent=t("postSending");status.innerHTML="";
   try{
-   let key="";const file=fd.get("photo");
-   if(file&&file.size){if(file.size>4*1024*1024)throw Error("Файл не должен превышать 4 МБ.");const upload=new FormData();upload.append("file",file);const x=await fetchJSON("/api/upload",{method:"POST",body:upload});key=x.key;}
-   const obj={};for(const key of ["title","description","category","deal_type","city","price","area","rooms","contact_name","contact_phone"])obj[key]=fd.get(key)||"";
-   obj.image_key=key;
-   const result=await fetchJSON("/api/create",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(obj)});
-   msg.innerHTML='<div class="notice">✓ '+escapeText(result.message)+'<br><a href="'+appLink("mine")+'">Посмотреть мои объявления →</a></div>';form.reset();
-  }catch(err){msg.innerHTML='<div class="notice error">'+escapeText(err.message)+'</div>';}finally{btn.disabled=false;btn.textContent="Отправить на проверку →";}
+   const keys=[];
+   for(let i=0;i<images.length;i++){
+     btn.textContent=t("postUpload")+" "+(i+1)+"/"+images.length+"…";
+     const form=new FormData();form.append("file",images[i]);
+     const result=await fetchJSON("/api/upload",{method:"POST",body:form});keys.push(result.key);
+   }
+   const body={};
+   ["title","description","category","deal_type","city","price","area","rooms","contact_name","contact_phone"].forEach(k=>body[k]=fd.get(k)||"");
+   body.images=keys;
+   if(postMarker){const p=postMarker.getLatLng();body.latitude=p.lat;body.longitude=p.lng;}else{body.latitude=null;body.longitude=null;}
+   const result=await fetchJSON("/api/create",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+   status.innerHTML='<div class="notice">✓ '+esc(t("postSuccess"))+'<p><a class="modal-link" href="'+esc(appLink("mine"))+'">'+esc(t("postMine"))+' →</a></p></div>';
+   f.reset();$("#photo-preview").innerHTML="";previews.forEach(x=>URL.revokeObjectURL(x));previews=[];
+   if(postMarker){postMap.removeLayer(postMarker);postMarker=null;}$("#pin-status").textContent=t("postPinNone");
+  }catch(err){status.innerHTML='<div class="notice error">'+esc(err.message||t("unknownError"))+'</div>';}
+  finally{btn.disabled=false;btn.textContent=t("postSubmit")+" →";}
  });
 }
 async function openMine(){
- if(!(await requireSession()))return;
- showDrawer('<span class="section-kicker">ЛИЧНЫЙ КАБИНЕТ</span><h2>Мои объявления</h2><div id="mine-items" class="loading">Загружаем…</div>');
+ const u=await session();if(!u)return;
+ showDrawer('<span class="kicker">'+esc(t("myKicker"))+'</span><h2>'+esc(t("myTitle"))+'</h2><div id="my-list" class="loading-placeholder">'+esc(t("loading"))+'</div>');
  try{
- const {items}=await fetchJSON("/api/mine");
- const status={pending:"На проверке",approved:"Опубликовано",rejected:"Отклонено"};
- $("#mine-items").innerHTML=items.length?items.map(x=>'<div class="mine-item"><h4>'+escapeText(x.title)+'</h4><p class="drawer-subtle">'+escapeText(x.city)+' · '+euro(x.price)+'</p><span class="item-status '+escapeText(x.status)+'">'+(status[x.status]||x.status)+'</span></div>').join(""):'<div class="notice">У вас пока нет объявлений. <a href="'+appLink("post")+'">Разместить первое →</a></div>';
- }catch(e){$("#mine-items").innerHTML=fail(e.message);}
-}
-async function openDetails(id){
- showDrawer('<span class="section-kicker">ПОДРОБНОСТИ ОБЪЯВЛЕНИЯ</span><div id="listing-detail" class="loading">Загружаем…</div>');
- try{
- const {item:x}=await fetchJSON("/api/listing/"+id);
- $("#listing-detail").innerHTML=(x.image_url?'<img class="drawer-image" src="'+escapeText(x.image_url)+'" alt="'+escapeText(x.title)+'">':'')+
- '<h2>'+escapeText(x.title)+'</h2><div class="detail-price">'+euro(x.price)+'</div><div class="detail-specs"><span>⌖ '+escapeText(x.city)+'</span><span>'+escapeText(cats[x.category]||"Объявление")+'</span><span>'+escapeText(deals[x.deal_type]||"Продажа")+'</span>'+(x.area?'<span>'+escapeText(x.area)+' м²</span>':'')+(x.rooms?'<span>'+escapeText(x.rooms)+' комн.</span>':'')+'</div>'+
- '<p class="detail-desc">'+escapeText(x.description)+'</p><div class="detail-contact"><h3>Связаться с продавцом</h3><p>'+escapeText(x.contact_name)+'</p>'+(x.contact_phone?'<a href="tel:'+escapeText(x.contact_phone.replace(/[^\\d+]/g,""))+'">☎ '+escapeText(x.contact_phone)+'</a>':'<p>Контактный телефон не указан.</p>')+'</div><p class="drawer-subtle">Опубликовано: '+escapeText(stamp(x.created_at))+'</p>';
- }catch(e){$("#listing-detail").innerHTML=fail(e.message);}
-}
-async function openAdmin(){
- if(!ON_APP){location.href=appLink("admin");return;}
- showDrawer('<span class="section-kicker">АДМИНИСТРИРОВАНИЕ</span><h2>Модерация объявлений</h2><div class="hint">Только для администратора проекта.</div><div id="admin-items">Загружаем…</div>');
- async function refresh(){
-  try{
-   const d=await fetchJSON("/api/admin");
-   $("#admin-items").innerHTML=d.items.length?d.items.map(x=>'<div class="admin-item"><h4>'+escapeText(x.title)+'</h4><p>'+escapeText(x.description)+'</p><p class="drawer-subtle">'+escapeText(x.city)+' · '+euro(x.price)+' · '+escapeText(x.contact_name)+'</p>'+(x.image_url?'<img src="'+escapeText(x.image_url)+'" style="height:130px;max-width:100%;object-fit:cover" alt="">':'')+'<div class="admin-actions"><button data-review="'+Number(x.id)+'" data-status="approved">Одобрить</button><button data-review="'+Number(x.id)+'" data-status="rejected" class="reject">Отклонить</button></div></div>').join(""):'<div class="notice">Нет объявлений на проверке.</div>';
-  }catch(e){$("#admin-items").innerHTML='<div class="notice error">'+escapeText(e.message)+'</div>';}
- }
- await refresh();
- $("#admin-items").addEventListener("click",async e=>{
- const b=e.target.closest("button[data-review]");if(!b)return;b.disabled=true;try{await fetchJSON("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:Number(b.dataset.review),status:b.dataset.status})});await refresh();}catch(err){toast(err.message);b.disabled=false;}
+  const r=await fetchJSON("/api/mine");
+  $("#my-list").innerHTML=r.items.length?r.items.map(a=>'<article class="mine-item"><h4>'+esc(a.title)+'</h4><p>'+esc(a.city)+' · '+esc(euro(a.price))+'</p><span class="item-status '+esc(a.status)+'">'+esc(t("status"+a.status[0].toUpperCase()+a.status.slice(1)))+'</span><button type="button" class="remove-own" data-delete="'+Number(a.id)+'">'+esc(t("delete"))+'</button></article>').join(""):'<div class="notice">'+esc(t("myEmpty"))+'</div>';
+ }catch(err){$("#my-list").innerHTML='<div class="notice error">'+esc(err.message)+'</div>';}
+ $("#my-list").addEventListener("click",async e=>{
+   const b=e.target.closest("button[data-delete]");if(!b)return;
+   if(!confirm(t("deleteConfirm")))return;
+   b.disabled=true;
+   try{await fetchJSON("/api/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:Number(b.dataset.delete)})});toast(t("deleteSuccess"));b.closest(".mine-item").remove();}
+   catch(err){toast(err.message||t("unknownError"));b.disabled=false;}
  });
 }
-function openAbout(){showDrawer('<span class="section-kicker">О ПРОЕКТЕ</span><h2>MURDILIMAX Объявления</h2><p class="detail-desc">Независимая доска частных объявлений для недвижимости, автомобилей, услуг и других категорий. Размещение бесплатно, объявления проверяются перед публикацией. Мы не посредник в сделках и не принимаем платежи за товары. Не отправляйте предоплату незнакомым людям, проверяйте документы и информацию перед покупкой.</p><div class="notice">Проект развивается. Если вы обнаружили подозрительное объявление, не совершайте переводов и сообщите администрации через контакты сайта, когда они будут опубликованы.</div>');}
-async function syncFromUrl(){
- displayFilters();
- const p=qs();const view=p.get("view")||"home";
- if(view==="home"){closeDrawer();await loadListings();return;}
- if(view==="post"){await openPost();return;}
- if(view==="mine"){await openMine();return;}
- if(view==="admin"){await openAdmin();return;}
+async function openDetails(id){
+ if(!Number.isSafeInteger(Number(id))||Number(id)<1)return;
+ showDrawer('<span class="kicker">'+esc(t("detailKicker"))+'</span><div id="detail" class="loading-placeholder">'+esc(t("loading"))+'</div>');
+ try{
+  const r=await fetchJSON("/api/listing/"+Number(id));const a=r.item;
+  const pictures=a.images?.length?'<div class="detail-photos">'+a.images.map((src,i)=>'<img src="'+esc(src)+'" alt="'+esc(a.title)+' '+(i+1)+'" loading="lazy">').join("")+'</div>':'';
+  const phone=a.contact_phone?'<a href="tel:'+esc(String(a.contact_phone).replace(/[^0-9+]/g,""))+'">☎ '+esc(a.contact_phone)+'</a>':'<p>'+esc(t("detailPhoneHidden"))+'</p>';
+  const hasCoords=Number.isFinite(Number(a.latitude))&&Number.isFinite(Number(a.longitude))&&a.latitude!=null&&a.longitude!=null;
+  const specs=[a.city,cat(a.category),t(dealKeys[a.deal_type]||"sale")];if(a.area)specs.push(a.area+" m²");if(a.rooms)specs.push(t("rooms")+": "+a.rooms);
+  $("#detail").innerHTML=pictures+'<h2>'+esc(a.title)+'</h2><div class="detail-price">'+esc(euro(a.price))+'</div><div class="detail-specs">'+specs.map(s=>'<span>'+esc(s)+'</span>').join("")+'</div><p class="detail-desc">'+esc(a.description)+'</p>'+
+  (hasCoords?'<h3>'+esc(t("detailLocation"))+'</h3><div class="detail-map" id="detail-map"></div>':'')+
+  '<section class="detail-contact"><h3>'+esc(t("detailContact"))+'</h3><p>'+esc(a.contact_name)+'</p>'+phone+'</section><p class="drawer-subtle">'+esc(t("detailSafety"))+'</p><p class="drawer-subtle">'+esc(t("adDate"))+': '+esc(date(a.created_at))+'</p>';
+  if(hasCoords&&window.L){
+   requestAnimationFrame(()=>{
+    if(!$("#detail-map"))return;
+    detailMap=L.map("detail-map",{scrollWheelZoom:false}).setView([Number(a.latitude),Number(a.longitude)],13);createTile(detailMap);L.marker([Number(a.latitude),Number(a.longitude)]).addTo(detailMap);detailMap.invalidateSize();
+   });
+  }
+ }catch(e){$("#detail").innerHTML='<div class="notice error">'+esc(t("detailNotFound"))+'</div>';}
+}
+async function openAdmin(){
+ if(!ON_APP){if(!backendReady){toast(t("postNoSite"));return;}location.href=appLink("admin");return;}
+ showDrawer('<span class="kicker">'+esc(t("adminKicker"))+'</span><h2>'+esc(t("adminTitle"))+'</h2><p class="hint">'+esc(t("adminOnly"))+'</p><div id="admin-queue" class="loading-placeholder">'+esc(t("loading"))+'</div>');
+ async function refresh(){
+  try{
+   const r=await fetchJSON("/api/admin");
+   $("#admin-queue").innerHTML=r.items.length?r.items.map(a=>'<article class="admin-item"><h4>'+esc(a.title)+'</h4><p>'+esc(a.description)+'</p><p>'+esc(a.city)+' · '+esc(euro(a.price))+' · '+esc(a.contact_name)+'</p>'+(a.image_url?'<img style="max-height:160px;border-radius:8px" src="'+esc(a.image_url)+'" alt="">':'')+'<div class="admin-actions"><button type="button" data-review="'+Number(a.id)+'" data-status="approved">'+esc(t("approve"))+'</button><button type="button" class="reject" data-review="'+Number(a.id)+'" data-status="rejected">'+esc(t("reject"))+'</button></div></article>').join(""):'<div class="notice">'+esc(t("adminEmpty"))+'</div>';
+  }catch(e){$("#admin-queue").innerHTML='<div class="notice error">'+esc(t("adminOnly"))+'</div>';}
+ }
+ await refresh();
+ $("#admin-remove-action").addEventListener("click",async()=>{
+  const id=Number($("#admin-delete-id").value);if(!Number.isSafeInteger(id)||id<1)return;
+  if(!confirm(t("deleteConfirm")))return;
+  try{await fetchJSON("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,status:"removed"})});toast(t("deleteSuccess"));$("#admin-delete-id").value="";await refresh();}catch(e){toast(e.message||t("unknownError"));}
+ });
+ $("#admin-queue").addEventListener("click",async e=>{
+  const b=e.target.closest("button[data-review]");if(!b)return;b.disabled=true;
+  try{await fetchJSON("/api/admin",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:Number(b.dataset.review),status:b.dataset.status})});await refresh();}
+  catch(err){toast(err.message);b.disabled=false;}
+ });
+}
+function openAbout(){showDrawer('<span class="kicker">MURDILIMAX</span><h2>'+esc(t("aboutTitle"))+'</h2><p class="detail-desc">'+esc(t("aboutText"))+'</p><div class="notice">'+esc(t("aboutNote"))+'</div>');}
+function sync(){
+ readFilters();
+ const p=params(),view=p.get("view")||"home";
+ if(view==="home"){closeDrawer();loadListings();if(layout==="map")loadMap();return;}
+ if(view==="post")return openPost();
+ if(view==="mine")return openMine();
+ if(view==="admin")return openAdmin();
  if(view==="about"){openAbout();return;}
- if(view==="ad"){await openDetails(p.get("id"));return;}
- closeDrawer();await loadListings();
+ if(view==="ad")return openDetails(p.get("id"));
+ closeDrawer();loadListings();
 }
-function initialize(){
- $("#hero-search").addEventListener("submit",e=>{e.preventDefault();const p=grabFilters();p.delete("page");setUrl(p.toString());$("#listings").scrollIntoView({behavior:"smooth",block:"start"});});
- $("#apply-filters").addEventListener("click",()=>{const p=grabFilters();p.delete("page");setUrl(p.toString());});
- document.querySelectorAll("[data-category]").forEach(b=>b.addEventListener("click",()=>{const p=grabFilters();p.set("category",b.dataset.category);p.delete("page");setUrl(p.toString());$("#listings").scrollIntoView({behavior:"smooth"});}));
- $("#cards").addEventListener("click",e=>{const card=e.target.closest("[data-open-id]");if(card)setUrl("view=ad&id="+card.dataset.openId);else if(e.target.id==="retry"){lastSearch="";loadListings();}});
- $("#cards").addEventListener("keydown",e=>{if(["Enter"," "].includes(e.key)){const card=e.target.closest("[data-open-id]");if(card){e.preventDefault();setUrl("view=ad&id="+card.dataset.openId);}}});
- $("#pagination").addEventListener("click",e=>{const b=e.target.closest("[data-page]");if(!b)return;const p=grabFilters();p.set("page",b.dataset.page);setUrl(p.toString());$("#listings").scrollIntoView({behavior:"smooth"});});
- $("#drawer-close").addEventListener("click",()=>{history.pushState({}, "", "/?view=home");syncFromUrl();});
- $("#drawer").addEventListener("click",e=>{if(e.target.hasAttribute("data-close")){history.pushState({}, "", "/?view=home");syncFromUrl();}});
- document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#drawer").hidden){history.pushState({}, "", "/?view=home");syncFromUrl();}});
- window.addEventListener("popstate",()=>{lastSearch="";syncFromUrl();});
- document.querySelectorAll("[data-post-link]").forEach(a=>{a.href=appLink("post");});
- $("#post-link").href=appLink("post");
- $("#sign-in").href=ON_APP?"/login?next=%2F":HOST+"/login?next=%2F";
- if(!ON_APP) document.addEventListener("click",e=>{const a=e.target.closest("a");if(!a)return;if((a.href.includes("view=post")||a.href.includes("/login"))&&!backendReady){e.preventDefault();toast("Приём объявлений пока закрыт. Публичный доступ к базе ещё не включён.");}},true);
- if(ON_APP&&window.hatchable?.auth)window.hatchable.auth.getSession().then(s=>{if(s?.user)$("#sign-in").textContent="Мой аккаунт";}).catch(()=>{});
- syncFromUrl();
+function navigateCurrent(p){history.pushState({}, "", "/?"+p.toString());lastSearch=null;sync();}
+function init(){
+ applyStatic();
+ $$(".language").forEach(b=>b.addEventListener("click",()=>setLanguage(b.dataset.lang)));
+ $("#hero-search").addEventListener("submit",e=>{e.preventDefault();navigateCurrent(filterQuery());$("#listings").scrollIntoView({behavior:"smooth"});});
+ $("#apply-filters").addEventListener("click",()=>{navigateCurrent(filterQuery());$("#listings").scrollIntoView({behavior:"smooth"});});
+ $$(".cat").forEach(b=>b.addEventListener("click",()=>{const p=filterQuery();p.set("category",b.dataset.category);navigateCurrent(p);$("#listings").scrollIntoView({behavior:"smooth"});}));
+ $$(".view-choice").forEach(b=>b.addEventListener("click",()=>setLayout(b.dataset.layout)));
+ $("#cards").addEventListener("click",e=>{const b=e.target.closest("[data-open-id]");if(b)go("ad",{id:Number(b.dataset.openId)});const retry=e.target.closest("[data-retry]");if(retry){lastSearch=null;loadListings();}});
+ $("#cards").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){const b=e.target.closest("[data-open-id]");if(b){e.preventDefault();go("ad",{id:Number(b.dataset.openId)});}}});
+ $("#pagination").addEventListener("click",e=>{const b=e.target.closest("[data-page]");if(!b)return;const p=filterQuery();p.set("page",b.dataset.page);navigateCurrent(p);$("#listings").scrollIntoView({behavior:"smooth"});});
+ $("#map-board").addEventListener("click",e=>{const b=e.target.closest("[data-open-id]");if(b)go("ad",{id:Number(b.dataset.openId)});});
+ $("#drawer-close").addEventListener("click",()=>go("home"));$("#drawer").addEventListener("click",e=>{if(e.target.hasAttribute("data-close"))go("home");});
+ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#drawer").hidden)go("home");});
+ document.addEventListener("click",e=>{
+  const a=e.target.closest("a");if(!a)return;
+  if(!ON_APP&&!backendReady&&(a.href.startsWith(HOST)&&(!a.href.includes("_preview")))){e.preventDefault();toast(t("postNoSite"));}
+ });
+ window.addEventListener("popstate",()=>{lastSearch=null;sync();});
+ if(ON_APP&&window.hatchable?.auth)window.hatchable.auth.getSession().then(s=>{if(s?.user)$("#sign-in").textContent=t("navMine");}).catch(()=>{});
+ sync();
 }
-if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initialize);else initialize();
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
