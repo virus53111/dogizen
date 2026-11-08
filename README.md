@@ -15,12 +15,18 @@ Modern classifieds marketplace in Russian, Latvian and English. Free hosting on 
 - **Account and login**: same-origin, authenticated user account at https://murdilimax.hatchable.site/account.html ; passwordless login lasts as long as the app session, and the login page avoids repeating authentication if already signed in. The public domain points all account buttons to this address to avoid a cross-site cookie mismatch.
 - Owner staff dashboard: https://murdilimax.hatchable.site/admin.html . Owner's registered/verified email gates the backend; moderators are granted permissions individually. All mutations verified server-side, with audit log.
 - New member listings may include up to 6 photos and optional approximate location on the map; they require moderation before public posting. No payment system.
+- Members can now **edit their own listings** (title, description, city, price, contact name/phone) from the Hatchable account page. Any change resets the listing to pending review; an anonymous or different user is denied by the API. The full create → edit → delete flow was tested with a temporary synthetic listing, which was removed afterwards.
+- The public JavaScript initialization error caused by treating a single element as a collection was fixed. Posting a job after signing in preserves the selected category and vacancy/seeking-work mode.
+- Hatchable v22 added `/api/edit` and updated `/api/mine`; a source snapshot of changed Hatchable files is saved under `hatchable/` for review. These files are not deployed by GitHub Pages.
 
 ## SEO
 Static, HTML-rendered, unique editorial landing pages in three languages, including separate vacancy and seeking-work landing pages. RU/LV/EN languages, localized title/H1, hreflang, canonical and JSON-LD. Daily sitemap generation includes published first-party ads and 21 language-specific category URLs plus language entry pages. Public RSS items are NOT republished as individual indexed pages to prevent misleading duplications. Job seeker category pages may link to original SS.lv listings but never index copies of individual profiles.
 
 ## Source restrictions
 SS.lv is an external source, not a partnership. Source remains visible beside the original-site link and in the category disclosure. Do not mirror private seller contacts or treat external offers as on-platform user ads. Link to the publisher and respect removal requests. Image files are hotlinked to the source server; some RSS thumbnails are lower resolution. Confirm all listing terms on the original site.
+
+## Pending production security work
+Hatchable currently has `[db.tables.classified_ads] read="public", write="public"` and no row rule for `site_user_bans`. The application protects sensitive mutations with authenticated, owner-checked endpoints. Do **not** switch ads to `write="own"` without redesigning the moderation endpoint, because moderators are authenticated as app users and need to edit ads by other users; a naive row policy would block that workflow. Test RLS changes in a separate staging database first.
 
 ## Backups and operations
 Old projects are archived in GitHub branches. Deploy with GitHub Pages workflow. Hatchable backend project `murdilimax` is public. This project has no paid hosting or subscriptions.

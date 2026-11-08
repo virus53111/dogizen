@@ -27,6 +27,19 @@ jobs:
           node --check app.js
           node --check i18n.js
           node --check scripts/generate-seo.mjs
+          test -s hatchable/public/account.html
+          test -s hatchable/api/edit.js
+          node <<'NODE'
+          const fs = require('fs');
+          const source = fs.readFileSync('app.js','utf8');
+          if(/(?<!\$)\$\((?:"[^"]+"|'[^']+')\)\.forEach\(/.test(source)) throw Error('Single DOM element used like a collection: use $ for querySelectorAll');
+          const account=fs.readFileSync('hatchable/public/account.html','utf8');
+          const inline=[...account.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(x=>x[1]).filter(Boolean);
+          if(!inline.length)throw Error('Missing account JS');
+          for(const js of inline)new Function(js);
+          if(!account.includes('/api/edit'))throw Error('Account edit API is missing');
+          console.log('PASS: app collection selectors and account inline JS');
+          NODE
           grep -q 'id="view-map"' index.html
           grep -q 'id="map-canvas"' index.html
           grep -q 'data-lang="lv"' index.html
