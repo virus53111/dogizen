@@ -13,6 +13,14 @@ assert(homepage.includes('rel="canonical" href="https://murdilimax.com/"'));
 assert(homepage.includes('href="' + download + '"'));
 assert(homepage.includes('href="/guide/"'));
 assert(homepage.includes('href="/recovery/"'));
+assert(homepage.includes('href="/assets/murdiworld-site.css"'));
+assert(fs.readFileSync('assets/murdiworld-site.css','utf8').includes('@media(max-width:770px)'));
+assert(homepage.includes('href="#screenshots"'));
+assert(homepage.includes('https://raw.githubusercontent.com/virus53111/dogizen/main/screenshots/murdiworld-world.png'));
+assert(homepage.includes('https://raw.githubusercontent.com/virus53111/dogizen/main/screenshots/murdiworld-actual-gameplay.png'));
+assert((homepage.match(/<img\\b/g)||[]).length>=6,'Missing real game media and game scenes');
+assert(!homepage.includes('Сервер онлайн'),'Do not pretend a public multiplayer server exists');
+
 assert(homepage.includes('ALPHA') || homepage.includes('прототип'));
 assert(guide.includes('PLAY.cmd') && guide.includes('SERVER.cmd'));
 assert(guide.includes('JOIN.cmd') && guide.includes('BACKUP.cmd'));
