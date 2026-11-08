@@ -22,6 +22,8 @@ function jobKind(a){return a.attributes?.job_type==="seeking"?"jobSeeking":"jobV
 function jobPrimaryTitle(a,external=false){
  if(!external||a.category!=="jobs")return a.title;
  const role=professionOptions.find(x=>x[0]===a.attributes?.profession);
+ const isSeeker=a.attributes?.job_type==="seeking";
+ if(isSeeker)return role?t("jobSeekingPerson")+" "+t(role[1]).toLocaleLowerCase(localeTag[lang]):t("jobSeeking");
  return role?t("jobHiring")+" "+t(role[1]).toLocaleLowerCase(localeTag[lang]):a.title;
 }
 function jobSeoUrl(language,seeking){const root={ru:"/ru/rabota/",lv:"/lv/darbs/",en:"/en/jobs/"}[language]||"/ru/rabota/";return root+(seeking?{ru:"ishut-rabotu/",lv:"mekle-darbu/",en:"seeking-work/"}[language]:{ru:"vakansii/",lv:"vakances/",en:"vacancies/"}[language]);}
@@ -155,7 +157,8 @@ function externalCard(a){
  const jobLabel=professionOptions.find(x=>x[0]===a.attributes?.profession);
  const info=a.attributes?.district||(jobLabel?t(jobLabel[1]):a.attributes?.make)||"";
  const isJob=a.category==="jobs",title=jobPrimaryTitle(a,true);
- const heading=isJob?'<span class="work-kind">'+esc(t("jobVacancies"))+'</span><h3>'+esc(title)+'</h3>'+(title!==a.title?'<p class="work-source-title">'+esc(a.title)+'</p>':'')+(shownPrice?'<div class="job-pay">'+esc(shownPrice)+' <span class="external-unit">'+esc(suffix)+'</span></div>':''):'<div class="listing-price">'+esc(shownPrice)+' <span class="external-unit">'+esc(suffix)+'</span></div><h3>'+esc(a.title)+'</h3>';
+ const isSeeker=isJob&&a.attributes?.job_type==="seeking";
+ const heading=isJob?'<span class="work-kind">'+esc(t(isSeeker?"jobSeeking":"jobVacancies"))+'</span><h3>'+esc(title)+'</h3>'+(title!==a.title&&!isSeeker?'<p class="work-source-title">'+esc(a.title)+'</p>':'')+(shownPrice?'<div class="job-pay">'+esc(shownPrice)+' <span class="external-unit">'+esc(suffix)+'</span></div>':''):'<div class="listing-price">'+esc(shownPrice)+' <span class="external-unit">'+esc(suffix)+'</span></div><h3>'+esc(a.title)+'</h3>';
  return '<article class="listing-card external-card"><a class="external-card-link" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(title)+' · SS.lv">'+
    '<div class="listing-thumb '+(!a.image_url?"no-photo":"")+'">'+image+'</div>'+
    '<div class="listing-info">'+heading+'<div class="listing-meta"><span>⌖ '+esc(a.city)+(info?' · '+esc(info):'')+'</span><span>'+esc(date(a.published_at))+'</span></div>'+
