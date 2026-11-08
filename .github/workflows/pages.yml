@@ -40,6 +40,12 @@ jobs:
           grep -q 'id="results-search"' index.html
           grep -q 'id="active-filters"' index.html
           grep -q 'function renderFilterChips' app.js
+          grep -q 'id="head-favorites"' index.html
+          grep -q 'id="favorites-note"' index.html
+          grep -q 'function renderFavorites' app.js
+          grep -q 'function favoriteButton' app.js
+          grep -q 'favoritesTitle' i18n.js
+          grep -q '.favorite-toggle' style.css
           grep -q 'mobileFilters' i18n.js
           grep -q 'data-report-id' hatchable/public/staff-ui.js
           grep -q 'async function optimizePhoto' app.js
