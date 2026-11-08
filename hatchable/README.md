@@ -4,6 +4,12 @@ Project: `proj_E4sXfkYysFlf` (`murdilimax.hatchable.site`).
 
 This directory stores the changed Hatchable files for code review. The actual deployed source and PostgreSQL database live in Hatchable, not on GitHub Pages. Do not treat these files as automatically deployed.
 
+## Changes in v23
+- `api/upload-cancel.js`: authenticated, owner-scoped cleanup of unlinked photos after a failed submission. Keys already referenced by `classified_images` are never deleted.
+- `public/app.js`: thumbnail manager, photo reorder/remove, incremental selections, large-photo optimization with Canvas/WebP, and error recovery.
+- `public/i18n.js`: accessible labels in RU/LV/EN for photo controls.
+- `public/style.css`: touch-friendly two-column photo grid on narrow screens.
+
 ## Changes in v22
 - `api/edit.js`: authenticated owner-only edits; any edit resets status to `pending`.
 - `api/mine.js`: returns data needed by the owner's edit form.
