@@ -1,24 +1,11 @@
-# MURDILIMAX Recovery
+# MURDILIMAX — Classifieds
+The previous MURDIWORLD / MURDILIMAX Recovery website was replaced with a new classified-ads and real-estate website for the existing custom domain `murdilimax.com`. All prior files are preserved only in Git branch `archive/murdilimax-before-classifieds-20261108`.
 
-Official website: https://murdilimax.com/
+This public frontend is hosted on GitHub Pages (free) and talks to the managed Hatchable application (Postgres, email-code auth, photo uploads and moderator approval).
 
-Free experimental Windows file-recovery application, version 0.10.7. Website copied from the deployed Recovery landing page at cenaradar.online on 2026-11-07. Russian/English UI and animated crystal artwork are preserved.
+## Critical launch gate (no payment)
+The Hatchable project `murdilimax` is currently PERSONAL/PRIVATE. In https://hatchable.com/console/projects/murdilimax navigate Settings -> Visibility -> Public. Only the owner can do this, and until they do, API endpoints serve a platform sign-in wall to strangers. The frontend on GitHub Pages can load, but listing search and ad submission won't work for public visitors. **Do not claim that the backend is publicly operational until visibility is changed and verified.**
 
-## Source and publishing
+This is a purpose-built classified ads app, **not** the PHP/MySQL ShopClass engine. ShopClass required paid PHP/MySQL infrastructure which the user declined. Source of backend is held in connected Hatchable project.
 
-- `index.html`: self-contained bilingual website.
-- `desktop/`: complete Recovery application source and tests, copied byte-for-byte from `price-aggregator-mvp/price-aggregator/desktop`.
-- `.github/workflows/pages.yml`: validates and publishes an explicit website-only artifact to GitHub Pages. Desktop source is not copied to the website.
-- Windows builds run on desktop source changes and publish a new, versioned release only after the full Windows regression suite, real-volume read-only access, packaged EXE and installer checks pass. Older releases are preserved.
-- Existing installer remains at https://github.com/virus53111/dogizen/releases/tag/v0.10.7.
-
-## Migration and rollback
-
-The browser site, desktop/browser code and browser build workflows were removed from the active main branch. Previous main is retained at `backup/murdilimax-browser-before-recovery-20261107` (dd0fb0da91b8d72bb5bad2fe92ec9e1b4e295a24). The Recovery application source in `price-aggregator-mvp` is preserved; its website build now redirects the former cenaradar.online address to murdilimax.com.
-
-Run `node tools/check_site.mjs` before publishing. Do not promise recovery from physically failing disks or real-world RAID without field validation.
-
-
-### Advanced recovery engine in 0.10.7
-
-The Windows installer includes a separately attributed **Halim Recovery 0.5.1** application, built from pinned public source [htoklu/halim-recovery](https://github.com/htoklu/halim-recovery) under the MIT license. Use the visible **Advanced recovery (Halim Recovery · MIT)** control in the MURDILIMAX GUI. The advanced tool provides alternative NTFS/FAT32/exFAT quick and deep recovery when the experimental built-in scanner returns few candidates. The original application's branding and license remain intact; consult `desktop/THIRD_PARTY_NOTICES.md`. Recovery on real, used or trimmed SSD media is not guaranteed.
+End-user listings require moderation. Payment and monetisation are disabled. No advertising content is pre-seeded, no fake listings. Do not give user personal admin credentials or embed API tokens in static files. The site stays on the existing GitHub Pages domain configuration and does not alter domain DNS.
