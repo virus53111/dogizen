@@ -1,0 +1,27 @@
+MURDIWORLD CRYSTAL ADVENTURE 0.2 — THIRD-PARTY NOTICES
+
+Game engine: Luanti 5.18.0
+Upstream: https://github.com/luanti-org/luanti
+Source version: https://github.com/luanti-org/luanti/releases/tag/5.18.0
+Licenses and credits are included in the unmodified upstream engine distribution.
+
+Game content: VoxeLibre (ContentDB release 39534, version 0.92.4)
+Upstream source: https://git.minetest.land/VoxeLibre/VoxeLibre
+ContentDB: https://content.luanti.org/packages/Wuzzy/mineclone2/
+License: GPL-3.0-or-later for code; individual media may have additional licenses.
+The complete original upstream game and its LICENSE.txt, LEGAL.md and CREDITS.md
+files are shipped inside engine/games/mineclone2.
+
+MURDIWORLD Crystal Adventure extension:
+Mod source: world-template/worldmods/mw_core and world-template/worldmods/mw_adventure.
+The added mw_adventure mod is an original MURDIWORLD component using the MIT license.
+The mw_core mod source and its MIT license are included in the same folder.
+Upstream source is accessible without charge at the URLs above.
+
+This installer repackages open-source engine and game code with separate
+attribution. It does not claim Luanti or VoxeLibre authorship, nor affiliation
+with Mojang, Microsoft, Minecraft or Roblox. No proprietary code is silently
+incorporated. No payment, telemetry or account required for this prototype.
+
+Saves stay in %LOCALAPPDATA%\MURDIWORLD\world, outside the uninstall directory.
+Users are responsible for backups before major upgrades. This is ALPHA software.

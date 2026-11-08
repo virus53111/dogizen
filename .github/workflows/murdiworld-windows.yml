@@ -1,0 +1,152 @@
+name: Build MURDIWORLD 0.2 Windows installer
+on:
+  pull_request:
+    paths:
+      - 'murdiworld/launcher/**'
+      - 'murdiworld/mods/**'
+      - 'murdiworld/installer.iss'
+      - 'murdiworld/THIRD_PARTY_NOTICES.txt'
+      - '.github/workflows/murdiworld-windows.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'murdiworld/launcher/**'
+      - 'murdiworld/mods/**'
+      - 'murdiworld/installer.iss'
+      - 'murdiworld/THIRD_PARTY_NOTICES.txt'
+      - '.github/workflows/murdiworld-windows.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows:
+    name: Full Windows install and Luanti game smoke
+    runs-on: windows-2022
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Stage verified Luanti, VoxeLibre and MURDIWORLD game files
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ProgressPreference = 'SilentlyContinue'
+          [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+          New-Item -ItemType Directory -Force _mwbuild\raw, _mwbuild\stage, _mwbuild\stage\assets | Out-Null
+          Invoke-WebRequest -UseBasicParsing -Uri 'https://github.com/luanti-org/luanti/releases/download/5.18.0/luanti-5.18.0-win64.zip' -OutFile '_mwbuild\raw\luanti.zip' -MaximumRedirection 10 -TimeoutSec 600
+          $hash = (Get-FileHash '_mwbuild\raw\luanti.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne 'bebce52b58555d8208bf16767d0717788479fef23c35ec8d7bf287774d641835') { throw "Official Luanti binary hash mismatch: $hash" }
+          Expand-Archive '_mwbuild\raw\luanti.zip' '_mwbuild\raw\engine' -Force
+          $engines = @(Get-ChildItem '_mwbuild\raw\engine' -Recurse -Filter luanti.exe -File | Where-Object { $_.Directory.Name -eq 'bin' })
+          if ($engines.Count -ne 1) { throw 'Expected exactly one Luanti executable' }
+          $engine = $engines[0].Directory.Parent.FullName
+          if (!(Test-Path (Join-Path $engine 'builtin'))) { throw 'Missing Luanti builtin files' }
+          Copy-Item -LiteralPath $engine -Destination '_mwbuild\stage\engine' -Recurse -Force
+          Invoke-WebRequest -UseBasicParsing -Uri 'https://content.luanti.org/packages/Wuzzy/mineclone2/releases/39534/download/' -OutFile '_mwbuild\raw\voxelibre.zip' -MaximumRedirection 10 -TimeoutSec 900
+          $size = (Get-Item '_mwbuild\raw\voxelibre.zip').Length
+          if ($size -lt 20000000 -or $size -gt 180000000) { throw "Unexpected VoxeLibre size: $size" }
+          Expand-Archive '_mwbuild\raw\voxelibre.zip' '_mwbuild\raw\game' -Force
+          $games = @(Get-ChildItem '_mwbuild\raw\game' -Recurse -Filter game.conf -File | Where-Object { Test-Path (Join-Path $_.Directory.FullName 'mods') })
+          if ($games.Count -ne 1) { throw "Expected one VoxeLibre game, found $($games.Count)" }
+          $source = $games[0].Directory.FullName
+          if (!(Test-Path (Join-Path $source 'LICENSE.txt'))) { throw 'VoxeLibre license missing' }
+          New-Item -ItemType Directory -Force '_mwbuild\stage\engine\games' | Out-Null
+          Copy-Item -LiteralPath $source -Destination '_mwbuild\stage\engine\games\mineclone2' -Recurse -Force
+
+          Invoke-WebRequest -UseBasicParsing -Uri 'https://murdilimax.com/downloads/MURDIWORLD_Prototype_0.1.zip' -OutFile '_mwbuild\raw\base.zip' -MaximumRedirection 10 -TimeoutSec 180
+          $hash = (Get-FileHash '_mwbuild\raw\base.zip' -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne 'f3fbd194049b6bf9db681aac60da726f2fbc1c61ba87458efb871cdd3e6d93b2') { throw 'Old base mod archive checksum mismatch' }
+          Expand-Archive '_mwbuild\raw\base.zip' '_mwbuild\raw\base' -Force
+          $cores = @(Get-ChildItem '_mwbuild\raw\base' -Recurse -Filter init.lua -File | Where-Object { $_.Directory.Name -eq 'mw_core' })
+          if ($cores.Count -ne 1) { throw 'Original crystal mod missing' }
+          $template = Split-Path -Parent (Split-Path -Parent $cores[0].Directory.FullName)
+          $oldroot = Split-Path -Parent $template
+          Copy-Item -LiteralPath $template -Destination '_mwbuild\stage\world-template' -Recurse -Force
+          Copy-Item -LiteralPath (Join-Path $oldroot 'config') -Destination '_mwbuild\stage\config' -Recurse -Force
+          Copy-Item -LiteralPath 'murdiworld\mods\mw_adventure' -Destination '_mwbuild\stage\world-template\worldmods\mw_adventure' -Recurse -Force
+          Copy-Item -LiteralPath 'assets\MURDIWORLD-logo.png' -Destination '_mwbuild\stage\assets\MURDIWORLD-logo.png'
+          if (!(Test-Path '_mwbuild\stage\world-template\worldmods\mw_adventure\init.lua')) { throw 'New quest not staged' }
+          if (!(Test-Path '_mwbuild\stage\engine\games\mineclone2\game.conf')) { throw 'Complete VoxeLibre not staged' }
+          Write-Host 'Complete offline game staged with license files'
+      - name: Build launcher as self-contained Windows EXE
+        shell: pwsh
+        run: |
+          dotnet publish 'murdiworld/launcher/Murdiworld.Launcher.csproj' -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false -p:EnableCompressionInSingleFile=true -o '_mwbuild/stage'
+          if ($LASTEXITCODE -ne 0) { throw 'Launcher compilation failed' }
+          if (!(Test-Path '_mwbuild\stage\MURDIWORLD.exe')) { throw 'Launcher missing' }
+      - name: Verify launcher can create a saved world with both real mods
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath (Resolve-Path '_mwbuild\stage\MURDIWORLD.exe').Path -ArgumentList '--self-test' -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw "Launcher self-test failed: $($p.ExitCode)" }
+          $version = & (Resolve-Path '_mwbuild\stage\engine\bin\luanti.exe').Path '--version' 2>&1 | Out-String
+          if ($version -notmatch '5\.18\.0') { throw "Wrong Luanti version: $version" }
+          Write-Host $version
+      - name: Smoke-test a live Windows server with the quest and game
+        shell: pwsh
+        run: |
+          Copy-Item -LiteralPath '_mwbuild\stage\world-template' -Destination '_mwbuild\smoke-world' -Recurse
+          $engine = (Resolve-Path '_mwbuild\stage\engine\bin\luanti.exe').Path
+          $world = (Resolve-Path '_mwbuild\smoke-world').Path
+          $config = (Resolve-Path '_mwbuild\stage\config\server.conf').Path
+          $args = @('--server','--world', ('"'+$world+'"'), '--config', ('"'+$config+'"'))
+          $p = Start-Process -FilePath $engine -WorkingDirectory (Split-Path $engine -Parent) -ArgumentList $args -PassThru -RedirectStandardOutput '_mwbuild\server-stdout.log' -RedirectStandardError '_mwbuild\server-stderr.log'
+          try {
+            Start-Sleep -Seconds 20
+            if ($p.HasExited) { throw "Windows game server exited early: $($p.ExitCode)" }
+            Write-Host 'Real VoxeLibre and MURDIWORLD 0.2 server remained active for 20 seconds.'
+          } finally { if (!$p.HasExited) { Stop-Process -Id $p.Id -Force } }
+          foreach ($log in @('_mwbuild\server-stdout.log','_mwbuild\server-stderr.log','_mwbuild\stage\engine\bin\debug.txt')) {
+            if (Test-Path $log) { Write-Host "--- $log"; Get-Content $log -Tail 25 }
+          }
+      - name: Install Inno Setup packaging tool
+        shell: pwsh
+        run: |
+          choco install innosetup --no-progress -y
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup install failed' }
+      - name: Build the full offline .exe installer
+        shell: pwsh
+        run: |
+          $iscc = @('C:\Program Files (x86)\Inno Setup 6\ISCC.exe','C:\Program Files\Inno Setup 6\ISCC.exe') | Where-Object { Test-Path $_ } | Select-Object -First 1
+          if (!$iscc) { throw 'Inno Setup compiler not found' }
+          & $iscc 'murdiworld\installer.iss'
+          if ($LASTEXITCODE -ne 0) { throw 'Inno Setup compilation failed' }
+          $setup = '_mwbuild\dist\MURDIWORLD-Setup-0.2.0.exe'
+          if (!(Test-Path $setup)) { throw 'Installer missing' }
+          if ((Get-Item $setup).Length -lt 30000000) { throw 'Installer incomplete; game files possibly missing' }
+          Get-FileHash $setup -Algorithm SHA256 | Format-List
+      - name: Install final EXE on fresh Windows and run health check
+        shell: pwsh
+        run: |
+          $setup = (Resolve-Path '_mwbuild\dist\MURDIWORLD-Setup-0.2.0.exe').Path
+          $dest = Join-Path (Get-Location) '_mwbuild\installed'
+          $p = Start-Process -FilePath $setup -ArgumentList @('/VERYSILENT','/SUPPRESSMSGBOXES','/NORESTART',("/DIR="+$dest)) -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw "Actual installation failed: $($p.ExitCode)" }
+          $exe = Join-Path $dest 'MURDIWORLD.exe'
+          if (!(Test-Path $exe)) { throw 'Installed game launcher missing' }
+          $p = Start-Process -FilePath $exe -ArgumentList '--self-test' -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw "Installed game check failed: $($p.ExitCode)" }
+          if (!(Test-Path (Join-Path $dest 'engine\games\mineclone2\LICENSE.txt'))) { throw 'Game legal notices missing' }
+          Write-Host 'PASS: Windows EXE installer, game files, launcher and save template'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MURDIWORLD-0.2.0-Windows-Installer
+          path: _mwbuild/dist/MURDIWORLD-Setup-0.2.0.exe
+          retention-days: 30
+          if-no-files-found: error
+      - name: Publish publicly installable Windows 0.2.0 pre-release
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $setup = '_mwbuild\dist\MURDIWORLD-Setup-0.2.0.exe'
+          gh release view v0.2.0 --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create v0.2.0 $setup --repo $env:GITHUB_REPOSITORY --title 'MURDIWORLD Crystal Adventure 0.2.0' --prerelease --notes 'A real single-file Windows installer including Luanti 5.18.0, VoxeLibre 0.92.4, original Crystal Adventure, a new three-stage Crystal Guardian boss quest, a graphical launcher and local world saves. No ZIP, Python, .NET installation or first-launch game downloads required. This is experimental unsigned software.'
+          } else {
+            gh release upload v0.2.0 $setup --repo $env:GITHUB_REPOSITORY --clobber
+          }
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to publish release' }
