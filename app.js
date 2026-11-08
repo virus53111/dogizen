@@ -7,12 +7,12 @@ const $=s=>document.querySelector(s);
 const cats={realty:"Недвижимость",cars:"Автомобили",electronics:"Электроника",jobs:"Работа",services:"Услуги",home:"Дом и сад",other:"Разное"};
 const icons={realty:"⌂",cars:"🚗",electronics:"▣",jobs:"▤",services:"⚒",home:"◈",other:"✦"};
 const deals={sell:"Продажа",rent:"Аренда",buy:"Куплю",offer:"Предложение"};
-let currentPage=1,lastSearch="";
+let currentPage=1,lastSearch="",backendReady=false;
 function escapeText(t){return String(t==null?"":t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function euro(p){let n=Number(p);return Number.isFinite(n)?new Intl.NumberFormat("ru-RU",{maximumFractionDigits:0}).format(n)+" €":"Цена по запросу";}
 function stamp(x){try{return new Date(x).toLocaleDateString("ru-RU",{day:"numeric",month:"short",year:"numeric"});}catch{return "";}}
 function toast(s){const t=$("#toast");t.textContent=s;t.hidden=false;setTimeout(()=>t.hidden=true,4200);}
-function fail(text){return '<div class="fetch-error"><strong>Не удалось загрузить данные</strong><p>'+escapeText(text)+'</p><button id="retry" type="button">Повторить</button></div>';}
+function fail(text){return '<div class="fetch-error"><strong>Приём объявлений пока закрыт</strong><p>Новый сайт опубликован, но база объявлений пока недоступна посетителям. Открытие доступа завершает владелец сайта.</p><button id="retry" type="button">Проверить ещё раз</button></div>';}
 function qs(){return new URLSearchParams(location.search);}
 function appLink(view){return (ON_APP?"":HOST)+"/?view="+encodeURIComponent(view);}
 async function fetchJSON(path,opts={}){const r=await fetch(API+path,opts);let v;try{v=await r.json();}catch{v={error:"Сервер временно недоступен."};}if(!r.ok)throw Error(v.error||"Ошибка запроса ("+r.status+")");return v;}
@@ -45,7 +45,7 @@ async function loadListings(){
  const qStr=query.toString();if(lastSearch===qStr)return;lastSearch=qStr;
  $("#cards").innerHTML='<div class="loading"><div class="loading-dot"></div><p>Загружаем объявления…</p></div>';$("#pagination").innerHTML="";
  try{
-  const data=await fetchJSON("/api/listings?"+query);
+  const data=await fetchJSON("/api/listings?"+query);backendReady=true;
   $("#view-counter").textContent=data.total+" объявлений";
   if(!data.items.length){
    const custom=[...query.keys()].some(k=>!["page"].includes(k));
@@ -53,7 +53,7 @@ async function loadListings(){
   }else $("#cards").innerHTML=data.items.map(card).join("");
   let page=data.page, maxPage=Math.ceil(data.total/24);
   if(maxPage>1){let html="";if(page>1)html+='<button data-page="'+(page-1)+'">← Назад</button>';html+='<button disabled>Страница '+page+' из '+maxPage+'</button>';if(page<maxPage)html+='<button data-page="'+(page+1)+'">Далее →</button>';$("#pagination").innerHTML=html;}
- }catch(e){lastSearch="";$("#cards").innerHTML=fail(e.message);$("#view-counter").textContent="";}
+ }catch(e){lastSearch="";backendReady=false;$("#cards").innerHTML=fail(e.message);$("#view-counter").textContent="";}
 }
 function showDrawer(html){
  $("#drawer-body").innerHTML=html;$("#drawer").hidden=false;document.body.style.overflow="hidden";$("#drawer-close").focus();
@@ -154,6 +154,7 @@ function initialize(){
  document.querySelectorAll("[data-post-link]").forEach(a=>{a.href=appLink("post");});
  $("#post-link").href=appLink("post");
  $("#sign-in").href=ON_APP?"/login?next=%2F":HOST+"/login?next=%2F";
+ if(!ON_APP) document.addEventListener("click",e=>{const a=e.target.closest("a");if(!a)return;if((a.href.includes("view=post")||a.href.includes("/login"))&&!backendReady){e.preventDefault();toast("Приём объявлений пока закрыт. Публичный доступ к базе ещё не включён.");}},true);
  if(ON_APP&&window.hatchable?.auth)window.hatchable.auth.getSession().then(s=>{if(s?.user)$("#sign-in").textContent="Мой аккаунт";}).catch(()=>{});
  syncFromUrl();
 }
