@@ -47,8 +47,8 @@ function applyStatic(){
   const routes={realty:{ru:"/ru/nedvizhimost/",lv:"/lv/nekustamais-ipasums/",en:"/en/real-estate/"},cars:{ru:"/ru/avtomobili/",lv:"/lv/auto/",en:"/en/cars/"},electronics:{ru:"/ru/elektronika/",lv:"/lv/elektronika/",en:"/en/electronics/"},jobs:{ru:"/ru/rabota/",lv:"/lv/darbs/",en:"/en/jobs/"},services:{ru:"/ru/uslugi/",lv:"/lv/pakalpojumi/",en:"/en/services/"},home:{ru:"/ru/dom-i-sad/",lv:"/lv/maja-un-darzs/",en:"/en/home-and-garden/"},other:{ru:"/ru/raznoe/",lv:"/lv/citi/",en:"/en/other/"}};
   $$("[data-seo-category]").forEach(a=>{const key=a.dataset.seoCategory;a.href=routes[key]?.[lang]||routes[key]?.ru;a.textContent=cat(key);});
   $("#sign-in").href=HOST+"/account.html?lang="+lang;$("#footer-admin").href=appLink("admin");
-  $("[data-job-seo]").forEach(a=>{const seek=a.dataset.jobSeo==="seeking";a.href=jobSeoUrl(lang,seek);a.textContent=t(seek?"jobSeeking":"jobVacancies");});
-  $(".cat").forEach(x=>x.classList.toggle("active",x.dataset.category===params().get("category")));
+  $$("[data-job-seo]").forEach(a=>{const seek=a.dataset.jobSeo==="seeking";a.href=jobSeoUrl(lang,seek);a.textContent=t(seek?"jobSeeking":"jobVacancies");});
+  $$(".cat").forEach(x=>x.classList.toggle("active",x.dataset.category===params().get("category")));
 }
 function setLanguage(next){if(!LANGS.includes(next)||next===lang)return;localStorage.setItem("murdilimax_language",next);const p=params();p.set("lang",next);location.search=p.toString();}
 const districts=["Centrs","Purvciems","Imanta","Āgenskalns","Teika","Ziepniekkalns","Mežciems","Ķengarags","Zolitūde","Vecmīlgrāvis"];
@@ -242,7 +242,7 @@ async function session(){
  if(!ON_APP){const p=params();location.href=appLink(p.get("view")||"post",{category:p.get("category")||undefined,job_type:p.get("job_type")||undefined});return null;}
  const a=window.hatchable&&window.hatchable.auth;if(!a){toast(t("postNoSite"));return null;}
  try{const sess=await a.getSession();if(sess?.user)return sess.user;}catch(e){}
- const to=route(params().get("view")||"post");location.href="/login?next="+encodeURIComponent(to)+"&lang="+lang;return null;
+ const p=params(),to=route(p.get("view")||"post",{category:p.get("category"),job_type:p.get("job_type")});location.href="/login?next="+encodeURIComponent(to)+"&lang="+lang;return null;
 }
 function selectOptions(items){return items.map(([value,key])=>'<option value="'+value+'">'+esc(t(key))+'</option>').join("");}
 function formField(name,label,type="text",attrs=""){return '<label>'+esc(t(label))+'<input name="'+name+'" type="'+type+'" '+attrs+' required></label>';}
