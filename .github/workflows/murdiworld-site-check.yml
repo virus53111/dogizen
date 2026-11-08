@@ -9,6 +9,7 @@ on:
       - 'downloads/**'
       - 'assets/**'
       - 'tools/check_site.mjs'
+      - 'tools/check_site_visual.mjs'
       - 'sitemap.xml'
       - '.github/workflows/pages.yml'
       - '.github/workflows/murdiworld-site-check.yml'
@@ -40,3 +41,17 @@ jobs:
                   assert any(n.endswith('/'+f) for n in names), f
           print('Verified source ZIP, CRC and all launch/gameplay entrypoints')
           PY
+
+      - name: Install headless Chromium visual test dependencies
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.57.0
+          npx playwright install chromium
+      - name: Render and verify desktop and mobile website
+        run: node tools/check_site_visual.mjs
+      - name: Save visual test screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: MURDIWORLD-Cinematic-Site-Desktop-Mobile
+          path: site-preview/
+          if-no-files-found: warn
