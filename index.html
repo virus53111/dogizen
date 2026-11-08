@@ -1,50 +1,77 @@
 <!doctype html>
-<html lang="ru"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#17382e">
-<meta name="description" content="MURDILIMAX — доска объявлений о недвижимости, автомобилях, товарах и услугах. Найдите выгодное предложение или разместите своё.">
-<title>MURDILIMAX — Объявления и недвижимость</title>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2157eb">
+<meta name="description" content="MURDILIMAX — объявления о недвижимости, автомобилях, работе, товарах и услугах. Публикуйте бесплатно, ищите на карте. Русский, латышский и английский.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="MURDILIMAX — объявления и недвижимость">
+<meta property="og:description" content="Квартиры, автомобили, техника и услуги. Ищите рядом или размещайте своё.">
+<title>MURDILIMAX — объявления, недвижимость и услуги</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/style.css">
-<link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+<script defer src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+<script defer src="/i18n.js"></script>
+<script defer src="/app.js"></script>
 </head>
 <body>
-<div class="top-strip"><div class="shell top-strip-inner"><span><span class="top-sparkle">✦</span> Продавайте и находите нужное в одном месте</span><span>Объявления · Недвижимость · Аренда · Услуги</span></div></div>
-<header class="header" id="header"><div class="shell header-inner">
-<a class="brand" href="/" aria-label="MURDILIMAX — главная"><span class="brand-mark">M<span class="brand-mark-dot"></span></span><span class="brand-copy"><strong>MURDILIMAX</strong><small>объявления рядом</small></span></a>
-<nav class="nav" aria-label="Основная навигация"><a href="/?view=home" class="nav-link">Объявления</a><a href="/?view=home&category=realty" class="nav-link">Недвижимость</a><a href="/?view=mine" class="nav-link">Мои объявления</a></nav>
-<div class="header-actions"><a class="sign-in" id="sign-in" href="/login?next=%2F">Войти</a><a class="post-button" id="post-link" href="/?view=post"><span class="plus">＋</span> Подать объявление</a></div>
+<div class="topline"><div class="shell top-inner"><div class="place"><span class="place-dot">●</span><span data-i18n="location">Латвия · Все города</span></div><div class="top-note"><span class="top-trust">✦</span><span data-i18n="heroHint1">Бесплатные объявления</span><span class="top-separator">·</span><span data-i18n="heroHint2">Объявления проверяются</span></div></div></div>
+<header class="header"><div class="shell head-inner">
+<a class="brand" href="/" aria-label="MURDILIMAX"><span class="brand-mark">m<span>✦</span></span><span class="brand-words"><strong>murdilimax</strong><small>marketplace</small></span></a>
+<nav class="main-nav"><a href="/?view=home" id="nav-all" data-i18n="navAll">Объявления</a><a href="/?view=home&category=realty" id="nav-realty" data-i18n="navRealty">Недвижимость</a><a href="/?view=mine" id="nav-mine" data-i18n="navMine">Мои объявления</a></nav>
+<div class="head-right">
+<div class="languages" role="group" aria-label="Language / Язык / Valoda"><button type="button" class="language active" data-lang="ru" aria-label="Русский">RU</button><button type="button" class="language" data-lang="lv" aria-label="Latviešu">LV</button><button type="button" class="language" data-lang="en" aria-label="English">EN</button></div>
+<a class="login-link" id="sign-in" href="/login" data-i18n="navLogin">Войти</a>
+<a class="head-post" id="post-link" href="/?view=post"><span class="post-plus">＋</span><span data-i18n="navPost">Разместить объявление</span></a>
+</div>
 </div></header>
 <main>
-<section class="hero" id="hero"><div class="shell hero-inner">
-<div class="hero-copy">
-<div class="eyebrow"><span class="eyebrow-dot"></span> БОЛЬШЕ ВОЗМОЖНОСТЕЙ РЯДОМ</div>
-<h1>Найдётся <em>именно</em><br>то, что нужно.</h1>
-<p>Квартиры и дома, автомобили, техника и услуги — находите интересные предложения и продавайте своё.</p>
-<form id="hero-search" class="hero-search" role="search"><span class="search-icon">⌕</span><input id="hero-q" name="q" type="search" placeholder="Что вы ищете? Квартира, автомобиль, телефон..." autocomplete="off" aria-label="Поиск объявлений"><button type="submit">Найти <span aria-hidden="true">↗</span></button></form>
-<div class="hero-facts"><span>✓ Удобный поиск</span><span>✓ Частные объявления</span><span>✓ Бесплатная публикация</span></div>
+<section class="hero"><div class="shell hero-shell">
+<div class="hero-left">
+<div class="hero-badge"><span class="badge-dot"></span><span data-i18n="heroBadge">ПЛОЩАДКА ДЛЯ ВАШИХ ВОЗМОЖНОСТЕЙ</span></div>
+<h1 data-i18n-html="heroTitle">Найти. Выбрать. <em>Договориться.</em></h1>
+<p class="hero-desc" data-i18n="heroDesc">Квартиры, автомобили, техника и услуги от людей рядом. Легко найти нужное и бесплатно разместить своё.</p>
+<form class="hero-search" id="hero-search" role="search"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.1"><circle cx="10.8" cy="10.8" r="6.8"/><path d="M16 16l5 5"/></svg><input id="hero-q" name="q" type="search" autocomplete="off" data-i18n-placeholder="heroSearch" placeholder="Что ищете сегодня?" aria-label="Поиск"><button type="submit"><span data-i18n="heroButton">Найти</span><span aria-hidden="true">↗</span></button></form>
+<div class="hero-under"><span><span class="ok">✓</span><span data-i18n="heroHint1">Бесплатные объявления</span></span><span><span class="ok">✓</span><span data-i18n="heroHint3">Удобный поиск по карте</span></span></div>
 </div>
-<div class="hero-art" aria-hidden="true"><div class="hero-blob"></div><div class="hero-photo photo-main"></div><div class="hero-photo photo-small"></div><div class="art-bubble art-bubble-one"><span>⌂</span><div><strong>Найди свой дом</strong><small>Продажа и аренда</small></div></div><div class="art-bubble art-bubble-two"><span>✦</span> Новые возможности</div><div class="ornament ornament-one">✳</div><div class="ornament ornament-two">✳</div></div>
+<div class="hero-visual" aria-hidden="true">
+<div class="hero-ring ring-one"></div><div class="hero-ring ring-two"></div><div class="hero-glow"></div>
+<div class="hero-photo hero-home"><img alt="" src="https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=950&q=84&fit=crop"></div>
+<div class="hero-photo hero-car"><img alt="" src="https://images.unsplash.com/photo-1494976388531-d1058494cdd8?w=500&q=82&fit=crop"></div>
+<div class="hero-sticker sticker-top"><span class="sticker-icon">⌂</span><span data-i18n="heroCard">Квартиры, дома и аренда</span></div>
+<div class="hero-sticker sticker-bottom"><span>✦</span><span data-i18n="heroChip">Новые возможности каждый день</span></div>
+</div></div></section>
+<section class="shell category-section" id="categories"><div class="section-row"><div><span class="kicker" data-i18n="catKicker">ПОПУЛЯРНЫЕ РАЗДЕЛЫ</span><h2 data-i18n="catTitle">Всё, что нужно — в одном месте</h2></div><p data-i18n="catDescription">Выбирайте категорию и начинайте поиск.</p></div>
+<div class="cat-grid" id="categories-grid">
+<button class="cat" data-category="realty" type="button"><span class="cat-symbol cat-home"><span>⌂</span></span><strong data-i18n="catRealty">Недвижимость</strong><small data-i18n="catRealtyD">Квартиры, дома, аренда</small></button>
+<button class="cat" data-category="cars" type="button"><span class="cat-symbol cat-cars"><span>🚙</span></span><strong data-i18n="catCars">Автомобили</strong><small data-i18n="catCarsD">Машины и транспорт</small></button>
+<button class="cat" data-category="electronics" type="button"><span class="cat-symbol cat-electronics"><span>▣</span></span><strong data-i18n="catElectronics">Электроника</strong><small data-i18n="catElectronicsD">Телефоны и техника</small></button>
+<button class="cat" data-category="jobs" type="button"><span class="cat-symbol cat-jobs"><span>▤</span></span><strong data-i18n="catJobs">Работа</strong><small data-i18n="catJobsD">Вакансии и подработка</small></button>
+<button class="cat" data-category="services" type="button"><span class="cat-symbol cat-services"><span>⚒</span></span><strong data-i18n="catServices">Услуги</strong><small data-i18n="catServicesD">Мастера и помощь</small></button>
+<button class="cat" data-category="home" type="button"><span class="cat-symbol cat-garden"><span>◈</span></span><strong data-i18n="catHome">Дом и сад</strong><small data-i18n="catHomeD">Мебель и интерьер</small></button>
+<button class="cat" data-category="other" type="button"><span class="cat-symbol cat-other"><span>✦</span></span><strong data-i18n="catOther">Разное</strong><small data-i18n="catOtherD">Находки на любой вкус</small></button>
 </div></section>
-<section class="shell categories-section" id="categories"><div class="section-heading"><div><span class="section-kicker">НАВИГАЦИЯ</span><h2>Выбирайте категорию</h2></div><p>Всё самое важное — в одном месте.</p></div>
-<div class="categories-grid" id="categories-grid">
-<button class="category-card" data-category="realty"><span class="category-icon" style="--ic:#e2f5eb">⌂</span><strong>Недвижимость</strong><small>Квартиры, дома, аренда</small></button>
-<button class="category-card" data-category="cars"><span class="category-icon" style="--ic:#fae8d9">🚗</span><strong>Автомобили</strong><small>Авто и транспорт</small></button>
-<button class="category-card" data-category="electronics"><span class="category-icon" style="--ic:#e7eaf9">▣</span><strong>Электроника</strong><small>Техника и телефоны</small></button>
-<button class="category-card" data-category="jobs"><span class="category-icon" style="--ic:#faecd3">▤</span><strong>Работа</strong><small>Вакансии и предложения</small></button>
-<button class="category-card" data-category="services"><span class="category-icon" style="--ic:#f2e7f8">⚒</span><strong>Услуги</strong><small>Помощь специалистов</small></button>
-<button class="category-card" data-category="home"><span class="category-icon" style="--ic:#fce5e6">◈</span><strong>Дом и сад</strong><small>Мебель и предметы</small></button>
-<button class="category-card" data-category="other"><span class="category-icon" style="--ic:#e4f2f6">✦</span><strong>Разное</strong><small>Всё остальное</small></button>
-</div></section>
-<section class="listing-section" id="listings"><div class="shell"><div class="section-heading listings-heading"><div><span class="section-kicker">ИЗ РУК В РУКИ</span><h2 id="results-title">Свежие объявления</h2></div><div class="view-counter" id="view-counter"></div></div>
-<div class="filters-bar"><div class="field-group"><label for="filter-city">Город</label><input id="filter-city" placeholder="Все города" autocomplete="address-level2"></div><div class="field-group"><label for="filter-category">Категория</label><select id="filter-category"><option value="all">Все категории</option><option value="realty">Недвижимость</option><option value="cars">Автомобили</option><option value="electronics">Электроника</option><option value="jobs">Работа</option><option value="services">Услуги</option><option value="home">Дом и сад</option><option value="other">Разное</option></select></div><div class="field-group narrow"><label for="filter-min">Цена от, €</label><input id="filter-min" type="number" min="0" placeholder="От"></div><div class="field-group narrow"><label for="filter-max">Цена до, €</label><input id="filter-max" type="number" min="0" placeholder="До"></div><div class="field-group narrow"><label for="filter-sort">Сортировка</label><select id="filter-sort"><option value="new">Сначала новые</option><option value="cheap">Дешевле</option><option value="expensive">Дороже</option></select></div><button id="apply-filters" type="button" class="filter-button">Показать</button></div>
-<div id="cards" class="listing-grid" aria-live="polite"><div class="loading">Загружаем объявления…</div></div>
+<section class="listings-section" id="listings"><div class="shell">
+<div class="section-row list-head"><div><span class="kicker" data-i18n="kickerListings">ОБЪЯВЛЕНИЯ РЯДОМ</span><h2 id="results-title" data-i18n="fresh">Свежие объявления</h2><div class="count" id="view-counter"></div></div>
+<div class="view-controls" role="group" aria-label="Отображение объявлений"><button type="button" class="view-choice active" data-layout="list" id="view-list"><span class="view-icon">▦</span><span data-i18n="cards">Список</span></button><button type="button" class="view-choice" data-layout="map" id="view-map"><span class="view-icon">♧</span><span data-i18n="map">На карте</span></button></div>
+</div>
+<div class="filters-bar"><label class="filter-field"><span data-i18n="city">Город</span><input id="filter-city" type="search" autocomplete="address-level2" data-i18n-placeholder="allCities" placeholder="Любой город"></label>
+<label class="filter-field"><span data-i18n="category">Категория</span><select id="filter-category"><option value="all" data-i18n="allCategories">Все категории</option><option value="realty" data-i18n="catRealty">Недвижимость</option><option value="cars" data-i18n="catCars">Автомобили</option><option value="electronics" data-i18n="catElectronics">Электроника</option><option value="jobs" data-i18n="catJobs">Работа</option><option value="services" data-i18n="catServices">Услуги</option><option value="home" data-i18n="catHome">Дом и сад</option><option value="other" data-i18n="catOther">Разное</option></select></label>
+<label class="filter-field compact"><span data-i18n="priceFrom">Цена от, €</span><input id="filter-min" type="number" min="0" placeholder="0"></label>
+<label class="filter-field compact"><span data-i18n="priceTo">Цена до, €</span><input id="filter-max" type="number" min="0" placeholder="∞"></label>
+<label class="filter-field sort-field"><span data-i18n="sort">Сортировка</span><select id="filter-sort"><option value="new" data-i18n="sortNew">Сначала новые</option><option value="cheap" data-i18n="sortCheap">Сначала дешёвые</option><option value="expensive" data-i18n="sortExpensive">Сначала дорогие</option></select></label>
+<button class="filter-apply" id="apply-filters" type="button" data-i18n="apply">Показать</button></div>
+<div class="listing-grid" id="cards" aria-live="polite"><div class="loading" data-i18n="loading">Загружаем объявления…</div></div>
+<div class="map-board" id="map-board" hidden><div id="map-canvas" role="region" aria-label="Карта объявлений"></div><div class="map-message" id="map-message"></div><p class="map-hint" data-i18n="mapSubtitle">Показаны объявления, где продавец отметил примерное расположение. Карта © OpenStreetMap.</p></div>
 <div class="pagination" id="pagination"></div>
 </div></section>
-<section class="shell promo-row"><div class="promo-card promo-orange"><div class="promo-icon">＋</div><h3>Есть что продать?</h3><p>Опубликуйте объявление за несколько минут. Покупатели увидят его после проверки.</p><a href="/?view=post" data-post-link>Разместить бесплатно <span>↗</span></a></div><div class="promo-card promo-green"><div class="promo-icon">⌂</div><h3>Ищете недвижимость?</h3><p>Сравнивайте квартиры и дома, условия покупки и аренды в удобной подборке.</p><a href="/?view=home&category=realty">Смотреть недвижимость <span>↗</span></a></div></section>
-<section class="shell trust"><div><span class="section-kicker">ПРОСТО И УДОБНО</span><h2>Покупайте с уверенностью</h2></div><div class="trust-points"><p><b>01.</b><span>Проверяйте товар и документы до оплаты.</span></p><p><b>02.</b><span>Не переводите предоплату незнакомым людям.</span></p><p><b>03.</b><span>При сомнениях попросите дополнительную информацию.</span></p></div></section>
+<section class="shell banner-section"><article class="banner banner-sell"><div class="banner-dots">✳</div><span class="banner-eyebrow">MURDILIMAX</span><h3 data-i18n="promoSellTitle">Есть что продать?</h3><p data-i18n="promoSellText">Создайте объявление за несколько минут. Добавьте фотографии — и вас найдут покупатели.</p><a href="/?view=post" data-post-link><span data-i18n="promoSellButton">Разместить бесплатно</span><span>↗</span></a></article>
+<article class="banner banner-house"><div class="banner-house-icon">⌂</div><span class="banner-eyebrow">MURDILIMAX HOME</span><h3 data-i18n="promoHomeTitle">Ищете новую квартиру?</h3><p data-i18n="promoHomeText">Продажа и аренда, удобные фильтры и расположение на карте.</p><a id="promo-realty" href="/?view=home&category=realty"><span data-i18n="promoHomeButton">Смотреть недвижимость</span><span>↗</span></a></article></section>
+<section class="shell safety"><div><span class="kicker" data-i18n="trustKicker">БЕЗОПАСНЫЕ СДЕЛКИ</span><h2 data-i18n="trustTitle">Покупайте спокойно</h2></div><div class="safety-items"><div><b>01</b><p data-i18n="trustOne">Проверяйте товары и документы лично.</p></div><div><b>02</b><p data-i18n="trustTwo">Не переводите предоплату незнакомым людям.</p></div><div><b>03</b><p data-i18n="trustThree">Встречайтесь в безопасном месте и не передавайте коды.</p></div></div></section>
 </main>
-<footer class="footer"><div class="shell footer-inner"><div class="footer-brand"><strong>MURDILIMAX</strong><span>Объявления о том, что важно.</span></div><div class="footer-links"><a href="/?view=home">Объявления</a><a href="/?view=post">Подать объявление</a><a href="/?view=about">О проекте</a></div><small>© 2026 MURDILIMAX. Совершайте сделки безопасно.</small></div></footer>
-<div class="drawer" id="drawer" hidden><div class="drawer-scrim" data-close></div><div class="drawer-panel"><button class="drawer-close" id="drawer-close" type="button" aria-label="Закрыть">✕</button><div id="drawer-body"></div></div></div>
-<div id="toast" class="toast" role="status" hidden></div>
-<script src="/app.js" defer></script>
+<footer class="footer"><div class="shell footer-main"><div><a class="footer-logo" href="/">murdilimax<span>✦</span></a><p data-i18n="footerTagline">Ваши объявления. Ваш город. Ваш выбор.</p></div><div class="footer-nav"><a id="footer-all" href="/" data-i18n="navAll">Объявления</a><a id="footer-post" href="/?view=post" data-i18n="navPost">Разместить объявление</a><a id="footer-about" href="/?view=about" data-i18n="footerAbout">О проекте</a></div></div><div class="shell footer-bottom"><small data-i18n="footerRights">© 2026 MURDILIMAX · Все права защищены</small><small data-i18n="footerWarn">MURDILIMAX не участвует в расчётах между покупателями и продавцами.</small></div></footer>
+<div class="drawer" id="drawer" hidden><div class="drawer-overlay" data-close></div><aside class="drawer-panel" aria-label="Объявление"><button class="drawer-close" id="drawer-close" type="button" aria-label="Закрыть">✕</button><div id="drawer-body"></div></aside></div>
+<div class="toast" id="toast" role="status" hidden></div>
 </body></html>

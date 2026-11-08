@@ -16,23 +16,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Check standalone classifieds site
+      - name: Validate RU/LV/EN site, map and listing workflows
         shell: bash
         run: |
           set -euo pipefail
-          test -f CNAME
-          grep -Fxq murdilimax.com CNAME
-          grep -q 'Объявления и недвижимость' index.html
-          grep -q 'class="listing-grid"' index.html
-          grep -q '/api/listings' app.js
+          test "$(cat CNAME)" = "murdilimax.com"
+          for f in index.html style.css app.js i18n.js favicon.svg robots.txt sitemap.xml; do test -s "$f"; done
           node --check app.js
-          for p in index.html style.css app.js favicon.svg robots.txt sitemap.xml; do test -s "$p"; done
+          node --check i18n.js
+          grep -q 'id="view-map"' index.html
+          grep -q 'id="map-canvas"' index.html
+          grep -q 'data-lang="lv"' index.html
+          grep -q 'data-lang="en"' index.html
+          grep -q 'OpenStreetMap' app.js
+          grep -q '/api/map' app.js
+          grep -q '/api/create' app.js
+          grep -q '/api/delete' app.js
+          node <<'NODE'
+          const fs=require('fs'),vm=require('vm'),sandbox={window:{}};
+          vm.runInNewContext(fs.readFileSync('i18n.js','utf8'),sandbox);
+          const d=sandbox.window.MURDI_I18N;
+          const keys=Object.keys(d.ru).sort();
+          for(const lang of ['ru','lv','en']){
+            const present=Object.keys(d[lang]).sort();
+            if(JSON.stringify(keys)!==JSON.stringify(present))throw Error('Key mismatch: '+lang);
+            if(keys.some(k=>!String(d[lang][k]).trim()))throw Error('Empty key in '+lang);
+          }
+          const html=fs.readFileSync('index.html','utf8');
+          for(const [_,key] of html.matchAll(/data-i18n(?:-html|-placeholder)?="([^"]+)"/g)){
+            if(!keys.includes(key))throw Error('Missing translation: '+key);
+          }
+          console.log('PASS: RU/LV/EN, listing forms, map and account controls');
+          NODE
           test ! -d recovery
           test ! -d downloads
           test ! -d guide
           ! grep -iq 'MURDIWORLD' index.html
           ! grep -iq 'MURDILIMAX Recovery' index.html
-          echo "PASS: new classifieds site, no legacy game or recovery files"
   deploy:
     if: github.event_name != 'pull_request'
     needs: validate
@@ -43,11 +63,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
-      - name: Stage only public classifieds website assets
-        shell: bash
+      - name: Stage public marketplace files
         run: |
           mkdir -p _site
-          cp index.html style.css app.js favicon.svg robots.txt sitemap.xml CNAME 404.html _site/
+          cp index.html style.css app.js i18n.js favicon.svg robots.txt sitemap.xml CNAME 404.html _site/
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
