@@ -36,6 +36,9 @@ jobs:
           grep -q '/api/create' app.js
           grep -q '/api/delete' app.js
           grep -q '/api/external' app.js
+          grep -q 'job_type' app.js
+          grep -q 'id="job-type-tabs"' index.html
+          grep -q 'jobPostKind' i18n.js
           grep -q 'externalCard' app.js
           grep -q 'externalTitle' i18n.js
           node <<'NODE'
@@ -66,6 +69,14 @@ jobs:
           test -s _seo_validation/ru/rabota/index.html
           test -s _seo_validation/lv/darbs/index.html
           test -s _seo_validation/en/services/index.html
+          test -s _seo_validation/ru/rabota/vakansii/index.html
+          test -s _seo_validation/ru/rabota/ishut-rabotu/index.html
+          test -s _seo_validation/lv/darbs/vakances/index.html
+          test -s _seo_validation/lv/darbs/mekle-darbu/index.html
+          test -s _seo_validation/en/jobs/vacancies/index.html
+          test -s _seo_validation/en/jobs/seeking-work/index.html
+          grep -q 'https://murdilimax.com/ru/rabota/vakansii/' _seo_validation/sitemap.xml
+          ! grep -q 'Зарплата уточняется' _seo_validation/ru/rabota/index.html
           grep -q "https://murdilimax.com/ru/rabota/" _seo_validation/sitemap.xml
           grep -q 'hreflang="en"' _seo_validation/ru/avtomobili/index.html
           grep -q 'application/ld+json' _seo_validation/en/cars/index.html

@@ -75,7 +75,15 @@
 <label class="filter-field sort-field"><span data-i18n="sort">Сортировка</span><select id="filter-sort"><option value="new" data-i18n="sortNew">Сначала новые</option><option value="cheap" data-i18n="sortCheap">Сначала дешёвые</option><option value="expensive" data-i18n="sortExpensive">Сначала дорогие</option></select></label>
 <button class="filter-apply" id="apply-filters" type="button" data-i18n="apply">Показать</button></div>
 <datalist id="latvian-cities"><option value="Rīga"></option><option value="Jūrmala"></option><option value="Liepāja"></option><option value="Daugavpils"></option><option value="Jelgava"></option><option value="Ventspils"></option><option value="Rēzekne"></option><option value="Valmiera"></option><option value="Jēkabpils"></option><option value="Ogre"></option><option value="Sigulda"></option><option value="Cēsis"></option><option value="Tukums"></option><option value="Salaspils"></option><option value="Ādaži"></option><option value="Rīgas rajons"></option></datalist><section class="advanced-filter-panel" id="advanced-filters" hidden aria-label="Дополнительные фильтры"></section>
-<div class="listing-grid" id="cards" aria-live="polite"><div class="loading" data-i18n="loading">Загружаем объявления…</div></div>
+<div class="job-type-tabs" id="job-type-tabs" hidden aria-label="Тип объявления о работе">
+ <div class="job-tab-actions" role="group" aria-label="Вакансии и ищут работу">
+  <button type="button" data-job-type="" data-i18n="jobAll">Все объявления о работе</button>
+  <button type="button" data-job-type="vacancy" data-i18n="jobVacancies">Вакансии</button>
+  <button type="button" data-job-type="seeking" data-i18n="jobSeeking">Ищут работу</button>
+ </div>
+ <a id="post-job-shortcut" class="job-post-shortcut" href="https://murdilimax.hatchable.site/?view=post&category=jobs&job_type=vacancy" data-i18n="jobPostVacancy">Разместить вакансию</a>
+ </div>
+ <div class="listing-grid" id="cards" aria-live="polite"><div class="loading" data-i18n="loading">Загружаем объявления…</div></div>
 <div class="map-board" id="map-board" hidden><div id="map-canvas" role="region" aria-label="Карта объявлений"></div><div class="map-message" id="map-message"></div><p class="map-hint" data-i18n="mapSubtitle">Показаны объявления, где продавец отметил примерное расположение. Карта © OpenStreetMap.</p></div>
 <div class="pagination" id="pagination"></div>
 </div></section>
@@ -84,6 +92,8 @@
 <a data-seo-category="cars" href="/ru/avtomobili/">Автомобили в Латвии</a>
 <a data-seo-category="electronics" href="/ru/elektronika/">Электроника в Латвии</a>
 <a data-seo-category="jobs" href="/ru/rabota/">Работа в Латвии</a>
+<a data-job-seo="vacancy" href="/ru/rabota/vakansii/">Вакансии</a>
+<a data-job-seo="seeking" href="/ru/rabota/ishut-rabotu/">Ищут работу</a>
 <a data-seo-category="services" href="/ru/uslugi/">Услуги в Латвии</a>
 <a data-seo-category="home" href="/ru/dom-i-sad/">Дом и сад в Латвии</a>
 <a data-seo-category="other" href="/ru/raznoe/">Другие объявления</a>
