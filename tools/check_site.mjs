@@ -42,8 +42,8 @@ assert((homepage.match(/<img /g)||[]).length>=6,'Missing real game media and gam
 assert(!homepage.includes('Сервер онлайн'),'Do not pretend a public multiplayer server exists');
 
 assert(homepage.includes('ALPHA') || homepage.includes('прототип'));
-assert(guide.includes('PLAY.cmd') && guide.includes('SERVER.cmd'));
-assert(guide.includes('JOIN.cmd') && guide.includes('BACKUP.cmd'));
+assert(guide.includes('MURDIWORLD-Setup-0.2.0.exe') && guide.includes('ЛОКАЛЬНЫЙ СЕРВЕР'), 'Guide must describe one-click EXE installation and LAN');
+assert(guide.includes('%LOCALAPPDATA%') && guide.includes('/mwquest'), 'Guide must explain save location and adventure');
 assert(guide.includes('пока нет') || guide.includes('нет'));
 assert(recovery.includes('<title>MURDILIMAX Recovery'));
 assert(recovery.includes('/releases/download/v0.10.7/MURDILIMAX-Recovery-Setup-0.10.7.exe'));
