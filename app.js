@@ -15,6 +15,7 @@ const dealKeys={sell:"sale",rent:"rent",buy:"buy",offer:"offer"};
 const localeTag={ru:"ru-RU",lv:"lv-LV",en:"en-GB"};
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function euro(n){const p=Number(n);return Number.isFinite(p)?new Intl.NumberFormat(localeTag[lang],{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(p):"—";}
+function displayPrice(a){if(a.category==="jobs"&&Number(a.price)===0)return t("advSalaryUnknown");if(a.category==="services"&&Number(a.price)===0)return t("advNegotiable");return euro(a.price);}
 function date(x){return new Date(x).toLocaleDateString(localeTag[lang],{day:"numeric",month:"short",year:"numeric"});}
 function cat(k){return t(catKeys[k]||"catOther");}
 function params(){return new URLSearchParams(location.search);}
@@ -107,7 +108,7 @@ function errorState(){return '<div class="fetch-error"><strong>'+esc(t("errorTit
 function noResults(filtered){return '<div class="empty"><span class="empty-icon">✧</span><strong>'+esc(t(filtered?"emptyFiltered":"emptyTitle"))+'</strong><p>'+esc(t(filtered?"emptyFilteredDesc":"emptyDesc"))+'</p><a href="'+esc(appLink("post"))+'" data-post-link>'+esc(t("emptyAction"))+' ↗</a></div>';}
 function listingCard(a){
  const photo=a.image_url?'<img loading="lazy" src="'+esc(a.image_url)+'" alt="'+esc(a.title)+'">':'<span class="no-photo-icon">'+(catIcons[a.category]||"✦")+'</span>';
- return '<article class="listing-card" tabindex="0" role="button" data-open-id="'+Number(a.id)+'" aria-label="'+esc(a.title)+'"><div class="listing-thumb '+(!a.image_url?"no-photo":"")+'">'+photo+'<em>'+esc(cat(a.category))+'</em></div><div class="listing-info"><div class="listing-price">'+esc(euro(a.price))+'</div><h3>'+esc(a.title)+'</h3><div class="listing-meta"><span>⌖ '+esc(a.city)+'</span><span>'+esc(date(a.created_at))+'</span></div></div></article>';
+ return '<article class="listing-card" tabindex="0" role="button" data-open-id="'+Number(a.id)+'" aria-label="'+esc(a.title)+'"><div class="listing-thumb '+(!a.image_url?"no-photo":"")+'">'+photo+'<em>'+esc(cat(a.category))+'</em></div><div class="listing-info"><div class="listing-price">'+esc(displayPrice(a))+'</div><h3>'+esc(a.title)+'</h3><div class="listing-meta"><span>⌖ '+esc(a.city)+'</span><span>'+esc(date(a.created_at))+'</span></div></div></article>';
 }
 function externalCard(a){
  const href=String(a.source_url||"");
@@ -273,7 +274,7 @@ async function openMine(){
  showDrawer('<span class="kicker">'+esc(t("myKicker"))+'</span><h2>'+esc(t("myTitle"))+'</h2><div id="my-list" class="loading-placeholder">'+esc(t("loading"))+'</div>');
  try{
   const r=await fetchJSON("/api/mine");
-  $("#my-list").innerHTML=r.items.length?r.items.map(a=>'<article class="mine-item"><h4>'+esc(a.title)+'</h4><p>'+esc(a.city)+' · '+esc(euro(a.price))+'</p><span class="item-status '+esc(a.status)+'">'+esc(t("status"+a.status[0].toUpperCase()+a.status.slice(1)))+'</span><button type="button" class="remove-own" data-delete="'+Number(a.id)+'">'+esc(t("delete"))+'</button></article>').join(""):'<div class="notice">'+esc(t("myEmpty"))+'</div>';
+  $("#my-list").innerHTML=r.items.length?r.items.map(a=>'<article class="mine-item"><h4>'+esc(a.title)+'</h4><p>'+esc(a.city)+' · '+esc(displayPrice(a))+'</p><span class="item-status '+esc(a.status)+'">'+esc(t("status"+a.status[0].toUpperCase()+a.status.slice(1)))+'</span><button type="button" class="remove-own" data-delete="'+Number(a.id)+'">'+esc(t("delete"))+'</button></article>').join(""):'<div class="notice">'+esc(t("myEmpty"))+'</div>';
  }catch(err){$("#my-list").innerHTML='<div class="notice error">'+esc(err.message)+'</div>';}
  $("#my-list").addEventListener("click",async e=>{
    const b=e.target.closest("button[data-delete]");if(!b)return;
@@ -292,7 +293,7 @@ async function openDetails(id){
   const phone=a.contact_phone?'<a href="tel:'+esc(String(a.contact_phone).replace(/[^0-9+]/g,""))+'">☎ '+esc(a.contact_phone)+'</a>':'<p>'+esc(t("detailPhoneHidden"))+'</p>';
   const hasCoords=Number.isFinite(Number(a.latitude))&&Number.isFinite(Number(a.longitude))&&a.latitude!=null&&a.longitude!=null;
   const specs=[a.city,cat(a.category),t(dealKeys[a.deal_type]||"sale")];if(a.area)specs.push(a.area+" m²");if(a.rooms)specs.push(t("rooms")+": "+a.rooms);
-  $("#detail").innerHTML=pictures+'<h2>'+esc(a.title)+'</h2><div class="detail-price">'+esc(euro(a.price))+'</div><div class="detail-specs">'+specs.map(s=>'<span>'+esc(s)+'</span>').join("")+'</div><p class="detail-desc">'+esc(a.description)+'</p>'+
+  $("#detail").innerHTML=pictures+'<h2>'+esc(a.title)+'</h2><div class="detail-price">'+esc(displayPrice(a))+'</div><div class="detail-specs">'+specs.map(s=>'<span>'+esc(s)+'</span>').join("")+'</div><p class="detail-desc">'+esc(a.description)+'</p>'+
   (hasCoords?'<h3>'+esc(t("detailLocation"))+'</h3><div class="detail-map" id="detail-map"></div>':'')+
   '<section class="detail-contact"><h3>'+esc(t("detailContact"))+'</h3><p>'+esc(a.contact_name)+'</p>'+phone+'</section><p class="drawer-subtle">'+esc(t("detailSafety"))+'</p><p class="drawer-subtle">'+esc(t("adDate"))+': '+esc(date(a.created_at))+'</p>';
   if(hasCoords&&window.L){
@@ -309,7 +310,7 @@ async function openAdmin(){
  async function refresh(){
   try{
    const r=await fetchJSON("/api/admin");
-   $("#admin-queue").innerHTML=r.items.length?r.items.map(a=>'<article class="admin-item"><h4>'+esc(a.title)+'</h4><p>'+esc(a.description)+'</p><p>'+esc(a.city)+' · '+esc(euro(a.price))+' · '+esc(a.contact_name)+'</p>'+(a.image_url?'<img style="max-height:160px;border-radius:8px" src="'+esc(a.image_url)+'" alt="">':'')+'<div class="admin-actions"><button type="button" data-review="'+Number(a.id)+'" data-status="approved">'+esc(t("approve"))+'</button><button type="button" class="reject" data-review="'+Number(a.id)+'" data-status="rejected">'+esc(t("reject"))+'</button></div></article>').join(""):'<div class="notice">'+esc(t("adminEmpty"))+'</div>';
+   $("#admin-queue").innerHTML=r.items.length?r.items.map(a=>'<article class="admin-item"><h4>'+esc(a.title)+'</h4><p>'+esc(a.description)+'</p><p>'+esc(a.city)+' · '+esc(displayPrice(a))+' · '+esc(a.contact_name)+'</p>'+(a.image_url?'<img style="max-height:160px;border-radius:8px" src="'+esc(a.image_url)+'" alt="">':'')+'<div class="admin-actions"><button type="button" data-review="'+Number(a.id)+'" data-status="approved">'+esc(t("approve"))+'</button><button type="button" class="reject" data-review="'+Number(a.id)+'" data-status="rejected">'+esc(t("reject"))+'</button></div></article>').join(""):'<div class="notice">'+esc(t("adminEmpty"))+'</div>';
   }catch(e){$("#admin-queue").innerHTML='<div class="notice error">'+esc(t("adminOnly"))+'</div>';}
  }
  await refresh();
