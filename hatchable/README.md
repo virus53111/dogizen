@@ -4,6 +4,11 @@ Project: `proj_E4sXfkYysFlf` (`murdilimax.hatchable.site`).
 
 This directory stores the changed Hatchable files for code review. The actual deployed source and PostgreSQL database live in Hatchable, not on GitHub Pages. Do not treat these files as automatically deployed.
 
+## Changes in v25
+- `api/edit.js`: owner-only photo changes (up to six), strict owned-key validation, collision prevention, atomic SQL update and automatic moderation.
+- `api/mine.js`: returns ordered photo URLs and owner-specific keys for safe editing.
+- `public/account.html`: preview, add, remove, and reorder photos; upload new files on save; remove unattached uploads on failure; RU/LV/EN.
+
 ## Changes in v24
 - `migrations/0012_listing_reports.sql`: moderated report queue with duplicate prevention and review metadata.
 - `api/report.js`: user-authenticated reports for native and SS.lv listings, verified targets, limits and ban checks.
