@@ -1,0 +1,56 @@
+name: Validate ShopClass deployment
+on:
+  pull_request:
+    paths:
+      - 'deploy/classifieds/**'
+      - '.github/workflows/shopclass-ci.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  shopclass:
+    name: Real PHP, MariaDB, site and admin
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate Render blueprint
+        run: |
+          python -m pip install -q PyYAML
+          python - <<'PY'
+          import yaml
+          from pathlib import Path
+          root=Path('deploy/classifieds')
+          y=yaml.safe_load((root/'render.yaml').read_text())
+          assert len(y['services'])==2
+          assert {s['type'] for s in y['services']}=={'web','pserv'}
+          for s in y['services']:
+              assert (root/Path(s['dockerfilePath']).name).exists()
+              assert s.get('disk',{}).get('sizeGB',0)>=5
+              assert s['plan']=='starter'
+          web=next(s for s in y['services'] if s['type']=='web')
+          db=next(s for s in y['services'] if s['type']=='pserv')
+          assert any(e.get('key')=='DB_PASSWORD' and e.get('fromService') for e in web['envVars'])
+          assert any(e.get('key')=='MARIADB_ROOT_PASSWORD' and e.get('generateValue') for e in db['envVars'])
+          assert any(e.get('key')=='OSC_ADMIN_PASSWORD' and e.get('generateValue') for e in web['envVars'])
+          print('Render blueprint verified: secret references, persistent app and database disks, separate services')
+          PY
+      - name: Start original ShopClass 7.0.16 with MariaDB
+        run: |
+          docker compose -f deploy/classifieds/compose.test.yaml up -d --build --wait --wait-timeout 300
+      - name: Verify real public page and administrator login
+        run: |
+          set -eux
+          curl --retry 12 --retry-delay 2 --retry-all-errors -fsSL -D /tmp/headers -o /tmp/home.html http://127.0.0.1:8080/
+          test -s /tmp/home.html
+          grep -Eiq 'shopclass|MURDILIMAX|classified' /tmp/home.html
+          curl --retry 10 --retry-delay 2 --retry-all-errors -fsSL -o /tmp/admin.html http://127.0.0.1:8080/oc-admin/
+          test -s /tmp/admin.html
+          grep -Eiq 'login|password|admin' /tmp/admin.html
+          echo "PASS: real ShopClass homepage and admin, backed by live MariaDB"
+      - name: Logs on failure
+        if: failure()
+        run: docker compose -f deploy/classifieds/compose.test.yaml logs --tail=160
+      - name: Always remove CI database and artifacts
+        if: always()
+        run: docker compose -f deploy/classifieds/compose.test.yaml down -v --remove-orphans || true
