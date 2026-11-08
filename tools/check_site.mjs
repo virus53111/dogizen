@@ -18,7 +18,7 @@ assert(fs.readFileSync('assets/murdiworld-site.css','utf8').includes('@media(max
 assert(homepage.includes('href="#screenshots"'));
 assert(homepage.includes('https://raw.githubusercontent.com/virus53111/dogizen/main/screenshots/murdiworld-world.png'));
 assert(homepage.includes('https://raw.githubusercontent.com/virus53111/dogizen/main/screenshots/murdiworld-actual-gameplay.png'));
-assert((homepage.match(/<img\\b/g)||[]).length>=6,'Missing real game media and game scenes');
+assert((homepage.match(/<img /g)||[]).length>=6,'Missing real game media and game scenes');
 assert(!homepage.includes('Сервер онлайн'),'Do not pretend a public multiplayer server exists');
 
 assert(homepage.includes('ALPHA') || homepage.includes('прототип'));
