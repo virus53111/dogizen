@@ -10,7 +10,11 @@ const download = '/downloads/MURDIWORLD_Prototype_0.1.zip';
 
 assert(homepage.includes('<title>MURDIWORLD'));
 assert(homepage.includes('rel="canonical" href="https://murdilimax.com/"'));
-assert(homepage.includes('href="' + download + '"'));
+const installer = 'https://github.com/virus53111/dogizen/releases/download/v0.2.0/MURDIWORLD-Setup-0.2.0.exe';
+assert(homepage.includes('href="' + installer + '"'), 'Game homepage must link to the complete Windows installer');
+assert(guide.includes('href="' + installer + '"'), 'Install guide must link to the complete Windows installer');
+assert(!homepage.includes('PLAY.cmd'), 'Homepage still asks players to run scripts');
+assert(!homepage.includes('Скачать ZIP'), 'Homepage still advertises old ZIP');
 assert(homepage.includes('href="/guide/"'));
 assert(homepage.includes('href="/recovery/"'));
 assert(homepage.includes('href="/assets/murdiworld-site.css"'));
@@ -61,4 +65,4 @@ const archive = fs.readFileSync('downloads/MURDIWORLD_Prototype_0.1.zip');
 assert(archive.length >= 15000 && archive.length <= 150000);
 const actual = crypto.createHash('sha256').update(archive).digest('hex');
 assert.equal(actual, 'f3fbd194049b6bf9db681aac60da726f2fbc1c61ba87458efb871cdd3e6d93b2');
-console.log('MURDIWORLD website, guide, recovered legacy site, and real downloadable ZIP: PASS.');
+console.log('MURDIWORLD 0.2 EXE website, install guide, preserved Recovery, and legacy archive integrity: PASS.');
