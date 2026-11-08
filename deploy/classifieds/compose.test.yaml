@@ -1,0 +1,42 @@
+# TEST ONLY: temporary CI data; never use this file for public hosting.
+services:
+  database:
+    image: mariadb:11.4
+    environment:
+      MARIADB_DATABASE: murdilimax_test
+      MARIADB_USER: shopclass
+      MARIADB_PASSWORD: local-ci-only-pass
+      MARIADB_ROOT_PASSWORD: local-ci-only-root
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 25
+    volumes:
+      - db:/var/lib/mysql
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.shopclass
+    environment:
+      DB_HOST: database
+      DB_NAME: murdilimax_test
+      DB_USER: shopclass
+      DB_PASSWORD: local-ci-only-pass
+      WEB_PATH: http://127.0.0.1:8080/
+      OSC_IGNORE_CONFIG_FILE: "1"
+      OSC_ADMIN_USER: ci-admin
+      OSC_ADMIN_EMAIL: ci-only@example.com
+      OSC_ADMIN_PASSWORD: ci-test-password-not-for-production
+      OSC_SITE_TITLE: "MURDILIMAX Classifieds CI"
+      OSC_DISABLE_PACKAGE_INSTALLS: "1"
+    ports:
+      - "127.0.0.1:8080:80"
+    depends_on:
+      database:
+        condition: service_healthy
+    volumes:
+      - content:/application/oc-content
+volumes:
+  db:
+  content:
