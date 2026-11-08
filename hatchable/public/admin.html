@@ -1,0 +1,15 @@
+<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow,noarchive"><meta name="referrer" content="same-origin"><meta name="theme-color" content="#152f5c"><title>MURDILIMAX — закрытая админка</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/staff.css"><script src="/staff-ui.js" defer></script></head>
+<body class="staff-body"><header class="staff-header"><div class="staff-shell staff-top"><a href="/" class="staff-brand"><span class="staff-brand-icon">m</span><strong>murdilimax</strong><span class="staff-brand-tag">ADMIN</span></a><div class="staff-top-right"><span class="staff-current-user" id="staff-email"></span><a href="/" class="staff-exit">На сайт ↗</a></div></div></header>
+<main class="staff-shell staff-layout"><aside class="staff-sidebar"><div class="side-caption">УПРАВЛЕНИЕ</div><nav class="staff-nav" id="staff-nav">
+<button class="active" data-tab="summary">▦ <span>Обзор</span></button>
+<button data-tab="ads">▤ <span>Объявления</span></button>
+<button data-tab="external">↗ <span>Предложения SS.lv</span></button>
+<button data-tab="reports">⚑ <span>Жалобы пользователей</span></button>
+<button data-tab="users" data-owner>♙ <span>Пользователи</span></button>
+<button data-tab="moderators" data-owner>♧ <span>Модераторы</span></button>
+<button data-tab="audit" data-owner>◷ <span>История действий</span></button>
+</nav><div class="side-security">🔒 <strong>Закрытый доступ</strong><small>Сервер проверяет подтверждённый email при каждом запросе. Модераторы не могут назначать других модераторов.</small></div></aside>
+<section class="staff-workspace"><div class="staff-heading"><div><div class="staff-kicker">MURDILIMAX CONTROL CENTER</div><h1 id="staff-title">Панель управления</h1><p id="staff-intro">Управляйте объявлениями, пользователями и контентом.</p></div><button class="staff-refresh" id="staff-refresh">↻ Обновить</button></div>
+<div id="staff-status" role="status" class="staff-status" hidden></div><div id="staff-content"><div class="staff-loading">Проверяем доступ…</div></div></section></main>
+<div class="staff-modal" id="staff-modal" hidden><div class="staff-backdrop" data-close></div><div class="staff-modal-panel"><button class="modal-x" data-close aria-label="Закрыть">✕</button><div id="staff-modal-body"></div></div></div>
+</body></html>
