@@ -32,6 +32,9 @@ jobs:
           grep -q '/api/map' app.js
           grep -q '/api/create' app.js
           grep -q '/api/delete' app.js
+          grep -q '/api/external' app.js
+          grep -q 'externalCard' app.js
+          grep -q 'externalTitle' i18n.js
           node <<'NODE'
           const fs=require('fs'),vm=require('vm'),sandbox={window:{}};
           vm.runInNewContext(fs.readFileSync('i18n.js','utf8'),sandbox);
