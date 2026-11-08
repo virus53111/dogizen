@@ -19,8 +19,8 @@ function date(x){return new Date(x).toLocaleDateString(localeTag[lang],{day:"num
 function cat(k){return t(catKeys[k]||"catOther");}
 function params(){return new URLSearchParams(location.search);}
 function route(view,extra={}){const p=new URLSearchParams({view,lang});Object.entries(extra).forEach(([k,v])=>{if(v!==null&&v!==undefined)p.set(k,String(v));});return "/?"+p.toString();}
-function appLink(view,extra){return (ON_APP?"":HOST)+route(view,extra);}
-function go(view,extra={}){if(!ON_APP&&(view==="post"||view==="mine"||view==="admin")){if(!backendReady){toast(t("postNoSite"));return;}location.href=appLink(view,extra);return;}history.pushState({}, "",route(view,extra));sync();}
+function appLink(view,extra){if(view==="mine")return HOST+"/account.html?lang="+lang;if(view==="admin")return HOST+"/admin.html";return (ON_APP?"":HOST)+route(view,extra);}
+function go(view,extra={}){if(!ON_APP&&(view==="post"||view==="mine"||view==="admin")){location.href=appLink(view,extra);return;}history.pushState({}, "",route(view,extra));sync();}
 function toast(text){const el=$("#toast");el.textContent=text;el.hidden=false;if(toastTimer)clearTimeout(toastTimer);toastTimer=setTimeout(()=>{el.hidden=true;},4700);}
 async function fetchJSON(path,options={}){const resp=await fetch(API+path,options);let data;try{data=await resp.json();}catch{data={error:t("errorDesc")};}if(!resp.ok)throw Error(data.error||t("unknownError"));return data;}
 function applyStatic(){
@@ -34,17 +34,63 @@ function applyStatic(){
   $("#post-link").href=appLink("post");$$("[data-post-link]").forEach(a=>a.href=appLink("post"));
   $("#promo-realty").href=route("home",{category:"realty"});
   $("#footer-all").href=route("home");$("#footer-post").href=appLink("post");$("#footer-about").href=route("about");
-  const routes={realty:{ru:"/ru/nedvizhimost/",lv:"/lv/nekustamais-ipasums/",en:"/en/real-estate/"},cars:{ru:"/ru/avtomobili/",lv:"/lv/auto/",en:"/en/cars/"},electronics:{ru:"/ru/elektronika/",lv:"/lv/elektronika/",en:"/en/electronics/"},home:{ru:"/ru/dom-i-sad/",lv:"/lv/maja-un-darzs/",en:"/en/home-and-garden/"},other:{ru:"/ru/raznoe/",lv:"/lv/citi/",en:"/en/other/"}};
+  const routes={realty:{ru:"/ru/nedvizhimost/",lv:"/lv/nekustamais-ipasums/",en:"/en/real-estate/"},cars:{ru:"/ru/avtomobili/",lv:"/lv/auto/",en:"/en/cars/"},electronics:{ru:"/ru/elektronika/",lv:"/lv/elektronika/",en:"/en/electronics/"},jobs:{ru:"/ru/rabota/",lv:"/lv/darbs/",en:"/en/jobs/"},services:{ru:"/ru/uslugi/",lv:"/lv/pakalpojumi/",en:"/en/services/"},home:{ru:"/ru/dom-i-sad/",lv:"/lv/maja-un-darzs/",en:"/en/home-and-garden/"},other:{ru:"/ru/raznoe/",lv:"/lv/citi/",en:"/en/other/"}};
   $$("[data-seo-category]").forEach(a=>{const key=a.dataset.seoCategory;a.href=routes[key]?.[lang]||routes[key]?.ru;a.textContent=cat(key);});
-  $("#sign-in").href=(ON_APP?"":HOST)+"/login?next="+encodeURIComponent(route("post"))+"&lang="+lang;
+  $("#sign-in").href=HOST+"/account.html?lang="+lang;$("#footer-admin").href=appLink("admin");
   $$(".cat").forEach(x=>x.classList.toggle("active",x.dataset.category===params().get("category")));
 }
 function setLanguage(next){if(!LANGS.includes(next)||next===lang)return;localStorage.setItem("murdilimax_language",next);const p=params();p.set("lang",next);location.search=p.toString();}
+const districts=["Centrs","Purvciems","Imanta","Āgenskalns","Teika","Ziepniekkalns","Mežciems","Ķengarags","Zolitūde","Vecmīlgrāvis"];
+const carMakes=["Volkswagen","BMW","Toyota","Volvo","Audi","Mercedes-Benz","Škoda","Honda","Ford","Nissan","Hyundai","Opel","Mazda","Kia"];
+const professionOptions=[["driver","jobDriver"],["seller","jobSeller"],["cook","jobCook"],["cleaner","jobCleaner"],["builder","jobBuilder"],["administrator","jobAdministrator"],["programmer","jobProgrammer"],["electrician","jobElectrician"],["cashier","jobCashier"],["dispatcher","jobDispatcher"],["teacher","jobTeacher"],["nurse","jobNurse"]];
+const conditions=[["new","condNew"],["used","condUsed"],["repair","condRepair"]];
+const catalogSpecs={
+ realty:[["district","advDistrict","select",districts.map(x=>[x,x])],["property_type","advType","select",[["apartment","placeApart"],["house","placeHouse"],["land","placeLand"],["commercial","placeCommercial"]]],["rooms","advRooms","number"],["area_min","advAreaMin","number"]],
+ cars:[["make","advMake","select",carMakes.map(x=>[x,x])],["year_min","advYearMin","number"],["condition","advCondition","select",conditions]],
+ jobs:[["profession","advProfession","select",professionOptions],["schedule","advSchedule","select",[["Darbadienas","shiftWeekdays"],["Maiņās","shiftShift"],["Pēc izvēles","shiftFlexible"]]]],
+ electronics:[["subcategory","advSubcategory","select",[["phones","subPhones"],["computers","subComputers"],["appliances","subAppliances"]]],["condition","advCondition","select",conditions]],
+ home:[["subcategory","advSubcategory","select",[["furniture","subFurniture"],["sofas","subSofas"],["tables","subTables"]]],["condition","advCondition","select",conditions]],
+ services:[["service_type","advService","select",[["construction","serviceConstruction"],["other","serviceOther"]]]],
+ other:[["condition","advCondition","select",conditions]]
+};
+const advancedKeys=[...new Set(Object.values(catalogSpecs).flat().map(x=>x[0]))];
+function advancedFieldHTML(spec,value="",forPost=false){
+ const [key,label,type,options]=spec;
+ const name=forPost?"a_"+(key==="year_min"?"vehicle_year":key):key;
+ const actualKey=forPost&&key==="year_min"?"vehicle_year":key;
+ let field="";
+ if(type==="select"){
+  field='<select name="'+esc(name)+'" data-filter-key="'+esc(actualKey)+'"><option value="">'+esc(t("advAny"))+'</option>'+
+   (options||[]).map(([v,lab])=>'<option value="'+esc(v)+'"'+(String(value)===String(v)?' selected':'')+'>'+esc(t(lab))+'</option>').join("")+'</select>';
+ }else{
+  const min=key==="year_min"?1950:0;
+  field='<input type="number" name="'+esc(name)+'" data-filter-key="'+esc(actualKey)+'" min="'+min+'"'+(key==="year_min"?' max="2030"':"")+' value="'+esc(value||"")+'" placeholder="'+esc(t("advAny"))+'">';
+ }
+ return '<label class="advanced-field"><span>'+esc(t(label))+'</span>'+field+'</label>';
+}
+function renderAdvancedFilters(){
+ const root=$("#advanced-filters");if(!root)return;
+ const category=$("#filter-category").value,specs=catalogSpecs[category]||[];
+ root.hidden=!specs.length;
+ if(!specs.length){root.innerHTML="";return;}
+ const p=params();
+ root.innerHTML='<div class="advanced-heading"><strong>'+esc(t("advFilters"))+'</strong><button type="button" id="clear-advanced">'+esc(t("advClear"))+' ↺</button></div>'+
+ '<div class="advanced-grid">'+specs.map(x=>advancedFieldHTML(x,p.get(x[0])||"")).join("")+'</div>';
+ $("#clear-advanced").addEventListener("click",()=>{root.querySelectorAll("[data-filter-key]").forEach(x=>x.value="");});
+}
+function renderPostCategoryFields(){
+ const form=$("#post-form");if(!form)return;
+ const category=form.querySelector('[name="category"]').value;
+ const specs=(catalogSpecs[category]||[]).filter(spec=>!["rooms","area_min"].includes(spec[0]));
+ const target=$("#post-category-fields");if(target)target.innerHTML=specs.map(x=>advancedFieldHTML(x,"",true)).join("");
+ form.querySelectorAll("[data-property-field]").forEach(x=>x.hidden=category!=="realty");
+}
 function filterQuery(){
  const p=new URLSearchParams({lang,view:"home"});
  const q=$("#hero-q").value.trim(),cat=$("#filter-category").value,city=$("#filter-city").value.trim(),min=$("#filter-min").value,max=$("#filter-max").value,sort=$("#filter-sort").value;
  if(q)p.set("q",q);if(cat!=="all")p.set("category",cat);if(city)p.set("city",city);
  if(min!=="")p.set("min",min);if(max!=="")p.set("max",max);if(sort!=="new")p.set("sort",sort);
+ $$("#advanced-filters [data-filter-key]").forEach(el=>{if(String(el.value).trim())p.set(el.dataset.filterKey,String(el.value).trim());});
  return p;
 }
 function readFilters(){
@@ -52,6 +98,7 @@ function readFilters(){
  Object.entries(map).forEach(([key,sel])=>{const el=$(sel);if(el)el.value=p.get(key)||(key==="category"?"all":key==="sort"?"new":"");});
  $$(".cat").forEach(el=>el.classList.toggle("active",el.dataset.category===(p.get("category")||"")));
  const c=p.get("category");$("#results-title").textContent=catKeys[c]?cat(c):t("fresh");
+ renderAdvancedFilters();
 }
 function loading(){return '<div class="loading"><span class="loading-spinner"></span>'+esc(t("loading"))+'</div>';}
 function errorState(){return '<div class="fetch-error"><strong>'+esc(t("errorTitle"))+'</strong><p>'+esc(t("errorDesc"))+'</p><button type="button" data-retry>'+esc(t("retry"))+'</button></div>';}
@@ -65,15 +112,18 @@ function externalCard(a){
  if(!/^https:\/\/(?:www\.)?(?:ss\.lv|ss\.com)\/msg\//.test(href))return "";
  const image=a.image_url?'<img loading="lazy" src="'+esc(a.image_url)+'" alt="" referrerpolicy="no-referrer">':'<span class="no-photo-icon">'+(catIcons[a.category]||"✦")+'</span>';
  const suffix=a.price_unit==="month"?t("externalMonth"):a.price_unit==="day"?t("externalDay"):"";
+ const shownPrice=a.price_unit==="negotiable"?t(a.category==="jobs"?"advSalaryUnknown":"advNegotiable"):euro(a.price);
+ const jobLabel=professionOptions.find(x=>x[0]===a.attributes?.profession);
+ const info=a.attributes?.district||(jobLabel?t(jobLabel[1]):a.attributes?.make)||"";
  return '<article class="listing-card external-card"><a class="external-card-link" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(a.title)+' · SS.lv">'+
-   '<div class="listing-thumb '+(!a.image_url?"no-photo":"")+'">'+image+'<em class="external-badge">SS.lv ↗</em></div>'+
-   '<div class="listing-info"><div class="listing-price">'+esc(euro(a.price))+' <span class="external-unit">'+esc(suffix)+'</span></div>'+
-   '<h3>'+esc(a.title)+'</h3><div class="listing-meta"><span>⌖ '+esc(a.city)+'</span><span>'+esc(date(a.published_at))+'</span></div>'+
-   '<div class="external-open">'+esc(t("externalOpen"))+' <span>↗</span></div></div></a></article>';
+   '<div class="listing-thumb '+(!a.image_url?"no-photo":"")+'">'+image+'</div>'+
+   '<div class="listing-info"><div class="listing-price">'+esc(shownPrice)+' <span class="external-unit">'+esc(suffix)+'</span></div>'+
+   '<h3>'+esc(a.title)+'</h3><div class="listing-meta"><span>⌖ '+esc(a.city)+(info?' · '+esc(info):'')+'</span><span>'+esc(date(a.published_at))+'</span></div>'+
+   '<div class="external-open"><span>'+esc(t("externalOpen"))+' · SS.lv</span><span>↗</span></div></div></a></article>';
 }
 async function loadListings(){
  const p=params(),query=new URLSearchParams();
- ["q","category","city","min","max","sort","page"].forEach(k=>{if(p.get(k))query.set(k,p.get(k));});
+ ["q","category","city","min","max","sort","page",...advancedKeys].forEach(k=>{if(p.get(k))query.set(k,p.get(k));});
  const signature=query.toString();
  if(signature===lastSearch)return;
  lastSearch=signature;
@@ -146,7 +196,7 @@ function cleanupModalMaps(){if(postMap){postMap.remove();postMap=null;postMarker
 function showDrawer(html){cleanupModalMaps();$("#drawer-body").innerHTML=html;$("#drawer").hidden=false;document.body.style.overflow="hidden";$("#drawer-close").focus();}
 function closeDrawer(){cleanupModalMaps();$("#drawer").hidden=true;document.body.style.overflow="";}
 async function session(){
- if(!ON_APP){if(!backendReady){toast(t("postNoSite"));return null;}location.href=appLink(params().get("view")||"post");return null;}
+ if(!ON_APP){location.href=appLink(params().get("view")||"post");return null;}
  const a=window.hatchable&&window.hatchable.auth;if(!a){toast(t("postNoSite"));return null;}
  try{const sess=await a.getSession();if(sess?.user)return sess.user;}catch(e){}
  const to=route(params().get("view")||"post");location.href="/login?next="+encodeURIComponent(to)+"&lang="+lang;return null;
@@ -163,16 +213,18 @@ async function openPost(){
  '<label class="full">'+esc(t("postDescription"))+'<textarea name="description" required minlength="20" maxlength="4000" placeholder="'+esc(t("postDescriptionPh"))+'"></textarea></label>'+
  '<label>'+esc(t("postCity"))+'<input name="city" required maxlength="80" placeholder="'+esc(t("postCityPh"))+'"></label>'+
  formField("price","postPrice","number",'min="0" max="9999999999" step="1"')+
- '<label>'+esc(t("postArea"))+'<input type="number" name="area" min="0" max="999999" step=".1"></label>'+
- '<label>'+esc(t("postRooms"))+'<input type="number" name="rooms" min="0" max="100"></label>'+
+ '<label data-property-field>'+esc(t("postArea"))+'<input type="number" name="area" min="0" max="999999" step=".1"></label>'+
+ '<label data-property-field>'+esc(t("postRooms"))+'<input type="number" name="rooms" min="0" max="100"></label>'+
  formField("contact_name","postContact","text",'maxlength="80"')+
  '<label>'+esc(t("postPhone"))+'<input name="contact_phone" type="tel" maxlength="35" placeholder="'+esc(t("postPhonePh"))+'"></label>'+
- '<label class="full">'+esc(t("postPhotos"))+'<input type="file" name="photos" id="photos" accept="image/jpeg,image/png,image/webp" multiple></label>'+
+ '<div class="full category-form-fields" id="post-category-fields"></div>'+ '<label class="full">'+esc(t("postPhotos"))+'<input type="file" name="photos" id="photos" accept="image/jpeg,image/png,image/webp" multiple></label>'+
  '<p class="hint full" style="margin:-10px 0 1px">'+esc(t("postPhotoHint"))+'</p><div id="photo-preview" class="photo-preview full"></div>'+
  '<div class="full"><label>'+esc(t("postMapLabel"))+'</label><p class="hint">'+esc(t("postMapHint"))+'</p><div class="post-map-box"><div id="post-map"></div><div class="pin-footer"><span id="pin-status">'+esc(t("postPinNone"))+'</span><button type="button" id="pin-remove">'+esc(t("postPinRemove"))+'</button></div></div></div>'+
  '<p class="full privacy-note">'+esc(t("postPrivacy"))+'</p>'+
  '<button type="submit" class="primary-action full" id="post-submit">'+esc(t("postSubmit"))+' →</button><div id="post-msg" role="status" class="full"></div></form>';
  showDrawer(html);
+ $("#post-form").querySelector("[name=category]").addEventListener("change",renderPostCategoryFields);
+ renderPostCategoryFields();
  let previews=[];
  $("#photos").addEventListener("change",e=>{
   previews.forEach(x=>URL.revokeObjectURL(x));previews=[];
@@ -203,6 +255,7 @@ async function openPost(){
    }
    const body={};
    ["title","description","category","deal_type","city","price","area","rooms","contact_name","contact_phone"].forEach(k=>body[k]=fd.get(k)||"");
+   body.attributes={};for(const [k,v] of fd.entries()){if(k.startsWith("a_")&&String(v).trim())body.attributes[k.slice(2)]=String(v).trim();}
    body.images=keys;
    if(postMarker){const p=postMarker.getLatLng();body.latitude=p.lat;body.longitude=p.lng;}else{body.latitude=null;body.longitude=null;}
    const result=await fetchJSON("/api/create",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
@@ -286,8 +339,9 @@ function init(){
  applyStatic();
  $$(".language").forEach(b=>b.addEventListener("click",()=>setLanguage(b.dataset.lang)));
  $("#hero-search").addEventListener("submit",e=>{e.preventDefault();navigateCurrent(filterQuery());$("#listings").scrollIntoView({behavior:"smooth"});});
+ $("#filter-category").addEventListener("change",renderAdvancedFilters);
  $("#apply-filters").addEventListener("click",()=>{navigateCurrent(filterQuery());$("#listings").scrollIntoView({behavior:"smooth"});});
- $$(".cat").forEach(b=>b.addEventListener("click",()=>{const p=filterQuery();p.set("category",b.dataset.category);navigateCurrent(p);$("#listings").scrollIntoView({behavior:"smooth"});}));
+ $$(".cat").forEach(b=>b.addEventListener("click",()=>{const p=filterQuery();p.set("category",b.dataset.category);advancedKeys.forEach(k=>p.delete(k));navigateCurrent(p);$("#listings").scrollIntoView({behavior:"smooth"});}));
  $$(".view-choice").forEach(b=>b.addEventListener("click",()=>setLayout(b.dataset.layout)));
  $("#cards").addEventListener("click",e=>{const b=e.target.closest("[data-open-id]");if(b)go("ad",{id:Number(b.dataset.openId)});const retry=e.target.closest("[data-retry]");if(retry){lastSearch=null;loadListings();}});
  $("#cards").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){const b=e.target.closest("[data-open-id]");if(b){e.preventDefault();go("ad",{id:Number(b.dataset.openId)});}}});
@@ -295,12 +349,9 @@ function init(){
  $("#map-board").addEventListener("click",e=>{const b=e.target.closest("[data-open-id]");if(b)go("ad",{id:Number(b.dataset.openId)});});
  $("#drawer-close").addEventListener("click",()=>go("home"));$("#drawer").addEventListener("click",e=>{if(e.target.hasAttribute("data-close"))go("home");});
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#drawer").hidden)go("home");});
- document.addEventListener("click",e=>{
-  const a=e.target.closest("a");if(!a)return;
-  if(!ON_APP&&!backendReady&&(a.href.startsWith(HOST)&&(!a.href.includes("_preview")))){e.preventDefault();toast(t("postNoSite"));}
- });
+ // Account navigation is always available, independent of listing API load.
  window.addEventListener("popstate",()=>{lastSearch=null;sync();});
- if(ON_APP&&window.hatchable?.auth)window.hatchable.auth.getSession().then(s=>{if(s?.user)$("#sign-in").textContent=t("navMine");}).catch(()=>{});
+ if(ON_APP&&window.hatchable?.auth)window.hatchable.auth.getSession().then(s=>{if(s?.user)$("#sign-in").textContent=t("navAccount");}).catch(()=>{});
  sync();
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
