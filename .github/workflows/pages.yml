@@ -45,6 +45,16 @@ jobs:
           grep -q 'function renderFavorites' app.js
           test -s hatchable/api/favorites.js
           test -s hatchable/migrations/0013_user_favorites.sql
+          test -s hatchable/migrations/0014_source_liveness.sql
+          test -s hatchable/api/jobs/verify-external.js
+          test -s hatchable/api/jobs/sync-external.js
+          grep -q 'source_missing_at IS NULL' hatchable/api/external.js
+          grep -q 'source_missing_confirmed_at' hatchable/api/jobs/verify-external.js
+          grep -q 'externalRefreshed' i18n.js
+          grep -q 'Last seen in RSS' i18n.js
+          grep -q 'last_imported_at' app.js
+          grep -q 'newestPublish' scripts/generate-seo.mjs
+          grep -q 'recentPriceMedian' scripts/generate-seo.mjs
           test -s hatchable/hatchable.toml
           grep -q 'function initializeFavoritesAccount' app.js
           grep -q 'MURDI_FAVS_TRANSFER_V1' app.js
@@ -107,6 +117,9 @@ jobs:
           ! grep -iq 'MURDIWORLD' index.html
           ! grep -iq 'MURDILIMAX Recovery' index.html
           node scripts/generate-seo.mjs _seo_validation
+          # No invented lastmod on the homepage, which has no underlying source change timestamp.
+          grep -q '<url><loc>https://murdilimax.com/</loc></url>' _seo_validation/sitemap.xml
+          ! grep -q 'const iso=new Date().toISOString().slice(0,10)' scripts/generate-seo.mjs
           grep -q 'https://murdilimax.com/en/cars/' _seo_validation/sitemap.xml
           test -s _seo_validation/lv/nekustamais-ipasums/index.html
           test -s _seo_validation/ru/nedvizhimost/index.html

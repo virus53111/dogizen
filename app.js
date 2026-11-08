@@ -452,7 +452,9 @@ async function loadListings(){
  $("#view-counter").textContent=t("found")+": "+(nativeCount+externalCount);
  let html=nativeItems.map(listingCard).join("");
  if(externalItems.length){
-  html+='<div class="source-intro"><div class="source-flag">'+esc(t("externalSection"))+' <span>SS.lv</span></div><h3>'+esc(t("externalTitle"))+'</h3><p>'+esc(t("externalDesc"))+'</p></div>';
+  const seenAt=externalData?.last_imported_at,seenText=seenAt&&Number.isFinite(Date.parse(seenAt))
+   ?'<p class="source-refreshed">↻ '+esc(t("externalRefreshed"))+': '+esc(new Date(seenAt).toLocaleString(localeTag[lang],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"}))+'</p>':"";
+  html+='<div class="source-intro"><div class="source-flag">'+esc(t("externalSection"))+' <span>SS.lv</span></div><h3>'+esc(t("externalTitle"))+'</h3><p>'+esc(t("externalDesc"))+'</p>'+seenText+'</div>';
   html+=externalItems.map(externalCard).join("");
  }
  if(!html){const filtered=[...query.keys()].some(k=>k!=="page");html=noResults(filtered);}

@@ -6,7 +6,12 @@
   const API="https://murdilimax.hatchable.site";
   const LANGS=["ru","lv","en"];
   const esc=(s)=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-  const iso=new Date().toISOString().slice(0,10);
+  // Google asks that sitemap lastmod reflect real substantial changes, not build time.
+  const validDate=s=>{const d=new Date(s);return Number.isFinite(d.getTime())?d.toISOString().slice(0,10):null;};
+  const newestPublish=items=>{
+    const dates=(items||[]).map(x=>Date.parse(x.updated_at||x.published_at||x.created_at)).filter(Number.isFinite);
+    return dates.length?new Date(Math.max(...dates)).toISOString().slice(0,10):null;
+  };
   const money=n=>new Intl.NumberFormat("en-GB",{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(Number(n)||0);
   const routes={
     realty:{ru:"nedvizhimost",lv:"nekustamais-ipasums",en:"real-estate"},
@@ -60,7 +65,7 @@
   const hrefLang=k=>["ru","lv","en"].map(l=>`<link rel="alternate" hreflang="${l}" href="${links(k,l)}">`).join("")+`<link rel="alternate" hreflang="x-default" href="${links(k,"ru")}">`;
   const homeAlternates=()=>["ru","lv","en"].map(l=>`<link rel="alternate" hreflang="${l}" href="${homeLink(l)}">`).join("")+`<link rel="alternate" hreflang="x-default" href="${BASE}/">`;
   const schema=x=>JSON.stringify(x).replace(/</g,"\\u003c");
-  const stylesheet=`@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap');:root{font-family:Manrope,Arial,sans-serif;color:#1c3355}*{box-sizing:border-box}body{margin:0;background:#f8faff}a{text-decoration:none;color:#245cdc}a:hover{text-decoration:underline}.shell{width:min(1110px,calc(100% - 32px));margin:auto}.header{background:#fff;border-bottom:1px solid #dfe7f6}.header .shell{min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:15px}.logo{font-size:23px;font-weight:800;letter-spacing:-1px}.languages{display:flex;gap:6px;align-items:center}.languages a{font-size:11px;font-weight:800;border-radius:8px;padding:9px;border:1px solid #dae6fb}.languages a.active{background:#2155e8;color:white}.hero{background:linear-gradient(115deg,#eaf8ff,#e7edff);padding:54px 0}.eyebrow{font-size:10px;letter-spacing:1.8px;font-weight:800;color:#386adb}.hero h1{font-size:clamp(32px,4.3vw,50px);letter-spacing:-1.8px;line-height:1.2;max-width:900px;margin:18px 0}.hero p{font-size:14px;line-height:1.85;max-width:810px;color:#637e9f}.cta{display:flex;gap:11px;flex-wrap:wrap;margin-top:24px}.cta a{display:inline-block;border-radius:10px;padding:13px 19px;background:#2155e8;color:#fff;font-size:12px;font-weight:800}.cta a.secondary{background:white;border:1px solid #bccff5;color:#245bd3}.main{padding:32px 0 70px}.panel{border:1px solid #e2eaf7;background:white;padding:25px;border-radius:16px;margin-bottom:21px}.panel h2{font-size:22px;letter-spacing:-.8px;margin:0 0 18px}.panel p{font-size:13px;line-height:1.85;color:#637b9b}.category-links{display:flex;flex-wrap:wrap;gap:9px}.category-links a{background:#f0f5ff;padding:11px 13px;border-radius:9px;font-size:12px;font-weight:800}.category-links a.current{background:#2155e8;color:white}.job-subnav{margin-top:16px;display:flex;flex-wrap:wrap;gap:12px}.job-subnav a{font-size:12px;font-weight:800;background:#e8f0ff;padding:9px 12px;border-radius:8px}.job-salary{font-size:13px!important;color:#2459c6!important;font-weight:800}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.offer{background:#fff;border:1px solid #e3ebf6;border-radius:12px;overflow:hidden;min-width:0}.offer img{width:100%;height:149px;object-fit:cover;background:#e9f2ff}.offer .photo-empty{height:149px;display:grid;place-items:center;background:#eaf3fc;color:#8eabde;font-size:39px}.offer .copy{padding:14px}.offer .price{font-weight:800;font-size:17px;color:#1e59da}.offer h3{font-size:12px;line-height:1.5;min-height:34px;color:#273954}.offer small{display:block;font-size:10px;color:#7187a5}.offer .label{display:inline-block;background:#e6edff;border-radius:6px;padding:5px 7px;color:#2459c6;font-size:10px;font-weight:800;margin-top:10px}.tips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.tips div{font-size:12px;line-height:1.9;background:#f0f6ff;border-radius:12px;padding:17px;color:#587398}.tips strong{display:block;color:#2159de;font-size:25px}.notice{font-size:11px;line-height:1.9;color:#806c4b;background:#fff5e4;padding:16px;border-radius:10px;margin-top:17px}.foot{background:#172b4e;color:#bdd1ef;padding:34px 0;font-size:12px;line-height:1.9}.foot strong{color:white;font-size:22px}.foot a{color:white}.breadcrumbs{margin-bottom:24px;color:#778aaa;font-size:12px}.item-detail{font-size:13px;line-height:1.9;white-space:pre-wrap;color:#506885}@media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tips{grid-template-columns:1fr}}@media(max-width:520px){.panel{padding:18px}.grid{gap:8px}.offer img,.offer .photo-empty{height:125px}.offer .copy{padding:10px}.offer h3{font-size:11px}.hero h1{letter-spacing:-1px}.logo{font-size:18px}.languages a{font-size:10px;padding:7px}}`;
+  const stylesheet=`@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap');:root{font-family:Manrope,Arial,sans-serif;color:#1c3355}*{box-sizing:border-box}body{margin:0;background:#f8faff}a{text-decoration:none;color:#245cdc}a:hover{text-decoration:underline}.shell{width:min(1110px,calc(100% - 32px));margin:auto}.header{background:#fff;border-bottom:1px solid #dfe7f6}.header .shell{min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:15px}.logo{font-size:23px;font-weight:800;letter-spacing:-1px}.languages{display:flex;gap:6px;align-items:center}.languages a{font-size:11px;font-weight:800;border-radius:8px;padding:9px;border:1px solid #dae6fb}.languages a.active{background:#2155e8;color:white}.hero{background:linear-gradient(115deg,#eaf8ff,#e7edff);padding:54px 0}.eyebrow{font-size:10px;letter-spacing:1.8px;font-weight:800;color:#386adb}.hero h1{font-size:clamp(32px,4.3vw,50px);letter-spacing:-1.8px;line-height:1.2;max-width:900px;margin:18px 0}.hero p{font-size:14px;line-height:1.85;max-width:810px;color:#637e9f}.cta{display:flex;gap:11px;flex-wrap:wrap;margin-top:24px}.cta a{display:inline-block;border-radius:10px;padding:13px 19px;background:#2155e8;color:#fff;font-size:12px;font-weight:800}.cta a.secondary{background:white;border:1px solid #bccff5;color:#245bd3}.main{padding:32px 0 70px}.panel{border:1px solid #e2eaf7;background:white;padding:25px;border-radius:16px;margin-bottom:21px}.panel h2{font-size:22px;letter-spacing:-.8px;margin:0 0 18px}.panel p{font-size:13px;line-height:1.85;color:#637b9b}.category-links{display:flex;flex-wrap:wrap;gap:9px}.category-links a{background:#f0f5ff;padding:11px 13px;border-radius:9px;font-size:12px;font-weight:800}.category-links a.current{background:#2155e8;color:white}.job-subnav{margin-top:16px;display:flex;flex-wrap:wrap;gap:12px}.job-subnav a{font-size:12px;font-weight:800;background:#e8f0ff;padding:9px 12px;border-radius:8px}.job-salary{font-size:13px!important;color:#2459c6!important;font-weight:800}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:13px}.offer{background:#fff;border:1px solid #e3ebf6;border-radius:12px;overflow:hidden;min-width:0}.offer img{width:100%;height:149px;object-fit:cover;background:#e9f2ff}.offer .photo-empty{height:149px;display:grid;place-items:center;background:#eaf3fc;color:#8eabde;font-size:39px}.offer .copy{padding:14px}.offer .price{font-weight:800;font-size:17px;color:#1e59da}.offer h3{font-size:12px;line-height:1.5;min-height:34px;color:#273954}.offer small{display:block;font-size:10px;color:#7187a5}.live-summary{padding:11px 14px;background:#edf5ff;border:1px solid #cddff9;border-radius:9px;color:#2c558d!important;font-weight:700}.live-median{padding:8px 14px;color:#4b668b!important;font-size:12px!important}.offer .label{display:inline-block;background:#e6edff;border-radius:6px;padding:5px 7px;color:#2459c6;font-size:10px;font-weight:800;margin-top:10px}.tips{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}.tips div{font-size:12px;line-height:1.9;background:#f0f6ff;border-radius:12px;padding:17px;color:#587398}.tips strong{display:block;color:#2159de;font-size:25px}.notice{font-size:11px;line-height:1.9;color:#806c4b;background:#fff5e4;padding:16px;border-radius:10px;margin-top:17px}.foot{background:#172b4e;color:#bdd1ef;padding:34px 0;font-size:12px;line-height:1.9}.foot strong{color:white;font-size:22px}.foot a{color:white}.breadcrumbs{margin-bottom:24px;color:#778aaa;font-size:12px}.item-detail{font-size:13px;line-height:1.9;white-space:pre-wrap;color:#506885}@media(max-width:800px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.tips{grid-template-columns:1fr}}@media(max-width:520px){.panel{padding:18px}.grid{gap:8px}.offer img,.offer .photo-empty{height:125px}.offer .copy{padding:10px}.offer h3{font-size:11px}.hero h1{letter-spacing:-1px}.logo{font-size:18px}.languages a{font-size:10px;padding:7px}}`;
   function header(l,k){
     const options=LANGS.map(v=>({code:v,href:k?links(k,v):homeLink(v)}));
     return `<header class="header"><div class="shell"><a href="${BASE}/" class="logo">murdilimax ✦</a><nav class="languages">${options.map(v=>`<a href="${v.href}" hreflang="${v.code}" class="${l===v.code?"active":""}">${v.code.toUpperCase()}</a>`).join("")}</nav></div></header>`;
@@ -87,8 +92,18 @@
    en:{vacancy:["Job vacancies in Latvia","Current employer offers for drivers, salespeople, cooks, builders and other roles. Confirm conditions with the original publisher."],seeking:["Seeking work in Latvia","Job seekers available for opportunities. Post your own profile for free so employers can contact you."],none:"There are no job seeker posts yet. You can publish the first one."}
   };
   const jobNavigation=lang=>'<div class="job-subnav">'+["vacancy","seeking"].map(kind=>'<a href="'+jobSubUrl(lang,kind)+'">'+esc(workCopy[lang][kind][0])+'</a>').join(" · ")+'</div>';
-  const offers={};
-  for(const k of Object.keys(routes))offers[k]=(await json("/api/external?category="+k+(k==="jobs"?"&job_type=vacancy":""))).items||[];
+  const offers={},offerCounts={};
+  for(const k of Object.keys(routes)){
+    const data=await json("/api/external?category="+k+(k==="jobs"?"&job_type=vacancy":""));
+    offers[k]=Array.isArray(data.items)?data.items:[];
+    offerCounts[k]=Number.isSafeInteger(data.total)?data.total:null;
+  }
+  const sourceSummary=(l,k,count)=>{
+    if(count==null)return "";
+    if(l==="ru")return k==="jobs"?"Сейчас в нашей RSS-подборке "+count+" вакансий. Данные обновляются автоматически каждые 6 часов.":"Сейчас в нашей RSS-подборке "+count+" предложений. Данные обновляются автоматически каждые 6 часов.";
+    if(l==="lv")return k==="jobs"?"Pašlaik mūsu RSS atlasē ir "+count+" vakances. Dati tiek atjaunināti ik pēc 6 stundām.":"Pašlaik mūsu RSS atlasē ir "+count+" piedāvājumi. Dati tiek atjaunināti ik pēc 6 stundām.";
+    return k==="jobs"?"Our RSS collection currently has "+count+" job listings. Data refreshes every 6 hours.":"Our RSS collection currently has "+count+" listings. Data refreshes every 6 hours.";
+  };
   const nativeSeekers=(await json("/api/listings?category=jobs&job_type=seeking")).items||[];
   const externalSeekers=(await json("/api/external?category=jobs&job_type=seeking")).items||[];
   const seekerRoleNames={
@@ -101,7 +116,22 @@
   const seekerName=(a,lang)=>seekerRoleNames[a.attributes?.profession]?.[lang]
     ?({ru:"Ищу работу ",lv:"Meklēju darbu kā ",en:"Seeking work as a "}[lang]+seekerRoleNames[a.attributes.profession][lang])
     :a.title;
-  const indexed=new Set([BASE+"/"]);
+  // These are descriptive statistics about the latest sampled feed listings, not market-wide prices.
+  function recentPriceMedian(key){
+    if(!["cars","electronics","home"].includes(key))return null;
+    const prices=(offers[key]||[]).filter(x=>!x.price_unit||x.price_unit==="total")
+      .map(x=>Number(x.price)).filter(x=>Number.isFinite(x)&&x>0).sort((a,b)=>a-b);
+    if(prices.length<5)return null;
+    const i=prices.length/2;
+    return {count:prices.length,value:prices.length%2?prices[Math.floor(i)]:(prices[i-1]+prices[i])/2};
+  }
+  function medianText(l,value){
+    if(!value)return "";
+    if(l==="ru")return "Медианная цена по выборке из "+value.count+" недавно опубликованных объявлений: "+money(value.value)+". Это не оценка всего рынка.";
+    if(l==="lv")return "Mediānā cena "+value.count+" nesen publicētu sludinājumu izlasē: "+money(value.value)+". Tā nav visa tirgus cenas aplēse.";
+    return "Median price in a sample of "+value.count+" recently published offers: "+money(value.value)+". This is not a market-wide estimate.";
+  }
+  const indexed=new Map([[BASE+"/",null]]);
   await write("seo.css",stylesheet);
   for(const lang of LANGS){
     const t=textContent[lang];
@@ -111,7 +141,7 @@
       const main=header(lang)+`<section class="hero"><div class="shell"><div class="eyebrow">MURDILIMAX · LATVIA</div><h1>${esc(t.heading)}</h1><p>${esc(t.lead)}</p><div class="cta"><a href="${BASE}/?lang=${lang}">${esc(t.browse)} →</a><a class="secondary" href="${BASE}/?view=post&lang=${lang}">${esc(t.post)}</a></div></div></section><main class="shell main"><div class="panel"><h2>${esc(t.categories)}</h2>${categories(lang)}</div></main>`+footer(lang);
       const structured={"@context":"https://schema.org","@type":"WebPage",name:t.heading,description:t.lead,url,inLanguage:lang};
       await write(lang+"/index.html",head(lang,title,t.lead.slice(0,158),url,homeAlternates(),structured)+main+"</body></html>");
-      indexed.add(url);
+      indexed.set(url,null);
     }
     for(const key of Object.keys(routes)){
       const [name,h1,lead,...tips]=t[key],canonical=links(key,lang);
@@ -132,10 +162,10 @@
       }).join("");
       const breadcrumb={"@type":"BreadcrumbList",itemListElement:[{"@type":"ListItem",position:1,name:"MURDILIMAX",item:homeLink(lang)},{"@type":"ListItem",position:2,name,item:canonical}]};
       const structured={"@context":"https://schema.org","@graph":[{"@type":"CollectionPage",name:h1,description,url:canonical,inLanguage:lang},breadcrumb]};
-      const main=header(lang,key)+`<section class="hero"><div class="shell"><div class="eyebrow">MURDILIMAX · LATVIA</div><h1>${esc(h1)}</h1><p>${esc(lead)}</p><div class="cta"><a href="${BASE}/?lang=${lang}&category=${key}">${esc(t.browse)} →</a><a href="${BASE}/?lang=${lang}&view=post" class="secondary">${esc(t.post)}</a></div></div></section><main class="shell main"><div class="breadcrumbs"><a href="${homeLink(lang)}">MURDILIMAX</a> / ${esc(name)}</div><section class="panel"><h2>${esc(t.categories)}</h2>${cats}${key==="jobs"?jobNavigation(lang):""}</section><section class="panel"><h2>${esc(t.source)}</h2><p>${esc(lead)}</p>${cards?`<div class="grid">${cards}</div>`:""}<div class="notice">${esc(t.sourceNotice)}</div></section><section class="panel"><h2>${esc(t.tips)}</h2><div class="tips">${tips.map((s,i)=>`<div><strong>${String(i+1).padStart(2,"0")}</strong>${esc(s)}</div>`).join("")}</div></section></main>`+footer(lang);
+      const main=header(lang,key)+`<section class="hero"><div class="shell"><div class="eyebrow">MURDILIMAX · LATVIA</div><h1>${esc(h1)}</h1><p>${esc(lead)}</p><div class="cta"><a href="${BASE}/?lang=${lang}&category=${key}">${esc(t.browse)} →</a><a href="${BASE}/?lang=${lang}&view=post" class="secondary">${esc(t.post)}</a></div></div></section><main class="shell main"><div class="breadcrumbs"><a href="${homeLink(lang)}">MURDILIMAX</a> / ${esc(name)}</div><section class="panel"><h2>${esc(t.categories)}</h2>${cats}${key==="jobs"?jobNavigation(lang):""}</section><section class="panel"><h2>${esc(t.source)}</h2><p>${esc(lead)}</p>${offerCounts[key]!=null?`<p class="live-summary">${esc(sourceSummary(lang,key,offerCounts[key]))}</p>`:""}${recentPriceMedian(key)?`<p class="live-median">${esc(medianText(lang,recentPriceMedian(key)))}</p>`:""}${cards?`<div class="grid">${cards}</div>`:""}<div class="notice">${esc(t.sourceNotice)}</div></section><section class="panel"><h2>${esc(t.tips)}</h2><div class="tips">${tips.map((s,i)=>`<div><strong>${String(i+1).padStart(2,"0")}</strong>${esc(s)}</div>`).join("")}</div></section></main>`+footer(lang);
       const alternates=LANGS.map(l=>`<link rel="alternate" hreflang="${l}" href="${links(key,l)}">`).join("")+`<link rel="alternate" hreflang="x-default" href="${links(key,"ru")}">`;
       await write(lang+"/"+routes[key][lang]+"/index.html",head(lang,title,description,canonical,alternates,structured)+main+"</body></html>");
-      indexed.add(canonical);
+      indexed.set(canonical,newestPublish(offers[key]));
     }
     // Dedicated SEO landing pages for vacancies and people seeking employment.
     for(const kind of ["vacancy","seeking"]){
@@ -154,7 +184,7 @@
       const main=header(lang,"jobs")+'<section class="hero"><div class="shell"><div class="eyebrow">MURDILIMAX · JOBS</div><h1>'+esc(heading)+'</h1><p>'+esc(lead)+'</p><div class="cta"><a href="'+ctaList+'">'+esc(t.browse)+' →</a><a href="'+ctaPost+'" class="secondary">'+esc(t.post)+'</a></div></div></section><main class="shell main"><div class="panel"><h2>'+esc(t.categories)+'</h2>'+categories(lang,"jobs")+jobNavigation(lang)+'</div><div class="panel"><h2>'+esc(heading)+'</h2><p>'+esc(lead)+'</p>'+(cards?'<div class="grid">'+cards+'</div>':'<p class="notice">'+esc(workCopy[lang].none)+'</p>')+'</div></main>'+footer(lang);
       const structured={"@context":"https://schema.org","@type":"CollectionPage",name:heading,description:lead,url:canonical,inLanguage:lang};
       await write(lang+"/"+routes.jobs[lang]+"/"+jobSubSlugs[kind][lang]+"/index.html",head(lang,title,lead.slice(0,165),canonical,alternates,structured)+main+"</body></html>");
-      indexed.add(canonical);
+      indexed.set(canonical,newestPublish(kind==="vacancy"?(offers.jobs||[]):[...externalSeekers,...nativeSeekers]));
     }
   }
   // Index unique first-party content only; external SS.lv items remain links to SS.lv.
@@ -168,12 +198,12 @@
       const structured={"@context":"https://schema.org","@type":"WebPage",name:ad.title,url:canonical,description:desc,datePublished:ad.created_at};
       const main=header("ru")+`<main class="shell main"><div class="breadcrumbs"><a href="${BASE}/">MURDILIMAX</a> / ${esc(ad.category)} / ${id}</div><section class="panel"><div class="eyebrow">MURDILIMAX · № ${id}</div><h1>${esc(ad.title)}</h1><p>${esc(ad.city)} · ${esc(ad.created_at?.slice(0,10)||"")}</p><h2>${esc(money(ad.price))}</h2><p class="item-detail">${esc(ad.description)}</p><div class="cta"><a href="${BASE}/?view=ad&id=${id}">Открыть объявление и связаться с продавцом →</a></div><div class="notice">Уточняйте наличие и цену у продавца до оплаты.</div></section></main>`+footer("ru");
       await write("ads/"+id+"/index.html",head("ru",ad.title+" — "+ad.city+" | MURDILIMAX",desc,canonical,"",structured)+main+"</body></html>");
-      indexed.add(canonical);
+      indexed.set(canonical,validDate(ad.updated_at||ad.created_at));
     }
     if(d.items.length<24)break;
   }
-  const urls=[...indexed];
-  await write("sitemap.xml",'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+urls.map(url=>`<url><loc>${esc(url)}</loc><lastmod>${iso}</lastmod></url>`).join("\n")+'\n</urlset>\n');
+  const urls=[...indexed.entries()];
+  await write("sitemap.xml",'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'+urls.map(([url,lastmod])=>`<url><loc>${esc(url)}</loc>${lastmod?`<lastmod>${lastmod}</lastmod>`:""}</url>`).join("\n")+'\n</urlset>\n');
   await write("robots.txt","User-agent: *\nAllow: /\nSitemap: https://murdilimax.com/sitemap.xml\n");
-  console.log("MURDILIMAX SEO: generated",urls.length,"indexable URLs; source:",API,"; date:",iso);
+  console.log("MURDILIMAX SEO: generated",urls.length,"indexable URLs; source:",API,"; no artificial build-date lastmod");
 })();
