@@ -68,6 +68,12 @@ jobs:
           import -display "$DISPLAY" -window root screenshots/murdiworld-actual-gameplay.png
           identify screenshots/murdiworld-actual-gameplay.png
           test "$(stat -c %s screenshots/murdiworld-actual-gameplay.png)" -gt 25000
+          # Close the initial MURDIWORLD quest guide, then capture the actual 3D world.
+          xdotool mousemove 824 570 click 1
+          sleep 8
+          import -display "$DISPLAY" -window root screenshots/murdiworld-world.png
+          identify screenshots/murdiworld-world.png
+          test "$(stat -c %s screenshots/murdiworld-world.png)" -gt 25000
           kill "$PID" || true
       - name: Upload actual screenshot, engine log and QA evidence
         if: always()
@@ -75,7 +81,7 @@ jobs:
         with:
           name: MURDIWORLD-real-gameplay-evidence
           path: |
-            screenshots/murdiworld-actual-gameplay.png
+            screenshots/murdiworld-*.png
             /tmp/mw/luanti.log
           if-no-files-found: warn
       - name: Publish screenshot for honest preview
@@ -85,6 +91,6 @@ jobs:
           test -s screenshots/murdiworld-actual-gameplay.png
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add screenshots/murdiworld-actual-gameplay.png
+          git add screenshots/murdiworld-*.png
           git commit -m 'Add actual MURDIWORLD gameplay screenshot from real Luanti+VoxeLibre session'
           git push
