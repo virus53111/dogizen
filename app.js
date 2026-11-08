@@ -162,7 +162,7 @@ function externalCard(a){
  return '<article class="listing-card external-card"><a class="external-card-link" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(title)+' · SS.lv">'+
    '<div class="listing-thumb '+(!a.image_url?"no-photo":"")+'">'+image+'</div>'+
    '<div class="listing-info">'+heading+'<div class="listing-meta"><span>⌖ '+esc(a.city)+(info?' · '+esc(info):'')+'</span><span>'+esc(date(a.published_at))+'</span></div>'+
-   '<div class="external-open"><span>'+esc(t("externalOpen"))+' · SS.lv</span><span>↗</span></div></div></a></article>';
+   '<div class="external-open"><span>'+esc(t("externalOpen"))+' · SS.lv</span><span>↗</span></div></div></a><button type="button" class="listing-report" data-report-kind="external" data-report-id="'+Number(a.id)+'" aria-label="'+esc(t("reportButton"))+'">⚑ '+esc(t("reportButton"))+'</button></article>';
 }
 async function loadListings(){
  const p=params(),query=new URLSearchParams();
@@ -413,7 +413,7 @@ async function openDetails(id){
   const specs=[a.city,cat(a.category),t(dealKeys[a.deal_type]||"sale")];if(a.area)specs.push(a.area+" m²");if(a.rooms)specs.push(t("rooms")+": "+a.rooms);
   $("#detail").innerHTML=pictures+'<h2>'+esc(a.title)+'</h2>'+(displayPrice(a)?'<div class="detail-price">'+esc(displayPrice(a))+'</div>':'')+'<div class="detail-specs">'+specs.map(s=>'<span>'+esc(s)+'</span>').join("")+'</div><p class="detail-desc">'+esc(a.description)+'</p>'+
   (hasCoords?'<h3>'+esc(t("detailLocation"))+'</h3><div class="detail-map" id="detail-map"></div>':'')+
-  '<section class="detail-contact"><h3>'+esc(t("detailContact"))+'</h3><p>'+esc(a.contact_name)+'</p>'+phone+'</section><p class="drawer-subtle">'+esc(t("detailSafety"))+'</p><p class="drawer-subtle">'+esc(t("adDate"))+': '+esc(date(a.created_at))+'</p>';
+  '<section class="detail-contact"><h3>'+esc(t("detailContact"))+'</h3><p>'+esc(a.contact_name)+'</p>'+phone+'</section><p class="drawer-subtle">'+esc(t("detailSafety"))+'</p><button type="button" class="listing-report detail-report" data-report-kind="native" data-report-id="'+Number(a.id)+'">⚑ '+esc(t("reportButton"))+'</button><p class="drawer-subtle">'+esc(t("adDate"))+': '+esc(date(a.created_at))+'</p>';
   if(hasCoords&&window.L){
    requestAnimationFrame(()=>{
     if(!$("#detail-map"))return;
@@ -443,6 +443,32 @@ async function openAdmin(){
   catch(err){toast(err.message);b.disabled=false;}
  });
 }
+function openReport(kind,rawId){
+ const id=Number(rawId);
+ if(!["native","external"].includes(kind)||!Number.isSafeInteger(id)||id<1){go("home");return;}
+ if(!ON_APP){location.href=HOST+route("report",{kind,id});return;}
+ const reasons=[["fraud","reportFraud"],["prohibited","reportProhibited"],["misleading","reportMisleading"],["privacy","reportPrivacy"],["broken","reportBroken"],["other","reportOther"]];
+ const content='<span class="kicker">'+esc(t("reportKicker"))+'</span><h2>'+esc(t("reportTitle"))+'</h2>'+
+  '<p class="hint">'+esc(t("reportHelp"))+'</p>'+
+  '<form id="report-form" class="report-form">'+
+  '<label>'+esc(t("reportReason"))+'<select name="reason" required>'+reasons.map(([value,key])=>'<option value="'+value+'">'+esc(t(key))+'</option>').join("")+'</select></label>'+
+  '<label>'+esc(t("reportDetails"))+'<textarea name="details" maxlength="600" rows="5" placeholder="'+esc(t("reportPlaceholder"))+'"></textarea></label>'+
+  '<p class="hint">'+esc(t("reportLoginNotice"))+'</p><button class="primary-action" type="submit">'+esc(t("reportSend"))+'</button><div id="report-message" role="status"></div></form>';
+ showDrawer(content);
+ $("#report-form").addEventListener("submit",async e=>{
+  e.preventDefault();
+  const form=e.target,button=form.querySelector('[type="submit"]'),message=$("#report-message");
+  button.disabled=true;message.textContent="";
+  try{
+   const auth=window.hatchable?.auth,session=await auth?.getSession?.();
+   if(!session?.user){location.href="/login?next="+encodeURIComponent(route("report",{kind,id}))+"&lang="+lang;return;}
+   const body={target_type:kind,target_id:id,reason:form.elements.reason.value,details:form.elements.details.value.trim()};
+   await fetchJSON("/api/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+   form.innerHTML='<div class="notice">✓ '+esc(t("reportSuccess"))+'</div><a class="modal-link" href="/?lang='+lang+'">'+esc(t("navAll"))+' →</a>';
+  }catch(error){message.innerHTML='<div class="notice error">'+esc(error.message||t("unknownError"))+'</div>';}
+  finally{button.disabled=false;}
+ });
+}
 function openAbout(){showDrawer('<span class="kicker">MURDILIMAX</span><h2>'+esc(t("aboutTitle"))+'</h2><p class="detail-desc">'+esc(t("aboutText"))+'</p><div class="notice">'+esc(t("aboutNote"))+'</div>');}
 function sync(){
  readFilters();
@@ -453,6 +479,7 @@ function sync(){
  if(view==="admin")return openAdmin();
  if(view==="about"){openAbout();return;}
  if(view==="ad")return openDetails(p.get("id"));
+ if(view==="report")return openReport(p.get("kind"),p.get("id"));
  closeDrawer();loadListings();
 }
 function navigateCurrent(p){history.pushState({}, "", "/?"+p.toString());lastSearch=null;sync();}
@@ -465,10 +492,11 @@ function init(){
  $("#apply-filters").addEventListener("click",()=>{navigateCurrent(filterQuery());$("#listings").scrollIntoView({behavior:"smooth"});});
  $$(".cat").forEach(b=>b.addEventListener("click",()=>{const p=filterQuery();p.set("category",b.dataset.category);advancedKeys.forEach(k=>p.delete(k));p.delete("job_type");navigateCurrent(p);$("#listings").scrollIntoView({behavior:"smooth"});}));
  $$(".view-choice").forEach(b=>b.addEventListener("click",()=>setLayout(b.dataset.layout)));
- $("#cards").addEventListener("click",e=>{const b=e.target.closest("[data-open-id]");if(b)go("ad",{id:Number(b.dataset.openId)});const retry=e.target.closest("[data-retry]");if(retry){lastSearch=null;loadListings();}});
+ $("#cards").addEventListener("click",e=>{const report=e.target.closest("[data-report-kind]");if(report){go("report",{kind:report.dataset.reportKind,id:Number(report.dataset.reportId)});return;}const b=e.target.closest("[data-open-id]");if(b)go("ad",{id:Number(b.dataset.openId)});const retry=e.target.closest("[data-retry]");if(retry){lastSearch=null;loadListings();}});
  $("#cards").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){const b=e.target.closest("[data-open-id]");if(b){e.preventDefault();go("ad",{id:Number(b.dataset.openId)});}}});
  $("#pagination").addEventListener("click",e=>{const b=e.target.closest("[data-page]");if(!b)return;const p=filterQuery();p.set("page",b.dataset.page);navigateCurrent(p);$("#listings").scrollIntoView({behavior:"smooth"});});
  $("#map-board").addEventListener("click",e=>{const b=e.target.closest("[data-open-id]");if(b)go("ad",{id:Number(b.dataset.openId)});});
+ $("#drawer-body").addEventListener("click",e=>{const report=e.target.closest("[data-report-kind]");if(report)go("report",{kind:report.dataset.reportKind,id:Number(report.dataset.reportId)});});
  $("#drawer-close").addEventListener("click",()=>go("home"));$("#drawer").addEventListener("click",e=>{if(e.target.hasAttribute("data-close"))go("home");});
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#drawer").hidden)go("home");});
  // Account navigation is always available, independent of listing API load.

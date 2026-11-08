@@ -30,6 +30,11 @@ jobs:
           test -s hatchable/public/account.html
           test -s hatchable/api/edit.js
           test -s hatchable/api/upload-cancel.js
+          test -s hatchable/api/report.js
+          test -s hatchable/migrations/0012_listing_reports.sql
+          grep -q 'function openReport' app.js
+          grep -q 'reportSuccess' i18n.js
+          grep -q 'data-report-id' hatchable/public/staff-ui.js
           grep -q 'async function optimizePhoto' app.js
           grep -q '/api/upload-cancel' app.js
           grep -q 'postPhotoPreparing' i18n.js

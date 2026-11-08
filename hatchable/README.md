@@ -4,6 +4,13 @@ Project: `proj_E4sXfkYysFlf` (`murdilimax.hatchable.site`).
 
 This directory stores the changed Hatchable files for code review. The actual deployed source and PostgreSQL database live in Hatchable, not on GitHub Pages. Do not treat these files as automatically deployed.
 
+## Changes in v24
+- `migrations/0012_listing_reports.sql`: moderated report queue with duplicate prevention and review metadata.
+- `api/report.js`: user-authenticated reports for native and SS.lv listings, verified targets, limits and ban checks.
+- `api/staff.js`: review queue, summary count and owner/moderator-only review actions including hiding an offending listing.
+- `public/staff-ui.js` / `public/admin.html`: closed staff report queue with review, reject and hide controls.
+- `public/app.js`, `public/i18n.js`, `public/style.css`: report links, report form and RU/LV/EN mobile styling.
+
 ## Changes in v23
 - `api/upload-cancel.js`: authenticated, owner-scoped cleanup of unlinked photos after a failed submission. Keys already referenced by `classified_images` are never deleted.
 - `public/app.js`: thumbnail manager, photo reorder/remove, incremental selections, large-photo optimization with Canvas/WebP, and error recovery.
