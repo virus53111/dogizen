@@ -13,7 +13,7 @@ AppSupportURL=https://murdilimax.com/guide/
 DefaultDirName={localappdata}\Programs\MURDIWORLD
 DefaultGroupName=MURDIWORLD
 PrivilegesRequired=lowest
-OutputDir=_mwbuild\dist
+OutputDir=..\_mwbuild\dist
 OutputBaseFilename=MURDIWORLD-Setup-0.2.0
 Compression=lzma2
 SolidCompression=yes
@@ -29,12 +29,12 @@ RestartApplications=no
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
-Source: "_mwbuild\stage\MURDIWORLD.exe"; DestDir: "{app}"; Flags: ignoreversion
-Source: "_mwbuild\stage\engine\*"; DestDir: "{app}\engine"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "_mwbuild\stage\world-template\*"; DestDir: "{app}\world-template"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "_mwbuild\stage\config\*"; DestDir: "{app}\config"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "_mwbuild\stage\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "murdiworld\THIRD_PARTY_NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\_mwbuild\stage\MURDIWORLD.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "..\_mwbuild\stage\engine\*"; DestDir: "{app}\engine"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\_mwbuild\stage\world-template\*"; DestDir: "{app}\world-template"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\_mwbuild\stage\config\*"; DestDir: "{app}\config"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "..\_mwbuild\stage\assets\*"; DestDir: "{app}\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "THIRD_PARTY_NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
 [Icons]
 Name: "{group}\MURDIWORLD"; Filename: "{app}\{#AppExe}"
 Name: "{autodesktop}\MURDIWORLD"; Filename: "{app}\{#AppExe}"
