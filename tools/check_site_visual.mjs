@@ -29,7 +29,7 @@ try{
     await page.goto('http://127.0.0.1:4189/',{waitUntil:'domcontentloaded',timeout:20000});
     await page.locator('#hero-title').waitFor();
     assert.equal(await page.title(),'MURDIWORLD — Твой мир. Твоя легенда.');
-    assert.equal(await page.locator('a[href="/downloads/MURDIWORLD_Prototype_0.1.zip"]').count(),1);
+    assert.equal(await page.locator('a[href="https://github.com/virus53111/dogizen/releases/download/v0.2.0/MURDIWORLD-Setup-0.2.0.exe"]').count(),1);
     assert(await page.locator('#screenshots').isVisible());
     await page.evaluate(()=>document.fonts.ready);
     await page.screenshot({path:'site-preview/'+name+'.png',fullPage:true,animations:'disabled'});
