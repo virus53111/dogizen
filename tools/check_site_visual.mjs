@@ -5,7 +5,7 @@ import path from 'node:path';
 import assert from 'node:assert/strict';
 
 const root=process.cwd();
-const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.zip':'application/zip'};
+const types={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.webp':'image/webp','.zip':'application/zip'};
 const server=createServer((req,res)=>{
   let pathname=decodeURIComponent((req.url||'/').split('?')[0]);
   if (pathname.includes('..')) {res.writeHead(400);res.end();return;}
@@ -39,6 +39,11 @@ try{
     const r=await page.request.get('http://127.0.0.1:4189/downloads/MURDIWORLD_Prototype_0.1.zip');
     assert.equal(r.status(),200);
     assert((await r.body()).byteLength>15000);
+    const art=await page.request.get('http://127.0.0.1:4189/assets/hero-crystal.webp');
+    assert.equal(art.status(),200);
+    assert((await art.body()).byteLength>150000);
+    assert(await page.evaluate(async()=>{const img=new Image();img.src='/assets/hero-crystal.webp';await img.decode();return img.naturalWidth>=1400}),'Hero image cannot load');
+
     console.log(name+' rendering: PASS ('+width+'x'+height+').');
     await page.close();
   }
