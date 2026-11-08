@@ -18,6 +18,22 @@ assert(fs.readFileSync('assets/murdiworld-site.css','utf8').includes('@media(max
 assert(homepage.includes('href="#screenshots"'));
 assert(homepage.includes('https://raw.githubusercontent.com/virus53111/dogizen/main/screenshots/murdiworld-world.png'));
 assert(homepage.includes('https://raw.githubusercontent.com/virus53111/dogizen/main/screenshots/murdiworld-actual-gameplay.png'));
+const artwork = [
+  ['hero-crystal.webp','171b1739db5fe02407a45b248be9a0b7807e8829f364996e12a61a9e03520038'],
+  ['village-crystal.webp','ed310147a5373cb0fd7abf90c7340dc6ca73599810672aead872445c5d096880'],
+  ['cave-crystal.webp','1995321e6b27982f836a9306d5a3028c3b97396cea1321c7cc8bfd1595858412'],
+  ['friends-build.webp','022ddc464adaba07834e0637da8dd759672d6d1283980d3184dca62ca91ba896'],
+];
+for (const [name,digest] of artwork){
+  const path='assets/'+name;
+  const file=fs.readFileSync(path);
+  assert(file.byteLength>90000,'Artwork unexpectedly small: '+name);
+  assert.equal(crypto.createHash('sha256').update(file).digest('hex'),digest,'Corrupt artwork '+name);
+  assert(homepage.includes('/'+path)||fs.readFileSync('assets/murdiworld-site.css','utf8').includes('/'+path),'Artwork unreferenced: '+name);
+}
+assert(homepage.includes('концепт'),'Marketing art must be labeled as a concept');
+assert(homepage.includes('настоящие снимки')||homepage.includes('настоящие кадры')||homepage.includes('настоящие снимки'.toUpperCase())||homepage.includes('настоящие снимки'.toLowerCase()),'Must explain genuine screenshots');
+
 assert((homepage.match(/<img /g)||[]).length>=6,'Missing real game media and game scenes');
 assert(!homepage.includes('Сервер онлайн'),'Do not pretend a public multiplayer server exists');
 
