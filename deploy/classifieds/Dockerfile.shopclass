@@ -1,0 +1,8 @@
+# Official ShopClass stable production image: PHP-FPM, nginx and application.
+# Pin a tested stable tag, not :latest or a development branch.
+FROM ghcr.io/mindstellar/shopclass:7.0.16
+COPY shopclass-entrypoint.sh /usr/local/bin/murdilimax-shopclass-entrypoint
+RUN chmod 755 /usr/local/bin/murdilimax-shopclass-entrypoint
+ENTRYPOINT ["/usr/local/bin/murdilimax-shopclass-entrypoint"]
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+EXPOSE 80
