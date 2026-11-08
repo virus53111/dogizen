@@ -4,6 +4,12 @@ Project: `proj_E4sXfkYysFlf` (`murdilimax.hatchable.site`).
 
 This directory stores the changed Hatchable files for code review. The actual deployed source and PostgreSQL database live in Hatchable, not on GitHub Pages. Do not treat these files as automatically deployed.
 
+## Changes in v26
+- `public/index.html`: results-level search, mobile filter button and active-filter summary.
+- `public/app.js`: query synchronization, remove-one/reset-all filter chips and accessible mobile toggle.
+- `public/i18n.js`, `public/style.css`: RU/LV/EN labels and responsive touch-friendly search controls.
+- Public site source is synchronized to GitHub Pages using the root-level files; backend remains on Hatchable.
+
 ## Changes in v25
 - `api/edit.js`: owner-only photo changes (up to six), strict owned-key validation, collision prevention, atomic SQL update and automatic moderation.
 - `api/mine.js`: returns ordered photo URLs and owner-specific keys for safe editing.

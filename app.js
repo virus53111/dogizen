@@ -122,7 +122,7 @@ function renderPostCategoryFields(){
 }
 function filterQuery(){
  const p=new URLSearchParams({lang,view:"home"});
- const q=$("#hero-q").value.trim(),cat=$("#filter-category").value,city=$("#filter-city").value.trim(),min=$("#filter-min").value,max=$("#filter-max").value,sort=$("#filter-sort").value;
+ const q=$("#filter-q").value.trim(),cat=$("#filter-category").value,city=$("#filter-city").value.trim(),min=$("#filter-min").value,max=$("#filter-max").value,sort=$("#filter-sort").value;
  if(q)p.set("q",q);if(cat!=="all")p.set("category",cat);if(city)p.set("city",city);
  if(cat==="jobs"&&["vacancy","seeking"].includes(params().get("job_type")))p.set("job_type",params().get("job_type"));
  if(min!=="")p.set("min",min);if(max!=="")p.set("max",max);if(sort!=="new")p.set("sort",sort);
@@ -130,14 +130,45 @@ function filterQuery(){
  return p;
 }
 function readFilters(){
- const p=params(),map={q:"#hero-q",category:"#filter-category",city:"#filter-city",min:"#filter-min",max:"#filter-max",sort:"#filter-sort"};
+ const p=params(),map={q:"#filter-q",category:"#filter-category",city:"#filter-city",min:"#filter-min",max:"#filter-max",sort:"#filter-sort"};
  Object.entries(map).forEach(([key,sel])=>{const el=$(sel);if(el)el.value=p.get(key)||(key==="category"?"all":key==="sort"?"new":"");});
+  $("#hero-q").value=p.get("q")||"";
  $$(".cat").forEach(el=>el.classList.toggle("active",el.dataset.category===(p.get("category")||"")));
  const c=p.get("category"),kind=p.get("job_type")||"";
  $("#results-title").textContent=c==="jobs"&&kind==="vacancy"?t("jobVacancies"):c==="jobs"&&kind==="seeking"?t("jobSeeking"):catKeys[c]?cat(c):t("fresh");
  const tabs=$("#job-type-tabs");if(tabs){tabs.hidden=c!=="jobs";tabs.querySelectorAll("[data-job-type]").forEach(b=>{const active=b.dataset.jobType===kind;b.classList.toggle("active",active);b.setAttribute("aria-pressed",String(active));});}
  const postJob=$("#post-job-shortcut");if(postJob){const jt=kind==="seeking"?"seeking":"vacancy";postJob.textContent=t(jt==="seeking"?"jobPostSeeking":"jobPostVacancy");postJob.href=appLink("post",{category:"jobs",job_type:jt});}
  renderAdvancedFilters();
+  renderFilterChips();
+}
+function setFiltersExpanded(expanded){
+ const box=$("#listings"),toggle=$("#filter-toggle");if(!box||!toggle)return;
+ box.classList.toggle("filters-collapsed",!expanded);
+ toggle.setAttribute("aria-expanded",String(expanded));
+}
+function renderFilterChips(){
+ const root=$("#active-filters");if(!root)return;
+ const p=params(),keys=[];
+ function add(key,label){if(p.get(key))keys.push({key,label});}
+ add("q",t("filterQuery")+": "+(p.get("q")||""));
+ const c=p.get("category");
+ if(c&&catKeys[c])add("category",cat(c));
+ if(c==="jobs"&&["vacancy","seeking"].includes(p.get("job_type")))add("job_type",t(p.get("job_type")==="seeking"?"jobSeeking":"jobVacancies"));
+ add("city",t("city")+": "+(p.get("city")||""));
+ add("min",t("filterMin")+": "+(p.get("min")||"")+" €");
+ add("max",t("filterMax")+": "+(p.get("max")||"")+" €");
+ if(["cheap","expensive"].includes(p.get("sort")))add("sort",t(p.get("sort")==="cheap"?"sortCheap":"sortExpensive"));
+ for(const spec of catalogSpecs[c]||[]){
+  const [key,label,type,options]=spec,raw=p.get(key);
+  if(!raw)continue;
+  const name=type==="select"?(options||[]).find(x=>x[0]===raw)?.[1]||raw:raw;
+  add(key,t(label)+": "+(type==="select"?t(name):name));
+ }
+ root.hidden=!keys.length;
+ root.setAttribute("aria-label",t("activeFilters"));
+ root.innerHTML=keys.map(x=>'<button type="button" class="filter-chip" data-clear-filter="'+esc(x.key)+'" aria-label="'+esc(t("filterRemove"))+': '+esc(x.label)+'">'+esc(x.label)+' <span aria-hidden="true">×</span></button>').join("")+
+ (keys.length?'<button type="button" class="filter-reset" data-clear-all>'+esc(t("filterClearAll"))+' ↺</button>':"");
+ $("#filter-count").textContent=keys.length?"("+keys.length+")":"";
 }
 function loading(){return '<div class="loading"><span class="loading-spinner"></span>'+esc(t("loading"))+'</div>';}
 function errorState(){return '<div class="fetch-error"><strong>'+esc(t("errorTitle"))+'</strong><p>'+esc(t("errorDesc"))+'</p><button type="button" data-retry>'+esc(t("retry"))+'</button></div>';}
@@ -486,10 +517,13 @@ function navigateCurrent(p){history.pushState({}, "", "/?"+p.toString());lastSea
 function init(){
  applyStatic();
  $$(".language").forEach(b=>b.addEventListener("click",()=>setLanguage(b.dataset.lang)));
- $("#hero-search").addEventListener("submit",e=>{e.preventDefault();navigateCurrent(filterQuery());$("#listings").scrollIntoView({behavior:"smooth"});});
+ $("#hero-search").addEventListener("submit",e=>{e.preventDefault();$("#filter-q").value=$("#hero-q").value;navigateCurrent(filterQuery());$("#listings").scrollIntoView({behavior:"smooth"});});
+  $("#results-search").addEventListener("submit",e=>{e.preventDefault();$("#hero-q").value=$("#filter-q").value;navigateCurrent(filterQuery());setFiltersExpanded(false);$("#listings").scrollIntoView({behavior:"smooth"});});
+  $("#filter-toggle").addEventListener("click",()=>setFiltersExpanded($("#listings").classList.contains("filters-collapsed")));
+  $("#active-filters").addEventListener("click",e=>{const chip=e.target.closest("[data-clear-filter]"),all=e.target.closest("[data-clear-all]");if(!chip&&!all)return;const p=all?new URLSearchParams({view:"home",lang}):new URLSearchParams(location.search);if(chip){const key=chip.dataset.clearFilter;p.delete(key);if(key==="category"){p.delete("job_type");for(const k of advancedKeys)p.delete(k);}}p.delete("page");navigateCurrent(p);});
  $("#filter-category").addEventListener("change",()=>{renderAdvancedFilters();const tabs=$("#job-type-tabs");if(tabs)tabs.hidden=$("#filter-category").value!=="jobs";});
  $("#job-type-tabs")?.addEventListener("click",e=>{const b=e.target.closest("[data-job-type]");if(!b)return;const p=filterQuery();p.set("category","jobs");p.delete("page");if(b.dataset.jobType)p.set("job_type",b.dataset.jobType);else p.delete("job_type");navigateCurrent(p);});
- $("#apply-filters").addEventListener("click",()=>{navigateCurrent(filterQuery());$("#listings").scrollIntoView({behavior:"smooth"});});
+ $("#apply-filters").addEventListener("click",()=>{navigateCurrent(filterQuery());setFiltersExpanded(false);$("#listings").scrollIntoView({behavior:"smooth"});});
  $$(".cat").forEach(b=>b.addEventListener("click",()=>{const p=filterQuery();p.set("category",b.dataset.category);advancedKeys.forEach(k=>p.delete(k));p.delete("job_type");navigateCurrent(p);$("#listings").scrollIntoView({behavior:"smooth"});}));
  $$(".view-choice").forEach(b=>b.addEventListener("click",()=>setLayout(b.dataset.layout)));
  $("#cards").addEventListener("click",e=>{const report=e.target.closest("[data-report-kind]");if(report){go("report",{kind:report.dataset.reportKind,id:Number(report.dataset.reportId)});return;}const b=e.target.closest("[data-open-id]");if(b)go("ad",{id:Number(b.dataset.openId)});const retry=e.target.closest("[data-retry]");if(retry){lastSearch=null;loadListings();}});
@@ -499,7 +533,8 @@ function init(){
  $("#drawer-body").addEventListener("click",e=>{const report=e.target.closest("[data-report-kind]");if(report)go("report",{kind:report.dataset.reportKind,id:Number(report.dataset.reportId)});});
  $("#drawer-close").addEventListener("click",()=>go("home"));$("#drawer").addEventListener("click",e=>{if(e.target.hasAttribute("data-close"))go("home");});
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#drawer").hidden)go("home");});
- // Account navigation is always available, independent of listing API load.
+ setFiltersExpanded(!window.matchMedia("(max-width:700px)").matches);
+  // Account navigation is always available, independent of listing API load.
  window.addEventListener("popstate",()=>{lastSearch=null;sync();});
  if(ON_APP&&window.hatchable?.auth)window.hatchable.auth.getSession().then(s=>{if(s?.user)$("#sign-in").textContent=t("navAccount");}).catch(()=>{});
  sync();

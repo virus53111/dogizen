@@ -4,6 +4,7 @@ Public domain: https://murdilimax.com
 Modern classifieds marketplace in Russian, Latvian and English. Free hosting on GitHub Pages; Hatchable handles member accounts, PostgreSQL, moderation and refresh jobs.
 
 ## Current features
+- **Mobile search and filter chips (v26):** search directly above results; collapse filters on small screens; remove individual active filters or reset all with one tap. Category, city, price and detailed filters stay in URL for shareable results, localized RU/LV/EN.
 - Curated, **attributed links to real offers from public SS.lv RSS**: Latvian property (Rīga districts, Jūrmala, Liepāja), many car makes, consumer electronics, household goods, bicycles, job vacancies by profession and construction services.
 - 90 selected public RSS feeds (88 responded at the November 8 test), refreshed every six hours by Hatchable; sourced items link to original listing. No fabricated sellers, prices, reviews or imported contact details. The RSS source indication is now BELOW each product photo, never a badge over the picture.
 - Filters for location, district, property type, rooms, floor area, car make and year, profession and work schedule, electronics category and condition, home goods, and services.

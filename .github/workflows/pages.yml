@@ -37,6 +37,10 @@ jobs:
           test -s hatchable/migrations/0012_listing_reports.sql
           grep -q 'function openReport' app.js
           grep -q 'reportSuccess' i18n.js
+          grep -q 'id="results-search"' index.html
+          grep -q 'id="active-filters"' index.html
+          grep -q 'function renderFilterChips' app.js
+          grep -q 'mobileFilters' i18n.js
           grep -q 'data-report-id' hatchable/public/staff-ui.js
           grep -q 'async function optimizePhoto' app.js
           grep -q '/api/upload-cancel' app.js
