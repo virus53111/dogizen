@@ -228,7 +228,9 @@ window.MURDI_I18N = {
   "jobNurse": "Медсестра",
   "shiftWeekdays": "Будни",
   "shiftShift": "Сменный",
-  "shiftFlexible": "Гибкий"
+  "shiftFlexible": "Гибкий",
+  "postSalary": "Зарплата, € (0 — уточняется)",
+  "postServicePrice": "Стоимость услуги, € (0 — по договорённости)"
  },
  "lv": {
   "location": "Latvija · Visas pilsētas",
@@ -458,7 +460,9 @@ window.MURDI_I18N = {
   "jobNurse": "Medmāsa",
   "shiftWeekdays": "Darbadienas",
   "shiftShift": "Maiņās",
-  "shiftFlexible": "Pēc izvēles"
+  "shiftFlexible": "Pēc izvēles",
+  "postSalary": "Alga, € (0 — jāprecizē)",
+  "postServicePrice": "Pakalpojuma cena, € (0 — pēc vienošanās)"
  },
  "en": {
   "location": "Latvia · All cities",
@@ -688,6 +692,8 @@ window.MURDI_I18N = {
   "jobNurse": "Nurse",
   "shiftWeekdays": "Weekdays",
   "shiftShift": "Shift work",
-  "shiftFlexible": "Flexible"
+  "shiftFlexible": "Flexible",
+  "postSalary": "Salary, € (0 — to be confirmed)",
+  "postServicePrice": "Service price, € (0 — on request)"
  }
 };

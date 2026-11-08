@@ -83,6 +83,8 @@ function renderPostCategoryFields(){
  const category=form.querySelector('[name="category"]').value;
  const specs=(catalogSpecs[category]||[]).filter(spec=>!["rooms","area_min"].includes(spec[0]));
  const target=$("#post-category-fields");if(target)target.innerHTML=specs.map(x=>advancedFieldHTML(x,"",true)).join("");
+ const priceLabel=form.querySelector('[name="price"]')?.closest("label");
+ if(priceLabel&&priceLabel.firstChild)priceLabel.firstChild.textContent=t(category==="jobs"?"postSalary":category==="services"?"postServicePrice":"postPrice");
  form.querySelectorAll("[data-property-field]").forEach(x=>x.hidden=category!=="realty");
 }
 function filterQuery(){
