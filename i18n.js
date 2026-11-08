@@ -1,4 +1,4 @@
-// Interface translations. User-created content retains its original language.
+// Interface translations. User-created listing text remains in its original language.
 window.MURDI_I18N = {
  "ru": {
   "location": "Латвия · Все города",
@@ -169,7 +169,15 @@ window.MURDI_I18N = {
   "deleteConfirm": "Удалить это объявление без возможности восстановления?",
   "deleteSuccess": "Объявление удалено",
   "adminRemove": "Удалить",
-  "photoCount": "Фотографий"
+  "photoCount": "Фотографий",
+  "externalTitle": "Реальные предложения с SS.lv",
+  "externalDesc": "Объявления взяты из открытой RSS-ленты SS.lv. Это предложения других сайтов: наличие, цену и условия уточняйте у продавца на оригинальной странице.",
+  "externalLabel": "На SS.lv",
+  "externalOpen": "Смотреть оригинал",
+  "externalMonth": "/мес.",
+  "externalDay": "/день",
+  "externalCheck": "Наличие и цену уточняйте на SS.lv",
+  "externalSection": "С ДРУГИХ ПЛОЩАДОК"
  },
  "lv": {
   "location": "Latvija · Visas pilsētas",
@@ -340,7 +348,15 @@ window.MURDI_I18N = {
   "deleteConfirm": "Vai tiešām neatgriezeniski dzēst šo sludinājumu?",
   "deleteSuccess": "Sludinājums izdzēsts",
   "adminRemove": "Dzēst",
-  "photoCount": "Fotogrāfijas"
+  "photoCount": "Fotogrāfijas",
+  "externalTitle": "Īsti piedāvājumi no SS.lv",
+  "externalDesc": "Sludinājumi ir no SS.lv publiskās RSS plūsmas. Tie nav MURDILIMAX lietotāju sludinājumi; cenu un pieejamību pārbaudiet oriģinālajā vietnē.",
+  "externalLabel": "SS.lv vietnē",
+  "externalOpen": "Atvērt oriģinālu",
+  "externalMonth": "/mēn.",
+  "externalDay": "/dienā",
+  "externalCheck": "Pieejamību un cenu pārbaudiet SS.lv",
+  "externalSection": "NO CITĀM VIETNĒM"
  },
  "en": {
   "location": "Latvia · All cities",
@@ -511,6 +527,14 @@ window.MURDI_I18N = {
   "deleteConfirm": "Delete this listing permanently?",
   "deleteSuccess": "Listing deleted",
   "adminRemove": "Delete",
-  "photoCount": "Photos"
+  "photoCount": "Photos",
+  "externalTitle": "Real offers from SS.lv",
+  "externalDesc": "These listings come from the public SS.lv RSS feed. They were posted on another website, not by MURDILIMAX users. Confirm availability and price on the original listing.",
+  "externalLabel": "On SS.lv",
+  "externalOpen": "View original listing",
+  "externalMonth": "/month",
+  "externalDay": "/day",
+  "externalCheck": "Verify availability and price at SS.lv",
+  "externalSection": "FROM OTHER WEBSITES"
  }
 };

@@ -11,3 +11,19 @@
 .admin-remove-row{display:flex;align-items:center;gap:10px;margin:0 0 18px;padding:12px;border:1px solid #e8eaf0;background:#f9fbfe;border-radius:12px}
 .admin-remove-row input{min-width:0;flex:1;height:41px;border:1px solid #dbe4f2;border-radius:9px;padding:0 12px}
 .admin-remove-row button{border:0;border-radius:9px;background:#fff0ed;color:#ad4a3f;padding:12px 16px;font-weight:800;font-size:11px}
+/* Real external listings are clearly separated from listings published here */
+.source-intro{grid-column:1/-1;display:block;background:linear-gradient(115deg,#ecf3ff,#f2f9ff);border:1px solid #d5e3fc;border-radius:17px;padding:22px 25px;margin:2px 0 3px}
+.source-flag{font-weight:800;letter-spacing:1.5px;font-size:10px;color:#326bd2;display:flex;align-items:center;gap:9px}
+.source-flag span{letter-spacing:0;background:#2155e8;color:#fff;border-radius:8px;padding:5px 9px;font-size:11px}
+.source-intro h3{font-weight:800;letter-spacing:-.7px;color:#1b3256;font-size:21px;margin:12px 0 6px}
+.source-intro p{font-size:11px;color:#627b9d;line-height:1.9;margin:0;max-width:890px}
+.external-card{box-shadow:0 3px 14px #1c458b0d}
+.external-card-link{display:block;min-height:100%;color:inherit;outline-offset:2px}
+.external-card .external-badge{background:#2155e8;color:#fff}
+.external-card .listing-thumb{background:#e9f1fb}
+.external-card .listing-info h3{height:auto;min-height:36px}
+.external-unit{font-weight:700;font-size:11px;letter-spacing:0;color:#6380aa}
+.external-open{margin-top:13px;padding-top:10px;border-top:1px solid #e9eef7;color:#235bd6;font-size:11px;font-weight:800;display:flex;justify-content:space-between;gap:8px;align-items:center}
+.external-open span{font-size:15px}
+.external-card-link:hover .external-open{text-decoration:underline}
+@media(max-width:660px){.source-intro{padding:17px;border-radius:13px}.source-intro h3{font-size:17px}.source-intro p{font-size:10px}.external-unit{font-size:9px}.external-open{font-size:10px}}

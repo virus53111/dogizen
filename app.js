@@ -58,6 +58,17 @@ function listingCard(a){
  const photo=a.image_url?'<img loading="lazy" src="'+esc(a.image_url)+'" alt="'+esc(a.title)+'">':'<span class="no-photo-icon">'+(catIcons[a.category]||"✦")+'</span>';
  return '<article class="listing-card" tabindex="0" role="button" data-open-id="'+Number(a.id)+'" aria-label="'+esc(a.title)+'"><div class="listing-thumb '+(!a.image_url?"no-photo":"")+'">'+photo+'<em>'+esc(cat(a.category))+'</em></div><div class="listing-info"><div class="listing-price">'+esc(euro(a.price))+'</div><h3>'+esc(a.title)+'</h3><div class="listing-meta"><span>⌖ '+esc(a.city)+'</span><span>'+esc(date(a.created_at))+'</span></div></div></article>';
 }
+function externalCard(a){
+ const href=String(a.source_url||"");
+ if(!/^https:\/\/(?:www\.)?(?:ss\.lv|ss\.com)\/msg\//.test(href))return "";
+ const image=a.image_url?'<img loading="lazy" src="'+esc(a.image_url)+'" alt="" referrerpolicy="no-referrer">':'<span class="no-photo-icon">'+(catIcons[a.category]||"✦")+'</span>';
+ const suffix=a.price_unit==="month"?t("externalMonth"):a.price_unit==="day"?t("externalDay"):"";
+ return '<article class="listing-card external-card"><a class="external-card-link" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(a.title)+' · SS.lv">'+
+   '<div class="listing-thumb '+(!a.image_url?"no-photo":"")+'">'+image+'<em class="external-badge">SS.lv ↗</em></div>'+
+   '<div class="listing-info"><div class="listing-price">'+esc(euro(a.price))+' <span class="external-unit">'+esc(suffix)+'</span></div>'+
+   '<h3>'+esc(a.title)+'</h3><div class="listing-meta"><span>⌖ '+esc(a.city)+'</span><span>'+esc(date(a.published_at))+'</span></div>'+
+   '<div class="external-open">'+esc(t("externalOpen"))+' <span>↗</span></div></div></a></article>';
+}
 async function loadListings(){
  const p=params(),query=new URLSearchParams();
  ["q","category","city","min","max","sort","page"].forEach(k=>{if(p.get(k))query.set(k,p.get(k));});
@@ -65,20 +76,33 @@ async function loadListings(){
  if(signature===lastSearch)return;
  lastSearch=signature;
  $("#cards").innerHTML=loading();$("#pagination").innerHTML="";
- try{
-  const result=await fetchJSON("/api/listings?"+signature);backendReady=true;
-  $("#view-counter").textContent=t("found")+": "+result.total;
-  const filtered=[...query.keys()].some(k=>k!=="page");
-  $("#cards").innerHTML=result.items.length?result.items.map(listingCard).join(""):noResults(filtered);
-  const pages=Math.ceil(result.total/24);
-  let html="";
-  if(pages>1){
-    if(result.page>1)html+='<button type="button" data-page="'+(result.page-1)+'">← '+esc(t("back"))+'</button>';
-    html+='<button disabled>'+esc(t("page"))+' '+result.page+' '+esc(t("of"))+' '+pages+'</button>';
-    if(result.page<pages)html+='<button type="button" data-page="'+(result.page+1)+'">'+esc(t("next"))+' →</button>';
-  }
-  $("#pagination").innerHTML=html;
- }catch(e){backendReady=false;lastSearch=null;$("#cards").innerHTML=errorState();$("#view-counter").textContent="";}
+ const [nativeCall,externalCall]=await Promise.allSettled([
+   fetchJSON("/api/listings?"+signature),
+   fetchJSON("/api/external?"+signature)
+ ]);
+ const nativeData=nativeCall.status==="fulfilled"?nativeCall.value:null;
+ const externalData=externalCall.status==="fulfilled"?externalCall.value:null;
+ backendReady=Boolean(nativeData||externalData);
+ if(!backendReady){lastSearch=null;$("#cards").innerHTML=errorState();$("#view-counter").textContent="";return;}
+ const nativeItems=nativeData?.items||[],externalItems=externalData?.items||[];
+ const nativeCount=nativeData?.total||0,externalCount=externalData?.total||0;
+ $("#view-counter").textContent=t("found")+": "+(nativeCount+externalCount);
+ let html=nativeItems.map(listingCard).join("");
+ if(externalItems.length){
+  html+='<div class="source-intro"><div class="source-flag">'+esc(t("externalSection"))+' <span>SS.lv</span></div><h3>'+esc(t("externalTitle"))+'</h3><p>'+esc(t("externalDesc"))+'</p></div>';
+  html+=externalItems.map(externalCard).join("");
+ }
+ if(!html){const filtered=[...query.keys()].some(k=>k!=="page");html=noResults(filtered);}
+ $("#cards").innerHTML=html;
+ const pageNum=Math.max(1,Number(p.get("page"))||1);
+ const maxPages=Math.max(Math.ceil(nativeCount/24),Math.ceil(externalCount/24));
+ let buttons="";
+ if(maxPages>1){
+  if(pageNum>1)buttons+='<button type="button" data-page="'+(pageNum-1)+'">← '+esc(t("back"))+'</button>';
+  buttons+='<button disabled>'+esc(t("page"))+' '+pageNum+' '+esc(t("of"))+' '+maxPages+'</button>';
+  if(pageNum<maxPages)buttons+='<button type="button" data-page="'+(pageNum+1)+'">'+esc(t("next"))+' →</button>';
+ }
+ $("#pagination").innerHTML=buttons;
 }
 function setLayout(which){
  layout=which;
