@@ -31,6 +31,9 @@ jobs:
           test -s hatchable/api/edit.js
           test -s hatchable/api/upload-cancel.js
           test -s hatchable/api/report.js
+          grep -q 'editPhotoSelect' hatchable/public/account.html
+          grep -q 'WITH updated AS' hatchable/api/edit.js
+          grep -q 'storage_key' hatchable/api/mine.js
           test -s hatchable/migrations/0012_listing_reports.sql
           grep -q 'function openReport' app.js
           grep -q 'reportSuccess' i18n.js

@@ -23,6 +23,9 @@ Modern classifieds marketplace in Russian, Latvian and English. Free hosting on 
 ## SEO
 Static, HTML-rendered, unique editorial landing pages in three languages, including separate vacancy and seeking-work landing pages. RU/LV/EN languages, localized title/H1, hreflang, canonical and JSON-LD. Daily sitemap generation includes published first-party ads and 21 language-specific category URLs plus language entry pages. Public RSS items are NOT republished as individual indexed pages to prevent misleading duplications. Job seeker category pages may link to original SS.lv listings but never index copies of individual profiles.
 
+## Edit listing photos (v25)
+Account owners may edit listing fields and their photo gallery (maximum six files). New photos are uploaded through the existing authenticated API; the edit route validates ownership and photo references before saving the new order and cover photo. Removed images are cleaned up after the database update. Any edit returns the listing to moderation. The account UI is translated into RU/LV/EN and supports touch-friendly photo management. Photos above 4 MB are rejected in this editor.
+
 ## Report unsafe listings (v24)
 Signed-in users can report native listings and SS.lv RSS references from the public interface. The report form is translated into RU/LV/EN and requires an account, checks the target, blocks duplicates for seven days and limits submissions to five per day. Reports stay in a private `listing_reports` moderation queue; moderator review is required before hiding anything. Review actions are audited; users cannot see reporters or internal decisions. External listings are never edited on SS.lv, only suppressed from MURDILIMAX.
 
