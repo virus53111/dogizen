@@ -1,0 +1,66 @@
+# Staged production infrastructure; DO NOT approve until recurring cost is reviewed.
+# Exact official ShopClass engine (not a static demo or rewritten marketplace).
+services:
+  - type: pserv
+    name: murdilimax-classifieds-db
+    runtime: docker
+    region: frankfurt
+    plan: starter
+    dockerfilePath: ./deploy/classifieds/Dockerfile.db
+    dockerContext: ./deploy/classifieds
+    envVars:
+      - key: PORT
+        value: "3306"
+      - key: MARIADB_DATABASE
+        value: murdilimax_ads
+      - key: MARIADB_USER
+        value: shopclass
+      - key: MARIADB_PASSWORD
+        generateValue: true
+      - key: MARIADB_ROOT_PASSWORD
+        generateValue: true
+    disk:
+      name: mariadb-data
+      mountPath: /var/lib/mysql
+      sizeGB: 5
+  - type: web
+    name: murdilimax-classifieds
+    runtime: docker
+    region: frankfurt
+    plan: starter
+    dockerfilePath: ./deploy/classifieds/Dockerfile.shopclass
+    dockerContext: ./deploy/classifieds
+    healthCheckPath: /
+    envVars:
+      - key: DB_HOST
+        fromService:
+          type: pserv
+          name: murdilimax-classifieds-db
+          property: host
+      - key: DB_NAME
+        value: murdilimax_ads
+      - key: DB_USER
+        value: shopclass
+      - key: DB_PASSWORD
+        fromService:
+          type: pserv
+          name: murdilimax-classifieds-db
+          envVarKey: MARIADB_PASSWORD
+      - key: OSC_IGNORE_CONFIG_FILE
+        value: "1"
+      - key: OSC_SITE_TITLE
+        value: "MURDILIMAX — Доска объявлений"
+      - key: OSC_ADMIN_USER
+        value: admin
+      - key: OSC_ADMIN_EMAIL
+        sync: false
+      - key: OSC_ADMIN_PASSWORD
+        generateValue: true
+      - key: OSC_DISABLE_SELF_UPDATE
+        value: "1"
+      - key: OSC_DISABLE_PACKAGE_INSTALLS
+        value: "1"
+    disk:
+      name: shopclass-content
+      mountPath: /application/oc-content
+      sizeGB: 5
