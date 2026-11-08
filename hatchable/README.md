@@ -4,6 +4,12 @@ Project: `proj_E4sXfkYysFlf` (`murdilimax.hatchable.site`).
 
 This directory stores the changed Hatchable files for code review. The actual deployed source and PostgreSQL database live in Hatchable, not on GitHub Pages. Do not treat these files as automatically deployed.
 
+## Changes in v27
+- `public/index.html`: favorites navigation and header count, favorites view navigation and browser-local notice.
+- `public/app.js`: safe favorites snapshots for native listings and SS.lv sources; add/remove heart buttons, cross-tab synchronization, limit of 100, return to saved view from native ad details.
+- `public/i18n.js` / `public/style.css`: RU/LV/EN labels, keyboard-accessible card button, responsive heart controls.
+- Browser-only storage, no API or database changes; saved entries are not synchronized between origins, devices, or accounts.
+
 ## Changes in v26
 - `public/index.html`: results-level search, mobile filter button and active-filter summary.
 - `public/app.js`: query synchronization, remove-one/reset-all filter chips and accessible mobile toggle.

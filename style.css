@@ -110,6 +110,27 @@
  .list-head{margin-bottom:17px}
 }
 
+/* Favorites: browser-local saved listings, accessible card actions and mobile navigation. */
+.head-favorites{position:relative;flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:39px;height:39px;border-radius:12px;border:1px solid #d7e3f8;background:#f8fbff;color:#2155c7;font-size:26px;line-height:1}
+.head-favorites:hover,.head-favorites:focus-visible{background:#edf4ff;border-color:#abc7f4}
+.head-favorites b{position:absolute;right:-6px;top:-6px;min-width:18px;height:18px;display:grid;place-items:center;border-radius:100px;padding:0 4px;background:#2155e8;color:#fff;border:2px solid #fff;font-size:10px;font-weight:800;line-height:1}
+.listing-card{position:relative}
+.native-card-open{display:block;width:100%;height:auto;border:0;background:transparent;color:inherit;text-align:left;padding:0;font:inherit;cursor:pointer}
+.native-card-open:focus-visible{outline:3px solid #2155e8;outline-offset:-3px;border-radius:14px}
+.favorite-toggle{position:absolute;z-index:4;top:10px;right:10px;display:grid;place-items:center;width:43px;height:43px;padding:0;border:1px solid #d9e4f6;border-radius:50%;background:#fff;color:#41618b;box-shadow:0 5px 18px #12294a26;cursor:pointer;line-height:1;font-size:27px;transition:transform .15s,border-color .15s,background .15s}
+.favorite-toggle:hover,.favorite-toggle:focus-visible{transform:scale(1.06);background:#fff5f7;border-color:#f4b5c1;outline-offset:2px}
+.favorite-toggle.is-saved{background:#fff0f3;color:#d13d67;border-color:#ffc2d0}
+.favorite-toggle span{pointer-events:none}
+.detail-save-row{display:flex;align-items:center;gap:12px;margin:15px 0 11px;color:#405b80;font-weight:800;font-size:12px}
+.detail-save-row .favorite-toggle{position:static;flex:0 0 43px;box-shadow:none}
+.favorites-back{display:inline-flex;align-items:center;justify-content:center;align-self:center;background:#eaf2ff;border:1px solid #bfd4f4;padding:12px 15px;border-radius:10px;color:#2155b5;font-size:12px;font-weight:800;white-space:nowrap}
+.favorites-back:hover{background:#dae9ff}
+.favorites-note{font-size:11px;line-height:1.7;color:#71829c;max-width:570px;margin:8px 0 0}
+.favorites-view .search-tools,.favorites-view .filters-bar,.favorites-view #advanced-filters,.favorites-view #active-filters,.favorites-view #job-type-tabs,.favorites-view .view-controls{display:none!important}
+.favorites-view .listing-grid{min-height:280px}
+@media(max-width:900px){.head-favorites{width:37px;height:37px}}
+@media(max-width:660px){.head-favorites{width:34px;height:34px;border-radius:10px;font-size:24px}.head-favorites b{top:-7px;right:-7px}.favorite-toggle{width:42px;height:42px;top:7px;right:7px}.favorites-back{font-size:10px;padding:10px 11px}.favorites-view .list-head{flex-wrap:wrap;gap:9px}}
+
 /* Publishing: touch-friendly photo manager. */
 #photo-preview.photo-preview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:7px 0 18px}
 .photo-preview .photo-count{grid-column:1/-1;margin:0;font-size:12px;font-weight:800;color:#587198}

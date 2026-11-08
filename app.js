@@ -13,6 +13,9 @@ const catKeys={realty:"catRealty",cars:"catCars",electronics:"catElectronics",jo
 const catIcons={realty:"⌂",cars:"🚙",electronics:"▣",jobs:"▤",services:"⚒",home:"◈",other:"✦"};
 const dealKeys={sell:"sale",rent:"rent",buy:"buy",offer:"offer"};
 const localeTag={ru:"ru-RU",lv:"lv-LV",en:"en-GB"};
+const FAVORITES_KEY="murdilimax_favorites_v1";
+const favoriteVisible=new Map();
+let favorites=readFavorites(),detailReturnView="home";
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function euro(n){const p=Number(n);return Number.isFinite(p)?new Intl.NumberFormat(localeTag[lang],{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(p):"—";}
 function displayPrice(a){if(a.category==="jobs"&&Number(a.price)===0)return "";if(a.category==="services"&&Number(a.price)===0)return t("advNegotiable");return euro(a.price);}
@@ -41,6 +44,7 @@ function applyStatic(){
   $$("[data-i18n-placeholder]").forEach(x=>x.placeholder=t(x.dataset.i18nPlaceholder));
   $$(".language").forEach(x=>{const active=x.dataset.lang===lang;x.classList.toggle("active",active);x.setAttribute("aria-pressed",String(active));});
   $("#nav-all").href=route("home");$("#nav-realty").href=route("home",{category:"realty"});$("#nav-mine").href=appLink("mine");
+   $("#nav-favorites").href=$("#head-favorites").href=$("#footer-favorites").href=route("favorites");
   $("#post-link").href=appLink("post");$$("[data-post-link]").forEach(a=>a.href=appLink("post"));
   $("#promo-realty").href=route("home",{category:"realty"});
   $("#footer-all").href=route("home");$("#footer-post").href=appLink("post");$("#footer-about").href=route("about");
@@ -173,11 +177,108 @@ function renderFilterChips(){
 function loading(){return '<div class="loading"><span class="loading-spinner"></span>'+esc(t("loading"))+'</div>';}
 function errorState(){return '<div class="fetch-error"><strong>'+esc(t("errorTitle"))+'</strong><p>'+esc(t("errorDesc"))+'</p><button type="button" data-retry>'+esc(t("retry"))+'</button></div>';}
 function noResults(filtered){return '<div class="empty"><span class="empty-icon">✧</span><strong>'+esc(t(filtered?"emptyFiltered":"emptyTitle"))+'</strong><p>'+esc(t(filtered?"emptyFilteredDesc":"emptyDesc"))+'</p><a href="'+esc(appLink("post"))+'" data-post-link>'+esc(t("emptyAction"))+' ↗</a></div>';}
+function favoriteSourceUrl(value){
+ try{
+  const u=new URL(String(value||""));
+  return u.protocol==="https:"&&["ss.lv","www.ss.lv","ss.com","www.ss.com"].includes(u.hostname)&&u.pathname.startsWith("/msg/")?u.href:"";
+ }catch{return "";}
+}
+function favoritePhotoUrl(value){
+ const v=String(value||"").slice(0,1100);
+ return /^https:\/\//i.test(v)?v:"";
+}
+function cleanFavorite(x){
+ if(!x||typeof x!=="object")return null;
+ const kind=x.kind==="native"?"native":x.kind==="external"?"external":null,id=Number(x.id);
+ if(!kind||!Number.isSafeInteger(id)||id<1)return null;
+ const url=kind==="external"?favoriteSourceUrl(x.source_url):"";
+ if(kind==="external"&&!url)return null;
+ const title=String(x.title||"").trim().slice(0,125);
+ if(!title)return null;
+ const rawPrice=Number(x.price),price=Number.isFinite(rawPrice)?Math.max(0,Math.min(rawPrice,9999999999)):0;
+ const category=Object.prototype.hasOwnProperty.call(catKeys,x.category)?x.category:"other";
+ const attrs=x.attributes&&typeof x.attributes==="object"?x.attributes:{};
+ const attributes={};
+ for(const k of ["profession","district","make","job_type"])if(attrs[k]!=null)attributes[k]=String(attrs[k]).slice(0,75);
+ const stamp=x.published_at||x.created_at||new Date().toISOString();
+ const dateValue=Number.isFinite(Date.parse(String(stamp)))?String(stamp).slice(0,40):new Date().toISOString();
+ return {kind,id,title,category,city:String(x.city||"Latvija").slice(0,80),price,
+  price_unit:["month","day","negotiable"].includes(x.price_unit)?x.price_unit:"",
+  image_url:favoritePhotoUrl(x.image_url),source_url:url,attributes,
+  created_at:dateValue,published_at:dateValue};
+}
+function readFavorites(){
+ try{
+  const raw=JSON.parse(localStorage.getItem(FAVORITES_KEY)||"[]");
+  if(!Array.isArray(raw))return [];
+  const seen=new Set(),items=[];
+  for(const entry of raw.slice(0,120)){
+   const x=cleanFavorite(entry);if(!x)continue;
+   const key=x.kind+":"+x.id;if(seen.has(key))continue;
+   seen.add(key);items.push(x);if(items.length>=100)break;
+  }
+  return items;
+ }catch{return [];}
+}
+function favoriteKey(kind,id){return kind+":"+Number(id);}
+function isFavorite(kind,id){return favorites.some(x=>x.kind===kind&&x.id===Number(id));}
+function favoriteButton(kind,id){
+ const saved=isFavorite(kind,id),label=t(saved?"favoriteRemove":"favoriteAdd");
+ return '<button type="button" class="favorite-toggle'+(saved?' is-saved':'')+
+  '" data-favorite-kind="'+esc(kind)+'" data-favorite-id="'+Number(id)+
+  '" aria-label="'+esc(label)+'" title="'+esc(label)+'" aria-pressed="'+String(saved)+'"><span aria-hidden="true">'+(saved?"♥":"♡")+'</span></button>';
+}
+function updateFavoritesUI(){
+ const count=$("#favorite-count"),head=$("#head-favorites");
+ if(count)count.textContent=String(favorites.length);
+ if(head){head.setAttribute("aria-label",t("favoritesNav")+" ("+favorites.length+")");head.title=t("favoritesNav");}
+ $$("[data-favorite-kind]").forEach(btn=>{
+  const saved=isFavorite(btn.dataset.favoriteKind,btn.dataset.favoriteId),label=t(saved?"favoriteRemove":"favoriteAdd");
+  btn.classList.toggle("is-saved",saved);
+  btn.setAttribute("aria-pressed",String(saved));btn.setAttribute("aria-label",label);btn.title=label;
+  btn.querySelector("span").textContent=saved?"♥":"♡";
+ });
+}
+function toggleFavorite(kind,id){
+ const key=favoriteKey(kind,id),prior=favorites,existing=prior.findIndex(x=>favoriteKey(x.kind,x.id)===key);
+ let next;
+ if(existing>=0)next=prior.filter((x,i)=>i!==existing);
+ else{
+  if(prior.length>=100){toast(t("favoriteLimit"));return;}
+  const entry=cleanFavorite({...favoriteVisible.get(key),kind,id});
+  if(!entry){toast(t("unknownError"));return;}
+  next=[entry,...prior];
+ }
+ try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(next));}
+ catch{toast(t("favoriteStorageError"));return;}
+ favorites=next;
+ updateFavoritesUI();
+ toast(t(existing>=0?"favoriteRemoved":"favoriteAdded"));
+ if(params().get("view")==="favorites")renderFavorites();
+}
+function renderFavorites(){
+ lastSearch=null;
+ const box=$("#listings");
+ box.classList.add("favorites-view");
+ setLayout("list");
+ $("#cards").hidden=false;
+ $("#pagination").hidden=true;
+ $("#favorites-back").hidden=false;
+ $("#favorites-note").hidden=false;
+ $("#results-title").textContent=t("favoritesTitle");
+ $("#view-counter").textContent=t("favoritesCount")+": "+favorites.length;
+ favoriteVisible.clear();
+ for(const x of favorites)favoriteVisible.set(favoriteKey(x.kind,x.id),x);
+ $("#cards").innerHTML=favorites.length?favorites.map(x=>x.kind==="native"?listingCard(x):externalCard(x)).join(""):
+  '<div class="empty"><span class="empty-icon">♡</span><strong>'+esc(t("favoritesEmpty"))+'</strong><p>'+esc(t("favoritesEmptyDesc"))+'</p><a href="'+esc(route("home"))+'">'+esc(t("favoritesBrowse"))+' →</a></div>';
+ updateFavoritesUI();
+}
+
 function listingCard(a){
  const photo=a.image_url?'<img loading="lazy" src="'+esc(a.image_url)+'" alt="'+esc(a.title)+'">':'<span class="no-photo-icon">'+(catIcons[a.category]||"✦")+'</span>';
  const price=displayPrice(a),isJob=a.category==="jobs";
  const heading=isJob?'<span class="work-kind">'+esc(t(jobKind(a)))+'</span><h3>'+esc(a.title)+'</h3>'+(price?'<div class="job-pay">'+esc(price)+'</div>':''):'<div class="listing-price">'+esc(price)+'</div><h3>'+esc(a.title)+'</h3>';
- return '<article class="listing-card" tabindex="0" role="button" data-open-id="'+Number(a.id)+'" aria-label="'+esc(a.title)+'"><div class="listing-thumb '+(!a.image_url?"no-photo":"")+'">'+photo+'<em>'+esc(cat(a.category))+'</em></div><div class="listing-info">'+heading+'<div class="listing-meta"><span>⌖ '+esc(a.city)+'</span><span>'+esc(date(a.created_at))+'</span></div></div></article>';
+ return '<article class="listing-card native-card"><button type="button" class="native-card-open" data-open-id="'+Number(a.id)+'" aria-label="'+esc(a.title)+'"><div class="listing-thumb '+(!a.image_url?"no-photo":"")+'">'+photo+'<em>'+esc(cat(a.category))+'</em></div><div class="listing-info">'+heading+'<div class="listing-meta"><span>⌖ '+esc(a.city)+'</span><span>'+esc(date(a.created_at))+'</span></div></div></button>'+favoriteButton("native",a.id)+'</article>';
 }
 function externalCard(a){
  const href=String(a.source_url||"");
@@ -193,7 +294,7 @@ function externalCard(a){
  return '<article class="listing-card external-card"><a class="external-card-link" href="'+esc(href)+'" target="_blank" rel="noopener noreferrer" aria-label="'+esc(title)+' · SS.lv">'+
    '<div class="listing-thumb '+(!a.image_url?"no-photo":"")+'">'+image+'</div>'+
    '<div class="listing-info">'+heading+'<div class="listing-meta"><span>⌖ '+esc(a.city)+(info?' · '+esc(info):'')+'</span><span>'+esc(date(a.published_at))+'</span></div>'+
-   '<div class="external-open"><span>'+esc(t("externalOpen"))+' · SS.lv</span><span>↗</span></div></div></a><button type="button" class="listing-report" data-report-kind="external" data-report-id="'+Number(a.id)+'" aria-label="'+esc(t("reportButton"))+'">⚑ '+esc(t("reportButton"))+'</button></article>';
+   '<div class="external-open"><span>'+esc(t("externalOpen"))+' · SS.lv</span><span>↗</span></div></div></a><button type="button" class="listing-report" data-report-kind="external" data-report-id="'+Number(a.id)+'" aria-label="'+esc(t("reportButton"))+'">⚑ '+esc(t("reportButton"))+'</button>'+favoriteButton("external",a.id)+'</article>';
 }
 async function loadListings(){
  const p=params(),query=new URLSearchParams();
@@ -211,6 +312,9 @@ async function loadListings(){
  backendReady=Boolean(nativeData||externalData);
  if(!backendReady){lastSearch=null;$("#cards").innerHTML=errorState();$("#view-counter").textContent="";return;}
  const nativeItems=nativeData?.items||[],externalItems=externalData?.items||[];
+  favoriteVisible.clear();
+  for(const a of nativeItems)favoriteVisible.set(favoriteKey("native",a.id),a);
+  for(const a of externalItems)favoriteVisible.set(favoriteKey("external",a.id),a);
  const nativeCount=nativeData?.total||0,externalCount=externalData?.total||0;
  $("#view-counter").textContent=t("found")+": "+(nativeCount+externalCount);
  let html=nativeItems.map(listingCard).join("");
@@ -220,6 +324,7 @@ async function loadListings(){
  }
  if(!html){const filtered=[...query.keys()].some(k=>k!=="page");html=noResults(filtered);}
  $("#cards").innerHTML=html;
+ updateFavoritesUI();
  const pageNum=Math.max(1,Number(p.get("page"))||1);
  const maxPages=Math.max(Math.ceil(nativeCount/24),Math.ceil(externalCount/24));
  let buttons="";
@@ -438,13 +543,14 @@ async function openDetails(id){
  showDrawer('<span class="kicker">'+esc(t("detailKicker"))+'</span><div id="detail" class="loading-placeholder">'+esc(t("loading"))+'</div>');
  try{
   const r=await fetchJSON("/api/listing/"+Number(id));const a=r.item;
+   favoriteVisible.set(favoriteKey("native",a.id),a);
   const pictures=a.images?.length?'<div class="detail-photos">'+a.images.map((src,i)=>'<img src="'+esc(src)+'" alt="'+esc(a.title)+' '+(i+1)+'" loading="lazy">').join("")+'</div>':'';
   const phone=a.contact_phone?'<a href="tel:'+esc(String(a.contact_phone).replace(/[^0-9+]/g,""))+'">☎ '+esc(a.contact_phone)+'</a>':'<p>'+esc(t("detailPhoneHidden"))+'</p>';
   const hasCoords=Number.isFinite(Number(a.latitude))&&Number.isFinite(Number(a.longitude))&&a.latitude!=null&&a.longitude!=null;
   const specs=[a.city,cat(a.category),t(dealKeys[a.deal_type]||"sale")];if(a.area)specs.push(a.area+" m²");if(a.rooms)specs.push(t("rooms")+": "+a.rooms);
   $("#detail").innerHTML=pictures+'<h2>'+esc(a.title)+'</h2>'+(displayPrice(a)?'<div class="detail-price">'+esc(displayPrice(a))+'</div>':'')+'<div class="detail-specs">'+specs.map(s=>'<span>'+esc(s)+'</span>').join("")+'</div><p class="detail-desc">'+esc(a.description)+'</p>'+
   (hasCoords?'<h3>'+esc(t("detailLocation"))+'</h3><div class="detail-map" id="detail-map"></div>':'')+
-  '<section class="detail-contact"><h3>'+esc(t("detailContact"))+'</h3><p>'+esc(a.contact_name)+'</p>'+phone+'</section><p class="drawer-subtle">'+esc(t("detailSafety"))+'</p><button type="button" class="listing-report detail-report" data-report-kind="native" data-report-id="'+Number(a.id)+'">⚑ '+esc(t("reportButton"))+'</button><p class="drawer-subtle">'+esc(t("adDate"))+': '+esc(date(a.created_at))+'</p>';
+  '<section class="detail-contact"><h3>'+esc(t("detailContact"))+'</h3><p>'+esc(a.contact_name)+'</p>'+phone+'</section><p class="drawer-subtle">'+esc(t("detailSafety"))+'</p><div class="detail-save-row">'+favoriteButton("native",a.id)+'<span>'+esc(t("favoritesNav"))+'</span></div><button type="button" class="listing-report detail-report" data-report-kind="native" data-report-id="'+Number(a.id)+'">⚑ '+esc(t("reportButton"))+'</button><p class="drawer-subtle">'+esc(t("adDate"))+': '+esc(date(a.created_at))+'</p>';
   if(hasCoords&&window.L){
    requestAnimationFrame(()=>{
     if(!$("#detail-map"))return;
@@ -504,7 +610,8 @@ function openAbout(){showDrawer('<span class="kicker">MURDILIMAX</span><h2>'+esc
 function sync(){
  readFilters();
  const p=params(),view=p.get("view")||"home";
- if(view==="home"){closeDrawer();loadListings();if(layout==="map")loadMap();return;}
+ if(view==="favorites"){closeDrawer();renderFavorites();return;}
+ if(view==="home"){closeDrawer();$("#listings").classList.remove("favorites-view");$("#favorites-back").hidden=true;$("#favorites-note").hidden=true;$("#pagination").hidden=false;loadListings();if(layout==="map")loadMap();return;}
  if(view==="post")return openPost();
  if(view==="mine")return openMine();
  if(view==="admin")return openAdmin();
@@ -516,6 +623,10 @@ function sync(){
 function navigateCurrent(p){history.pushState({}, "", "/?"+p.toString());lastSearch=null;sync();}
 function init(){
  applyStatic();
+ updateFavoritesUI();
+ for(const sel of ["#nav-favorites","#head-favorites","#footer-favorites"]){$(sel).addEventListener("click",e=>{e.preventDefault();go("favorites");$("#listings").scrollIntoView({behavior:"smooth"});});}
+ $("#favorites-back").addEventListener("click",e=>{e.preventDefault();go("home");});
+ window.addEventListener("storage",e=>{if(e.key!==FAVORITES_KEY)return;favorites=readFavorites();if(params().get("view")==="favorites")renderFavorites();else updateFavoritesUI();});
  $$(".language").forEach(b=>b.addEventListener("click",()=>setLanguage(b.dataset.lang)));
  $("#hero-search").addEventListener("submit",e=>{e.preventDefault();$("#filter-q").value=$("#hero-q").value;navigateCurrent(filterQuery());$("#listings").scrollIntoView({behavior:"smooth"});});
   $("#results-search").addEventListener("submit",e=>{e.preventDefault();$("#hero-q").value=$("#filter-q").value;navigateCurrent(filterQuery());setFiltersExpanded(false);$("#listings").scrollIntoView({behavior:"smooth"});});
@@ -526,13 +637,13 @@ function init(){
  $("#apply-filters").addEventListener("click",()=>{navigateCurrent(filterQuery());setFiltersExpanded(false);$("#listings").scrollIntoView({behavior:"smooth"});});
  $$(".cat").forEach(b=>b.addEventListener("click",()=>{const p=filterQuery();p.set("category",b.dataset.category);advancedKeys.forEach(k=>p.delete(k));p.delete("job_type");navigateCurrent(p);$("#listings").scrollIntoView({behavior:"smooth"});}));
  $$(".view-choice").forEach(b=>b.addEventListener("click",()=>setLayout(b.dataset.layout)));
- $("#cards").addEventListener("click",e=>{const report=e.target.closest("[data-report-kind]");if(report){go("report",{kind:report.dataset.reportKind,id:Number(report.dataset.reportId)});return;}const b=e.target.closest("[data-open-id]");if(b)go("ad",{id:Number(b.dataset.openId)});const retry=e.target.closest("[data-retry]");if(retry){lastSearch=null;loadListings();}});
- $("#cards").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){const b=e.target.closest("[data-open-id]");if(b){e.preventDefault();go("ad",{id:Number(b.dataset.openId)});}}});
+ $("#cards").addEventListener("click",e=>{const saved=e.target.closest("[data-favorite-kind]");if(saved){toggleFavorite(saved.dataset.favoriteKind,Number(saved.dataset.favoriteId));return;}const report=e.target.closest("[data-report-kind]");if(report){go("report",{kind:report.dataset.reportKind,id:Number(report.dataset.reportId)});return;}const b=e.target.closest("[data-open-id]");if(b){detailReturnView=params().get("view")==="favorites"?"favorites":"home";go("ad",{id:Number(b.dataset.openId)});return;}const retry=e.target.closest("[data-retry]");if(retry){lastSearch=null;loadListings();}});
+ // Cards use native buttons for keyboard-accessible viewing; no synthetic key events needed.
  $("#pagination").addEventListener("click",e=>{const b=e.target.closest("[data-page]");if(!b)return;const p=filterQuery();p.set("page",b.dataset.page);navigateCurrent(p);$("#listings").scrollIntoView({behavior:"smooth"});});
  $("#map-board").addEventListener("click",e=>{const b=e.target.closest("[data-open-id]");if(b)go("ad",{id:Number(b.dataset.openId)});});
- $("#drawer-body").addEventListener("click",e=>{const report=e.target.closest("[data-report-kind]");if(report)go("report",{kind:report.dataset.reportKind,id:Number(report.dataset.reportId)});});
- $("#drawer-close").addEventListener("click",()=>go("home"));$("#drawer").addEventListener("click",e=>{if(e.target.hasAttribute("data-close"))go("home");});
- document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#drawer").hidden)go("home");});
+ $("#drawer-body").addEventListener("click",e=>{const favorite=e.target.closest("[data-favorite-kind]");if(favorite){toggleFavorite(favorite.dataset.favoriteKind,Number(favorite.dataset.favoriteId));return;}const report=e.target.closest("[data-report-kind]");if(report)go("report",{kind:report.dataset.reportKind,id:Number(report.dataset.reportId)});});
+ $("#drawer-close").addEventListener("click",()=>go(params().get("view")==="ad"?detailReturnView:"home"));$("#drawer").addEventListener("click",e=>{if(e.target.hasAttribute("data-close"))go(params().get("view")==="ad"?detailReturnView:"home");});
+ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#drawer").hidden)go(params().get("view")==="ad"?detailReturnView:"home");});
  setFiltersExpanded(!window.matchMedia("(max-width:700px)").matches);
   // Account navigation is always available, independent of listing API load.
  window.addEventListener("popstate",()=>{lastSearch=null;sync();});
