@@ -1,0 +1,24 @@
+name = "MURDILIMAX Объявления"
+description = "Объявления о недвижимости, автомобилях, работе, товарах и услугах. RU/LV/EN."
+[auth]
+enabled = true
+providers = ["email"]
+
+[db.tables.classified_ads]
+read = "public"
+write = "public"
+
+[db.tables.classified_images]
+read = "public"
+write = "own"
+owner_column = "owner_id"
+
+# Favorites are private to their authenticated owner.
+[db.tables.user_favorites]
+read = "own"
+write = "own"
+owner_column = "user_id"
+# External RSS listing discovery; no seller contact details are mirrored.
+[[cron]]
+path = "/api/jobs/sync-external"
+schedule = "15 */6 * * *"
