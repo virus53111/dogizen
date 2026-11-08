@@ -29,7 +29,7 @@ RestartApplications=no
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
 Name: "english"; MessagesFile: "compiler:Default.isl"
 [Files]
-Source: "_mwbuild\stage\launcher\MURDIWORLD.exe"; DestDir: "{app}"; Flags: ignoreversion
+Source: "_mwbuild\stage\MURDIWORLD.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "_mwbuild\stage\engine\*"; DestDir: "{app}\engine"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "_mwbuild\stage\world-template\*"; DestDir: "{app}\world-template"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "_mwbuild\stage\config\*"; DestDir: "{app}\config"; Flags: ignoreversion recursesubdirs createallsubdirs
