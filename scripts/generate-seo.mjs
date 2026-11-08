@@ -88,8 +88,19 @@
   };
   const jobNavigation=lang=>'<div class="job-subnav">'+["vacancy","seeking"].map(kind=>'<a href="'+jobSubUrl(lang,kind)+'">'+esc(workCopy[lang][kind][0])+'</a>').join(" · ")+'</div>';
   const offers={};
-  for(const k of Object.keys(routes))offers[k]=(await json("/api/external?category="+k)).items||[];
-  const seekerAds=(await json("/api/listings?category=jobs&job_type=seeking")).items||[];
+  for(const k of Object.keys(routes))offers[k]=(await json("/api/external?category="+k+(k==="jobs"?"&job_type=vacancy":""))).items||[];
+  const nativeSeekers=(await json("/api/listings?category=jobs&job_type=seeking")).items||[];
+  const externalSeekers=(await json("/api/external?category=jobs&job_type=seeking")).items||[];
+  const seekerRoleNames={
+    driver:{ru:"водителем",lv:"autovadītāju",en:"driver"},cleaner:{ru:"уборщиком",lv:"apkopēju",en:"cleaner"},
+    builder:{ru:"строителем",lv:"celtnieku",en:"builder"},electrician:{ru:"электриком",lv:"elektriķi",en:"electrician"},
+    programmer:{ru:"программистом",lv:"programmētāju",en:"programmer"},cook:{ru:"поваром",lv:"pavāru",en:"cook"},
+    seller:{ru:"продавцом",lv:"pārdevēju",en:"salesperson"},worker:{ru:"рабочим",lv:"strādnieku",en:"worker"},
+    administrator:{ru:"администратором",lv:"administratoru",en:"administrator"},nurse:{ru:"помощником по уходу",lv:"aprūpētāju",en:"caregiver"}
+  };
+  const seekerName=(a,lang)=>seekerRoleNames[a.attributes?.profession]?.[lang]
+    ?({ru:"Ищу работу ",lv:"Meklēju darbu kā ",en:"Seeking work as a "}[lang]+seekerRoleNames[a.attributes.profession][lang])
+    :a.title;
   const indexed=new Set([BASE+"/"]);
   await write("seo.css",stylesheet);
   for(const lang of LANGS){
@@ -131,8 +142,13 @@
       const [heading,lead]=workCopy[lang][kind],canonical=jobSubUrl(lang,kind);
       const title=heading+" | MURDILIMAX";
       const alternates=LANGS.map(l=>'<link rel="alternate" hreflang="'+l+'" href="'+jobSubUrl(l,kind)+'">').join("")+'<link rel="alternate" hreflang="x-default" href="'+jobSubUrl("ru",kind)+'">';
-      const results=kind==="vacancy"?(offers.jobs||[]).slice(0,8).map(a=>({title:a.title,city:a.city,source:a.source_url,image:a.image_url,price:a.price,price_unit:a.price_unit})):seekerAds.slice(0,8).map(a=>({title:a.title,city:a.city,source:BASE+"/ads/"+Number(a.id)+"/",image:a.image_url,price:a.price,price_unit:"total"}));
-      const cards=results.filter(a=>/^https:\/\//.test(a.source||"")).map(a=>'<article class="offer"><a href="'+esc(a.source)+'"'+(kind==="vacancy"?' target="_blank" rel="noopener noreferrer"':'')+'>'+(a.image?'<img src="'+esc(a.image)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<div class="photo-empty">▤</div>')+'<div class="copy"><span class="label">'+esc(kind==="vacancy"?(lang==="ru"?"Вакансия":lang==="lv"?"Vakance":"Vacancy"):workCopy[lang].seeking[0])+'</span><h3>'+esc(a.title)+'</h3>'+(Number(a.price)>0?'<small>'+esc(money(a.price))+'</small>':'')+'<small>'+esc(a.city||"Latvija")+'</small></div></a></article>').join("");
+      const results=kind==="vacancy"
+        ?(offers.jobs||[]).slice(0,8).map(a=>({title:a.title,city:a.city,source:a.source_url,image:a.image_url,price:a.price,price_unit:a.price_unit,external:true}))
+        :[
+          ...externalSeekers.map(a=>({title:seekerName(a,lang),city:a.city,source:a.source_url,image:null,price:null,external:true})),
+          ...nativeSeekers.map(a=>({title:a.title,city:a.city,source:BASE+"/ads/"+Number(a.id)+"/",image:a.image_url,price:a.price,external:false}))
+        ].slice(0,8);
+      const cards=results.filter(a=>/^https:\/\//.test(a.source||"")).map(a=>'<article class="offer"><a href="'+esc(a.source)+'"'+(a.external?' target="_blank" rel="noopener noreferrer"':'')+'>'+(a.image?'<img src="'+esc(a.image)+'" alt="" loading="lazy" referrerpolicy="no-referrer">':'<div class="photo-empty">▤</div>')+'<div class="copy"><span class="label">'+esc(kind==="vacancy"?(lang==="ru"?"Вакансия":lang==="lv"?"Vakance":"Vacancy"):workCopy[lang].seeking[0])+'</span><h3>'+esc(a.title)+'</h3>'+(Number(a.price)>0?'<small>'+esc(money(a.price))+'</small>':'')+'<small>'+esc(a.city||"Latvija")+'</small>'+(a.external?'<span class="label">SS.lv ↗</span>':'')+'</div></a></article>').join("");
       const ctaList=BASE+"/?lang="+lang+"&category=jobs&job_type="+kind;
       const ctaPost=BASE+"/?view=post&lang="+lang+"&category=jobs&job_type="+kind;
       const main=header(lang,"jobs")+'<section class="hero"><div class="shell"><div class="eyebrow">MURDILIMAX · JOBS</div><h1>'+esc(heading)+'</h1><p>'+esc(lead)+'</p><div class="cta"><a href="'+ctaList+'">'+esc(t.browse)+' →</a><a href="'+ctaPost+'" class="secondary">'+esc(t.post)+'</a></div></div></section><main class="shell main"><div class="panel"><h2>'+esc(t.categories)+'</h2>'+categories(lang,"jobs")+jobNavigation(lang)+'</div><div class="panel"><h2>'+esc(heading)+'</h2><p>'+esc(lead)+'</p>'+(cards?'<div class="grid">'+cards+'</div>':'<p class="notice">'+esc(workCopy[lang].none)+'</p>')+'</div></main>'+footer(lang);
