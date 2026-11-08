@@ -47,6 +47,7 @@ jobs:
           cp downloads/MURDIWORLD_Prototype_0.1.zip _site/downloads/
           cp assets/MURDIWORLD-logo.png _site/assets/
           cp assets/murdiworld-site.css _site/assets/
+          cp assets/*.webp _site/assets/
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
