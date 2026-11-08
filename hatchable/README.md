@@ -4,6 +4,14 @@ Project: `proj_E4sXfkYysFlf` (`murdilimax.hatchable.site`).
 
 This directory stores the changed Hatchable files for code review. The actual deployed source and PostgreSQL database live in Hatchable, not on GitHub Pages. Do not treat these files as automatically deployed.
 
+## Changes in v29 (server update from v28)
+- `migrations/0013_user_favorites.sql`: private per-user favorites with a composite unique key and a limit of 100 enforced by API.
+- `api/favorites.js`: signed-in GET, add, remove and merge endpoints. Validates user input and SS.lv link hosts, scopes SQL to the authenticated account, rejects anonymous calls.
+- `hatchable.toml`: owner-only row access for `user_favorites`.
+- `public/app.js`: automatically merges guest favorites after login to Hatchable and saves further changes to the account. Browser storage is retained if import fails.
+- `public/index.html` / `public/style.css` / `public/i18n.js`: responsive sync panel and RU/LV/EN messaging.
+- GitHub Pages `murdilimax.com` remains a separate origin: users tap Sync with account to open Hatchable, transferring existing favorites via origin-checked `postMessage`. Signed-in data lives on Hatchable, not in a GitHub Pages database. Browser-to-browser live sync on the public origin is not implied.
+
 ## Changes in v27
 - `public/index.html`: favorites navigation and header count, favorites view navigation and browser-local notice.
 - `public/app.js`: safe favorites snapshots for native listings and SS.lv sources; add/remove heart buttons, cross-tab synchronization, limit of 100, return to saved view from native ad details.

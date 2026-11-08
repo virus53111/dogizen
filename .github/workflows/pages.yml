@@ -43,6 +43,13 @@ jobs:
           grep -q 'id="head-favorites"' index.html
           grep -q 'id="favorites-note"' index.html
           grep -q 'function renderFavorites' app.js
+          test -s hatchable/api/favorites.js
+          test -s hatchable/migrations/0013_user_favorites.sql
+          test -s hatchable/hatchable.toml
+          grep -q 'function initializeFavoritesAccount' app.js
+          grep -q 'MURDI_FAVS_TRANSFER_V1' app.js
+          grep -q 'favorites-sync-button' index.html
+          grep -q 'favoritesSyncedNotice' i18n.js
           grep -q 'function favoriteButton' app.js
           grep -q 'favoritesTitle' i18n.js
           grep -q '.favorite-toggle' style.css

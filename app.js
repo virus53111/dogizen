@@ -16,6 +16,7 @@ const localeTag={ru:"ru-RU",lv:"lv-LV",en:"en-GB"};
 const FAVORITES_KEY="murdilimax_favorites_v1";
 const favoriteVisible=new Map();
 let favorites=readFavorites(),detailReturnView="home";
+let accountFavoritesUser=null,accountSessionUser=null,favoritesInitPromise=Promise.resolve(),favoriteMutationBusy=false,favoritesSyncFailed=false,transferDone=false;
 function esc(v){return String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function euro(n){const p=Number(n);return Number.isFinite(p)?new Intl.NumberFormat(localeTag[lang],{style:"currency",currency:"EUR",maximumFractionDigits:0}).format(p):"—";}
 function displayPrice(a){if(a.category==="jobs"&&Number(a.price)===0)return "";if(a.category==="services"&&Number(a.price)===0)return t("advNegotiable");return euro(a.price);}
@@ -220,6 +221,131 @@ function readFavorites(){
   return items;
  }catch{return [];}
 }
+function combineFavorites(first,second){
+ const seen=new Set(),result=[];
+ for(const raw of [...first,...second]){
+  const item=cleanFavorite(raw);if(!item)continue;
+  const key=favoriteKey(item.kind,item.id);
+  if(seen.has(key))continue;
+  seen.add(key);result.push(item);
+  if(result.length>=100)break;
+ }
+ return result;
+}
+function refreshFavoritesSurface(){
+ updateFavoritesUI();
+ if(params().get("view")==="favorites")renderFavorites();
+}
+function showFavoriteSyncControls(){
+ const panel=$("#favorites-sync-panel"),note=$("#favorites-note"),status=$("#favorites-sync-status"),button=$("#favorites-sync-button"),link=$("#favorites-login-link");
+ if(!panel)return;
+ panel.hidden=false;
+ if(!ON_APP){
+  status.textContent=t("favoritesTransferStatus");
+  button.hidden=false;button.disabled=false;link.hidden=true;
+ }else if(favoritesSyncFailed){
+  status.textContent=t("favoritesSyncError");
+  button.hidden=false;button.disabled=false;link.hidden=!accountSessionUser;
+  if(!accountSessionUser){button.hidden=true;link.hidden=false;}
+ }else if(accountFavoritesUser){
+  status.textContent=t("favoritesSyncReady");
+  button.hidden=true;link.hidden=true;
+ }else if(accountSessionUser){
+  status.textContent=t("favoritesSyncPending");
+  button.hidden=false;button.disabled=true;link.hidden=true;
+ }else{
+  status.textContent=t("favoritesGuestStatus");
+  button.hidden=true;link.hidden=false;
+ }
+ link.href="/login?next="+encodeURIComponent(route("favorites"))+"&lang="+lang;
+ note.textContent=t(accountFavoritesUser?"favoritesSyncedNotice":"favoritesNotice");
+}
+async function initializeFavoritesAccount(){
+ if(!ON_APP)return;
+ let session;
+ try{session=await window.hatchable?.auth?.getSession?.();}
+ catch{session=null;}
+ if(!session?.user?.id){
+  accountFavoritesUser=null;accountSessionUser=null;favoritesSyncFailed=false;
+  refreshFavoritesSurface();return;
+ }
+ const uid=String(session.user.id);
+ accountSessionUser=uid;favoritesSyncFailed=false;
+ if(params().get("view")==="favorites")showFavoriteSyncControls();
+ try{
+  const guest=readFavorites();
+  const response=guest.length
+   ?await fetchJSON("/api/favorites",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"merge",items:guest})})
+   :await fetchJSON("/api/favorites");
+  if(!Array.isArray(response.items))throw Error("Invalid favorites response");
+  favorites=combineFavorites(response.items,[]);
+  accountFavoritesUser=uid;
+  // Only clear the imported guest list after the server confirms it saved the merge.
+  if(guest.length){try{localStorage.removeItem(FAVORITES_KEY);}catch{}}
+  favoritesSyncFailed=false;
+ }catch(error){
+  accountFavoritesUser=null;favoritesSyncFailed=true;
+  favorites=combineFavorites(readFavorites(),[]);
+ }
+ refreshFavoritesSurface();
+}
+async function acceptFavoritesTransfer(raw){
+ const received=combineFavorites(Array.isArray(raw)?raw.slice(0,100):[],[]);
+ if(!received.length){refreshFavoritesSurface();return;}
+ await favoritesInitPromise;
+ if(accountFavoritesUser){
+  try{
+   const response=await fetchJSON("/api/favorites",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"merge",items:received})});
+   if(!Array.isArray(response.items))throw Error("Invalid response");
+   favorites=combineFavorites(response.items,[]);
+   favoritesSyncFailed=false;
+   toast(t("favoritesSyncReady"));
+  }catch{
+   const local=combineFavorites(received,readFavorites());
+   try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(local));}catch{}
+   favorites=combineFavorites(local,favorites);
+   favoritesSyncFailed=true;
+   toast(t("favoritesSyncError"));
+  }
+ }else{
+  const local=combineFavorites(received,readFavorites());
+  try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(local));}
+  catch{toast(t("favoriteStorageError"));return;}
+  favorites=local;
+  toast(t("favoritesTransferSuccess"));
+ }
+ refreshFavoritesSurface();
+}
+function configureFavoritesTransfer(){
+ if(ON_APP){
+  if(params().get("transfer")!=="1"||!window.opener)return;
+  const allowed=["https://murdilimax.com","https://www.murdilimax.com"];
+  window.addEventListener("message",e=>{
+   if(transferDone||e.source!==window.opener||!allowed.includes(e.origin)||e.data?.type!=="MURDI_FAVS_TRANSFER_V1")return;
+   transferDone=true;
+   acceptFavoritesTransfer(e.data.items);
+  });
+  for(const origin of allowed){try{window.opener.postMessage({type:"MURDI_FAVS_READY_V1"},origin);}catch{}}
+  return;
+ }
+}
+function startFavoritesTransfer(){
+ if(ON_APP){
+  if(!favoriteMutationBusy){favoritesSyncFailed=false;favoritesInitPromise=initializeFavoritesAccount();}
+  return;
+ }
+ let popup=null;
+ const listener=e=>{
+  if(e.origin!==HOST||e.source!==popup||e.data?.type!=="MURDI_FAVS_READY_V1")return;
+  window.removeEventListener("message",listener);
+  try{popup.postMessage({type:"MURDI_FAVS_TRANSFER_V1",items:readFavorites()},HOST);}
+  catch{toast(t("favoritesTransferError"));}
+ };
+ window.addEventListener("message",listener);
+ popup=window.open(HOST+route("favorites",{transfer:"1"}),"_blank");
+ if(!popup){window.removeEventListener("message",listener);toast(t("favoritesTransferError"));}
+}
+
 function favoriteKey(kind,id){return kind+":"+Number(id);}
 function isFavorite(kind,id){return favorites.some(x=>x.kind===kind&&x.id===Number(id));}
 function favoriteButton(kind,id){
@@ -239,22 +365,28 @@ function updateFavoritesUI(){
   btn.querySelector("span").textContent=saved?"♥":"♡";
  });
 }
-function toggleFavorite(kind,id){
+async function toggleFavorite(kind,id){
+ await favoritesInitPromise;
+ if(favoriteMutationBusy)return;
  const key=favoriteKey(kind,id),prior=favorites,existing=prior.findIndex(x=>favoriteKey(x.kind,x.id)===key);
- let next;
- if(existing>=0)next=prior.filter((x,i)=>i!==existing);
- else{
-  if(prior.length>=100){toast(t("favoriteLimit"));return;}
-  const entry=cleanFavorite({...favoriteVisible.get(key),kind,id});
-  if(!entry){toast(t("unknownError"));return;}
-  next=[entry,...prior];
+ const item=existing>=0?null:cleanFavorite({...favoriteVisible.get(key),kind,id});
+ if(existing<0&&!item){toast(t("unknownError"));return;}
+ if(existing<0&&prior.length>=100){toast(t("favoriteLimit"));return;}
+ const next=existing>=0?prior.filter((x,i)=>i!==existing):[item,...prior];
+ if(accountFavoritesUser){
+  favoriteMutationBusy=true;
+  try{
+   await fetchJSON("/api/favorites",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify(existing>=0?{op:"remove",kind,id:Number(id)}:{op:"add",item})});
+  }catch(error){toast(t("favoritesSyncError"));return;}
+  finally{favoriteMutationBusy=false;}
+ }else{
+  try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(next));}
+  catch{toast(t("favoriteStorageError"));return;}
  }
- try{localStorage.setItem(FAVORITES_KEY,JSON.stringify(next));}
- catch{toast(t("favoriteStorageError"));return;}
  favorites=next;
- updateFavoritesUI();
+ refreshFavoritesSurface();
  toast(t(existing>=0?"favoriteRemoved":"favoriteAdded"));
- if(params().get("view")==="favorites")renderFavorites();
 }
 function renderFavorites(){
  lastSearch=null;
@@ -265,6 +397,7 @@ function renderFavorites(){
  $("#pagination").hidden=true;
  $("#favorites-back").hidden=false;
  $("#favorites-note").hidden=false;
+ showFavoriteSyncControls();
  $("#results-title").textContent=t("favoritesTitle");
  $("#view-counter").textContent=t("favoritesCount")+": "+favorites.length;
  favoriteVisible.clear();
@@ -611,7 +744,7 @@ function sync(){
  readFilters();
  const p=params(),view=p.get("view")||"home";
  if(view==="favorites"){closeDrawer();renderFavorites();return;}
- if(view==="home"){closeDrawer();$("#listings").classList.remove("favorites-view");$("#favorites-back").hidden=true;$("#favorites-note").hidden=true;$("#pagination").hidden=false;loadListings();if(layout==="map")loadMap();return;}
+ if(view==="home"){closeDrawer();$("#listings").classList.remove("favorites-view");$("#favorites-back").hidden=true;$("#favorites-note").hidden=true;$("#favorites-sync-panel").hidden=true;$("#pagination").hidden=false;loadListings();if(layout==="map")loadMap();return;}
  if(view==="post")return openPost();
  if(view==="mine")return openMine();
  if(view==="admin")return openAdmin();
@@ -626,7 +759,8 @@ function init(){
  updateFavoritesUI();
  for(const sel of ["#nav-favorites","#head-favorites","#footer-favorites"]){$(sel).addEventListener("click",e=>{e.preventDefault();go("favorites");$("#listings").scrollIntoView({behavior:"smooth"});});}
  $("#favorites-back").addEventListener("click",e=>{e.preventDefault();go("home");});
- window.addEventListener("storage",e=>{if(e.key!==FAVORITES_KEY)return;favorites=readFavorites();if(params().get("view")==="favorites")renderFavorites();else updateFavoritesUI();});
+ window.addEventListener("storage",e=>{if(e.key!==FAVORITES_KEY||accountFavoritesUser)return;favorites=readFavorites();refreshFavoritesSurface();});
+ $("#favorites-sync-button").addEventListener("click",startFavoritesTransfer);
  $$(".language").forEach(b=>b.addEventListener("click",()=>setLanguage(b.dataset.lang)));
  $("#hero-search").addEventListener("submit",e=>{e.preventDefault();$("#filter-q").value=$("#hero-q").value;navigateCurrent(filterQuery());$("#listings").scrollIntoView({behavior:"smooth"});});
   $("#results-search").addEventListener("submit",e=>{e.preventDefault();$("#hero-q").value=$("#filter-q").value;navigateCurrent(filterQuery());setFiltersExpanded(false);$("#listings").scrollIntoView({behavior:"smooth"});});
@@ -648,7 +782,9 @@ function init(){
   // Account navigation is always available, independent of listing API load.
  window.addEventListener("popstate",()=>{lastSearch=null;sync();});
  if(ON_APP&&window.hatchable?.auth)window.hatchable.auth.getSession().then(s=>{if(s?.user)$("#sign-in").textContent=t("navAccount");}).catch(()=>{});
+ configureFavoritesTransfer();
  sync();
+ if(ON_APP)favoritesInitPromise=initializeFavoritesAccount();
 }
 if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();

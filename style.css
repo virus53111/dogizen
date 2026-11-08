@@ -131,6 +131,15 @@
 @media(max-width:900px){.head-favorites{width:37px;height:37px}}
 @media(max-width:660px){.head-favorites{width:34px;height:34px;border-radius:10px;font-size:24px}.head-favorites b{top:-7px;right:-7px}.favorite-toggle{width:42px;height:42px;top:7px;right:7px}.favorites-back{font-size:10px;padding:10px 11px}.favorites-view .list-head{flex-wrap:wrap;gap:9px}}
 
+/* Account favorites synchronization, with an explicit cross-origin transfer. */
+.favorites-sync-panel{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin:12px 0 0}
+.favorites-sync-panel>span{color:#536d91;font-size:11px;font-weight:700;line-height:1.6;max-width:580px}
+.favorites-sync-button,.favorites-login-link{display:inline-flex;align-items:center;justify-content:center;min-height:40px;padding:9px 14px;border-radius:10px;border:1px solid #c2d6f5;background:#e9f1ff;color:#2457b5;font-size:11px;font-weight:800;cursor:pointer}
+.favorites-sync-button:hover,.favorites-login-link:hover{background:#dceaff}
+.favorites-sync-button:disabled{opacity:.55;cursor:wait}
+.favorites-sync-panel[hidden],.favorites-sync-button[hidden],.favorites-login-link[hidden]{display:none!important}
+@media(max-width:650px){.favorites-sync-panel{flex-direction:column;align-items:flex-start}.favorites-sync-button,.favorites-login-link{min-height:44px}}
+
 /* Publishing: touch-friendly photo manager. */
 #photo-preview.photo-preview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:7px 0 18px}
 .photo-preview .photo-count{grid-column:1/-1;margin:0;font-size:12px;font-weight:800;color:#587198}
