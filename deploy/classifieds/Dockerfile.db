@@ -1,0 +1,3 @@
+# Durable MariaDB backend for the official PHP ShopClass engine.
+FROM mariadb:11.4
+EXPOSE 3306
