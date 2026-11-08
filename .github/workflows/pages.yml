@@ -63,6 +63,10 @@ jobs:
           grep -q 'https://murdilimax.com/en/cars/' _seo_validation/sitemap.xml
           test -s _seo_validation/lv/nekustamais-ipasums/index.html
           test -s _seo_validation/ru/nedvizhimost/index.html
+          test -s _seo_validation/ru/rabota/index.html
+          test -s _seo_validation/lv/darbs/index.html
+          test -s _seo_validation/en/services/index.html
+          grep -q "https://murdilimax.com/ru/rabota/" _seo_validation/sitemap.xml
           grep -q 'hreflang="en"' _seo_validation/ru/avtomobili/index.html
           grep -q 'application/ld+json' _seo_validation/en/cars/index.html
           test -s _seo_validation/robots.txt
