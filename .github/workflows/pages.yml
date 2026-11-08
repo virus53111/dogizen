@@ -29,6 +29,11 @@ jobs:
           node --check scripts/generate-seo.mjs
           test -s hatchable/public/account.html
           test -s hatchable/api/edit.js
+          test -s hatchable/api/upload-cancel.js
+          grep -q 'async function optimizePhoto' app.js
+          grep -q '/api/upload-cancel' app.js
+          grep -q 'postPhotoPreparing' i18n.js
+          grep -q 'photo-item' style.css
           node <<'NODE'
           const fs = require('fs');
           const source = fs.readFileSync('app.js','utf8');

@@ -6,7 +6,7 @@ const API=ON_APP?"":HOST;
 const M=window.MURDI_I18N||{},LANGS=["ru","lv","en"];
 const urlLang=new URLSearchParams(location.search).get("lang");
 let lang=LANGS.includes(urlLang)?urlLang:LANGS.includes(localStorage.getItem("murdilimax_language"))?localStorage.getItem("murdilimax_language"):"ru";
-let backendReady=false,lastSearch=null,layout="list",listMap=null,listMarkers=null,postMap=null,postMarker=null,detailMap=null,toastTimer=null;
+let backendReady=false,lastSearch=null,layout="list",listMap=null,listMarkers=null,postMap=null,postMarker=null,detailMap=null,toastTimer=null,photoCleanup=null;
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const t=k=>M[lang]?.[k]||M.ru?.[k]||k;
 const catKeys={realty:"catRealty",cars:"catCars",electronics:"catElectronics",jobs:"catJobs",services:"catServices",home:"catHome",other:"catOther"};
@@ -235,7 +235,7 @@ async function loadMap(){
   label.textContent=bounds.length?"":t("mapNoPins");
  }catch(e){label.textContent=t("errorDesc");}
 }
-function cleanupModalMaps(){if(postMap){postMap.remove();postMap=null;postMarker=null;}if(detailMap){detailMap.remove();detailMap=null;}}
+function cleanupModalMaps(){if(photoCleanup){photoCleanup();photoCleanup=null;}if(postMap){postMap.remove();postMap=null;postMarker=null;}if(detailMap){detailMap.remove();detailMap=null;}}
 function showDrawer(html){cleanupModalMaps();$("#drawer-body").innerHTML=html;$("#drawer").hidden=false;document.body.style.overflow="hidden";$("#drawer-close").focus();}
 function closeDrawer(){cleanupModalMaps();$("#drawer").hidden=true;document.body.style.overflow="";}
 async function session(){
@@ -261,7 +261,7 @@ async function openPost(){
  formField("contact_name","postContact","text",'maxlength="80"')+
  '<label>'+esc(t("postPhone"))+'<input name="contact_phone" type="tel" maxlength="35" placeholder="'+esc(t("postPhonePh"))+'"></label>'+
  '<div class="full category-form-fields" id="post-category-fields"></div>'+ '<label class="full">'+esc(t("postPhotos"))+'<input type="file" name="photos" id="photos" accept="image/jpeg,image/png,image/webp" multiple></label>'+
- '<p class="hint full" style="margin:-10px 0 1px">'+esc(t("postPhotoHint"))+'</p><div id="photo-preview" class="photo-preview full"></div>'+
+ '<p class="hint full" style="margin:-10px 0 1px">'+esc(t("postPhotoHint"))+'</p><div id="photo-preview" class="photo-preview full" aria-live="polite"></div>'+
  '<div class="full"><label>'+esc(t("postMapLabel"))+'</label><p class="hint">'+esc(t("postMapHint"))+'</p><div class="post-map-box"><div id="post-map"></div><div class="pin-footer"><span id="pin-status">'+esc(t("postPinNone"))+'</span><button type="button" id="pin-remove">'+esc(t("postPinRemove"))+'</button></div></div></div>'+
  '<p class="full privacy-note">'+esc(t("postPrivacy"))+'</p>'+
  '<button type="submit" class="primary-action full" id="post-submit">'+esc(t("postSubmit"))+' →</button><div id="post-msg" role="status" class="full"></div></form>';
@@ -270,12 +270,81 @@ async function openPost(){
  if(initialCategory&&catKeys[initialCategory])$("#post-form").elements.category.value=initialCategory;
  $("#post-form").querySelector("[name=category]").addEventListener("change",renderPostCategoryFields);
  renderPostCategoryFields();
- let previews=[];
- $("#photos").addEventListener("change",e=>{
-  previews.forEach(x=>URL.revokeObjectURL(x));previews=[];
-  let files=[...e.target.files];if(files.length>6){toast(t("postFileError"));e.target.value="";return;}
-  const wrap=$("#photo-preview");wrap.replaceChildren();
-  files.forEach(f=>{if(f.type.startsWith("image/")){const u=URL.createObjectURL(f);previews.push(u);const img=document.createElement("img");img.src=u;img.alt=f.name;wrap.appendChild(img);}});
+ let selectedPhotos=[],previewUrls=[],photosBusy=false;
+ const photoTypes=["image/jpeg","image/png","image/webp"];
+ const maxPhotoBytes=4*1024*1024;
+ const releasePhotoUrls=()=>{previewUrls.forEach(url=>URL.revokeObjectURL(url));previewUrls=[];};
+ photoCleanup=()=>{releasePhotoUrls();selectedPhotos=[];};
+ function redrawPhotos(){
+  releasePhotoUrls();
+  const wrap=$("#photo-preview");if(!wrap)return;
+  wrap.replaceChildren();
+  const counter=document.createElement("p");counter.className="photo-count";
+  counter.textContent=t("postPhotoCount")+": "+selectedPhotos.length+"/6";
+  wrap.appendChild(counter);
+  selectedPhotos.forEach((file,index)=>{
+   const item=document.createElement("div");item.className="photo-item";
+   const img=document.createElement("img");const url=URL.createObjectURL(file);previewUrls.push(url);
+   img.src=url;img.alt=file.name;item.appendChild(img);
+   const name=document.createElement("span");name.className="photo-filename";
+   name.textContent=(index+1)+". "+file.name+" · "+(file.size/1024/1024).toFixed(1)+" MB";
+   item.appendChild(name);
+   const actions=document.createElement("div");actions.className="photo-actions";
+   for(const [action,label,disabled] of [["left","postPhotoPrev",index===0],["right","postPhotoNext",index===selectedPhotos.length-1],["remove","postPhotoRemove",false]]){
+    const button=document.createElement("button");button.type="button";
+    button.dataset.photoAction=action;button.dataset.photoIndex=String(index);
+    button.setAttribute("aria-label",t(label));
+    button.title=t(label);button.textContent=action==="left"?"←":action==="right"?"→":"×";
+    button.disabled=disabled||photosBusy;actions.appendChild(button);
+   }
+   item.appendChild(actions);wrap.appendChild(item);
+  });
+ }
+ async function optimizePhoto(file){
+  if(!photoTypes.includes(file.type)||file.size<100)throw Error(t("postFileError"));
+  if(file.size<=2.5*1024*1024)return file;
+  if(typeof createImageBitmap!=="function"){if(file.size<=maxPhotoBytes)return file;throw Error(t("postFileError"));}
+  let bitmap;
+  try{bitmap=await createImageBitmap(file);}catch{if(file.size<=maxPhotoBytes)return file;throw Error(t("postFileError"));}
+  try{
+   const scale=Math.min(1,1600/Math.max(bitmap.width,bitmap.height));
+   const canvas=document.createElement("canvas");
+   canvas.width=Math.max(1,Math.round(bitmap.width*scale));
+   canvas.height=Math.max(1,Math.round(bitmap.height*scale));
+   const context=canvas.getContext("2d");if(!context)throw Error(t("postFileError"));
+   context.drawImage(bitmap,0,0,canvas.width,canvas.height);
+   const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/webp",.82));
+   if(blob&&blob.type==="image/webp"&&blob.size>=100&&blob.size<=maxPhotoBytes){
+    return new File([blob],file.name.replace(/\.[^.]+$/,"")+".webp",{type:"image/webp",lastModified:file.lastModified});
+   }
+   if(file.size<=maxPhotoBytes)return file;
+   throw Error(t("postFileError"));
+  }finally{bitmap.close?.();}
+ }
+ redrawPhotos();
+ $("#photo-preview").addEventListener("click",e=>{
+  const button=e.target.closest("[data-photo-action]");if(!button||photosBusy)return;
+  const index=Number(button.dataset.photoIndex);
+  if(!Number.isSafeInteger(index)||index<0||index>=selectedPhotos.length)return;
+  const action=button.dataset.photoAction;
+  if(action==="remove")selectedPhotos.splice(index,1);
+  if(action==="left"&&index>0)[selectedPhotos[index-1],selectedPhotos[index]]=[selectedPhotos[index],selectedPhotos[index-1]];
+  if(action==="right"&&index<selectedPhotos.length-1)[selectedPhotos[index],selectedPhotos[index+1]]=[selectedPhotos[index+1],selectedPhotos[index]];
+  redrawPhotos();
+ });
+ $("#photos").addEventListener("change",async e=>{
+  const input=e.target,files=[...input.files];input.value="";
+  if(!files.length)return;
+  if(photosBusy||selectedPhotos.length+files.length>6){toast(t("postFileError"));return;}
+  photosBusy=true;input.disabled=true;$("#post-submit").disabled=true;
+  const status=$("#post-msg");status.textContent=t("postPhotoPreparing");
+  try{
+   const prepared=[];
+   for(const file of files)prepared.push(await optimizePhoto(file));
+   selectedPhotos.push(...prepared);
+   status.textContent="";
+  }catch(error){status.textContent=error.message||t("postFileError");}
+  finally{photosBusy=false;input.disabled=false;$("#post-submit").disabled=false;redrawPhotos();}
  });
  if(window.L){
   requestAnimationFrame(()=>{
@@ -288,11 +357,12 @@ async function openPost(){
  $("#pin-remove").addEventListener("click",()=>{if(postMap&&postMarker){postMap.removeLayer(postMarker);postMarker=null;}$("#pin-status").textContent=t("postPinNone");});
  $("#post-form").addEventListener("submit",async e=>{
   e.preventDefault();const f=e.target,fd=new FormData(f),btn=$("#post-submit"),status=$("#post-msg");
-  const images=[...($("#photos").files||[])];
+  const images=selectedPhotos.slice();
+  if(photosBusy){status.textContent=t("postPhotoPreparing");return;}
   if(images.length>6||images.some(x=>x.size>4*1024*1024||!["image/jpeg","image/png","image/webp"].includes(x.type))){status.innerHTML='<div class="notice error">'+esc(t("postFileError"))+'</div>';return;}
   btn.disabled=true;btn.textContent=t("postSending");status.innerHTML="";
+  const keys=[];
   try{
-   const keys=[];
    for(let i=0;i<images.length;i++){
      btn.textContent=t("postUpload")+" "+(i+1)+"/"+images.length+"…";
      const form=new FormData();form.append("file",images[i]);
@@ -305,9 +375,15 @@ async function openPost(){
    if(postMarker){const p=postMarker.getLatLng();body.latitude=p.lat;body.longitude=p.lng;}else{body.latitude=null;body.longitude=null;}
    const result=await fetchJSON("/api/create",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
    status.innerHTML='<div class="notice">✓ '+esc(t("postSuccess"))+'<p><a class="modal-link" href="'+esc(appLink("mine"))+'">'+esc(t("postMine"))+' →</a></p></div>';
-   f.reset();renderPostCategoryFields();$("#photo-preview").innerHTML="";previews.forEach(x=>URL.revokeObjectURL(x));previews=[];
+   f.reset();renderPostCategoryFields();selectedPhotos=[];redrawPhotos();
    if(postMarker){postMap.removeLayer(postMarker);postMarker=null;}$("#pin-status").textContent=t("postPinNone");
-  }catch(err){status.innerHTML='<div class="notice error">'+esc(err.message||t("unknownError"))+'</div>';}
+  }catch(err){
+   if(keys.length){
+    try{await fetchJSON("/api/upload-cancel",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({keys})});}
+    catch(cleanupError){console.warn("Unable to release temporary uploads");}
+   }
+   status.innerHTML='<div class="notice error">'+esc(err.message||t("unknownError"))+'</div>';
+  }
   finally{btn.disabled=false;btn.textContent=t("postSubmit")+" →";}
  });
 }

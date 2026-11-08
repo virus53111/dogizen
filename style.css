@@ -62,3 +62,16 @@
 .listing-info .work-source-title{font-size:11px;line-height:1.5;color:#5f738f;margin:5px 0 9px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .external-card .listing-info .work-kind+h3{font-size:15px;line-height:1.4;margin:0 0 7px;min-height:0}
 @media(max-width:570px){.job-type-tabs{align-items:stretch}.job-tab-actions{width:100%}.job-tab-actions button{flex:1;min-width:90px;padding:10px 7px;font-size:11px}.job-post-shortcut{width:100%}}
+/* Publishing: touch-friendly photo manager. */
+#photo-preview.photo-preview{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:7px 0 18px}
+.photo-preview .photo-count{grid-column:1/-1;margin:0;font-size:12px;font-weight:800;color:#587198}
+.photo-item{min-width:0;padding:7px;background:#f7faff;border:1px solid #dce7f7;border-radius:12px;display:flex;flex-direction:column;gap:7px}
+.photo-preview .photo-item img{width:100%;height:110px;object-fit:cover;border-radius:8px;border:1px solid #d8e3f4}
+.photo-filename{display:block;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-size:10px;color:#536a88;min-height:16px}
+.photo-actions{display:flex;align-items:center;gap:6px}
+.photo-actions button{flex:1;min-width:0;min-height:38px;border:1px solid #ccdcf4;border-radius:8px;background:#fff;color:#2355b2;font-size:20px;font-weight:800;touch-action:manipulation}
+.photo-actions button:last-child{color:#a33638;background:#fff2f2;border-color:#f1cece}
+.photo-actions button:disabled{opacity:.35;cursor:not-allowed}
+.photo-actions button:focus-visible{outline:2px solid #2155e8;outline-offset:2px}
+#post-submit:disabled{opacity:.6;cursor:wait}
+@media(max-width:600px){#photo-preview.photo-preview{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.photo-preview .photo-item img{height:120px}.photo-actions button{min-height:44px}.drawer-panel .form-grid input[type=file]{font-size:13px;padding:11px 8px}.drawer-panel .form-grid button.primary-action{min-height:50px}}
