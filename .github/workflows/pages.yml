@@ -4,6 +4,8 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  schedule:
+    - cron: '15 3 * * *'
 permissions:
   contents: read
   pages: write
@@ -24,6 +26,7 @@ jobs:
           for f in index.html style.css app.js i18n.js favicon.svg robots.txt sitemap.xml; do test -s "$f"; done
           node --check app.js
           node --check i18n.js
+          node --check scripts/generate-seo.mjs
           grep -q 'id="view-map"' index.html
           grep -q 'id="map-canvas"' index.html
           grep -q 'data-lang="lv"' index.html
@@ -56,6 +59,13 @@ jobs:
           test ! -d guide
           ! grep -iq 'MURDIWORLD' index.html
           ! grep -iq 'MURDILIMAX Recovery' index.html
+          node scripts/generate-seo.mjs _seo_validation
+          grep -q 'https://murdilimax.com/en/cars/' _seo_validation/sitemap.xml
+          test -s _seo_validation/lv/nekustamais-ipasums/index.html
+          test -s _seo_validation/ru/nedvizhimost/index.html
+          grep -q 'hreflang="en"' _seo_validation/ru/avtomobili/index.html
+          grep -q 'application/ld+json' _seo_validation/en/cars/index.html
+          test -s _seo_validation/robots.txt
   deploy:
     if: github.event_name != 'pull_request'
     needs: validate
@@ -70,6 +80,7 @@ jobs:
         run: |
           mkdir -p _site
           cp index.html style.css app.js i18n.js favicon.svg robots.txt sitemap.xml CNAME 404.html _site/
+          node scripts/generate-seo.mjs _site
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:

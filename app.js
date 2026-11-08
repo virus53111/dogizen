@@ -34,6 +34,8 @@ function applyStatic(){
   $("#post-link").href=appLink("post");$$("[data-post-link]").forEach(a=>a.href=appLink("post"));
   $("#promo-realty").href=route("home",{category:"realty"});
   $("#footer-all").href=route("home");$("#footer-post").href=appLink("post");$("#footer-about").href=route("about");
+  const routes={realty:{ru:"/ru/nedvizhimost/",lv:"/lv/nekustamais-ipasums/",en:"/en/real-estate/"},cars:{ru:"/ru/avtomobili/",lv:"/lv/auto/",en:"/en/cars/"},electronics:{ru:"/ru/elektronika/",lv:"/lv/elektronika/",en:"/en/electronics/"},home:{ru:"/ru/dom-i-sad/",lv:"/lv/maja-un-darzs/",en:"/en/home-and-garden/"},other:{ru:"/ru/raznoe/",lv:"/lv/citi/",en:"/en/other/"}};
+  $("[data-seo-category]").forEach(a=>{const key=a.dataset.seoCategory;a.href=routes[key]?.[lang]||routes[key]?.ru;a.textContent=cat(key);});
   $("#sign-in").href=(ON_APP?"":HOST)+"/login?next="+encodeURIComponent(route("post"))+"&lang="+lang;
   $$(".cat").forEach(x=>x.classList.toggle("active",x.dataset.category===params().get("category")));
 }
