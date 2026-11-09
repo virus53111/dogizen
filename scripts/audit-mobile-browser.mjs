@@ -12,6 +12,8 @@ routes.push(
  '/ru/guides/cloud-types-field-guide/','/ru/guides/thunderstorm-hiking-safety/','/ru/guides/beginner-stargazing-plan/','/ru/guides/bicycle-visibility-checklist/','/ru/guides/find-water-leaks-home/'
 );
 const sizes=[320,360,390,430,768];
+const {illustratedGuidesC}=await import('../lib/illustrated-guides-c.js');
+for(const article of illustratedGuidesC)for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+article.id+'/');
 routes.push(...['it','pt','pl'].map(lang=>'/'+lang+'/guides/ssd-vs-hdd/'));
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
 const server=createServer(async(req,res)=>{
@@ -46,6 +48,12 @@ try{
   page.on('pageerror',e=>browserErrors.push(e.message));
   for(const pathname of routes){
    await page.goto(base+pathname,{waitUntil:'domcontentloaded',timeout:12000});
+   if(pathname.includes('/guides/')){
+    const hero=page.locator('.article-image img');
+    await hero.evaluate(img=>img.decode());
+    assert.ok(await hero.evaluate(img=>img.complete&&img.naturalWidth>0),'Article artwork failed to decode: '+pathname);
+    assert.equal(await hero.getAttribute('src'),'/media/'+pathname.split('/').filter(Boolean).at(-1)+'.svg','Generic fallback replaced subject artwork');
+   }
    const data=await page.evaluate(()=>{
     const viewport=document.documentElement.clientWidth;
     const scroll=Math.max(document.documentElement.scrollWidth,document.body.scrollWidth);

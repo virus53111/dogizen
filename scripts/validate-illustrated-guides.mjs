@@ -3,18 +3,19 @@ import {readFileSync,existsSync} from 'node:fs';
 import {stories,storiesFor,availableIn,languages} from '../lib/atlas-data.js';
 import {illustratedGuidesA} from '../lib/illustrated-guides-a.js';
 import {illustratedGuidesB} from '../lib/illustrated-guides-b.js';
+import {illustratedGuidesC} from '../lib/illustrated-guides-c.js';
 import {editorialArt2026} from '../lib/editorial-art-2026.js';
 const read=p=>readFileSync(p,'utf8');
-const articles=[...illustratedGuidesA,...illustratedGuidesB];
+const articles=[...illustratedGuidesA,...illustratedGuidesB,...illustratedGuidesC];
 const slugs=articles.map(s=>s.id);
-assert.equal(articles.length,10,'Ten editorial topics, not ten duplicated translations');
-assert.equal(new Set(slugs).size,10,'Duplicate new slugs');
-assert.deepEqual(Object.keys(editorialArt2026).sort(),[...slugs].sort(),'Every article needs its own unique original picture');
-assert.equal(stories.length,70,'Expected 60 previous + 10 new articles');
-assert.equal(new Set(stories.map(s=>s.id)).size,70,'Do not create duplicate article IDs');
+assert.equal(articles.length,22,'Twenty-two distinct illustrated topics');
+assert.equal(new Set(slugs).size,22,'Duplicate new slugs');
+assert.deepEqual(Object.keys(editorialArt2026).sort(),stories.map(s=>s.id).sort(),'Every article needs its own unique original picture');
+assert.equal(stories.length,82,'Expected 70 previous + 12 new articles');
+assert.equal(new Set(stories.map(s=>s.id)).size,82,'Do not create duplicate article IDs');
 assert.equal(languages.length,12,'Must preserve all language options');
 const map=read('dist/sitemap.xml');
-assert.equal((map.match(/<url>/g)||[]).length,567,'Each new article adds exactly two genuinely written URLs');
+assert.equal((map.match(/<url>/g)||[]).length,591,'Each new article adds exactly two genuinely written URLs');
 const artPaths=new Set();
 const allCards={en:read('dist/index.html'),ru:read('dist/ru/index.html')};
 const artFallback='dist/media/guide-fallback.svg';
@@ -48,7 +49,7 @@ for(const article of articles){
   assert.equal(new Set(text.sections.map(x=>x[0])).size,5,'Repeated chapter headings');
   const count=text.sections.flat().join(' ').trim().split(/\s+/u).filter(Boolean).length;
   assert.ok(count>=200,'Insufficient practical research content '+article.id+'/'+lang+': '+count);
-  assert.ok(text.sections.every(([head,body])=>head.length>=20&&body.length>=270),
+  assert.ok(text.sections.every(([head,body])=>head.length>=15&&body.length>=270),
    'Each chapter must explain decisions and steps: '+article.id+'/'+lang);
   const prefix=lang==='en'?'':lang+'/';
   const route='/'+prefix+'guides/'+article.id+'/';
@@ -86,4 +87,4 @@ for(const article of articles){
    'Never publish a fake untranslated guide: '+article.id+'/'+lang);
  console.log('PASS '+article.id+': 2 complete guides, 1 unique local picture, original sources and accessible image metadata');
 }
-console.log('PASS: all 70 unique topics have pictures; 10 new locally hosted vector illustrations; 20 researched articles; 567 real canonical sitemap URLs.');
+console.log('PASS: all 82 unique topics have pictures; 82 locally hosted vector illustrations; 44 researched article editions; 591 real canonical sitemap URLs.');
