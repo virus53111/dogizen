@@ -89,6 +89,10 @@ jobs:
           grep -q 'xhtml:link' dist/sitemap.xml
           node --input-type=module -e "import {visualSpecies} from './lib/species-atlas.js'; if(visualSpecies.length !== 78||visualSpecies.some(x=>!x.image||!x.photoCredit||!x.detail.ru||!x.detail.en)) process.exit(2);"
           grep -q 'Как обновить старый Ryzen' dist/ru/guides/ryzen-upgrade/index.html
+      - name: Audit mobile layouts with real Chromium rendering
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          node scripts/audit-mobile-browser.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
