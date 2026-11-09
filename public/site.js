@@ -126,6 +126,38 @@ if(calc){
 }
 const share=$('#share-button');if(share)share.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);share.textContent='✓ '+dict.copied}catch(e){share.textContent=location.href}});
 
+// Reader navigation is optional: other page types remain free of scroll listeners.
+const articleToc=document.querySelector('.article-toc-panel');
+const readingProgress=document.querySelector('#reading-progress');
+const articleText=document.querySelector('#article-text');
+if(articleToc&&readingProgress&&articleText){
+ const sections=[...articleText.querySelectorAll('section[id]')];
+ const links=[...document.querySelectorAll('[data-toc-link]')];
+ if(window.matchMedia&&window.matchMedia('(max-width: 740px)').matches)articleToc.open=false;
+ const syncReadingPosition=()=>{
+  const rect=articleText.getBoundingClientRect();
+  const travel=Math.max(1,rect.height-window.innerHeight*0.6);
+  const fraction=Math.min(1,Math.max(0,(window.innerHeight*0.25-rect.top)/travel));
+  readingProgress.style.setProperty('--reading-fraction',String(fraction));
+  readingProgress.setAttribute('aria-valuenow',String(Math.round(100*fraction)));
+  const offset=window.innerHeight*0.28;
+  let current=sections[0]?.id;
+  for(const section of sections){
+   if(section.getBoundingClientRect().top<=offset)current=section.id;
+  }
+  for(const link of links){
+   if(link.dataset.tocLink===current)link.setAttribute('aria-current','location');
+   else link.removeAttribute('aria-current');
+  }
+ };
+ window.addEventListener('scroll',syncReadingPosition,{passive:true});
+ window.addEventListener('resize',syncReadingPosition);
+ articleToc.addEventListener('click',event=>{
+  if(event.target.closest('[data-toc-link]')&&window.innerWidth<=740)articleToc.open=false;
+ });
+ syncReadingPosition();
+}
+
 const speciesSearch=document.querySelector('[data-species-search]');
 if(speciesSearch){
  const entries=[...document.querySelectorAll('[data-species-entry]')];
