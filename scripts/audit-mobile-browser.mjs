@@ -124,10 +124,13 @@ try{
  await page.goto(base+'/ru/ai-photo-prompts/',{waitUntil:'domcontentloaded'});
  await page.context().grantPermissions(['clipboard-read','clipboard-write'],{origin:base});
  await page.locator('.ai-copy').first().click();
+ // Clipboard writes resolve asynchronously after the click listener yields.
+ await page.waitForFunction(()=>document.querySelector('[data-ai-feedback]')?.textContent?.includes('Скопировано'),null,{timeout:6000});
  assert.match(await page.locator('[data-ai-feedback]').first().innerText(),/Скопировано/,'Copy button must report success');
  const copied=await page.evaluate(()=>navigator.clipboard.readText());
  assert.match(copied,/Создай гиперреалистичный кинематографический студийный портрет/,'Clipboard must contain full first prompt');
  await page.locator('.ai-copy').nth(2).click();
+ await page.waitForFunction(()=>document.querySelectorAll('[data-ai-feedback]')[2]?.textContent?.includes('Скопировано'),null,{timeout:6000});
  const third=await page.evaluate(()=>navigator.clipboard.readText());
  assert.match(third,/Создай динамичное кинематографическое изображение/,'Copy button must target its own prompt');
  console.log('PASS: AI image prompt buttons copy independent full prompts in mobile Chromium');
