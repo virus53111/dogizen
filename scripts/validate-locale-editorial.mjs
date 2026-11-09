@@ -53,5 +53,5 @@ for(const lang of ['en','ru','fr','lv']){
  const html=read('dist/'+(lang==='en'?'':lang+'/')+'guides/backup-321/index.html');
  for(const source of essentialGuidesDeEs['backup-321'].sources)assert.ok(!html.includes(source.url)&&!html.includes(source.url.replaceAll('&','&amp;')),'Do not leak DE/ES-only links to '+lang);
 }
-assert.equal((read('dist/sitemap.xml').match(/<url>/g)||[]).length,623,'Expected unchanged 623 real URLs');
-console.log('PASS: six independently rewritten German/Spanish pages, with source-safe citations and 623 URL sitemap.');
+assert.equal((read('dist/sitemap.xml').match(/<url>/g)||[]).length,625,'Expected unchanged 625 real URLs');
+console.log('PASS: six independently rewritten German/Spanish pages, with source-safe citations and 625 URL sitemap.');
