@@ -9,7 +9,7 @@ await rm(root,{recursive:true,force:true});
 await mkdir(root,{recursive:true});
 const write=async(file,body)=>{const dest=path.join(root,file);await mkdir(path.dirname(dest),{recursive:true});await writeFile(dest,body,'utf8')};
 const key='8f6c1e2a9b4d7f30a5c2e18d6b9f43a1';
-for(const file of ['site.css','site.js','favicon.svg','robots.txt'])await copyFile(path.resolve('public',file),path.join(root,file));
+for(const file of ['site.css','atlas-visual.css','site.js','favicon.svg','robots.txt'])await copyFile(path.resolve('public',file),path.join(root,file));
 const pages=[];
 for(const lang of languages){
   const prefix=lang==='en'?'':lang+'/';
