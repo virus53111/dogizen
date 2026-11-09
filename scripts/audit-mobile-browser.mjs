@@ -52,7 +52,7 @@ try{
     const hero=page.locator('.article-image img');
     await hero.evaluate(img=>img.decode());
     assert.ok(await hero.evaluate(img=>img.complete&&img.naturalWidth>0),'Article artwork failed to decode: '+pathname);
-    assert.equal(await hero.getAttribute('src'),'/media/'+pathname.split('/').filter(Boolean).at(-1)+'.svg','Generic fallback replaced subject artwork');
+    assert.match(await hero.getAttribute('src'),/^\/photos\/[a-f0-9]{18}\.jpg$/,'Guide cover must be a genuine local JPEG photograph: '+pathname);
    }
    const data=await page.evaluate(()=>{
     const viewport=document.documentElement.clientWidth;
