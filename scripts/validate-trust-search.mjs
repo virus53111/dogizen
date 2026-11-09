@@ -5,7 +5,7 @@ import {visualSpecies} from '../lib/species-atlas.js';
 const read=path=>readFileSync(path,'utf8');
 const pages=['about','editorial','privacy'];
 const site=read('dist/sitemap.xml');
-assert.equal((site.match(/<url>/g)||[]).length,547,'Expected existing 541 URL entries plus six verified trust pages');
+assert.equal((site.match(/<url>/g)||[]).length,567,'Expected existing 541 URL entries plus six verified trust pages');
 for(const lang of ['en','ru']){
  const prefix='dist/'+(lang==='en'?'':lang+'/');
  const home=read(prefix+'index.html');
@@ -54,4 +54,4 @@ assert.match(css,/search-hit/,'Universal-search styling missing');
 assert.match(css,/\[hidden\]\{display:none!important\}/,'Hidden search cards must remain hidden');
 const sample=read('dist/ru/guides/backup-321/index.html');
 assert.match(sample,/Правило резервного копирования/);
-console.log('PASS: 547 sitemap entries, six bilingual trust pages, 12 search indexes, 78 species and three deep bilingual guides.');
+console.log('PASS: 567 sitemap entries, six bilingual trust pages, 12 search indexes, 78 species and three deep bilingual guides.');
