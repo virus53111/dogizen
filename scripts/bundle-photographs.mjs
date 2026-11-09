@@ -9,7 +9,8 @@ import path from 'node:path';
 const firstTopicPhotos={
  tech:'https://images.unsplash.com/photo-1518770660439-4636190af475',
  digital:'https://images.unsplash.com/photo-1498050108023-c5249f4df085',
- tools:'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40'
+ tools:'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40',
+ sauna:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Typical_Russian_Banya.jpg?width=1200'
 };
 const newGuidePhotos={
  'wifi-router-placement':{
@@ -75,6 +76,72 @@ const newGuidePhotos={
  'fish-senses-lateral-line':{url:'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429',source:'https://unsplash.com/',credit:'Unsplash'},
  'kitchen-scale-tare-guide':{url:'https://images.unsplash.com/photo-1556911220-bff31c812dba',source:'https://unsplash.com/',credit:'Unsplash'}
 };
+
+// Individually selected photographs: identifiable subject, reviewed Commons file, photographer and licence.
+// Keep each entry unique; generic category stock must not replace these images.
+const reviewedArticlePhotos={
+  "heat-exhaustion-signs": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/A%20man%20sweats%20while%20running%20during%20a%20sunny%20heatwave%20in%20Hong%20Kong.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:A_man_sweats_while_running_during_a_sunny_heatwave_in_Hong_Kong.jpg",
+    "credit": "Hong Kong Free Press / Wikimedia Commons — CC BY 4.0 (image resized/cropped)"
+  },
+  "check-medical-information": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Nurse%20taking%20notes%20while%20working%20on%20a%20laptop%20in%20a%20medical%20office.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Nurse_taking_notes_while_working_on_a_laptop_in_a_medical_office.jpg",
+    "credit": "Shixart1985 / Wikimedia Commons — CC BY 2.0 (image resized/cropped)"
+  },
+  "better-sleep-routine": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Person%20Sleeping.JPG?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Person_Sleeping.JPG",
+    "credit": "Panduh562 / Wikimedia Commons — CC BY-SA 3.0 (image resized/cropped)"
+  },
+  "carbon-monoxide-home-safety": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Carbon%20monoxide%20alarm.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Carbon_monoxide_alarm.jpg",
+    "credit": "Santeri Viinamäki / Wikimedia Commons — CC BY-SA 4.0 (image resized/cropped)"
+  },
+  "wood-stove-sauna-carbon-monoxide": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Wood%20stove%20of%20smoke%20sauna%20of%20Kuusij%C3%A4rvi%2C%20Kuninkaanm%C3%A4ki%2C%20Vantaa%2C%20Finland%2C%202023%20April%20-%202.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Wood_stove_of_smoke_sauna_of_Kuusij%C3%A4rvi%2C_Kuninkaanm%C3%A4ki%2C_Vantaa%2C_Finland%2C_2023_April_-_2.jpg",
+    "credit": "Simo Räsänen / Wikimedia Commons — CC BY-SA 4.0 (image resized/cropped)"
+  },
+  "sauna-heat-vs-heatstroke": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Interior%20of%20a%20sauna.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Interior_of_a_sauna.jpg",
+    "credit": "Konstantin / Wikimedia Commons — CC BY-SA 3.0 (image resized/cropped)"
+  },
+  "sauna-safety-guide": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Sauna%20stove.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Sauna_stove.jpg",
+    "credit": "Kulmalukko / Wikimedia Commons — CC BY-SA 4.0 (image resized/cropped)"
+  },
+  "smoke-alarm-home-placement": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Heimrauchmelder.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Heimrauchmelder.jpg",
+    "credit": "TDLacoste / Wikimedia Commons — CC BY-SA 3.0 (image resized/cropped)"
+  },
+  "tick-bite-first-steps": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Ixodes%20ricinus%20PL.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Ixodes_ricinus_PL.jpg",
+    "credit": "Navaho / Wikimedia Commons — CC BY-SA 4.0 (image resized/cropped)"
+  },
+  "mushroom-poisoning-warning-signs": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Mushroom%20Amanita%20phalloides.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Mushroom_Amanita_phalloides.jpg",
+    "credit": "Aleksey Gnilenkov / Wikimedia Commons — CC BY 2.0 (image resized/cropped)"
+  },
+  "international-travel-documents": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Passport%20and%20Luggage%20(5778139343).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Passport_and_Luggage_(5778139343).jpg",
+    "credit": "Sean MacEntee / Wikimedia Commons — CC BY 2.0 (image resized/cropped)"
+  }
+};
+for(const [slug,record] of Object.entries(reviewedArticlePhotos)){
+ if(newGuidePhotos[slug])throw Error('Already curated elsewhere: '+slug);
+ newGuidePhotos[slug]=record;
+}
+const reviewedFiles=new Set(Object.values(reviewedArticlePhotos).map(p=>p.source));
+if(reviewedFiles.size!==Object.keys(reviewedArticlePhotos).length)throw Error('Two reviewed articles reuse a photograph');
 const signature=buffer=>buffer.length>12&&buffer[0]===255&&buffer[1]===216&&buffer[buffer.length-2]===255&&buffer[buffer.length-1]===217;
 async function getJpeg(source){
  const url=new URL(source);
