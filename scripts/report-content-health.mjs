@@ -7,7 +7,7 @@ for(const lang of languages){
   title:article[lang].title,
   id:article.id,
   words:words(article[lang].sections),
-  refs:(article.sources||[]).length
+  refs:(article.sources||[]).length+(article.localeSources?.[lang]||[]).length
  }));
  const counts=stats.map(x=>x.words).sort((a,b)=>a-b);
  const med=counts.length?counts[Math.floor(counts.length/2)]:0;
