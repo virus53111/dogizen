@@ -392,6 +392,43 @@ for(const [slug,asset] of Object.entries(highIntentPhotos)){
  if(newGuidePhotos[slug])throw Error('New article photo overrides existing guide: '+slug);
  newGuidePhotos[slug]=asset;
 }
+// Six individually licensed, topic-matching genuine photographs for worldwide evergreen how-to guides.
+const globalGuidePhotos={
+  "change-flat-tire-safely": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Changing%20car%20tire%2020170513%2001.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Changing_car_tire_20170513_01.jpg",
+    "credit": "Santeri Viinamäki / Wikimedia Commons — CC BY-SA 4.0 (photograph resized for web)"
+  },
+  "find-my-ip-address": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Linksys-Wireless-G-Router.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Linksys-Wireless-G-Router.jpg",
+    "credit": "Evan-Amos / Wikimedia Commons — Public domain (photograph resized for web)"
+  },
+  "simple-monthly-budget-plan": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Counting%20Money%2C%20Yemen%20(10850034204).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Counting_Money%2C_Yemen_(10850034204).jpg",
+    "credit": "Rod Waddington / Wikimedia Commons — CC BY-SA 2.0 (photograph resized for web)"
+  },
+  "create-professional-invoice": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Paperilasku%2020180304.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Paperilasku_20180304.jpg",
+    "credit": "Santeri Viinamäki / Wikimedia Commons — CC BY-SA 4.0 (photograph resized for web)"
+  },
+  "lost-stolen-smartphone-first-steps": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Coffee-cup-apple-iphone.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Coffee-cup-apple-iphone.jpg",
+    "credit": "Pexels contributor / Wikimedia Commons — CC0 (photograph resized for web)"
+  },
+  "fake-remote-job-offer-warning-signs": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Job%20interview.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Job_interview.jpg",
+    "credit": "Alan Cleaver / Wikimedia Commons — CC BY 2.0 (photograph resized for web)"
+  }
+};
+for(const [slug,asset] of Object.entries(globalGuidePhotos)){
+ if(newGuidePhotos[slug])throw Error('Duplicate photo assignment '+slug);
+ newGuidePhotos[slug]=asset;
+}
 const signature=buffer=>buffer.length>12&&buffer[0]===255&&buffer[1]===216&&buffer[buffer.length-2]===255&&buffer[buffer.length-1]===217;
 async function getJpeg(source){
  const url=new URL(source);
