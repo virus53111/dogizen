@@ -1,7 +1,7 @@
 name: Publish MURDILIMAX — The Answer Atlas
 on:
   push:
-    branches: [main, feature/visual-species-encyclopedia-20261109]
+    branches: [main, fix/species-photographs-editorial-20261109]
   workflow_dispatch:
 permissions:
   contents: read
@@ -34,6 +34,7 @@ jobs:
           node --check lib/atlas-site.js
           node --check public/site.js
           node scripts/build-atlas.mjs
+          node scripts/validate-species-media.mjs
           test -s dist/index.html
           test -s dist/ru/guides/ryzen-upgrade/index.html
           test -s dist/de/tools/percentage/index.html
