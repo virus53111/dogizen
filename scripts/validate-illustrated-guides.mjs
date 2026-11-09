@@ -38,7 +38,7 @@ for(const article of articles){
  assert.ok(img.length>=1100,'Original illustration must be substantive: '+article.id);
  assert.match(img,/^<svg\b.*<\/svg>$/s,'Well-formed SVG image needed '+article.id);
  assert.match(img,/viewBox="0 0 1400 780"/,'Retain article hero ratio');
- assert.ok(!/https?:\/\/|<script\b|onload=|<foreignObject/i.test(img),'SVG must be local and inert');
+ assert.ok(!/https?:\/\/|<script\b|onload=|<foreignObject/i.test(img.replace('xmlns="http://www.w3.org/2000/svg"','')),'SVG must be local and inert');
  assert.match(img,/aria-label="/,'Include image context for SVG use');
  assert.ok(availableIn(article,'en')&&availableIn(article,'ru'),'Each new guide requires an original EN/RU edition');
  for(const lang of ['en','ru']){
@@ -55,7 +55,7 @@ for(const article of articles){
   const html=read('dist'+route+'index.html');
   assert.ok(html.includes(text.title)&&html.includes(text.subtitle),'Localized guide not visible');
   assert.ok(html.includes('src="'+image+'"'),'Original local artwork missing from guide');
-  assert.ok(html.includes('alt="'+article.mediaAlt?.[lang]+'"'),'Image needs meaningful translated alt');
+  assert.ok(html.includes('alt="'+editorialArt2026[article.id].alt[lang]+'"'),'Image needs meaningful translated alt');
   assert.ok(html.includes('decoding="async"'),'Decode high-res art off the main thread');
   assert.ok(html.includes('fetchpriority="high"'),'Prioritize visible hero artwork');
   assert.match(html,/href="#section-4"/,'Reading outline must contain five chapters');
