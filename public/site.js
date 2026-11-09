@@ -41,4 +41,32 @@ if(calc){
  a.addEventListener('input',()=>{active='a';recalc()});b.addEventListener('input',()=>{active='b';recalc()});recalc();
 }
 const share=$('#share-button');if(share)share.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);share.textContent='✓ '+dict.copied}catch(e){share.textContent=location.href}});
+
+const speciesSearch=document.querySelector('[data-species-search]');
+if(speciesSearch){
+ const entries=[...document.querySelectorAll('[data-species-entry]')];
+ const chips=[...document.querySelectorAll('[data-species-filter]')];
+ const count=document.querySelector('[data-species-count]');
+ const empty=document.querySelector('[data-species-empty]');
+ let mode='all';
+ const apply=()=>{
+  const query=speciesSearch.value.trim().toLocaleLowerCase();
+  let visible=0;
+  for(const el of entries){
+   const matches=(mode==='all'||el.dataset.status===mode)&&(!query||el.dataset.name.includes(query));
+   el.hidden=!matches;if(matches)visible++;
+  }
+  if(count)count.textContent=String(visible);
+  if(empty)empty.hidden=visible>0;
+ };
+ speciesSearch.addEventListener('input',apply);
+ for(const chip of chips)chip.addEventListener('click',()=>{
+  mode=chip.dataset.speciesFilter;
+  for(const btn of chips){const current=btn===chip;btn.classList.toggle('v-selected',current);btn.setAttribute('aria-pressed',String(current));}
+  apply();
+ });
+ const params=new URLSearchParams(window.location.search);
+ const term=params.get('q');if(term){speciesSearch.value=term;apply();}
+}
+
 })();
