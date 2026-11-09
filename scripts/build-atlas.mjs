@@ -2,7 +2,7 @@ import {mkdir,writeFile,copyFile,rm} from 'node:fs/promises';
 import path from 'node:path';
 import {languages,stories,storiesFor,availableIn,topics} from '../lib/atlas-data.js';
 import {species} from '../lib/world-topics.js';
-import {home,guide,tool,category,speciesPage,notFound,url} from '../lib/atlas-site.js';
+import {home,guide,tool,category,speciesPage,trustPage,notFound,url} from '../lib/atlas-site.js';
 import {visualSpecies} from '../lib/species-atlas.js';
 const root=path.resolve('dist');
 await rm(root,{recursive:true,force:true});
@@ -15,6 +15,10 @@ for(const lang of languages){
   const prefix=lang==='en'?'':lang+'/';
   await write(prefix+'index.html',home(lang));
   pages.push({lang,part:'',weight:'0.9'});
+  if(['en','ru'].includes(lang))for(const id of ['about','editorial','privacy']){
+    await write(prefix+id+'/index.html',trustPage(lang,id));
+    pages.push({lang,part:id,weight:'0.4',updated:'2026-11-09'});
+  }
   for(const s of storiesFor(lang)){
     await write(prefix+'guides/'+s.id+'/index.html',guide(lang,s.id));
     pages.push({lang,part:'guides/'+s.id,weight:'0.7',updated:s.updated,story:s,image:s.image});
@@ -38,7 +42,7 @@ const urls=pages.map(p=>site+url(p.lang,p.part));
 const xmlesc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 let sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
 for(const p of pages){
-  const langs=p.species?['en','ru']:(p.story?languages.filter(l=>availableIn(p.story,l)):(p.topic?languages.filter(l=>storiesFor(l).some(s=>s.topic===p.topic)||species.some(s=>s.group===p.topic)||p.topic==='tools'):languages));
+  const langs=['about','editorial','privacy'].includes(p.part)?['en','ru']:(p.species?['en','ru']:(p.story?languages.filter(l=>availableIn(p.story,l)):(p.topic?languages.filter(l=>storiesFor(l).some(s=>s.topic===p.topic)||species.some(s=>s.group===p.topic)||p.topic==='tools'):languages)));
   sitemap+='  <url><loc>'+xmlesc(site+url(p.lang,p.part))+'</loc>';
   if(p.updated)sitemap+='<lastmod>'+p.updated+'</lastmod>';
   if(p.image)sitemap+='<image:image><image:loc>'+xmlesc(p.image)+'</image:loc></image:image>';
