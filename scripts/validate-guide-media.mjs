@@ -22,7 +22,7 @@ for(const guide of stories){
   assert.ok(local,'Visible photo must be included '+guide.id+'/'+lang);
   photo(local);photos.add(local);
   const alt=(guide.mediaAlt?.[lang]||guide[lang].title)
-    .replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+    .replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll("'",'&#39;').replaceAll('<','&lt;').replaceAll('>','&gt;');
   assert.ok(html.includes('alt="'+alt+'"'),'Descriptive localized alt missing '+lang+'/'+guide.id);
   assert.ok(html.includes('property="og:image" content="https://murdilimax.com'+local+'"'),
    'Share image missing '+lang+'/'+guide.id);
