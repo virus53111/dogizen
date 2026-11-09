@@ -155,7 +155,7 @@ Object.assign(reviewedArticlePhotos,{
   "password-manager-passkeys": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/YubiKey.jpg?width=1200",
     "source": "https://commons.wikimedia.org/wiki/File:YubiKey.jpg",
-    "credit": "Wikimedia contributor / Wikimedia Commons — See Commons file license (resized/cropped)"
+    "credit": "Warfieldian / Wikimedia Commons — CC BY-SA 3.0 (resized/cropped)"
   },
   "secure-our-world-four-habits": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/FIDO%20U2F%20Security%20Key%20by%20Plug-up%20International%2001.jpg?width=1200",
@@ -255,7 +255,7 @@ Object.assign(reviewedArticlePhotos,{
   "thunderstorm-hiking-safety": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Nighttime%20Thunderstorm%20and%20Cloud-to-Cloud%20Lightning.jpg?width=1200",
     "source": "https://commons.wikimedia.org/wiki/File:Nighttime_Thunderstorm_and_Cloud-to-Cloud_Lightning.jpg",
-    "credit": "Wikimedia Commons contributor / Wikimedia Commons — See linked Commons licence (resized/cropped)"
+    "credit": "Muhammadphoto / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
   },
   "read-contour-lines": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Map%20Reading%20in%20prep%20for%20hike%20(51873860348).jpg?width=1200",
@@ -293,9 +293,9 @@ Object.assign(reviewedArticlePhotos,{
     "credit": "Leo Fung / Wikimedia Commons — CC BY 2.0 (resized/cropped)"
   },
   "animal-tracks-observation": {
-    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Animal%20tracks%20in%20snow.jpg?width=1200",
-    "source": "https://commons.wikimedia.org/wiki/File:Animal_tracks_in_snow.jpg",
-    "credit": "Tiia Monto / Wikimedia Commons — CC BY-SA 3.0 (resized/cropped)"
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Fox%20Tracks%20in%20the%20Snow%20(51861791568).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Fox_Tracks_in_the_Snow_(51861791568).jpg",
+    "credit": "NPS / Hannah Prokop — Public domain (resized/cropped)"
   },
   "solar-eclipse-eye-safety": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/2017%20Total%20Solar%20Eclipse%20(36739413175).jpg?width=1200",
@@ -325,7 +325,7 @@ Object.assign(reviewedArticlePhotos,{
   "best-before-vs-use-by-europe": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Parasta%20ennen%202018.jpg?width=1200",
     "source": "https://commons.wikimedia.org/wiki/File:Parasta_ennen_2018.jpg",
-    "credit": "Wikimedia Commons contributor / Wikimedia Commons — See linked Commons licence (resized/cropped)"
+    "credit": "Santeri Viinamäki / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
   },
   "freezer-food-storage": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bags%20of%20frozen%20fruit%20in%20the%20freezer.jpg?width=1200",
