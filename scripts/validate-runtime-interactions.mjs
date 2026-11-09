@@ -31,7 +31,7 @@ const document={
  events:{},
  createElement(){return node()}
 };
-vm.runInNewContext(source,{document,console,window:{location:{search:''}},location:{},navigator:{},setTimeout(){}},{timeout:1500});
+vm.runInNewContext(source,{document,console,window:{location:{search:''}},location:{},navigator:{},URLSearchParams,setTimeout(){}},{timeout:1500});
 for(const [kind,items] of [['category filter',filters],['topic link',links]]){
  for(const el of items)assert.equal(el.events.click?.length,1,kind+' missing listener');
 }
