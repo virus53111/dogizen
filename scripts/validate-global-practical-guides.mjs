@@ -18,12 +18,12 @@ const photoFileNames={
 const read=p=>readFileSync(root+p,'utf8');
 assert.equal(newGuides.length,6,'Six complete worldwide guides required');
 assert.equal(new Set(newGuides.map(g=>g.id)).size,6,'New article IDs must be unique');
-assert.equal(stories.length,92,'Old 86 + six original how-to guides');
-assert.equal(new Set(stories.map(g=>g.id)).size,92);
+assert.equal(stories.length,98,'86 previous + six global + six health and safety guides');
+assert.equal(new Set(stories.map(g=>g.id)).size,98);
 assert.equal(languages.length,12,'Preserve all interface locales');
 assert.equal(topics.length,16,'Preserve topics');
 const sitemap=read('sitemap.xml');
-assert.equal((sitemap.match(/<url>/g)||[]).length,611,'Six EN/RU originals add twelve indexable pages');
+assert.equal((sitemap.match(/<url>/g)||[]).length,623,'Six EN/RU originals add twelve indexable pages');
 const photos=new Set();
 for(const guide of newGuides){
  assert.ok(topics.some(t=>t.id===guide.topic),'Unknown category '+guide.id);
@@ -82,4 +82,4 @@ for(const lang of ['en','ru']){
  const previous=markup.indexOf('href="/'+prefix+'guides/latvia-property-tax-online/');
  assert.ok(previous>offsets.at(-1),'Worldwide articles should precede last release '+lang);
 }
-console.log('PASS: 6 substantive globally relevant bilingual guides, 12 new routes, 92 different photo covers, 611 canonical URLs.');
+console.log('PASS: 6 substantive globally relevant bilingual guides, 12 new routes, 98 different photo covers, 623 canonical URLs.');
