@@ -1,16 +1,17 @@
 # MURDILIMAX — The Answer Atlas
 
-A multilingual independent knowledge portal deployed to [murdilimax.com](https://murdilimax.com).
+The multilingual independent knowledge project at [murdilimax.com](https://murdilimax.com), deployed by GitHub Actions to GitHub Pages.
 
-- Languages: English, Russian, German, Spanish, French, Latvian.
-- Searchable practical guides and interactive calculators.
-- Server-rendered source mirrored from Hatchable; GitHub Actions generates fully static SEO pages for GitHub Pages.
-- No ads or tracking scripts are configured.
+## Publishing model
+- 12 interface languages with **explicit** article-translation coverage. A guide is published only when it has a real localized version.
+- 60 unique guide topics, visual species reference pages and three interactive tools.
+- Static HTML, per-language canonical URLs, reciprocal hreflang, robots.txt and a generated sitemap.xml.
+- The previous classifieds product is no longer part of the live project. Historical code remains only in a separate backup branch.
+- Editorial, about and privacy pages are available in English and Russian; other languages link to the English policies until translations are written.
+- As of November 2026, the deployed code does not include an advertising or analytics integration. External images and fonts load from third-party providers.
 
-## Development
+## Build and verification
+Node 22: `npm run build`. The workflow runs article-coverage, species media, SEO and editorial checks, and auto-publishes only when the `main` build succeeds.
 
-Run `npm run build` using Node 22 to generate `dist/` locally. The GitHub Pages workflow deploys `dist/` on every push to main.
-
-The previous classifieds project was preserved in branch `backup/murdilimax-classifieds-2026-11-09`.
-
-Never mass-generate near-duplicate pages for search engines. Publish thoroughly checked, helpful content.
+## Editing principles
+Expand one content cluster at a time, cite primary sources where possible, publish only complete translations, and do not fabricate author expertise or modification dates. If a page has a factual mistake, open a public issue without posting sensitive data.
