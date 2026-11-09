@@ -1,0 +1,32 @@
+name: Verify retired CenaRadar domain is isolated
+on:
+  push:
+    branches:
+      - price-aggregator-mvp
+      - fix/disable-old-cenaradar-domain-redirect-20261109
+    paths:
+      - price-aggregator/build.mjs
+      - price-aggregator/test-retired-domain.mjs
+      - .github/workflows/cenaradar-retirement-check.yml
+  pull_request:
+    branches: [price-aggregator-mvp]
+    paths:
+      - price-aggregator/build.mjs
+      - price-aggregator/test-retired-domain.mjs
+permissions:
+  contents: read
+jobs:
+  check:
+    name: No redirects to MURDILIMAX
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Generate retired legacy landing page and enforce isolation
+        working-directory: price-aggregator
+        run: |
+          node --check build.mjs
+          node build.mjs
+          node test-retired-domain.mjs
