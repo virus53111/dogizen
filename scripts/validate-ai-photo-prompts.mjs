@@ -59,7 +59,7 @@ for(const lang of ['en','ru']){
  const index=JSON.parse(read(prefix+'search-index.json'));
  assert.ok(index.some(x=>x.href==='/'+prefix+gallery&&x.image===items[0].image),'AI prompt gallery must be searchable in '+lang);
  const home=read(prefix+'index.html');
- assert.ok(home.includes('class="ai-promo"')&&home.includes('href="/'+prefix+gallery+'"'),'Homepage gallery discovery missing '+lang);
+ assert.ok(home.includes('class="shell ai-promo"')&&home.includes('href="/'+prefix+gallery+'"'),'Homepage gallery discovery missing '+lang);
  assert.ok(home.includes('<link rel="stylesheet" href="/ai-photo-prompts.css">'),'Promo CSS missing '+lang);
 }
 for(const lang of languages.filter(l=>!['en','ru'].includes(l)))assert.ok(!existsSync('dist/'+lang+'/ai-photo-prompts/index.html'),'No unsupported fake translation '+lang);
