@@ -2,7 +2,7 @@ import {mkdir,writeFile,copyFile,rm} from 'node:fs/promises';
 import path from 'node:path';
 import {languages,stories,storiesFor,availableIn,topics,copy} from '../lib/atlas-data.js';
 import {species} from '../lib/world-topics.js';
-import {home,guide,tool,category,speciesPage,trustPage,notFound,url} from '../lib/atlas-site.js';
+import {home,guide,tool,category,speciesPage,trustPage,photoPromptGallery,notFound,url} from '../lib/atlas-site.js';
 import {visualSpecies} from '../lib/species-atlas.js';
 import {bundlePhotographs} from './bundle-photographs.mjs';
 const root=path.resolve('dist');
@@ -13,6 +13,10 @@ await bundlePhotographs({root,stories,topics});
 const write=async(file,body)=>{const dest=path.join(root,file);await mkdir(path.dirname(dest),{recursive:true});await writeFile(dest,body,'utf8')};
 const key='8f6c1e2a9b4d7f30a5c2e18d6b9f43a1';
 for(const file of ['site.css','atlas-visual.css','site.js','favicon.svg','robots.txt'])await copyFile(path.resolve('public',file),path.join(root,file));
+// Distinct AI generated examples are explicitly separated from authentic documentary guide photographs.
+await copyFile(path.resolve('public/ai-photo-prompts.css'),path.join(root,'ai-photo-prompts.css'));
+await mkdir(path.join(root,'ai-prompts'),{recursive:true});
+for(const file of ['01-cinematic-portrait.webp','02-reaction-chaos.webp','03-cartoon-chase.webp','04-sketchbook.webp'])await copyFile(path.resolve('public/ai-prompts',file),path.join(root,'ai-prompts',file));
 // The old English homepage lived at /en/; its actual replacement is /.
 // GitHub Pages cannot issue path-specific 301 headers. An immediate meta
 // refresh is the supported fallback (kept outside the canonical sitemap).
@@ -27,6 +31,7 @@ for(const lang of languages){
     type:'guide',title:s[lang].title,summary:s[lang].subtitle,label:topics.find(t=>t.id===s.topic)?.[lang]||s.topic,
     keywords:[s.id,s.topic,s.en?.title].filter(Boolean).join(' '),href:url(lang,'guides/'+s.id),image:s.image
   }));
+  if(['en','ru'].includes(lang))entries.push({type:'guide',title:lang==='ru'?'4 крутых промпта для фото в ChatGPT — с примерами':'4 creative ChatGPT photo prompts with real examples',summary:lang==='ru'?'Кинопортрет, 50 мини-клонов, мультяшная погоня и скетчбук: фото, описание и промпты для копирования.':'Cinematic portrait, 50 tiny clones, animated chase and sketchbook: examples and copy-ready prompts.',label:lang==='ru'?'AI-промпты':'AI photo prompts',keywords:'chatgpt image prompts photo prompt collage ai photoshop cinema sketchbook 3d cartoon коллаж промты фото скетчбук',href:url(lang,'ai-photo-prompts'),image:'/ai-prompts/01-cinematic-portrait.webp'});
   if(['en','ru'].includes(lang))for(const sp of visualSpecies)entries.push({
     type:'species',title:sp[lang],summary:sp.detail[lang],label:lang==='ru'?'Справочник видов':'Species atlas',
     keywords:[sp.latin,sp.en,sp.ru,sp.group].join(' '),href:url(lang,'species/'+sp.id),image:sp.image
@@ -42,6 +47,10 @@ for(const lang of languages){
   }
   await write(prefix+'search-index.json',JSON.stringify(entries));
 
+  if(['en','ru'].includes(lang)){
+    await write(prefix+'ai-photo-prompts/index.html',photoPromptGallery(lang));
+    pages.push({lang,part:'ai-photo-prompts',weight:'0.8',updated:'2026-11-09',image:'/ai-prompts/01-cinematic-portrait.webp'});
+  }
   if(['en','ru'].includes(lang))for(const id of ['about','editorial','privacy']){
     await write(prefix+id+'/index.html',trustPage(lang,id));
     pages.push({lang,part:id,weight:'0.4',updated:'2026-11-09'});
@@ -69,7 +78,7 @@ const urls=pages.map(p=>site+url(p.lang,p.part));
 const xmlesc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 let sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
 for(const p of pages){
-  const langs=['about','editorial','privacy'].includes(p.part)?['en','ru']:(p.species?['en','ru']:(p.story?languages.filter(l=>availableIn(p.story,l)):(p.topic?languages.filter(l=>storiesFor(l).some(s=>s.topic===p.topic)||species.some(s=>s.group===p.topic)||p.topic==='tools'):languages)));
+  const langs=['about','editorial','privacy','ai-photo-prompts'].includes(p.part)?['en','ru']:(p.species?['en','ru']:(p.story?languages.filter(l=>availableIn(p.story,l)):(p.topic?languages.filter(l=>storiesFor(l).some(s=>s.topic===p.topic)||species.some(s=>s.group===p.topic)||p.topic==='tools'):languages)));
   sitemap+='  <url><loc>'+xmlesc(site+url(p.lang,p.part))+'</loc>';
   if(p.updated)sitemap+='<lastmod>'+p.updated+'</lastmod>';
   if(p.image)sitemap+='<image:image><image:loc>'+xmlesc(p.image.startsWith('/')?site+p.image:p.image)+'</image:loc></image:image>';
