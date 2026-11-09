@@ -1,42 +1,54 @@
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
-import {createHash} from 'node:crypto';
+import {readFileSync,existsSync} from 'node:fs';
 import {stories,topics,availableIn,languages} from '../lib/atlas-data.js';
-import {editorialArt2026} from '../lib/editorial-art-2026.js';
 import {illustratedGuidesC} from '../lib/illustrated-guides-c.js';
 const read=p=>readFileSync(p,'utf8');
-const hashes=new Set();
+const photo=(url)=>{
+ assert.match(url,/^\/photos\/[a-f0-9]{18}\.jpg$/,'Every cover must use locally hosted JPEG photography');
+ const p='dist'+url;
+ assert.ok(existsSync(p),'JPEG missing '+p);
+ const b=readFileSync(p);
+ assert.ok(b.length>12000&&b[0]===0xff&&b[1]===0xd8&&b[b.length-2]===0xff&&b[b.length-1]===0xd9,
+  'Real JPG bytes required '+p);
+ return b.length;
+};
 let editions=0;
-for(const article of stories){
- const path='/media/'+article.id+'.svg';
- assert.equal(article.image,path,'Every guide needs its own local subject image');
- const art=read('dist'+path);
- assert.match(art,/viewBox="0 0 1400 780"/);
- assert.ok(!/https?:\/\/|<script|<foreignObject|\bon\w+=/i.test(art.replace('xmlns="http://www.w3.org/2000/svg"','')),'External or active SVG content');
- const hash=createHash('sha256').update(editorialArt2026[article.id].scene).digest('hex');
- assert.ok(!hashes.has(hash),'Same drawing assigned to different subjects: '+article.id);
- hashes.add(hash);
- for(const lang of languages.filter(lang=>availableIn(article,lang))){
+const photos=new Set();
+for(const guide of stories){
+ for(const lang of languages.filter(lang=>availableIn(guide,lang))){
   const prefix=lang==='en'?'':lang+'/';
-  const html=read('dist/'+prefix+'guides/'+article.id+'/index.html');
-  assert.ok(html.includes('src="'+path+'"'),'Missing hero image: '+lang+'/'+article.id);
-  const escaped=(article.mediaAlt[lang]||article[lang].title).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-  assert.ok(html.includes('alt="'+escaped+'"'),'Missing descriptive alt: '+lang+'/'+article.id);
-  assert.ok(html.includes('https://murdilimax.com'+path),'Missing absolute share image');
+  const html=read('dist/'+prefix+'guides/'+guide.id+'/index.html');
+  const local=html.match(/class="article-image"[^>]*><img src="(\/photos\/[a-f0-9]{18}\.jpg)"/)?.[1];
+  assert.ok(local,'Visible photo must be included '+guide.id+'/'+lang);
+  photo(local);photos.add(local);
+  const alt=(guide.mediaAlt?.[lang]||guide[lang].title)
+    .replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+  assert.ok(html.includes('alt="'+alt+'"'),'Descriptive localized alt missing '+lang+'/'+guide.id);
+  assert.ok(html.includes('property="og:image" content="https://murdilimax.com'+local+'"'),
+   'Share image missing '+lang+'/'+guide.id);
   editions++;
  }
 }
-for(const topic of topics){
- assert.ok(topic.image.startsWith('/media/'),'Category image must be local');
- assert.match(read('dist'+topic.image),/^<svg/);
+for(const lang of ['en','ru']){
+ const prefix=lang==='en'?'':lang+'/';
+ const html=read('dist/'+prefix+'index.html');
+ assert.match(html,/class="hero-image hero-photo-stage"/,'Homepage must feature real photography');
+ const topPhotos=[...html.matchAll(/<img class="topic-image"[^>]*src="(\/photos\/[a-f0-9]{18}\.jpg)"/g)];
+ assert.equal(topPhotos.length,topics.length,'All topic cards must have real photos');
+ for(const image of topPhotos)photo(image[1]);
 }
-for(const article of illustratedGuidesC){
+for(const newer of illustratedGuidesC){
  for(const lang of ['en','ru']){
   const prefix=lang==='en'?'':lang+'/';
-  const category=read('dist/'+prefix+'topics/'+article.topic+'/index.html');
-  assert.ok(category.includes('/'+prefix+'guides/'+article.id+'/'),'New guide must appear in existing category');
+  const html=read('dist/'+prefix+'topics/'+newer.topic+'/index.html');
+  assert.ok(html.includes('/'+prefix+'guides/'+newer.id+'/'),'New content must be discoverable via its category');
  }
 }
+assert.equal(stories.length,82);
 assert.equal(illustratedGuidesC.length,12);
 assert.equal(new Set(illustratedGuidesC.map(a=>a.topic)).size,11);
-console.log(`PASS: ${stories.length} distinct local guide illustrations, ${editions} illustrated editions, ${topics.length} local category covers and 12 additions discoverable in 11 existing categories.`);
+assert.ok(photos.size>=22,'We expect a meaningful variety of actual photographs');
+assert.ok(!existsSync('dist/media/guide-fallback.svg'),'Remove old SVG fallback');
+const fallback=readFileSync('dist/photos/photo-fallback.jpg');
+assert.ok(fallback.length>12000&&fallback[0]===0xff&&fallback[1]===0xd8,'Fallback must be real JPEG photography');
+console.log('PASS: '+stories.length+' guides, '+editions+' localized photo editions, '+topics.length+' photographic categories and twelve additions linked in eleven categories.');
