@@ -10,6 +10,10 @@ await mkdir(root,{recursive:true});
 const write=async(file,body)=>{const dest=path.join(root,file);await mkdir(path.dirname(dest),{recursive:true});await writeFile(dest,body,'utf8')};
 const key='8f6c1e2a9b4d7f30a5c2e18d6b9f43a1';
 for(const file of ['site.css','atlas-visual.css','site.js','favicon.svg','robots.txt'])await copyFile(path.resolve('public',file),path.join(root,file));
+// The old English homepage lived at /en/; its actual replacement is /.
+// GitHub Pages cannot issue path-specific 301 headers. An immediate meta
+// refresh is the supported fallback (kept outside the canonical sitemap).
+await write('en/index.html',`<!doctype html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0; url=/"><link rel="canonical" href="https://murdilimax.com/"><title>MURDILIMAX — English homepage moved</title></head><body><main><p>The English atlas is now at <a href="/">murdilimax.com</a>.</p></main></body></html>`);
 const pages=[];
 for(const lang of languages){
   const prefix=lang==='en'?'':lang+'/';
