@@ -6,7 +6,7 @@ import path from 'node:path';
 import {chromium} from 'playwright';
 
 const root=path.resolve('dist');
-const routes=['/ru/','/','/ru/guides/ryzen-upgrade/','/ru/topics/mushrooms/','/ru/species/amanita-phalloides/','/ru/tools/percentage/','/ru/privacy/','/fr/guides/secure-accounts/','/fr/guides/backup-321/','/fr/guides/ssd-vs-hdd/','/lv/guides/secure-accounts/','/lv/guides/backup-321/','/lv/guides/ssd-vs-hdd/'];
+const routes=['/ru/','/','/ru/guides/ryzen-upgrade/','/ru/topics/mushrooms/','/ru/species/amanita-phalloides/','/ru/tools/percentage/','/ru/privacy/','/fr/guides/secure-accounts/','/fr/guides/backup-321/','/fr/guides/ssd-vs-hdd/','/lv/guides/secure-accounts/','/lv/guides/backup-321/','/lv/guides/ssd-vs-hdd/','/it/guides/secure-accounts/','/it/guides/backup-321/','/pt/guides/secure-accounts/','/pt/guides/backup-321/','/pl/guides/secure-accounts/','/pl/guides/backup-321/'];
 const sizes=[320,360,390,430,768];
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
 const server=createServer(async(req,res)=>{
