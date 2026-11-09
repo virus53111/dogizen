@@ -42,5 +42,5 @@ for(const lang of languages){
  assert.ok(storiesFor(lang).length>0,'Do not lose any language edition: '+lang);
 }
 const sitemap=readFileSync('dist/sitemap.xml','utf8');
-assert.equal((sitemap.match(/<url>/g)||[]).length,623,'Sitemap should not gain artificial URLs');
-console.log('PASS: Five substantive EN/RU editorial rewrites, ten published pages, primary citations, complete chapters, preserved locale coverage and 623 URLs.');
+assert.equal((sitemap.match(/<url>/g)||[]).length,625,'Sitemap should not gain artificial URLs');
+console.log('PASS: Five substantive EN/RU editorial rewrites, ten published pages, primary citations, complete chapters, preserved locale coverage and 625 URLs.');

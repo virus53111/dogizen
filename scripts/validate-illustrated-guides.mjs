@@ -13,7 +13,7 @@ assert.equal(new Set(stories.map(x=>x.id)).size,98);
 assert.equal(languages.length,12);
 assert.equal(topics.length,16);
 const sitemap=read('dist/sitemap.xml');
-assert.equal((sitemap.match(/<url>/g)||[]).length,623,'Only real EN/RU translations may add URLs');
+assert.equal((sitemap.match(/<url>/g)||[]).length,625,'Only real EN/RU translations may add URLs');
 const jpeg=(p)=>{
  assert.ok(existsSync(p),'Missing local photo '+p);
  const img=readFileSync(p);
@@ -96,4 +96,4 @@ for(const lang of ['en','ru']){
  assert.match(home,/hero-image hero-photo-stage/,'Homepage must use editorial photograph');
  assert.doesNotMatch(home,/orbit-core/,'No cartoon orbital hero');
 }
-console.log('PASS: 98 guides, 22 distinct real photographic covers, 16 photographic topic cards, 44 new article editions, 623 canonical sitemap URLs.');
+console.log('PASS: 98 guides, 22 distinct real photographic covers, 16 photographic topic cards, 44 new article editions, 625 canonical sitemap URLs.');

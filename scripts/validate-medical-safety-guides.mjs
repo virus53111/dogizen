@@ -24,7 +24,7 @@ assert.equal(languages.length,12,'All original UI languages preserved');
 assert.equal(topics.length,16,'Taxonomy preserved');
 assert.equal(articles.filter(a=>a.topic==='health').length,4,'Four medical guides');
 const map=read('sitemap.xml');
-assert.equal((map.match(/<url>/g)||[]).length,623,'Six genuine EN/RU guides add exactly 12 canonical pages');
+assert.equal((map.match(/<url>/g)||[]).length,625,'Six genuine EN/RU guides add exactly 12 canonical pages');
 const uniquePhotos=new Set();
 for(const a of articles){
  assert.equal(a.updated,'2026-11-09','Accurate editorial date '+a.id);
@@ -83,4 +83,4 @@ for(const lang of ['en','ru']){
  assert.ok(places.every((n,i)=>i===0||n>places[i-1]),'New content not prominent and in order '+lang);
  assert.ok(places.at(-1)<markup.indexOf('href="/'+prefix+'guides/change-flat-tire-safely/'),'New practical health posts should appear before older batch '+lang);
 }
-console.log('PASS: 98 unique bilingual/translated articles, 623 indexable real pages; 6 new authentic medical and emergency guides plus 6 unique photographs.');
+console.log('PASS: 98 unique bilingual/translated articles, 625 indexable real pages; 6 new authentic medical and emergency guides plus 6 unique photographs.');

@@ -53,5 +53,5 @@ for(const lang of ['fr','lv']){
  }
 }
 const sitemap=read('dist/sitemap.xml');
-assert.equal((sitemap.match(/<url>/g)||[]).length,623,'URL count must not change');
-console.log('PASS: six FR/LV improvements to existing guides, 623 genuine URLs, no source cross-contamination.');
+assert.equal((sitemap.match(/<url>/g)||[]).length,625,'URL count must not change');
+console.log('PASS: six FR/LV improvements to existing guides, 625 genuine URLs, no source cross-contamination.');

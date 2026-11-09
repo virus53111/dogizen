@@ -60,6 +60,7 @@ jobs:
           node --check lib/global-practical-guides-2026-b.js
           node --check lib/practical-medicine-and-safety-2026-a.js
           node --check lib/practical-medicine-and-safety-2026-b.js
+          node --check lib/ai-photo-prompt-gallery.js
           node --check lib/editorial-art-library.js
           node --check scripts/bundle-photographs.mjs
           node --check lib/atlas-site.js
@@ -78,6 +79,7 @@ jobs:
           node scripts/validate-high-intent-guides.mjs
           node scripts/validate-global-practical-guides.mjs
           node scripts/validate-medical-safety-guides.mjs
+          node scripts/validate-ai-photo-prompts.mjs
           node scripts/validate-expansion.mjs
           node scripts/validate-quality-growth.mjs
           node scripts/validate-atlas-experience.mjs

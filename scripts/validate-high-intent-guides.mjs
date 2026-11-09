@@ -20,7 +20,7 @@ assert.equal(new Set(stories.map(x=>x.id)).size,98,'Duplicate story ID');
 assert.equal(languages.length,12,'All existing interface languages must remain');
 assert.equal(topics.length,16,'Use existing topic taxonomy');
 const sitemap=read('sitemap.xml');
-assert.equal((sitemap.match(/<url>/g)||[]).length,623,'All six new health guides add 12 pages');
+assert.equal((sitemap.match(/<url>/g)||[]).length,625,'All six new health guides add 12 pages');
 const photosSeen=new Set();
 for(const guide of highIntentGuides){
  assert.ok(topics.some(t=>t.id===guide.topic),'Topic does not exist '+guide.id);
@@ -88,4 +88,4 @@ for(const lang of ['en','ru']){
  const firstLegacy=cards.indexOf('href="/'+prefix+'guides/ryzen-upgrade/');
  assert.ok(firstLegacy>positions.at(-1),'New material should appear before old featured topic in article list '+lang);
 }
-console.log('PASS: four verified original topics, eight detailed new articles, four distinct photographs, 98 guides and 623 genuine indexable URLs.');
+console.log('PASS: four verified original topics, eight detailed new articles, four distinct photographs, 98 guides and 625 genuine indexable URLs.');
