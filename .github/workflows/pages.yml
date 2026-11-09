@@ -62,7 +62,7 @@ jobs:
           test -s dist/ru/species/atropa-belladonna/index.html
           test -s dist/ru/topics/mushrooms/index.html
           grep -q 'data-species-search' dist/ru/topics/mushrooms/index.html
-          grep -q 'thumb.wikimedia.org' dist/ru/topics/mushrooms/index.html
+          grep -q 'upload.wikimedia.org' dist/ru/topics/mushrooms/index.html
           grep -q 'Бледная поганка' dist/ru/species/amanita-phalloides/index.html
           grep -q 'Где встречается' dist/ru/species/amanita-phalloides/index.html
           grep -q 'image:loc' dist/sitemap.xml
