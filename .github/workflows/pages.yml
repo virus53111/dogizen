@@ -56,6 +56,8 @@ jobs:
           node --check lib/illustrated-guides-b.js
           node --check lib/illustrated-guides-c.js
           node --check lib/high-intent-november-2026.js
+          node --check lib/global-practical-guides-2026-a.js
+          node --check lib/global-practical-guides-2026-b.js
           node --check lib/editorial-art-library.js
           node --check scripts/bundle-photographs.mjs
           node --check lib/atlas-site.js
@@ -72,6 +74,7 @@ jobs:
           node scripts/validate-illustrated-guides.mjs
           node scripts/validate-guide-media.mjs
           node scripts/validate-high-intent-guides.mjs
+          node scripts/validate-global-practical-guides.mjs
           node scripts/validate-expansion.mjs
           node scripts/validate-quality-growth.mjs
           node scripts/validate-atlas-experience.mjs
