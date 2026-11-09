@@ -48,6 +48,7 @@ jobs:
           node --check lib/editorial-storage-fr-lv.js
           node --check lib/editorial-security-it-pt-pl.js
           node --check lib/editorial-backup-it-pt-pl.js
+          node --check lib/editorial-storage-it-pt-pl.js
           node --check lib/editorial-account-security-lt-et-nl.js
           node --check lib/editorial-backups-lt-et-nl.js
           node --check lib/editorial-art-2026.js

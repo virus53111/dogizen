@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {essentialSecurityItPtPl} from '../lib/editorial-security-it-pt-pl.js';
 import {essentialBackupItPtPl} from '../lib/editorial-backup-it-pt-pl.js';
+import {storageGuideItPtPl} from '../lib/editorial-storage-it-pt-pl.js';
 import {stories,story,storiesFor,languages} from '../lib/atlas-data.js';
 const read=p=>readFileSync(p,'utf8');
-const revisions={...essentialSecurityItPtPl,...essentialBackupItPtPl};
-assert.deepEqual(Object.keys(revisions).sort(),['backup-321','secure-accounts']);
+const revisions={...essentialSecurityItPtPl,...essentialBackupItPtPl,...storageGuideItPtPl};
+assert.deepEqual(Object.keys(revisions).sort(),['backup-321','secure-accounts','ssd-vs-hdd']);
 assert.equal(stories.length,70,'No synthetic topics or doorway pages permitted');
 assert.equal(languages.length,12,'Preserve all supported languages');
 const sitemap=read('dist/sitemap.xml');
@@ -14,7 +15,7 @@ let pages=0;
 for(const lang of ['it','pt','pl']){
  assert.equal(storiesFor(lang).length,8,'Do not introduce unreviewed translations');
  const index=JSON.parse(read('dist/'+lang+'/search-index.json'));
- for(const id of ['secure-accounts','backup-321']){
+ for(const id of Object.keys(revisions)){
   const data=story(id),rewrite=revisions[id][lang],url='https://murdilimax.com/'+lang+'/guides/'+id+'/';
   assert.deepEqual(data[lang],rewrite,'Unexpected edition text for '+id+'/'+lang);
   assert.equal(rewrite.sections.length,5,'Five useful chapters expected');
@@ -55,5 +56,5 @@ for(const lang of ['it','pt','pl']){
   console.log('PASS: '+lang+'/'+id+' — '+totalWords+' words, 5 chapters, primary citations, localized SEO and search result');
  }
 }
-assert.equal(pages,6);
-console.log('PASS: six substantive Italian/Portuguese/Polish guide revisions; all other translated routes retained; 567 sitemap URLs.');
+assert.equal(pages,9);
+console.log('PASS: nine substantive Italian/Portuguese/Polish guide revisions; all other translated routes retained; 567 sitemap URLs.');
