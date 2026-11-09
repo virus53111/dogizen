@@ -69,4 +69,33 @@ if(speciesSearch){
  const term=params.get('q');if(term){speciesSearch.value=term;apply();}
 }
 
+
+/* If Wikimedia's cropped thumbnail fails, try the actual original photograph. */
+document.addEventListener('error',function(ev){
+ const im=ev.target;
+ if(!im||im.tagName!=='IMG')return;
+ const src=im.currentSrc||im.src||'';
+ const marker='/wikipedia/commons/thumb/';
+ if(src.includes('upload.wikimedia.org')&&src.includes(marker)&&!im.dataset.originalRetry){
+   const parts=src.split(marker);
+   const path=parts[1]||'';
+   if(path.includes('/')){
+     im.dataset.originalRetry='1';
+     im.src=parts[0]+'/wikipedia/commons/'+path.substring(0,path.lastIndexOf('/'));
+     return;
+   }
+ }
+ if(src.includes('upload.wikimedia.org')&&im.dataset.originalRetry&&!im.dataset.originalFailed){
+   im.dataset.originalFailed='1';
+   im.style.opacity='.13';
+   const box=im.parentElement;
+   if(box&&!box.querySelector('.v-image-error')){
+     const caption=document.createElement('span');
+     caption.className='v-image-error';
+     caption.textContent=document.body.dataset.lang==='ru'?'Фото в Wikimedia Commons':'Image on Wikimedia Commons';
+     box.appendChild(caption);
+   }
+ }
+},true);
+
 })();
