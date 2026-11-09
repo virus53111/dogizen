@@ -1,0 +1,32 @@
+name: Inspect CenaRadar live DNS and redirects
+on:
+  push:
+    branches: [diagnostic/cenaradar-live-routing-20261109]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Query authoritative records and identify live forwarding server
+        shell: bash
+        run: |
+          set +e
+          echo "=== UTC TIME ==="; date -u
+          for host in cenaradar.online www.cenaradar.online murdilimax.com; do
+            echo "=== DNS $host ==="
+            for type in NS A AAAA CNAME TXT; do
+              echo "-- $type"; dig +time=3 +tries=1 +short "$host" "$type" | head -15
+            done
+          done
+          echo "=== REGISTRAR VIA RDAP ==="
+          curl -fsSL --max-time 12 "https://rdap.org/domain/cenaradar.online" | python3 -c "import json,sys; d=json.load(sys.stdin); print('registrar=',[(x.get('vcardArray',[[],[]])[1]) for x in d.get('entities',[]) if 'registrar' in x.get('roles',[])]); print('nameservers=',[x.get('ldhName') for x in d.get('nameservers',[])])" || true
+          for target in http://cenaradar.online/ https://cenaradar.online/ https://www.cenaradar.online/; do
+            echo "=== HEADERS $target ==="
+            curl -k -sSIL --max-time 18 --max-redirs 8 -w 'END_URL=%{url_effective} STATUS=%{http_code} REMOTE_IP=%{remote_ip}\n' "$target" | head -85
+            echo "=== HTML direct $target ==="
+            curl -k -sSL --max-time 12 --max-redirs 0 -o /tmp/cenaradar-direct.html -w 'STATUS=%{http_code} END_URL=%{url_effective} IP=%{remote_ip}\n' "$target"
+            head -c 700 /tmp/cenaradar-direct.html | tr '\n' ' '; echo
+          done
