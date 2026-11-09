@@ -7,6 +7,10 @@ import {chromium} from 'playwright';
 
 const root=path.resolve('dist');
 const routes=['/ru/','/','/ru/guides/ryzen-upgrade/','/ru/topics/mushrooms/','/ru/species/amanita-phalloides/','/ru/tools/percentage/','/ru/privacy/','/fr/guides/secure-accounts/','/fr/guides/backup-321/','/fr/guides/ssd-vs-hdd/','/lv/guides/secure-accounts/','/lv/guides/backup-321/','/lv/guides/ssd-vs-hdd/','/it/guides/secure-accounts/','/it/guides/backup-321/','/pt/guides/secure-accounts/','/pt/guides/backup-321/','/pl/guides/secure-accounts/','/pl/guides/backup-321/','/lt/guides/secure-accounts/','/lt/guides/backup-321/','/et/guides/secure-accounts/','/et/guides/backup-321/','/nl/guides/secure-accounts/','/nl/guides/backup-321/'];
+routes.push(
+ '/ru/guides/wifi-router-placement/','/ru/guides/laptop-overheating-checklist/','/ru/guides/freezer-food-storage/','/ru/guides/start-seeds-indoors/','/ru/guides/rain-garden-at-home/',
+ '/ru/guides/cloud-types-field-guide/','/ru/guides/thunderstorm-hiking-safety/','/ru/guides/beginner-stargazing-plan/','/ru/guides/bicycle-visibility-checklist/','/ru/guides/find-water-leaks-home/'
+);
 const sizes=[320,360,390,430,768];
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
 const server=createServer(async(req,res)=>{
@@ -130,6 +134,29 @@ try{
  await page.goto(base+'/de/guides/ddr4-ddr5/',{waitUntil:'domcontentloaded'});
  assert.ok((await page.locator('.article-toc-panel summary').textContent()).includes('In diesem Artikel'),'Article contents must be translated');
  console.log('PASS: German article chapter label is localized');
+ // The original editorial artwork is self-hosted. Verify every new image
+ // actually decodes as a real 1400x780 SVG, not a broken remote placeholder.
+ for(const slug of [
+  'wifi-router-placement','laptop-overheating-checklist','freezer-food-storage','start-seeds-indoors',
+  'rain-garden-at-home','cloud-types-field-guide','thunderstorm-hiking-safety',
+  'beginner-stargazing-plan','bicycle-visibility-checklist','find-water-leaks-home'
+ ]){
+  await page.goto(base+'/ru/guides/'+slug+'/',{waitUntil:'domcontentloaded'});
+  const img=page.locator('.article-image img');
+  await img.evaluate(image=>image.decode());
+  assert.equal(await img.evaluate(image=>image.naturalWidth),1400,'Local illustration did not decode: '+slug);
+  assert.ok((await img.getAttribute('alt')).length>25,'Localized meaningful alt missing: '+slug);
+ }
+ console.log('PASS: ten original guide illustrations load and decode locally at full size');
+ await page.goto(base+'/ru/',{waitUntil:'domcontentloaded'});
+ const broken=page.locator('.story-photo img').first();
+ await broken.scrollIntoViewIfNeeded();
+ await broken.evaluate(img=>{img.src='https://invalid.example.net/missing-thumbnail.jpg';});
+ await page.waitForFunction(()=>document.querySelector('.story-photo img')?.getAttribute('src')==='/media/guide-fallback.svg');
+ await broken.evaluate(image=>image.decode());
+ assert.equal(await broken.evaluate(image=>image.naturalWidth),1400,'Local fallback must be visible when a remote image fails');
+ console.log('PASS: broken remote article images automatically receive a real local fallback illustration');
+
  // Verify translated chapter controls stay interactive on the newly expanded pages.
  for(const [language,expected] of [['lt','Šiame straipsnyje'],['et','Selles artiklis'],['nl','In dit artikel']]){
   await page.goto(base+'/'+language+'/guides/backup-321/',{waitUntil:'domcontentloaded'});
