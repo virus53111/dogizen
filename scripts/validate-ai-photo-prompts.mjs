@@ -5,6 +5,7 @@ import {photoPromptShowcase} from '../lib/ai-photo-prompt-gallery.js';
 import {stories,languages} from '../lib/atlas-data.js';
 
 const read=file=>readFileSync('dist/'+file,'utf8');
+const htmlEscape=value=>String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
 const items=photoPromptShowcase.items;
 assert.equal(items.length,4,'Four actual distinct user-supplied visual concepts are required');
 assert.equal(new Set(items.map(i=>i.id)).size,4,'No duplicate concepts');
@@ -48,12 +49,12 @@ for(const lang of ['en','ru']){
   assert.ok(page.includes('src="'+item.image+'"'),'Image omitted '+item.id+'/'+lang);
   assert.ok(page.includes('href="#prompt-'+item.number+'"'),'On-page example navigation missing '+item.id+'/'+lang);
   assert.ok(page.includes('id="ai-prompt-'+item.number+'"'),'Copy target missing '+item.id+'/'+lang);
-  assert.ok(page.includes(d.name)&&page.includes(d.subtitle),'Description missing '+item.id+'/'+lang);
-  assert.ok(page.includes(d.input),'Uploaded photo instructions missing '+item.id+'/'+lang);
+  assert.ok(page.includes(htmlEscape(d.name))&&page.includes(htmlEscape(d.subtitle)),'Description missing '+item.id+'/'+lang);
+  assert.ok(page.includes(htmlEscape(d.input)),'Uploaded photo instructions missing '+item.id+'/'+lang);
   assert.equal(d.steps.length,3,'Clear three-stage instructions required '+item.id+'/'+lang);
-  assert.ok(d.steps.every(step=>page.includes(step)),'Missing step '+item.id+'/'+lang);
+  assert.ok(d.steps.every(step=>page.includes(htmlEscape(step))),'Missing step '+item.id+'/'+lang);
   assert.ok(d.prompt.length>1050&&d.prompt.length<2600,'Prompts need depth without repetition '+item.id+'/'+lang);
-  assert.ok(page.includes(d.prompt.slice(0,200)),'Full usable prompt missing '+item.id+'/'+lang);
+  assert.ok(page.includes(htmlEscape(d.prompt.slice(0,200))),'Full usable prompt missing '+item.id+'/'+lang);
  }
  assert.ok(sitemap.includes('<loc>https://murdilimax.com/'+prefix+gallery+'</loc><lastmod>2026-11-09</lastmod>'),'No canonical sitemap inclusion '+lang);
  const index=JSON.parse(read(prefix+'search-index.json'));
