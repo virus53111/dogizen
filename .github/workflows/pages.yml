@@ -1,11 +1,8 @@
-name: Publish MURDILIMAX Объявления
+name: Publish MURDILIMAX — The Answer Atlas
 on:
   push:
     branches: [main]
-  pull_request:
   workflow_dispatch:
-  schedule:
-    - cron: '15 3 * * *'
 permissions:
   contents: read
   pages: write
@@ -14,149 +11,35 @@ concurrency:
   group: murdilimax-pages
   cancel-in-progress: true
 jobs:
-  validate:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate RU/LV/EN site, map and listing workflows
-        shell: bash
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate multilingual pages and generate static website
         run: |
-          set -euo pipefail
-          test "$(cat CNAME)" = "murdilimax.com"
-          for f in index.html style.css app.js i18n.js favicon.svg robots.txt sitemap.xml; do test -s "$f"; done
-          node --check app.js
-          node --check i18n.js
-          node --check scripts/generate-seo.mjs
-          test -s hatchable/public/account.html
-          test -s hatchable/api/edit.js
-          test -s hatchable/api/upload-cancel.js
-          test -s hatchable/api/report.js
-          grep -q 'editPhotoSelect' hatchable/public/account.html
-          grep -q 'WITH updated AS' hatchable/api/edit.js
-          grep -q 'storage_key' hatchable/api/mine.js
-          test -s hatchable/migrations/0012_listing_reports.sql
-          grep -q 'function openReport' app.js
-          grep -q 'reportSuccess' i18n.js
-          grep -q 'id="results-search"' index.html
-          grep -q 'id="active-filters"' index.html
-          grep -q 'function renderFilterChips' app.js
-          grep -q 'id="head-favorites"' index.html
-          grep -q 'id="favorites-note"' index.html
-          grep -q 'function renderFavorites' app.js
-          test -s hatchable/api/favorites.js
-          test -s hatchable/migrations/0013_user_favorites.sql
-          test -s hatchable/migrations/0014_source_liveness.sql
-          test -s hatchable/api/jobs/verify-external.js
-          test -s hatchable/api/jobs/sync-external.js
-          grep -q 'source_missing_at IS NULL' hatchable/api/external.js
-          grep -q 'source_missing_confirmed_at' hatchable/api/jobs/verify-external.js
-          grep -q 'externalRefreshed' i18n.js
-          grep -q 'Last seen in RSS' i18n.js
-          grep -q 'last_imported_at' app.js
-          grep -q 'newestPublish' scripts/generate-seo.mjs
-          grep -q 'recentPriceMedian' scripts/generate-seo.mjs
-          test -s hatchable/hatchable.toml
-          grep -q 'function initializeFavoritesAccount' app.js
-          grep -q 'MURDI_FAVS_TRANSFER_V1' app.js
-          grep -q 'favorites-sync-button' index.html
-          grep -q 'favoritesSyncedNotice' i18n.js
-          grep -q 'function favoriteButton' app.js
-          grep -q 'favoritesTitle' i18n.js
-          grep -q '.favorite-toggle' style.css
-          grep -q 'mobileFilters' i18n.js
-          grep -q 'data-report-id' hatchable/public/staff-ui.js
-          grep -q 'async function optimizePhoto' app.js
-          grep -q '/api/upload-cancel' app.js
-          grep -q 'postPhotoPreparing' i18n.js
-          grep -q 'photo-item' style.css
-          node <<'NODE'
-          const fs = require('fs');
-          const source = fs.readFileSync('app.js','utf8');
-          if(/(?<!\$)\$\((?:"[^"]+"|'[^']+')\)\.forEach\(/.test(source)) throw Error('Single DOM element used like a collection: use $ for querySelectorAll');
-          const account=fs.readFileSync('hatchable/public/account.html','utf8');
-          const inline=[...account.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].map(x=>x[1]).filter(Boolean);
-          if(!inline.length)throw Error('Missing account JS');
-          for(const js of inline)new Function(js);
-          if(!account.includes('/api/edit'))throw Error('Account edit API is missing');
-          console.log('PASS: app collection selectors and account inline JS');
-          NODE
-          grep -q 'id="view-map"' index.html
-          grep -q 'id="map-canvas"' index.html
-          grep -q 'data-lang="lv"' index.html
-          grep -q 'data-lang="en"' index.html
-          grep -q 'OpenStreetMap' app.js
-          grep -q '/api/map' app.js
-          grep -q '/api/create' app.js
-          grep -q '/api/delete' app.js
-          grep -q '/api/external' app.js
-          grep -q 'job_type' app.js
-          grep -q 'id="job-type-tabs"' index.html
-          grep -q 'jobPostKind' i18n.js
-          grep -q 'jobSeekingPerson' i18n.js
-          grep -q 'externalCard' app.js
-          grep -q 'externalTitle' i18n.js
-          node <<'NODE'
-          const fs=require('fs'),vm=require('vm'),sandbox={window:{}};
-          vm.runInNewContext(fs.readFileSync('i18n.js','utf8'),sandbox);
-          const d=sandbox.window.MURDI_I18N;
-          const keys=Object.keys(d.ru).sort();
-          for(const lang of ['ru','lv','en']){
-            const present=Object.keys(d[lang]).sort();
-            if(JSON.stringify(keys)!==JSON.stringify(present))throw Error('Key mismatch: '+lang);
-            if(keys.some(k=>!String(d[lang][k]).trim()))throw Error('Empty key in '+lang);
-          }
-          const html=fs.readFileSync('index.html','utf8');
-          for(const [_,key] of html.matchAll(/data-i18n(?:-html|-placeholder)?="([^"]+)"/g)){
-            if(!keys.includes(key))throw Error('Missing translation: '+key);
-          }
-          console.log('PASS: RU/LV/EN, listing forms, map and account controls');
-          NODE
-          test ! -d recovery
-          test ! -d downloads
-          test ! -d guide
-          ! grep -iq 'MURDIWORLD' index.html
-          ! grep -iq 'MURDILIMAX Recovery' index.html
-          node scripts/generate-seo.mjs _seo_validation
-          # No invented lastmod on the homepage, which has no underlying source change timestamp.
-          grep -q '<url><loc>https://murdilimax.com/</loc></url>' _seo_validation/sitemap.xml
-          ! grep -q 'const iso=new Date().toISOString().slice(0,10)' scripts/generate-seo.mjs
-          grep -q 'https://murdilimax.com/en/cars/' _seo_validation/sitemap.xml
-          test -s _seo_validation/lv/nekustamais-ipasums/index.html
-          test -s _seo_validation/ru/nedvizhimost/index.html
-          test -s _seo_validation/ru/rabota/index.html
-          test -s _seo_validation/lv/darbs/index.html
-          test -s _seo_validation/en/services/index.html
-          test -s _seo_validation/ru/rabota/vakansii/index.html
-          test -s _seo_validation/ru/rabota/ishut-rabotu/index.html
-          test -s _seo_validation/lv/darbs/vakances/index.html
-          test -s _seo_validation/lv/darbs/mekle-darbu/index.html
-          test -s _seo_validation/en/jobs/vacancies/index.html
-          test -s _seo_validation/en/jobs/seeking-work/index.html
-          grep -q 'SS.lv' _seo_validation/ru/rabota/ishut-rabotu/index.html
-          grep -q 'https://murdilimax.com/ru/rabota/vakansii/' _seo_validation/sitemap.xml
-          ! grep -q 'Зарплата уточняется' _seo_validation/ru/rabota/index.html
-          grep -q "https://murdilimax.com/ru/rabota/" _seo_validation/sitemap.xml
-          grep -q 'hreflang="en"' _seo_validation/ru/avtomobili/index.html
-          grep -q 'application/ld+json' _seo_validation/en/cars/index.html
-          test -s _seo_validation/robots.txt
+          node --check lib/atlas-data.js
+          node --check lib/atlas-site.js
+          node --check public/site.js
+          node scripts/build-atlas.mjs
+          test -s dist/index.html
+          test -s dist/ru/guides/ryzen-upgrade/index.html
+          test -s dist/de/tools/percentage/index.html
+          grep -q 'murdilimax.com' dist/CNAME
+          grep -q 'hreflang="de"' dist/index.html
+          grep -q 'Как обновить старый Ryzen' dist/ru/guides/ryzen-upgrade/index.html
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
   deploy:
-    if: github.event_name != 'pull_request'
-    needs: validate
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - name: Stage public marketplace files
-        run: |
-          mkdir -p _site
-          cp index.html style.css app.js i18n.js favicon.svg robots.txt sitemap.xml CNAME 404.html _site/
-          node scripts/generate-seo.mjs _site
-          touch _site/.nojekyll
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
