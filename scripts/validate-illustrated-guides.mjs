@@ -32,7 +32,7 @@ for(const article of articles){
  assert.ok(article.sources?.length>=1,'Need real editorial source: '+article.id);
  for(const src of article.sources)assert.match(src.url,/^https:\/\/[a-z0-9.-]+\//i);
  const image='/media/'+article.id+'.svg';
- assert.ok(artPaths.size===new Set([...artPaths,image]).size,'Must not reuse one artwork for different articles');
+ assert.ok(!artPaths.has(image),'Must not reuse one artwork for different articles');
  artPaths.add(image);
  const img=read('dist'+image);
  assert.ok(img.length>=1100,'Original illustration must be substantive: '+article.id);
