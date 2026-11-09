@@ -60,7 +60,8 @@ const newGuidePhotos={
  'find-water-leaks-home':{
   url:'https://images.unsplash.com/photo-1560673429-b9b9338a360a',
   source:'https://unsplash.com/',
-  credit:'Unsplash',
+  credit:'Unsplash'
+ },
  'usb-c-cable-capabilities':{
   url:'https://images.unsplash.com/photo-1660820936305-3e8df25adf0d',
   source:'https://unsplash.com/',
