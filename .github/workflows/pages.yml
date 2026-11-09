@@ -1,7 +1,7 @@
 name: Publish MURDILIMAX — The Answer Atlas
 on:
   push:
-    branches: [main, feature/free-world-atlas-expansion-20261109]
+    branches: [main, feature/atlas-quality-growth-20261109]
   workflow_dispatch:
 permissions:
   contents: read
@@ -36,12 +36,16 @@ jobs:
           node --check lib/expansion-articles-b.js
           node --check lib/expansion-articles-c.js
           node --check lib/expansion-articles-d.js
+          node --check lib/atlas-guides-additions-a.js
+          node --check lib/atlas-guides-additions-b.js
+          node --check lib/atlas-native-guides.js
           node --check lib/atlas-site.js
           node --check public/site.js
           node scripts/build-atlas.mjs
           node scripts/validate-species-media.mjs
           node scripts/validate-editorial.mjs
           node scripts/validate-expansion.mjs
+          node scripts/validate-quality-growth.mjs
           test -s dist/index.html
           test -s dist/ru/guides/ryzen-upgrade/index.html
           test -s dist/de/tools/percentage/index.html
