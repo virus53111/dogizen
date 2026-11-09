@@ -364,6 +364,34 @@ for(const [slug,record] of Object.entries(reviewedArticlePhotos)){
 }
 const reviewedFiles=new Set(Object.values(reviewedArticlePhotos).map(p=>p.source));
 if(reviewedFiles.size!==Object.keys(reviewedArticlePhotos).length)throw Error('Two reviewed articles reuse a photograph');
+// Verified original documentary photographs (not AI artwork) for current-interest guides.
+// Exact Wikimedia Commons file pages document photographer, terms, and reuse attribution.
+const highIntentPhotos={
+  "flu-cold-covid-differences": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Influenza%20A%20and%20Influenza%20B%20Rapid%20Test-Negative%20Result.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Influenza_A_and_Influenza_B_Rapid_Test-Negative_Result.jpg",
+    "credit": "Ajay Kumar Chaurasiya / Wikimedia Commons — CC BY 4.0 (photograph resized for web)"
+  },
+  "black-friday-real-discounts": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Black%20Friday%20Shopping.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Black_Friday_Shopping.jpg",
+    "credit": "Eric.Ray / Wikimedia Commons — CC BY-SA 2.0 (photograph resized for web)"
+  },
+  "latvia-property-tax-online": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Andromedas%20Gatve%2C%205B%20Andromedas%20Gatve%2C%205B%20WMID2579272%20725.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Andromedas_Gatve%2C_5B_Andromedas_Gatve%2C_5B_WMID2579272_725.jpg",
+    "credit": "Imants / Wikimapia / Wikimedia Commons — CC BY-SA 3.0 (photograph resized for web)"
+  },
+  "ai-voice-scam-calls": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Man%20responds%20to%20telephone%20call.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Man_responds_to_telephone_call.jpg",
+    "credit": "Diane A. Reid / US National Cancer Institute / Wikimedia Commons — Public domain (photograph resized for web)"
+  }
+};
+for(const [slug,asset] of Object.entries(highIntentPhotos)){
+ if(newGuidePhotos[slug])throw Error('New article photo overrides existing guide: '+slug);
+ newGuidePhotos[slug]=asset;
+}
 const signature=buffer=>buffer.length>12&&buffer[0]===255&&buffer[1]===216&&buffer[buffer.length-2]===255&&buffer[buffer.length-1]===217;
 async function getJpeg(source){
  const url=new URL(source);
