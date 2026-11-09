@@ -7,10 +7,10 @@ import {stories,story,storiesFor,languages} from '../lib/atlas-data.js';
 const read=p=>readFileSync(p,'utf8');
 const revisions={...essentialSecurityItPtPl,...essentialBackupItPtPl,...storageGuideItPtPl};
 assert.deepEqual(Object.keys(revisions).sort(),['backup-321','secure-accounts','ssd-vs-hdd']);
-assert.equal(stories.length,98,'No synthetic topics or doorway pages permitted');
+assert.equal(stories.length,99,'No synthetic topics or doorway pages permitted');
 assert.equal(languages.length,12,'Preserve all supported languages');
 const sitemap=read('dist/sitemap.xml');
-assert.equal((sitemap.match(/<url>/g)||[]).length,625);
+assert.equal((sitemap.match(/<url>/g)||[]).length,629);
 let pages=0;
 for(const lang of ['it','pt','pl']){
  assert.equal(storiesFor(lang).length,8,'Do not introduce unreviewed translations');
@@ -57,4 +57,4 @@ for(const lang of ['it','pt','pl']){
  }
 }
 assert.equal(pages,9);
-console.log('PASS: nine substantive Italian/Portuguese/Polish guide revisions; all other translated routes retained; 625 sitemap URLs.');
+console.log('PASS: nine substantive Italian/Portuguese/Polish guide revisions; all other translated routes retained; 629 sitemap URLs.');

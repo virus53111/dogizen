@@ -523,7 +523,7 @@ export async function bundlePhotographs({root,stories,topics}){
  };
  for(const t of topics)usePhoto(t,firstTopicPhotos[t.id]||t.image);
  for(const s of stories){
-  const selected=newGuidePhotos[s.id];
+  const selected=s.photoAsset||newGuidePhotos[s.id];
   if(selected){
    s.photoCredit=selected.credit;
    s.photoCreditUrl=selected.source;

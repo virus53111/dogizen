@@ -64,7 +64,7 @@ for(const lang of languages){
     await write(prefix+part+'/index.html',speciesPage(lang,sp.id));
     pages.push({lang,part,weight:'0.7',species:sp,image:sp.image,updated:'2026-11-09'});
   }
-  for(const t of topics){
+  for(const t of topics.filter(t=>!t.languages||t.languages.includes(lang))){
     await write(prefix+'topics/'+t.id+'/index.html',category(lang,t.id));
     if(storiesFor(lang).some(s=>s.topic===t.id)||species.some(s=>s.group===t.id)||t.id==='tools')pages.push({lang,part:'topics/'+t.id,weight:'0.6',topic:t.id});
   }
