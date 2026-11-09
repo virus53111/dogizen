@@ -41,7 +41,7 @@ for(const lang of languages){
   }
   for(const s of storiesFor(lang)){
     await write(prefix+'guides/'+s.id+'/index.html',guide(lang,s.id));
-    pages.push({lang,part:'guides/'+s.id,weight:'0.7',updated:s.updated,story:s,image:s.image});
+    pages.push({lang,part:'guides/'+s.id,weight:'0.7',updated:s.localeUpdated?.[lang]||s.updated,story:s,image:s.image});
   }
   if(['en','ru'].includes(lang))for(const sp of visualSpecies){
     const part='species/'+sp.id;
