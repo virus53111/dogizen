@@ -151,7 +151,7 @@ try{
  await page.goto(base+'/ru/',{waitUntil:'domcontentloaded'});
  const broken=page.locator('.story-photo img').first();
  await broken.scrollIntoViewIfNeeded();
- await broken.evaluate(img=>{img.src='https://invalid.example.net/missing-thumbnail.jpg';});
+ await broken.evaluate(img=>{delete img.dataset.guideImageFallback;img.src='https://invalid.example.net/missing-thumbnail.jpg';});
  await page.waitForFunction(()=>document.querySelector('.story-photo img')?.getAttribute('src')==='/media/guide-fallback.svg');
  await broken.evaluate(image=>image.decode());
  assert.equal(await broken.evaluate(image=>image.naturalWidth),1400,'Local fallback must be visible when a remote image fails');
