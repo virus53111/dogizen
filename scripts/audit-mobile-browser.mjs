@@ -66,6 +66,13 @@ try{
    await menu.click();
    assert.equal(await page.locator('#menu-toggle').getAttribute('aria-expanded'),'true');
    assert.equal(await page.locator('#mobile-links').isVisible(),true,'Mobile links must open at '+width+'px');
+   assert.equal(await menu.getAttribute('aria-label'), 'Закрыть меню','Open mobile menu must explain its current action in Russian');
+   await page.keyboard.press('Escape');
+   assert.equal(await menu.getAttribute('aria-expanded'),'false','Escape must close mobile menu');
+   assert.equal(await page.locator('#mobile-links').isVisible(),false);
+   await menu.click();
+   await page.locator('.hero h1').click();
+   assert.equal(await menu.getAttribute('aria-expanded'),'false','Tap outside menu must close it');
   }
   if(browserErrors.length)failures.push({width,issue:'JavaScript runtime errors',errors:browserErrors});
   await page.close();
