@@ -50,7 +50,7 @@ jobs:
           node --check lib/editorial-backup-it-pt-pl.js
           node --check lib/editorial-account-security-lt-et-nl.js
           node --check lib/editorial-backups-lt-et-nl.js
-          node --check lib/editorial-art-2026.js
+          node --check scripts/bundle-photographs.mjs
           node --check lib/illustrated-guides-a.js
           node --check lib/illustrated-guides-b.js
           node --check lib/atlas-site.js
