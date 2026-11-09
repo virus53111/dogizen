@@ -11,6 +11,7 @@ routes.push(
  '/ru/guides/wifi-router-placement/','/ru/guides/laptop-overheating-checklist/','/ru/guides/freezer-food-storage/','/ru/guides/start-seeds-indoors/','/ru/guides/rain-garden-at-home/',
  '/ru/guides/cloud-types-field-guide/','/ru/guides/thunderstorm-hiking-safety/','/ru/guides/beginner-stargazing-plan/','/ru/guides/bicycle-visibility-checklist/','/ru/guides/find-water-leaks-home/'
 );
+routes.push('/ru/guides/krakow-shooting-november-2026/','/guides/krakow-shooting-november-2026/','/ru/topics/world-events/','/topics/world-events/');
 const sizes=[320,360,390,430,768];
 const {illustratedGuidesC}=await import('../lib/illustrated-guides-c.js');
 for(const article of illustratedGuidesC)for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+article.id+'/');
@@ -193,14 +194,14 @@ try{
  console.log('PASS: broken photo replaced with a real local JPEG fallback');
  await page.goto(base+'/',{waitUntil:'domcontentloaded'});
  const topicPhotos=page.locator('.topic-card.photo-topic img.topic-image');
- assert.equal(await topicPhotos.count(),16,'Every category must have a real photo');
- for(let i=0;i<16;i++){
+ assert.equal(await topicPhotos.count(),17,'Every category must have a real photo');
+ for(let i=0;i<17;i++){
   const img=topicPhotos.nth(i);
   await img.scrollIntoViewIfNeeded();
   await img.evaluate(el=>el.decode());
   assert.ok((await img.evaluate(el=>el.naturalWidth))>=900,'Category photo failed to decode: '+i);
  }
- console.log('PASS: all 16 category photos display genuine JPEGs on mobile');
+ console.log('PASS: all 17 category photos display genuine JPEGs on mobile');
 
  // Verify translated chapter controls stay interactive on the newly expanded pages.
  for(const [language,expected] of [['lt','Šiame straipsnyje'],['et','Selles artiklis'],['nl','In dit artikel']]){

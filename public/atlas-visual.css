@@ -408,3 +408,6 @@ body{background:var(--paper);color:var(--ink)}
  .hero-image.hero-photo-stage{min-height:300px}
  .topic-card.photo-topic{min-height:215px}
 }
+
+/* Provenance remains readable below documentary photographs. */
+.article-photo-context{max-width:900px;margin:12px auto 32px;line-height:1.65;font-size:14px;overflow-wrap:anywhere}.article-photo-context a{text-decoration:underline}
