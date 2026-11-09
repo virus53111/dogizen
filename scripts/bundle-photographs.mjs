@@ -1,4 +1,4 @@
-import {mkdir,writeFile} from 'node:fs/promises';
+import {mkdir,writeFile,readFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 import path from 'node:path';
 
@@ -33,7 +33,32 @@ const newGuidePhotos={
   credit:'Unsplash'
  },
  'rain-garden-at-home':{
-  url:'https://images.unsplash.com/photo-1473448912268-2022ce9509d8',
+  url:'https://images.unsplash.com/photo-1501004318641-b39e6451bec6',
+  source:'https://unsplash.com/',
+  credit:'Unsplash'
+ },
+ 'cloud-types-field-guide':{
+  url:'https://images.unsplash.com/photo-1534088568595-a066f410bcda',
+  source:'https://unsplash.com/',
+  credit:'Unsplash'
+ },
+ 'thunderstorm-hiking-safety':{
+  url:'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b',
+  source:'https://unsplash.com/',
+  credit:'Unsplash'
+ },
+ 'beginner-stargazing-plan':{
+  url:'https://images.unsplash.com/photo-1623945477998-ca7fe0a623fc',
+  source:'https://unsplash.com/',
+  credit:'Unsplash'
+ },
+ 'bicycle-visibility-checklist':{
+  url:'https://images.unsplash.com/photo-1485965120184-e220f721d03e',
+  source:'https://unsplash.com/',
+  credit:'Unsplash'
+ },
+ 'find-water-leaks-home':{
+  url:'https://images.unsplash.com/photo-1560673429-b9b9338a360a',
   source:'https://unsplash.com/',
   credit:'Unsplash'
  }
@@ -99,6 +124,10 @@ export async function bundlePhotographs({root,stories,topics}){
   await writeFile(path.join(photoDir,record.file),bytes);
   record.bytes=bytes.length;
  }));
+ const fallbackSource=firstTopicPhotos.tech.split('?')[0];
+ const techPhoto=bySource.get(fallbackSource);
+ if(!techPhoto)throw new Error('Missing guaranteed real-photo fallback');
+ await writeFile(path.join(photoDir,'photo-fallback.jpg'),await readFile(path.join(photoDir,techPhoto.file)));
  console.log('PHOTO ASSET PASS: '+records.length+' unique genuine JPEG photographs, '+stories.length+' article covers, '+topics.length+' topic covers, '+records.reduce((n,x)=>n+x.bytes,0)+' total bytes; all stored locally.');
  return records.length;
 }
