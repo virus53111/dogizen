@@ -4,8 +4,8 @@ import {story} from '../lib/atlas-data.js';
 const read=p=>readFileSync(p,'utf8');
 const home=read('dist/index.html'),ruHome=read('dist/ru/index.html');
 for(const html of [home,ruHome]){
- assert.match(html,/hero-image hero-art/,'The new orbital atlas hero must be rendered');
- assert.match(html,/orbit-core/,'Missing original orbital artwork');
+ assert.match(html,/hero-image hero-photo-stage/,'Editorial homepage must show a real photo');
+ assert.doesNotMatch(html,/orbit-core/,'Decorative orbital illustration should be removed');
  assert.match(html,/atlas-visual\.css/,'Visual styles not linked');
  assert.match(html,/href="#main-content"/,'Skip navigation missing');
  assert.doesNotMatch(html,/(?:создать объявление|разместить объявление|classifieds marketplace)/i,'Legacy classified UI must not appear');
