@@ -6,7 +6,7 @@ import path from 'node:path';
 import {chromium} from 'playwright';
 
 const root=path.resolve('dist');
-const routes=['/ru/','/','/ru/guides/ryzen-upgrade/','/ru/topics/mushrooms/','/ru/species/amanita-phalloides/','/ru/tools/percentage/','/ru/privacy/','/fr/guides/secure-accounts/','/fr/guides/backup-321/','/fr/guides/ssd-vs-hdd/','/lv/guides/secure-accounts/','/lv/guides/backup-321/','/lv/guides/ssd-vs-hdd/','/it/guides/secure-accounts/','/it/guides/backup-321/','/pt/guides/secure-accounts/','/pt/guides/backup-321/','/pl/guides/secure-accounts/','/pl/guides/backup-321/'];
+const routes=['/ru/','/','/ru/guides/ryzen-upgrade/','/ru/topics/mushrooms/','/ru/species/amanita-phalloides/','/ru/tools/percentage/','/ru/privacy/','/fr/guides/secure-accounts/','/fr/guides/backup-321/','/fr/guides/ssd-vs-hdd/','/lv/guides/secure-accounts/','/lv/guides/backup-321/','/lv/guides/ssd-vs-hdd/','/it/guides/secure-accounts/','/it/guides/backup-321/','/pt/guides/secure-accounts/','/pt/guides/backup-321/','/pl/guides/secure-accounts/','/pl/guides/backup-321/','/lt/guides/secure-accounts/','/lt/guides/backup-321/','/et/guides/secure-accounts/','/et/guides/backup-321/','/nl/guides/secure-accounts/','/nl/guides/backup-321/'];
 const sizes=[320,360,390,430,768];
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
 const server=createServer(async(req,res)=>{
@@ -130,6 +130,20 @@ try{
  await page.goto(base+'/de/guides/ddr4-ddr5/',{waitUntil:'domcontentloaded'});
  assert.ok((await page.locator('.article-toc-panel summary').textContent()).includes('In diesem Artikel'),'Article contents must be translated');
  console.log('PASS: German article chapter label is localized');
+ // Verify translated chapter controls stay interactive on the newly expanded pages.
+ for(const [language,expected] of [['lt','Šiame straipsnyje'],['et','Selles artiklis'],['nl','In dit artikel']]){
+  await page.goto(base+'/'+language+'/guides/backup-321/',{waitUntil:'domcontentloaded'});
+  const toc=page.locator('.article-toc-panel');
+  assert.ok((await toc.locator('summary').textContent()).includes(expected),'Translated chapter title missing for '+language);
+  assert.equal(await toc.evaluate(el=>el.open),false,'Mobile chapter contents must start folded for '+language);
+  await toc.locator('summary').click();
+  assert.equal(await toc.evaluate(el=>el.open),true,'Mobile chapter contents must open for '+language);
+  assert.equal(await toc.locator('[data-toc-link]').count(),5,'All localized chapters should be navigable');
+  await toc.locator('[data-toc-link="section-2"]').click();
+  assert.equal(await toc.evaluate(el=>el.open),false,'After chapter navigation, contents should fold for '+language);
+  console.log('PASS: '+language+' mobile chapter navigation, localized label and five chapter links');
+ }
+
 
  // Migration intent: the former English homepage has a real equivalent,
  // while removed construction, jobs and marketplace paths must be HTTP 404.
