@@ -50,6 +50,9 @@ jobs:
           node --check lib/editorial-backup-it-pt-pl.js
           node --check lib/editorial-account-security-lt-et-nl.js
           node --check lib/editorial-backups-lt-et-nl.js
+          node --check lib/editorial-art-2026.js
+          node --check lib/illustrated-guides-a.js
+          node --check lib/illustrated-guides-b.js
           node --check lib/atlas-site.js
           node --check public/site.js
           node scripts/build-atlas.mjs
@@ -61,6 +64,7 @@ jobs:
           node scripts/validate-locale-fr-lv.mjs
           node scripts/validate-it-pt-pl-editorial.mjs
           node scripts/validate-lt-et-nl-editorial.mjs
+          node scripts/validate-illustrated-guides.mjs
           node scripts/validate-expansion.mjs
           node scripts/validate-quality-growth.mjs
           node scripts/validate-atlas-experience.mjs
