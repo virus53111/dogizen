@@ -2,7 +2,8 @@ import {mkdir,writeFile,copyFile,rm} from 'node:fs/promises';
 import path from 'node:path';
 import {languages,stories,storiesFor,availableIn,topics} from '../lib/atlas-data.js';
 import {species} from '../lib/world-topics.js';
-import {home,guide,tool,category,notFound,url} from '../lib/atlas-site.js';
+import {home,guide,tool,category,speciesPage,notFound,url} from '../lib/atlas-site.js';
+import {visualSpecies} from '../lib/species-atlas.js';
 const root=path.resolve('dist');
 await rm(root,{recursive:true,force:true});
 await mkdir(root,{recursive:true});
@@ -16,7 +17,12 @@ for(const lang of languages){
   pages.push({lang,part:'',weight:'0.9'});
   for(const s of storiesFor(lang)){
     await write(prefix+'guides/'+s.id+'/index.html',guide(lang,s.id));
-    pages.push({lang,part:'guides/'+s.id,weight:'0.7',updated:s.updated,story:s});
+    pages.push({lang,part:'guides/'+s.id,weight:'0.7',updated:s.updated,story:s,image:s.image});
+  }
+  if(['en','ru'].includes(lang))for(const sp of visualSpecies){
+    const part='species/'+sp.id;
+    await write(prefix+part+'/index.html',speciesPage(lang,sp.id));
+    pages.push({lang,part,weight:'0.7',species:sp,image:sp.image,updated:'2026-11-09'});
   }
   for(const t of topics){
     await write(prefix+'topics/'+t.id+'/index.html',category(lang,t.id));
@@ -30,11 +36,12 @@ for(const lang of languages){
 const site='https://murdilimax.com';
 const urls=pages.map(p=>site+url(p.lang,p.part));
 const xmlesc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
-let sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n';
+let sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
 for(const p of pages){
-  const langs=p.story?languages.filter(l=>availableIn(p.story,l)):(p.topic?languages.filter(l=>storiesFor(l).some(s=>s.topic===p.topic)||species.some(s=>s.group===p.topic)||p.topic==='tools'):languages);
+  const langs=p.species?['en','ru']:(p.story?languages.filter(l=>availableIn(p.story,l)):(p.topic?languages.filter(l=>storiesFor(l).some(s=>s.topic===p.topic)||species.some(s=>s.group===p.topic)||p.topic==='tools'):languages));
   sitemap+='  <url><loc>'+xmlesc(site+url(p.lang,p.part))+'</loc>';
   if(p.updated)sitemap+='<lastmod>'+p.updated+'</lastmod>';
+  if(p.image)sitemap+='<image:image><image:loc>'+xmlesc(p.image)+'</image:loc></image:image>';
   sitemap+='<priority>'+p.weight+'</priority>';
   for(const l of langs)sitemap+='<xhtml:link rel="alternate" hreflang="'+l+'" href="'+xmlesc(site+url(l,p.part))+'"/>';
   sitemap+='<xhtml:link rel="alternate" hreflang="x-default" href="'+xmlesc(site+url('en',p.part))+'"/>';
