@@ -29,7 +29,7 @@ for(const t of expansionTopics){
 for(const x of added){
   assert.equal(x.sources?.length,1);
   assert.match(x.sources[0].url,/^https:\/\/(www\.|science\.|consumer\.)?/);
-  assert.ok(x.image?.startsWith('/media/'));
+  assert.ok(x.image?.startsWith('https://images.unsplash.com/'),'Original source asset must be a genuine photographic URL');
   for(const lang of enOnly){
     assert.ok(availableIn(x,lang));
     assert.equal(x[lang].sections.length,4);
