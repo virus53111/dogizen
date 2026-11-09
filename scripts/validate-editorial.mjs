@@ -25,7 +25,7 @@ for(const article of editorial2026){
   assert.ok(!existsSync('dist/de/guides/'+article.id+'/index.html'),'No fake German translation for '+article.id);
 }
 const map=readFileSync('dist/sitemap.xml','utf8');
-assert.equal((map.match(/<url>/g)||[]).length,623,'Expected 623 correctly scoped indexable sitemap pages');
+assert.equal((map.match(/<url>/g)||[]).length,625,'Expected 625 correctly scoped indexable sitemap pages');
 assert.ok(map.includes('xmlns:image='));
 for(const lang of ['en','ru'])assert.ok(storiesFor(lang).length>=30);
-console.log('PASS editorial QA: 11 meaningful bilingual guides, 11 distinct sections, verified source links, 623 sitemap URLs');
+console.log('PASS editorial QA: 11 meaningful bilingual guides, 11 distinct sections, verified source links, 625 sitemap URLs');
