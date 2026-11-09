@@ -5,7 +5,7 @@ import {stories,storiesFor} from '../lib/atlas-data.js';
 
 assert.equal(editorial2026.length,11);
 assert.equal(new Set(editorial2026.map(x=>x.id)).size,editorial2026.length);
-assert.equal(stories.length,92,'Expected 92 fully published guides');
+assert.equal(stories.length,98,'Expected 98 fully published guides');
 const seenGroups=new Set(editorial2026.map(x=>x.topic));
 assert.equal(seenGroups.size,11,'Each new guide must expand a different category');
 for(const article of editorial2026){
@@ -25,7 +25,7 @@ for(const article of editorial2026){
   assert.ok(!existsSync('dist/de/guides/'+article.id+'/index.html'),'No fake German translation for '+article.id);
 }
 const map=readFileSync('dist/sitemap.xml','utf8');
-assert.equal((map.match(/<url>/g)||[]).length,611,'Expected 611 correctly scoped indexable sitemap pages');
+assert.equal((map.match(/<url>/g)||[]).length,623,'Expected 623 correctly scoped indexable sitemap pages');
 assert.ok(map.includes('xmlns:image='));
 for(const lang of ['en','ru'])assert.ok(storiesFor(lang).length>=30);
-console.log('PASS editorial QA: 11 meaningful bilingual guides, 11 distinct sections, verified source links, 611 sitemap URLs');
+console.log('PASS editorial QA: 11 meaningful bilingual guides, 11 distinct sections, verified source links, 623 sitemap URLs');
