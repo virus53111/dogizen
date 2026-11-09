@@ -15,7 +15,8 @@ function genuineJpeg(src){
 let editions=0;
 const unique=new Set();
 for(const article of stories){
- const src=article.image;
+ const page=read('dist/guides/'+article.id+'/index.html');
+ const src=page.match(/class="article-image"[^>]*><img src="(\/photos\/[a-f0-9]{18}\.jpg)"/)?.[1];
  genuineJpeg(src);
  unique.add(src);
  for(const lang of languages.filter(lang=>availableIn(article,lang))){
@@ -38,7 +39,7 @@ for(const [lang,html] of [['en',home],['ru',ruHome]]){
  assert.equal(cards.length,16,'All sixteen category cards need real photographs: '+lang);
  for(const [,src] of cards)genuineJpeg(src);
 }
-for(const category of topics)genuineJpeg(category.image);
+// Category image locations are collected from the published homepage, not pre-build data.
 for(const newArticle of illustratedGuidesC)
  for(const lang of ['en','ru']){
   const prefix=lang==='en'?'':lang+'/';
