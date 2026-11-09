@@ -7,7 +7,7 @@ import {illustratedGuidesC} from '../lib/illustrated-guides-c.js';
 const read=path=>readFileSync(path,'utf8');
 const items=[...illustratedGuidesA,...illustratedGuidesB,...illustratedGuidesC];
 assert.equal(items.length,22);
-assert.equal(new Set(items.map(x=>x.id)).size,10,'Guide IDs must be unique');
+assert.equal(new Set(items.map(x=>x.id)).size,22,'Guide IDs must be unique');
 assert.equal(stories.length,82,'60 existing plus 10 original new guides');
 assert.equal(new Set(stories.map(x=>x.id)).size,82);
 assert.equal(languages.length,12);
