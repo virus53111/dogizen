@@ -73,5 +73,5 @@ if(errors.length){
  console.error(errors.slice(0,80).join('\n'));
  throw new Error(errors.length+' broken internal links / SEO URLs');
 }
-assert.equal(pages,591,'Unexpected sitemap coverage');
+assert.equal(pages,599,'Unexpected sitemap coverage');
 console.log('PASS: all internal links resolve; fragment targets and sitemap canonicals are valid.');
