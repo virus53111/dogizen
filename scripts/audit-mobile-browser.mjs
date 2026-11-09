@@ -128,7 +128,7 @@ try{
  assert.equal(await page.locator('.article-toc-links a[aria-current="location"]').count(),1,'One chapter should be active');
  console.log('PASS: mobile article contents fold, chapters navigate, active chapter and progress update: '+reading+'%');
  await page.goto(base+'/de/guides/ddr4-ddr5/',{waitUntil:'domcontentloaded'});
- assert.ok((await page.locator('.article-toc-panel summary').innerText()).includes('In diesem Artikel'),'Article contents must be translated');
+ assert.ok((await page.locator('.article-toc-panel summary').textContent()).includes('In diesem Artikel'),'Article contents must be translated');
  console.log('PASS: German article chapter label is localized');
  assert.equal(errors.length,0,'Uncaught client-side JS errors: '+errors.join('; '));
  await page.close();
