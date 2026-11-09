@@ -240,3 +240,63 @@ body{background:var(--paper);color:var(--ink)}
 .v-guide-link:focus-visible,.v-all-link:focus-visible,.v-safety a:focus-visible,.v-detail-warning a:focus-visible{outline:3px solid #b2db65;outline-offset:4px}
 @media(max-width:960px){.v-guide-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:640px){.v-related .section-head{align-items:flex-start;flex-wrap:wrap;gap:10px}.v-all-link{white-space:normal}.v-related-explainer{font-size:13px}.v-guide-links{grid-template-columns:1fr}.v-guide-link{min-height:175px;padding:22px}.v-related-guides{padding-bottom:70px}.v-guide-link>span:first-child{font-size:22px}}
+
+/* Mobile readability repair (2026-11-09).
+   Never hide an oversized heading: give grid children a shrinkable width and
+   use fluid editorial type at small viewports. This specifically addresses
+   long Russian featured-story titles observed on a real phone. */
+.feature,.feature-img,.feature-copy,.feature-copy h2,.feature-copy p{min-width:0}
+.feature-copy{max-width:100%;width:100%}
+.feature-copy h2{max-width:100%;overflow-wrap:anywhere;hyphens:auto;text-wrap:pretty}
+.feature-copy p,.feature-copy .card-meta{max-width:100%;overflow-wrap:break-word}
+.article-heading h1,.atlas-head h1,.v-detail h1,.trust-header h1,.hero h1,
+.section-head h2,.interlude h2,.method h2,.tool-layout h1,.topic-info strong,
+.story-body strong,.v-guide-link>span:first-child{
+ max-width:100%;overflow-wrap:anywhere;hyphens:auto
+}
+@media(max-width:740px){
+ .feature{grid-template-columns:minmax(0,1fr);min-height:0}
+ .feature-img{height:225px;min-height:225px}
+ .feature-copy{min-height:0;padding:clamp(20px,5.5vw,30px);align-items:stretch}
+ .feature-copy .card-meta{font-size:11px;line-height:1.5}
+ .feature-copy h2{
+  font-family:'Instrument Serif',Georgia,serif;
+  font-size:clamp(30px,8.5vw,45px);
+  line-height:1.06;letter-spacing:-.028em;
+  margin:17px 0 19px;
+ }
+ .feature-copy p{font-size:clamp(14px,3.8vw,16px);line-height:1.65}
+ .feature .round-arrow{margin-top:20px;align-self:flex-start;width:54px;height:54px;font-size:23px}
+ .article-heading h1{font-size:clamp(35px,9vw,51px);line-height:1.07;letter-spacing:-.025em}
+ .atlas-head h1,.v-detail h1{font-size:clamp(39px,10vw,56px);line-height:1.04;letter-spacing:-.03em}
+ .section-head h2,.interlude h2,.method h2{font-size:clamp(37px,8.8vw,52px);line-height:1.07}
+ .tool-layout h1{font-size:clamp(37px,9vw,49px)}
+ .trust-header h1{font-size:clamp(41px,10vw,65px);line-height:1.02}
+ .hero h1{font-size:clamp(45px,12vw,70px);line-height:.98;letter-spacing:-.035em}
+}
+@media(max-width:430px){
+ .feature-img{height:195px;min-height:195px}
+ .feature-copy{padding:21px 19px 25px}
+ .feature-copy h2{font-size:clamp(29px,8.2vw,35px);line-height:1.08;margin:15px 0 17px}
+ .feature-copy p{font-size:14px}
+ .article-heading h1{font-size:clamp(33px,8.7vw,40px)}
+ .atlas-head h1,.v-detail h1{font-size:clamp(36px,9.4vw,43px)}
+ .hero h1{font-size:clamp(43px,11.8vw,52px)}
+ .section-head h2,.interlude h2{font-size:clamp(35px,8.9vw,43px)}
+ .brand{min-width:0;flex-shrink:1}
+ .brand-text{font-size:clamp(15px,4.4vw,18px);letter-spacing:-.9px}
+ .brand-text small{font-size:7px;letter-spacing:1px}
+ .nav-inner{gap:8px}
+ .nav-actions{gap:6px;flex:none}
+ .lang-select{padding:6px 7px;gap:4px}
+ .lang-select select{max-width:69px;font-size:11px}
+ .lang-icon{font-size:14px}
+ .menu-button{width:31px}
+}
+@media(max-width:355px){
+ .brand-icon{width:34px;height:34px;font-size:23px;flex:none}
+ .brand-text{font-size:15px}
+ .nav-inner{gap:5px}
+ .feature-copy h2{font-size:29px}
+ .feature-copy{padding:18px 16px 23px}
+}
