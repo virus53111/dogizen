@@ -10,6 +10,7 @@ const fingerprints = new Set();
 const banned = /(?:^|[_\W])(?:distribution|dist|range|map|globe|atlas|iucn|status|flag|cookbook|kokbok|medizinal|illustration|plate)(?:[_\W]|$)|distkils|ineurope|(?:world|range)[_-]?map/i;
 for (const entry of visualSpecies) {
   assert.ok(entry.latin&&entry.ru&&entry.en,'Missing species name: '+entry.id);
+  assert.equal(entry.imageKind,'photograph','Replace illustrations with real species photography: '+entry.latin);
   assert.ok(entry.detail?.ru?.length>70&&entry.detail?.en?.length>70,'Missing real description: '+entry.latin);
   assert.ok(entry.image?.startsWith('https://upload.wikimedia.org/wikipedia/commons/'),'External/untrusted image '+entry.latin);
   assert.ok(entry.photoCredit?.startsWith('https://commons.wikimedia.org/wiki/File:'),'Missing Commons credit '+entry.latin);
