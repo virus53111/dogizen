@@ -14,7 +14,7 @@ for(const [id,revision] of Object.entries(upgrades)){
  assert.ok(published,'Missing original guide: '+id);
  assert.equal(published.localeUpdated?.en,'2026-11-09','English revision date missing');
  assert.equal(published.localeUpdated?.ru,'2026-11-09','Russian revision date missing');
- assert.deepEqual(Object.keys(published.localeUpdated).sort(),['en','ru'],'Only revised languages get new dates');
+ assert.deepEqual(Object.keys(published.localeUpdated).sort(),id==='secure-accounts'?['de','en','es','ru']:['en','ru'],'Only truly revised languages get new dates');
  assert.ok(published.sources.length>=revision.sources.length,'Earlier sources must be preserved');
  for(const source of revision.sources){
   assert.ok(source.url.startsWith('https://'),'Verified HTTPS source required');
