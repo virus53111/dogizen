@@ -50,6 +50,7 @@ jobs:
           node scripts/validate-quality-growth.mjs
           node scripts/validate-atlas-experience.mjs
           node scripts/validate-trust-search.mjs
+          node scripts/validate-runtime-interactions.mjs
           node scripts/report-content-health.mjs
           test -s dist/index.html
           test -s dist/ru/guides/ryzen-upgrade/index.html
