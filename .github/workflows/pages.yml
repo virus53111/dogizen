@@ -1,7 +1,7 @@
 name: Publish MURDILIMAX — The Answer Atlas
 on:
   push:
-    branches: [main]
+    branches: [main, feature/world-atlas-topics-20261109]
   workflow_dispatch:
 permissions:
   contents: read
@@ -21,6 +21,10 @@ jobs:
       - name: Validate multilingual pages and generate static website
         run: |
           node --check lib/atlas-data.js
+          node --check lib/world-topics.js
+          node --check lib/world-articles.js
+          node --check lib/world-intros.js
+          node --check lib/atlas-baltic-translations.js
           node --check lib/atlas-site.js
           node --check public/site.js
           node scripts/build-atlas.mjs
@@ -35,6 +39,18 @@ jobs:
           test -s dist/pl/guides/secure-accounts/index.html
           test -s dist/it/index.html
           ! test -e dist/pl/guides/spot-phishing/index.html
+          test -s dist/lt/index.html
+          test -s dist/et/index.html
+          test -s dist/nl/index.html
+          test -s dist/et/guides/ryzen-upgrade/index.html
+          test -s dist/lt/topics/mushrooms/index.html
+          test -s dist/nl/topics/fishing/index.html
+          test -s dist/ru/guides/mold-moisture-home/index.html
+          test -s dist/en-fake-never-index/index.html || true
+          ! test -e dist/lt/guides/mold-moisture-home/index.html
+          grep -q 'noindex,follow' dist/lt/topics/construction/index.html
+          grep -q 'Грибы' dist/ru/topics/mushrooms/index.html
+          grep -q 'Amanita phalloides' dist/ru/topics/mushrooms/index.html
           grep -q 'xhtml:link' dist/sitemap.xml
           grep -q 'Как обновить старый Ryzen' dist/ru/guides/ryzen-upgrade/index.html
       - uses: actions/configure-pages@v5
@@ -42,6 +58,7 @@ jobs:
         with:
           path: dist
   deploy:
+    if: github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     environment:
