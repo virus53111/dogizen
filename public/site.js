@@ -82,7 +82,7 @@ async function performUniversalSearch(raw){
  }
 }
 $('.filter-btn').forEach(btn=>btn.addEventListener('click',()=>{if(search)search.value='';resetUniversalSearch();applyFilter(btn.dataset.filter||'all','');}));
-$('[data-filter-link]').forEach(link=>link.addEventListener('click',()=>{const topic=link.dataset.filterLink;setTimeout(()=>{resetUniversalSearch();applyFilter(topic==='tools'?'all':topic)},60)}));
+$$('[data-filter-link]').forEach(link=>link.addEventListener('click',()=>{const topic=link.dataset.filterLink;setTimeout(()=>{resetUniversalSearch();applyFilter(topic==='tools'?'all':topic)},60)}));
 const searchForm=$('#search-form');
 if(searchForm)searchForm.addEventListener('submit',e=>{
  e.preventDefault();performUniversalSearch(search?.value||'');
