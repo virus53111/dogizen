@@ -19,7 +19,7 @@ const server=createServer(async(req,res)=>{
   const body=await readFile(target);
   res.writeHead(200,{'Content-Type':mime[path.extname(target)]||'application/octet-stream','Cache-Control':'no-store'});
   res.end(body);
- }catch(e){res.writeHead(404,{'Content-Type':'text/plain'});res.end('Not Found')}
+ }catch(e){res.writeHead(404,{'Content-Type':'text/html; charset=utf-8','Cache-Control':'no-store'});res.end(await readFile(path.join(root,'404.html')))}
 });
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const base='http://127.0.0.1:'+server.address().port;
@@ -130,6 +130,30 @@ try{
  await page.goto(base+'/de/guides/ddr4-ddr5/',{waitUntil:'domcontentloaded'});
  assert.ok((await page.locator('.article-toc-panel summary').textContent()).includes('In diesem Artikel'),'Article contents must be translated');
  console.log('PASS: German article chapter label is localized');
+
+ // Migration intent: the former English homepage has a real equivalent,
+ // while removed construction, jobs and marketplace paths must be HTTP 404.
+ await page.goto(base+'/en/',{waitUntil:'domcontentloaded'});
+ await page.waitForURL(base+'/',{timeout:6000});
+ assert.match(await page.title(),/MURDILIMAX/,'English legacy entry should lead to canonical homepage');
+ console.log('PASS: former /en/ homepage resolves to current English homepage');
+ const oldLatvian=await page.goto(base+'/lv/buvdarbu-cenas/',{waitUntil:'domcontentloaded'});
+ assert.equal(oldLatvian.status(),404,'Removed Latvian construction prices must stay a 404');
+ await page.locator('[data-error-title]').waitFor();
+ assert.match(await page.locator('[data-error-title]').innerText(),/Šī lapa/,'Latvian old-URL message is not localized');
+ assert.equal(await page.locator('link[rel="canonical"]').count(),0,'Missing page must never canonicalize to home');
+ assert.equal(await page.locator('meta[name="robots"]').getAttribute('content'),'noindex,follow');
+ await page.locator('#error-query').fill('3-2-1');
+ await page.locator('[data-error-search-button]').click();
+ await page.waitForURL(/\/lv\/\?q=3-2-1/,{timeout:6000});
+ await page.locator('#universal-list a[href="/lv/guides/backup-321/"]').waitFor({timeout:9000});
+ console.log('PASS: a removed Latvian marketplace URL returns 404 and its search leads to a real current guide');
+ const oldRussian=await page.goto(base+'/podrabotka/',{waitUntil:'domcontentloaded'});
+ assert.equal(oldRussian.status(),404,'Old Russian job portal must not silently redirect to a guide');
+ await page.locator('[data-error-title]').waitFor();
+ assert.match(await page.locator('[data-error-title]').innerText(),/Этой страницы/);
+ assert.equal(await page.locator('[data-error-search]').getAttribute('action'),'/ru/');
+ console.log('PASS: old Russian jobs URL returns an honest localized 404');
  assert.equal(errors.length,0,'Uncaught client-side JS errors: '+errors.join('; '));
  await page.close();
 }finally{

@@ -102,6 +102,44 @@ if(searchForm)searchForm.addEventListener('submit',e=>{
  document.getElementById('stories')?.scrollIntoView({behavior:'smooth'});
 });
 if(search)search.addEventListener('input',()=>{if(!search.value.trim()){resetUniversalSearch();applyFilter('all','')}});
+// Search forms on old-page 404s can carry a query into the live atlas homepage.
+if(search){
+ const initialQuery=new URLSearchParams(window.location.search).get('q');
+ if(initialQuery&&initialQuery.trim()){
+  search.value=initialQuery.slice(0,180);
+  performUniversalSearch(search.value);
+  document.getElementById('stories')?.scrollIntoView();
+ }
+}
+// A removed page is a real 404, not a homepage duplicate. Offer a useful,
+// localized way back without pretending old classified listings still exist.
+const gone=$('[data-error-page]');
+if(gone){
+ const requested=window.location.pathname.match(/^\/(ru|lv)\//)?.[1]||
+   (/^\/(podrabotka|rabota|stroitelnye-rascenki|traffic)\//.test(window.location.pathname)?'ru':'en');
+ const messages={
+  en:{title:'This page is no longer here.',lead:'Some older links belong to a previous version of MURDILIMAX. We now publish practical guides, tools and a species atlas.',label:'Search the new atlas',placeholder:'Guide, topic or species',button:'Search ↗',home:'← Explore the atlas',note:'If you followed an older advert or job listing, that content has been removed rather than redirected to an unrelated article.'},
+  ru:{title:'Этой страницы больше нет.',lead:'Некоторые старые ссылки относятся к прежнему сайту. Теперь MURDILIMAX — энциклопедия с полезными статьями, справочниками природы и калькуляторами.',label:'Поиск по новой энциклопедии',placeholder:'Статья, тема или вид',button:'Найти ↗',home:'← На главную',note:'Старые объявления и вакансии удалены. Мы не перенаправляем их на материалы, не связанные с вашим запросом.'},
+  lv:{title:'Šī lapa vairs nav pieejama.',lead:'Dažas vecās saites attiecas uz iepriekšējo vietni. Tagad MURDILIMAX piedāvā praktiskas pamācības, dabas enciklopēdiju un kalkulatorus.',label:'Meklēt jaunajā enciklopēdijā',placeholder:'Raksts, tēma vai suga',button:'Meklēt ↗',home:'← Uz sākumlapu',note:'Iepriekšējie sludinājumi un darba piedāvājumi ir noņemti, nevis pāradresēti uz nesaistītiem rakstiem.'}
+ };
+ const copy=messages[requested]||messages.en;
+ document.documentElement.lang=requested;
+ const fill=(selector,value)=>{const el=gone.querySelector(selector);if(el)el.textContent=value;};
+ fill('[data-error-title]',copy.title);
+ fill('[data-error-lead]',copy.lead);
+ fill('[data-error-search-label]',copy.label);
+ fill('[data-error-search-button]',copy.button);
+ fill('[data-error-note]',copy.note);
+ const input=gone.querySelector('#error-query');
+ if(input){input.placeholder=copy.placeholder;input.setAttribute('aria-label',copy.label);}
+ const base=requested==='en'?'/':'/'+requested+'/';
+ const form=gone.querySelector('[data-error-search]');
+ if(form)form.action=base;
+ const home=gone.querySelector('[data-error-home]');
+ if(home){home.href=base;home.textContent=copy.home;}
+ document.title=copy.title+' | MURDILIMAX';
+}
+
 
 const calc=$('.calculator');
 if(calc){

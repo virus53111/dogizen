@@ -340,3 +340,27 @@ body{background:var(--paper);color:var(--ink)}
 }
 @media(max-width:550px){.reading-progress{top:70px}}
 @media(prefers-reduced-motion:reduce){.reading-progress>span,.article-toc-panel>summary span{transition:none;will-change:auto}}
+
+/* Site-migration 404: direct visitors to useful answers, never unrelated listings. */
+.error-help{max-width:950px;padding-top:105px;padding-bottom:140px}
+.error-help h1{font:600 clamp(42px,8vw,81px)/1.06 'Instrument Serif',Georgia,serif;max-width:850px;letter-spacing:-.035em;overflow-wrap:anywhere;margin:23px 0 20px}
+.error-help>p{font:400 17px/1.75 'DM Sans',sans-serif;max-width:720px;color:#647168}
+.error-search{max-width:700px;margin-top:35px;padding:26px;background:#172d32;color:#fff}
+.error-search>label{display:block;font:700 12px/1.5 'Syne',sans-serif;text-transform:uppercase;letter-spacing:.09em;margin-bottom:14px}
+.error-search-row{display:flex;gap:8px}
+.error-search-row>input{flex:1;min-width:0;background:#fff;color:#173129;border:0;border-radius:0;padding:13px 15px;font:500 16px/1.4 'DM Sans',sans-serif}
+.error-search-row>button{border:0;border-radius:0;background:#dbefa9;color:#12392b;font:700 13px/1.4 'Syne',sans-serif;padding:13px 21px;cursor:pointer}
+.error-help-links{display:flex;flex-wrap:wrap;gap:15px 28px;margin-top:16px}
+.error-help-links a{display:inline-flex;font:700 14px/1.5 'Syne',sans-serif;align-items:center;margin-top:0;padding:10px 0;border-bottom:1px solid #80998a;overflow-wrap:anywhere}
+.error-help .error-small{font-size:13px;line-height:1.7;margin-top:29px;color:#6b786d}
+.error-search input:focus-visible,.error-search button:focus-visible,.error-help-links a:focus-visible{outline:3px solid #accd66;outline-offset:3px}
+@media(max-width:740px){
+ .error-help{padding-top:60px;padding-bottom:85px}
+ .error-help h1{font-size:clamp(42px,10vw,62px);line-height:1.08}
+ .error-help>p{font-size:15px}
+ .error-search{padding:19px 16px}
+ .error-search-row{flex-wrap:wrap}
+ .error-search-row>input{flex-basis:100%}
+ .error-search-row>button{min-height:44px;width:100%}
+ .error-help-links{gap:9px 20px}
+}
