@@ -7,9 +7,9 @@ import {stories,languages,availableIn} from '../lib/atlas-data.js';
 
 const added=[...atlasGuidesA,...atlasGuidesB];
 assert.equal(added.length,10);
-assert.equal(stories.length,82);
+assert.equal(stories.length,86);
 assert.equal(languages.length,12);
-assert.equal(new Set(stories.map(s=>s.id)).size,82,'Duplicate article ID');
+assert.equal(new Set(stories.map(s=>s.id)).size,86,'Duplicate article ID');
 const expectedLocales=['en','ru','de','es','fr','lv','pt','it','pl','lt','et','nl'];
 for(const article of added){
  assert.ok(article.sources?.length===1&&article.sources[0].url.startsWith('https://'),'Missing primary source '+article.id);
@@ -47,5 +47,5 @@ for(const id of ['europe-freshwater-fish','wild-mushroom-poison-risk']){
  }
 }
 assert.deepEqual(Object.keys(atlasNativeGuides).sort(),['europe-freshwater-fish','wild-mushroom-poison-risk']);
-assert.equal((readFileSync('dist/sitemap.xml','utf8').match(/<url>/g)||[]).length,591,'Incorrect sitemap coverage');
-console.log('PASS: 10 new 2-language sourced guides + 14 newly translated guides, 591 indexable URL entries.');
+assert.equal((readFileSync('dist/sitemap.xml','utf8').match(/<url>/g)||[]).length,599,'Incorrect sitemap coverage');
+console.log('PASS: 10 new 2-language sourced guides + 14 newly translated guides, 599 indexable URL entries.');
