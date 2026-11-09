@@ -364,3 +364,47 @@ body{background:var(--paper);color:var(--ink)}
  .error-search-row>button{min-height:44px;width:100%}
  .error-help-links{gap:9px 20px}
 }
+
+
+/* 2026 editorial photo refresh: show actual JPEG photography, not icon art. */
+.hero-image.hero-photo-stage{
+ position:relative;min-height:650px;align-self:stretch;overflow:hidden;
+ background:#1b3b41;isolation:isolate;display:block;
+}
+.hero-photo-stage .hero-photo{
+ position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
+ object-position:center;filter:none;opacity:1;
+}
+.hero-photo-stage:after{
+ content:'';position:absolute;z-index:1;inset:0;pointer-events:none;
+ background:linear-gradient(180deg,transparent 25%,rgba(7,18,26,.12) 47%,rgba(7,18,26,.86) 100%);
+}
+.hero-photo-stage .hero-photo-caption{
+ position:absolute;left:clamp(22px,5%,54px);right:clamp(22px,5%,54px);
+ bottom:38px;z-index:3;padding-top:15px;display:flex;flex-direction:column;gap:6px;
+ color:white;text-decoration:none;border-top:1px solid #ffffff80;
+}
+.hero-photo-stage .hero-photo-caption small{color:#e1ffb1;font:700 10px 'Syne',sans-serif;letter-spacing:1.5px}
+.hero-photo-stage .hero-photo-caption strong{font:400 clamp(23px,2.7vw,37px)/1.15 'Instrument Serif',Georgia,serif}
+.topic-card.photo-topic .topic-image{object-fit:cover;filter:none;opacity:1}
+.topic-card.photo-topic:before{background:linear-gradient(180deg,rgba(4,18,20,.03) 10%,rgba(3,18,21,.13) 39%,rgba(4,18,20,.69) 100%)}
+.topic-card.photo-topic::after{background:linear-gradient(180deg,transparent 48%,rgba(6,22,24,.58) 100%)}
+.topic-card.photo-topic .topic-info{z-index:3}
+.topic-card.photo-topic .topic-info strong{text-shadow:0 2px 14px #0009}
+.article-image{position:relative;margin:0;overflow:hidden}
+.article-image img{display:block;width:100%;height:100%;object-fit:cover}
+.article-photo-credit{position:absolute;right:15px;bottom:13px;z-index:3;max-width:calc(100% - 30px);background:#14282dc9;padding:7px 10px;color:#fff;font:600 11px/1.5 'DM Sans',sans-serif}
+.article-photo-credit a{color:inherit;text-decoration:underline}
+@media(max-width:900px){
+ .hero-image.hero-photo-stage{min-height:480px}
+}
+@media(max-width:740px){
+ .hero-image.hero-photo-stage{min-height:390px}
+ .hero-photo-stage .hero-photo-caption{bottom:27px}
+ .hero-photo-stage .hero-photo-caption strong{font-size:28px}
+ .topic-card.photo-topic{min-height:235px}
+}
+@media(max-width:450px){
+ .hero-image.hero-photo-stage{min-height:300px}
+ .topic-card.photo-topic{min-height:215px}
+}
