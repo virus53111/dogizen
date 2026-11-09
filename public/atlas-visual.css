@@ -312,3 +312,31 @@ body{background:var(--paper);color:var(--ink)}
 .menu-button:focus-visible,.lang-select select:focus-visible,.mobile-links a:focus-visible{
  outline:3px solid #d9ef98;outline-offset:3px
 }
+
+/* Long-form article experience: localized chapter navigation and calm scroll progress. */
+.reading-progress{position:fixed;top:82px;left:0;right:0;height:3px;z-index:101;background:transparent;pointer-events:none}
+.reading-progress>span{display:block;height:100%;width:100%;transform-origin:left center;transform:scaleX(var(--reading-fraction,0));background:#d5ee8b;will-change:transform}
+.article-toc{min-width:0}
+.article-toc-panel{margin:0}
+.article-toc-panel>summary{cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:12px;list-style:none;padding:12px 0 18px;border-bottom:1px solid #cbd6c8;color:#547b61}
+.article-toc-panel>summary::-webkit-details-marker{display:none}
+.article-toc-panel>summary span{font-size:24px;font-weight:400;line-height:1;transition:transform .2s}
+.article-toc-panel[open]>summary span{transform:rotate(180deg)}
+.article-toc-links{display:flex;flex-direction:column;gap:0;padding-top:11px}
+.article-toc-links a{display:flex;align-items:flex-start;gap:12px;min-width:0;padding:11px 10px 11px 14px;border-left:2px solid transparent;font-size:13px;line-height:1.55;color:#627468;hyphens:auto;overflow-wrap:break-word;transition:color .2s,border-color .2s,background .2s}
+.article-toc-links a span{flex:none;font:700 10px/1.8 'Syne',sans-serif;color:#7c9882}
+.article-toc-links a:hover,.article-toc-links a[aria-current=location]{color:#16422f;background:#edf1e6;border-left-color:#427857}
+.article-toc-links a:focus-visible,.article-toc-panel>summary:focus-visible{outline:3px solid #b2d47d;outline-offset:3px}
+.article-text section[id]{scroll-margin-top:140px}
+.article-text h2,.article-text p{overflow-wrap:break-word;hyphens:auto}
+@media(max-width:740px){
+ .reading-progress{top:67px;height:3px}
+ .article-toc{margin:0 0 35px;background:#eaf0e5;padding:0 18px;border:1px solid #cfdfce}
+ .article-toc-panel>summary{min-height:58px;padding:17px 0;letter-spacing:1px}
+ .article-toc-panel:not([open])>summary{border-bottom:0}
+ .article-toc-links{padding:4px 0 14px}
+ .article-toc-links a{padding:12px 8px 12px 12px}
+ .article-text section[id]{scroll-margin-top:95px}
+}
+@media(max-width:550px){.reading-progress{top:70px}}
+@media(prefers-reduced-motion:reduce){.reading-progress>span,.article-toc-panel>summary span{transition:none;will-change:auto}}
