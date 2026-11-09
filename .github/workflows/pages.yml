@@ -51,11 +51,10 @@ jobs:
           node --check lib/editorial-storage-it-pt-pl.js
           node --check lib/editorial-account-security-lt-et-nl.js
           node --check lib/editorial-backups-lt-et-nl.js
-          node --check lib/editorial-art-2026.js
+          node --check scripts/bundle-photographs.mjs
           node --check lib/illustrated-guides-a.js
           node --check lib/illustrated-guides-b.js
           node --check lib/illustrated-guides-c.js
-          node --check lib/editorial-art-library.js
           node --check lib/atlas-site.js
           node --check public/site.js
           node scripts/build-atlas.mjs
