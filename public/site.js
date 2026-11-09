@@ -250,6 +250,13 @@ document.addEventListener('error',function(ev){
      box.appendChild(caption);
    }
  }
+
+ if(!im.dataset.guideImageFallback&&im.closest?.('.article-image,.story-photo,.search-hit-media')){
+   im.dataset.guideImageFallback='1';
+   im.src='/media/guide-fallback.svg';
+   im.style.opacity='1';
+   return;
+ }
 },true);
 
 })();
