@@ -35,6 +35,7 @@ jobs:
           node --check public/site.js
           node scripts/build-atlas.mjs
           node scripts/validate-species-media.mjs
+          node scripts/validate-editorial.mjs
           test -s dist/index.html
           test -s dist/ru/guides/ryzen-upgrade/index.html
           test -s dist/de/tools/percentage/index.html
