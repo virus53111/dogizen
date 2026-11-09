@@ -222,3 +222,21 @@ body{background:var(--paper);color:var(--ink)}
 .search-empty{grid-column:1/-1;padding:25px;font-size:16px;border:1px solid #d6ddd4;background:#f8f7ed}
 @media(max-width:800px){.universal-list{grid-template-columns:1fr}}
 @media(max-width:480px){.search-hit{min-height:130px}.search-hit-media{width:100px;min-width:100px}.search-hit-symbol{width:60px;min-width:60px;font-size:39px}.search-hit-body{padding:13px 5px 13px 13px}.search-hit-body strong{font-size:16px}.search-hit-arrow{padding:10px 9px 0 0}}
+
+/* Species reference: real cross-links, safety-first typography, and accessible cards. */
+.v-other-name{font:600 13px/1.6 'DM Sans',sans-serif;color:#607467;letter-spacing:.015em;margin:5px 0 22px}
+.v-safety a,.v-detail-warning a{display:inline-flex;align-items:center;gap:6px;margin-top:12px;color:#754232;font:700 12px/1.5 'Syne',sans-serif;text-decoration:underline;text-underline-offset:4px}
+.v-related .section-head{align-items:center}
+.v-all-link{font:700 12px/1.4 'Syne',sans-serif;color:#345b47;border-bottom:1px solid #5e8b76;white-space:nowrap;padding-bottom:5px}
+.v-related-explainer{font:400 14px/1.75 'DM Sans',sans-serif;color:#596b62;margin:-10px 0 27px;max-width:790px}
+.v-related-guides{padding:0 0 120px}
+.v-related-guides .section-head{margin-bottom:28px}
+.v-guide-links{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.v-guide-link{display:grid;grid-template-rows:auto 1fr auto;min-height:225px;gap:13px;position:relative;background:#172d32;color:#f6f4e9;border:1px solid #52615b;padding:27px;transition:transform .2s,box-shadow .2s}
+.v-guide-link:hover{transform:translateY(-4px);box-shadow:7px 7px 0 #e1eab9}
+.v-guide-link>span:first-child{font:600 24px/1.12 'Syne',sans-serif;letter-spacing:-.045em}
+.v-guide-link small{font:400 13px/1.65 'DM Sans',sans-serif;color:#c6d2cb;max-width:290px}
+.v-guide-link>span:last-child{font-size:24px;color:#d8efae;justify-self:end}
+.v-guide-link:focus-visible,.v-all-link:focus-visible,.v-safety a:focus-visible,.v-detail-warning a:focus-visible{outline:3px solid #b2db65;outline-offset:4px}
+@media(max-width:960px){.v-guide-links{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.v-related .section-head{align-items:flex-start;flex-wrap:wrap;gap:10px}.v-all-link{white-space:normal}.v-related-explainer{font-size:13px}.v-guide-links{grid-template-columns:1fr}.v-guide-link{min-height:175px;padding:22px}.v-related-guides{padding-bottom:70px}.v-guide-link>span:first-child{font-size:22px}}
