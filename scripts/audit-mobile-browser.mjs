@@ -84,6 +84,9 @@ try{
  await page.locator('#universal-list a[href="/ru/species/esox-lucius/"]').waitFor({timeout:9000});
  assert.equal(await page.locator('#universal-results').isVisible(),true,'Search results must be visible');
  console.log('PASS: Russian atlas search finds pike species profile');
+ // Topic filters become available again after the search field is cleared.
+ await page.locator('#site-search').fill('');
+ assert.equal(await page.locator('#universal-results').isVisible(),false,'Clearing the query must restore the article catalogue');
  await page.locator('.filter-btn[data-filter="tech"]').click();
  assert.ok(await page.locator('.story-wrap[data-topic="tech"]:visible').count()>0,'Tech filter must display tech stories');
  assert.equal(await page.locator('.story-wrap[data-topic="digital"]:visible').count(),0,'Tech filter should hide digital stories');
