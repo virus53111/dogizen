@@ -12,7 +12,7 @@ routes.push(
  '/ru/guides/cloud-types-field-guide/','/ru/guides/thunderstorm-hiking-safety/','/ru/guides/beginner-stargazing-plan/','/ru/guides/bicycle-visibility-checklist/','/ru/guides/find-water-leaks-home/'
 );
 const sizes=[320,360,390,430,768];
-const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
+const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.jpg':'image/jpeg'};
 const server=createServer(async(req,res)=>{
  try{
   const u=new URL(req.url||'/', 'http://localhost');
@@ -134,8 +134,8 @@ try{
  await page.goto(base+'/de/guides/ddr4-ddr5/',{waitUntil:'domcontentloaded'});
  assert.ok((await page.locator('.article-toc-panel summary').textContent()).includes('In diesem Artikel'),'Article contents must be translated');
  console.log('PASS: German article chapter label is localized');
- // The original editorial artwork is self-hosted. Verify every new image
- // actually decodes as a real 1400x780 SVG, not a broken remote placeholder.
+ // The photographs are served by this site, not embedded vector artwork.
+ // Decode every new cover in real Chromium and check the resolution.
  for(const slug of [
   'wifi-router-placement','laptop-overheating-checklist','freezer-food-storage','start-seeds-indoors',
   'rain-garden-at-home','cloud-types-field-guide','thunderstorm-hiking-safety',
@@ -144,18 +144,30 @@ try{
   await page.goto(base+'/ru/guides/'+slug+'/',{waitUntil:'domcontentloaded'});
   const img=page.locator('.article-image img');
   await img.evaluate(image=>image.decode());
-  assert.equal(await img.evaluate(image=>image.naturalWidth),1400,'Local illustration did not decode: '+slug);
-  assert.ok((await img.getAttribute('alt')).length>25,'Localized meaningful alt missing: '+slug);
+  assert.ok((await img.evaluate(image=>image.naturalWidth))>=900,'Genuine photograph did not decode: '+slug);
+  assert.match(await img.getAttribute('src'),/^\/photos\/[a-f0-9]+\.jpg$/);
+  assert.ok((await img.getAttribute('alt')).length>25,'Localized descriptive alt missing: '+slug);
  }
- console.log('PASS: ten original guide illustrations load and decode locally at full size');
+ console.log('PASS: ten new article photographs load and decode locally in Chromium');
  await page.goto(base+'/ru/',{waitUntil:'domcontentloaded'});
  const broken=page.locator('.story-photo img').first();
  await broken.scrollIntoViewIfNeeded();
  await broken.evaluate(img=>{delete img.dataset.guideImageFallback;img.src='https://invalid.example.net/missing-thumbnail.jpg';});
- await page.waitForFunction(()=>document.querySelector('.story-photo img')?.getAttribute('src')==='/media/guide-fallback.svg');
+ await page.waitForFunction(()=>document.querySelector('.story-photo img')?.getAttribute('src')==='/photos/photo-fallback.jpg');
  await broken.evaluate(image=>image.decode());
- assert.equal(await broken.evaluate(image=>image.naturalWidth),1400,'Local fallback must be visible when a remote image fails');
- console.log('PASS: broken remote article images automatically receive a real local fallback illustration');
+ assert.ok((await broken.evaluate(image=>image.naturalWidth))>=900,'Real photographic fallback must be shown');
+ console.log('PASS: image failure fallback shows an actual local JPEG photograph');
+ // Ensure the category art shown in screenshots has become real photography.
+ await page.goto(base+'/',{waitUntil:'domcontentloaded'});
+ const categoryImages=page.locator('.topic-card.photo-topic img.topic-image');
+ assert.equal(await categoryImages.count(),16,'All 16 category covers should be photographs');
+ for(let i=0;i<16;i++){
+  const image=categoryImages.nth(i);
+  await image.scrollIntoViewIfNeeded();
+  await image.evaluate(el=>el.decode());
+  assert.ok((await image.evaluate(el=>el.naturalWidth))>=900,'Category image does not decode: '+i);
+ }
+ console.log('PASS: all 16 category photos decode as real JPG on the homepage');
 
  // Verify translated chapter controls stay interactive on the newly expanded pages.
  for(const [language,expected] of [['lt','Šiame straipsnyje'],['et','Selles artiklis'],['nl','In dit artikel']]){
