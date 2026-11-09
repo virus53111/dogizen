@@ -300,3 +300,15 @@ body{background:var(--paper);color:var(--ink)}
  .feature-copy h2{font-size:29px}
  .feature-copy{padding:18px 16px 23px}
 }
+
+/* Finger-friendly and keyboard-friendly mobile navigation. */
+@media(max-width:740px){
+ .menu-button{min-width:40px;min-height:44px;justify-content:center}
+ .lang-select select{min-height:40px}
+ .mobile-links:not([hidden]){gap:4px;padding-top:12px;padding-bottom:18px}
+ .mobile-links a{display:block;padding:12px 0;line-height:1.5;border-bottom:1px solid #36474b}
+ .mobile-links a:last-child{border-bottom:0}
+}
+.menu-button:focus-visible,.lang-select select:focus-visible,.mobile-links a:focus-visible{
+ outline:3px solid #d9ef98;outline-offset:3px
+}

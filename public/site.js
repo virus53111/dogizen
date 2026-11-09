@@ -7,7 +7,20 @@ const $=(s)=>document.querySelector(s),$$=(s)=>Array.from(document.querySelector
 const langSelect=$('#language-select');
 if(langSelect)langSelect.addEventListener('change',function(){const chosen=this.value;const part=this.dataset.part||'';location.href=(chosen==='en'?'/':'/'+chosen+'/')+part});
 const mobileToggle=$('#menu-toggle'),mobile=$('#mobile-links');
-if(mobileToggle&&mobile)mobileToggle.addEventListener('click',()=>{mobile.hidden=!mobile.hidden;mobileToggle.setAttribute('aria-expanded',String(!mobile.hidden))});
+if(mobileToggle&&mobile){
+ const setMenuOpen=open=>{
+  mobile.hidden=!open;
+  mobileToggle.setAttribute('aria-expanded',String(open));
+  mobileToggle.setAttribute('aria-label',open?(mobileToggle.dataset.closeLabel||'Close menu'):(mobileToggle.dataset.openLabel||'Open menu'));
+ };
+ mobileToggle.addEventListener('click',()=>setMenuOpen(mobile.hidden));
+ document.addEventListener('keydown',event=>{
+  if(event.key==='Escape'&&!mobile.hidden){setMenuOpen(false);mobileToggle.focus();}
+ });
+ document.addEventListener('click',event=>{
+  if(!mobile.hidden&&!event.target.closest('.masthead'))setMenuOpen(false);
+ });
+}
 function applyFilter(topic='all',query=''){
  const cards=$$('.story-wrap'),q=query.trim().toLowerCase();let n=0;
  cards.forEach(el=>{const show=(topic==='all'||el.dataset.topic===topic)&&(!q||el.dataset.search.includes(q));el.hidden=!show;if(show)n++});
