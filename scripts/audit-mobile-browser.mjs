@@ -6,7 +6,7 @@ import path from 'node:path';
 import {chromium} from 'playwright';
 
 const root=path.resolve('dist');
-const routes=['/ru/','/','/ru/guides/ryzen-upgrade/','/ru/topics/mushrooms/','/ru/species/amanita-phalloides/','/ru/tools/percentage/','/ru/privacy/'];
+const routes=['/ru/','/','/ru/guides/ryzen-upgrade/','/ru/topics/mushrooms/','/ru/species/amanita-phalloides/','/ru/tools/percentage/','/ru/privacy/','/fr/guides/secure-accounts/','/fr/guides/backup-321/','/fr/guides/ssd-vs-hdd/','/lv/guides/secure-accounts/','/lv/guides/backup-321/','/lv/guides/ssd-vs-hdd/'];
 const sizes=[320,360,390,430,768];
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml'};
 const server=createServer(async(req,res)=>{
@@ -139,4 +139,4 @@ try{
 if(failures.length){
  console.error('MOBILE AUDIT FAILURES:\n'+JSON.stringify(failures,null,2));
  process.exitCode=1;
-}else console.log('PASS: 35 real Chrome viewport/page checks (320–768px), no horizontal page overflow, feature title contained, mobile menu works.');
+}else console.log('PASS: '+(routes.length*sizes.length)+' real Chrome viewport/page checks (320–768px), no horizontal page overflow, feature title contained, mobile menu works.');
