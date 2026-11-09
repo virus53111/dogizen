@@ -29,7 +29,7 @@ for(const lang of languages){
     entries.push({type:'tool',title:copy[lang]['tool'+k],summary:copy[lang]['tool'+k+'Desc'],
       label:lang==='ru'?'Инструменты':'Tools',keywords:id,href:url(lang,'tools/'+id),image:''});
   }
-  for(const topic of topics.filter(t=>storiesFor(lang).some(s=>s.topic===t.id)||(['en','ru'].includes(lang)&&visualSpecies.some(sp=>sp.group===t.id)))){
+  for(const topic of topics.filter(t=>storiesFor(lang).some(s=>s.topic===t.id)||visualSpecies.some(sp=>sp.group===t.id))){
     entries.push({type:'topic',title:topic[lang]||topic.en,summary:'',label:lang==='ru'?'Раздел':'Topic',
       keywords:[topic.id,topic.en].join(' '),href:url(lang,'topics/'+topic.id),image:topic.image||''});
   }
