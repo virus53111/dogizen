@@ -32,10 +32,14 @@ for(const guide of highIntentGuides){
  const source='https://commons.wikimedia.org/wiki/File:'+encodeURIComponent(filename.replaceAll(' ','_'));
  const story=stories.find(x=>x.id===guide.id);
  assert.ok(story,'Story not registered '+guide.id);
- assert.equal(story.photoCreditUrl,source,'Wrong licensed photo reference '+guide.id);
- assert.ok(story.photoCredit?.includes('Wikimedia Commons'),'Author and license credit missing '+guide.id);
- assert.ok(/CC BY|Public domain/.test(story.photoCredit),'License not disclosed '+guide.id);
- const image=story.image;
+ // Photo bundling mutates the in-process stories during build, not imported source data
+ // in this separate QA process. Validate the output that visitors actually receive.
+ const renderedEnglish=read('guides/'+guide.id+'/index.html');
+ const image=renderedEnglish.match(/<figure class="article-image"><img src="([^"]+)"/)?.[1];
+ const photoCreditUrl=renderedEnglish.match(/<figcaption class="article-photo-credit"><a href="([^"]+)"/)?.[1];
+ assert.equal(photoCreditUrl,source,'Wrong licensed photo reference '+guide.id);
+ assert.ok(renderedEnglish.includes('Wikimedia Commons'),'Author credit missing '+guide.id);
+ assert.match(renderedEnglish,/(?:CC BY|Public domain)/,'Photo license not disclosed '+guide.id);
  assert.match(image,/^\/photos\/[a-f0-9]{18}\.jpg$/,'No local genuine JPEG for '+guide.id);
  assert.ok(!photosSeen.has(image),'Different stories cannot share one cover '+guide.id);
  photosSeen.add(image);
