@@ -295,7 +295,7 @@ Object.assign(reviewedArticlePhotos,{
   "animal-tracks-observation": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Fox%20Tracks%20in%20the%20Snow%20(51861791568).jpg?width=1200",
     "source": "https://commons.wikimedia.org/wiki/File:Fox_Tracks_in_the_Snow_(51861791568).jpg",
-    "credit": "NPS / Hannah Prokop — Public domain (resized/cropped)"
+    "credit": "NPS / Hannah Prokop / Wikimedia Commons — Public domain (resized/cropped)"
   },
   "solar-eclipse-eye-safety": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/2017%20Total%20Solar%20Eclipse%20(36739413175).jpg?width=1200",
