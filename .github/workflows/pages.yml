@@ -45,6 +45,7 @@ jobs:
           node --check public/site.js
           node scripts/build-atlas.mjs
           node scripts/validate-species-media.mjs
+          node scripts/validate-species-experience.mjs
           node scripts/validate-editorial.mjs
           node scripts/validate-expansion.mjs
           node scripts/validate-quality-growth.mjs
