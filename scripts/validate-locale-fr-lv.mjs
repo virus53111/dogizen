@@ -8,7 +8,7 @@ const read=path=>readFileSync(path,'utf8');
 const upgrades={...essentialGuidesFrLv,...storageGuideFrLv};
 const slugs=['backup-321','secure-accounts','ssd-vs-hdd'];
 assert.deepEqual(Object.keys(upgrades).sort(),slugs.slice().sort(),'Only three useful topics');
-assert.equal(stories.length,60,'No artificial guide URL additions');
+assert.equal(stories.length,70,'No artificial guide URL additions');
 for(const lang of ['fr','lv']){
  assert.equal(storiesFor(lang).length,14,'Existing translations are revised, not expanded with duplicates');
  for(const id of slugs){
@@ -53,5 +53,5 @@ for(const lang of ['fr','lv']){
  }
 }
 const sitemap=read('dist/sitemap.xml');
-assert.equal((sitemap.match(/<url>/g)||[]).length,547,'URL count must not change');
-console.log('PASS: six FR/LV improvements to existing guides, 547 genuine URLs, no source cross-contamination.');
+assert.equal((sitemap.match(/<url>/g)||[]).length,567,'URL count must not change');
+console.log('PASS: six FR/LV improvements to existing guides, 567 genuine URLs, no source cross-contamination.');
