@@ -29,6 +29,13 @@ jobs:
           test -s dist/de/tools/percentage/index.html
           grep -q 'murdilimax.com' dist/CNAME
           grep -q 'hreflang="de"' dist/index.html
+          grep -q 'hreflang="pt"' dist/index.html
+          grep -q 'Windows 10' dist/ru/guides/windows-10-support-2026/index.html
+          test -s dist/pt/guides/ddr4-ddr5/index.html
+          test -s dist/pl/guides/secure-accounts/index.html
+          test -s dist/it/index.html
+          ! test -e dist/pl/guides/spot-phishing/index.html
+          grep -q 'xhtml:link' dist/sitemap.xml
           grep -q 'Как обновить старый Ryzen' dist/ru/guides/ryzen-upgrade/index.html
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
@@ -43,3 +50,10 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Notify IndexNow search engines of published URLs
+        continue-on-error: true
+        run: node scripts/indexnow-submit.mjs
