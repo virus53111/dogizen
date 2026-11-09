@@ -4,6 +4,29 @@ const lang=document.body.dataset.lang||'en';
 const strings={en:{copied:'Copied',empty:'No matching guides yet.'},ru:{copied:'Скопировано',empty:'Ничего не найдено.'},de:{copied:'Kopiert',empty:'Keine Ergebnisse.'},es:{copied:'Copiado',empty:'Sin resultados.'},fr:{copied:'Copié',empty:'Aucun résultat.'},lv:{copied:'Nokopēts',empty:'Nav rezultātu.'}};
 const dict=strings[lang]||strings.en;
 const $=(s)=>document.querySelector(s),$$=(s)=>Array.from(document.querySelectorAll(s));
+// Copy one prompt without touching other page content or requiring a login.
+document.addEventListener('click',async event=>{
+ const button=event.target.closest('[data-ai-copy]');
+ if(!button)return;
+ const target=document.querySelector(button.dataset.aiCopy||'');
+ if(!target)return;
+ const text=target.textContent||'';
+ const feedback=button.closest('.ai-detail')?.querySelector('[data-ai-feedback]');
+ try{
+  if(navigator.clipboard&&window.isSecureContext){await navigator.clipboard.writeText(text);}
+  else{
+   const area=document.createElement('textarea');
+   area.value=text;area.style.position='fixed';area.style.left='-9999px';
+   document.body.append(area);area.select();
+   const ok=document.execCommand('copy');area.remove();
+   if(!ok)throw Error('Clipboard unavailable');
+  }
+  button.textContent=(button.dataset.copiedLabel||'Copied')+' ✓';
+  if(feedback)feedback.textContent=button.dataset.copiedLabel||'Copied';
+ }catch(_){
+  if(feedback)feedback.textContent=button.dataset.failLabel||'Select the text manually';
+ }
+});
 const langSelect=$('#language-select');
 if(langSelect)langSelect.addEventListener('change',function(){const chosen=this.value;const part=this.dataset.part||'';location.href=(chosen==='en'?'/':'/'+chosen+'/')+part});
 const mobileToggle=$('#menu-toggle'),mobile=$('#mobile-links');
