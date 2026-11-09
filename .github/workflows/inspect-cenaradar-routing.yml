@@ -30,3 +30,22 @@ jobs:
             curl -k -sSL --max-time 12 --max-redirs 0 -o /tmp/cenaradar-direct.html -w 'STATUS=%{http_code} END_URL=%{url_effective} IP=%{remote_ip}\n' "$target"
             head -c 700 /tmp/cenaradar-direct.html | tr '\n' ' '; echo
           done
+      - name: Confirm active CenaRadar no longer forwards to Murdilimax
+        shell: bash
+        run: |
+          set -euo pipefail
+          for domain in cenaradar.online www.cenaradar.online; do
+            address="https://$domain/?verify-decommission=$(date +%s)"
+            echo "Checking $address"
+            curl -fsSL --max-time 20 -H "Cache-Control: no-cache" -o /tmp/retired-cena.html "$address"
+            python3 - <<'PY'
+          from pathlib import Path
+          content=Path('/tmp/retired-cena.html').read_text()
+          print("PAGE_BEGIN:",content[:240])
+          assert "CenaRadar больше не работает" in content, "Retired notice missing"
+          assert "https://murdilimax.com" not in content, "Former redirect still visible"
+          assert 'http-equiv="refresh"' not in content, "Old meta redirect still visible"
+          assert 'location.replace(' not in content, "JavaScript redirect still visible"
+          print("PASS: live CenaRadar no longer redirects visitors")
+          PY
+          done
