@@ -113,7 +113,7 @@ const reviewedArticlePhotos={
   "sauna-safety-guide": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Sauna%20stove.jpg?width=1200",
     "source": "https://commons.wikimedia.org/wiki/File:Sauna_stove.jpg",
-    "credit": "Kulmalukko / Wikimedia Commons — CC BY-SA 4.0 (image resized/cropped)"
+    "credit": "Tiia Monto / Wikimedia Commons — CC BY-SA 4.0 (image resized/cropped)"
   },
   "smoke-alarm-home-placement": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Heimrauchmelder.jpg?width=1200",
@@ -150,7 +150,7 @@ Object.assign(reviewedArticlePhotos,{
   "organize-family-photo-archive": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Family-album.jpg?width=1200",
     "source": "https://commons.wikimedia.org/wiki/File:Family-album.jpg",
-    "credit": "Photolis / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+    "credit": "Anonymous photographer; derivative by Photolis / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
   },
   "password-manager-passkeys": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/YubiKey.jpg?width=1200",
@@ -260,7 +260,7 @@ Object.assign(reviewedArticlePhotos,{
   "read-contour-lines": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Map%20Reading%20in%20prep%20for%20hike%20(51873860348).jpg?width=1200",
     "source": "https://commons.wikimedia.org/wiki/File:Map_Reading_in_prep_for_hike_(51873860348).jpg",
-    "credit": "US National Park Service / Wikimedia Commons — Public domain (resized/cropped)"
+    "credit": "US Forest Service, Northern Region / Wikimedia Commons — Public domain (resized/cropped)"
   },
   "physical-activity-after-break": {
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Walkingexercise.jpg?width=1200",
@@ -331,6 +331,31 @@ Object.assign(reviewedArticlePhotos,{
     "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bags%20of%20frozen%20fruit%20in%20the%20freezer.jpg?width=1200",
     "source": "https://commons.wikimedia.org/wiki/File:Bags_of_frozen_fruit_in_the_freezer.jpg",
     "credit": "Shixart1985 / Wikimedia Commons — CC BY 2.0 (resized/cropped)"
+  },
+  "ryzen-upgrade": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Ryzen%205%201600%20CPU%20on%20a%20motherboard.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Ryzen_5_1600_CPU_on_a_motherboard.jpg",
+    "credit": "Ilya Plekhanov / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "wifi-speed": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Close-up%20of%20the%20internet%20router.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Close-up_of_the_internet_router.jpg",
+    "credit": "Shixart1985 / Wikimedia Commons — CC BY 2.0 (resized/cropped)"
+  },
+  "ddr4-ddr5": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Memory%20modules.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Memory_modules.jpg",
+    "credit": "Peter Fiskerstrand / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "backup-321": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Typical%20External%20Hard%20Drive.JPG?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Typical_External_Hard_Drive.JPG",
+    "credit": "Armchair / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "ssd-vs-hdd": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Last%20and%20next-generation%20storage%20media.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Last_and_next-generation_storage_media.jpg",
+    "credit": "Daniel Aleksandersen / Wikimedia Commons — CC BY 2.0 (resized/cropped)"
   }
 });
 for(const [slug,record] of Object.entries(reviewedArticlePhotos)){
