@@ -21,7 +21,7 @@ const jpeg=(p)=>{
 };
 assert.ok(jpeg('dist/photos/photo-fallback.jpg')>12000);
 assert.ok(!existsSync('dist/media/guide-fallback.svg'),'Do not publish decorative SVG fallbacks');
-assert.equal(readdirSync('dist/media',{withFileTypes:true}).filter(x=>x.isFile()&&x.name.endsWith('.svg')).length,0,'No illustrated story art');
+assert.ok(!existsSync('dist/media')||readdirSync('dist/media',{withFileTypes:true}).every(x=>!x.isFile()||!x.name.endsWith('.svg')),'No illustrated story art');
 const js=read('dist/site.js');
 assert.ok(js.includes('/photos/photo-fallback.jpg'),'Broken images must use real-photo fallback');
 const illustratedPhotos=new Set();
