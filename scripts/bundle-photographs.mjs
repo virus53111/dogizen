@@ -10,7 +10,7 @@ const firstTopicPhotos={
  tech:'https://images.unsplash.com/photo-1518770660439-4636190af475',
  digital:'https://images.unsplash.com/photo-1498050108023-c5249f4df085',
  tools:'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40',
- sauna:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Typical_Russian_Banya.jpg?width=1200'
+ sauna:'https://commons.wikimedia.org/wiki/Special:Redirect/file/Tamminiemi_sauna_interior.jpg?width=1200'
 };
 const newGuidePhotos={
  'wifi-router-placement':{
