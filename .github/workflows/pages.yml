@@ -50,6 +50,8 @@ jobs:
           node scripts/validate-expansion.mjs
           node scripts/validate-quality-growth.mjs
           node scripts/validate-atlas-experience.mjs
+          node scripts/validate-article-reading.mjs
+          node scripts/validate-site-links.mjs
           node scripts/validate-mobile-readability.mjs
           node scripts/validate-trust-search.mjs
           node scripts/validate-runtime-interactions.mjs
