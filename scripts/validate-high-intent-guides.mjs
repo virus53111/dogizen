@@ -71,4 +71,17 @@ for(const guide of highIntentGuides){
  }
  console.log('PASS high-intent guide '+guide.id+' EN/RU, original reporting sources, authentic photo, SEO and search');
 }
+// Verify new articles are actually discoverable near the top of both homepage lists.
+for(const lang of ['en','ru']){
+ const prefix=lang==='ru'?'ru/':'';
+ const home=read(prefix+'index.html');
+ const start=home.indexOf('<div class="story-grid" id="story-grid">');
+ assert.ok(start>0,'Homepage article grid missing '+lang);
+ const cards=home.slice(start);
+ const positions=highIntentGuides.map(guide=>cards.indexOf('href="/'+prefix+'guides/'+guide.id+'/'));
+ assert.ok(positions.every(pos=>pos>=0),'Newly published guide not shown on homepage '+lang);
+ assert.ok(positions.every((pos,i)=>i===0||pos>positions[i-1]),'New guides are not the first ordered cards '+lang);
+ const firstLegacy=cards.indexOf('href="/'+prefix+'guides/ryzen-upgrade/');
+ assert.ok(firstLegacy>positions.at(-1),'New material should appear before old featured topic in article list '+lang);
+}
 console.log('PASS: four verified original topics, eight detailed new articles, four distinct photographs, 86 guides and 599 genuine indexable URLs.');
