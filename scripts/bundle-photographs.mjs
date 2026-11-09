@@ -136,8 +136,205 @@ const reviewedArticlePhotos={
     "credit": "Sean MacEntee / Wikimedia Commons — CC BY 2.0 (image resized/cropped)"
   }
 };
+Object.assign(reviewedArticlePhotos,{
+  "windows-laptop-battery-care": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Laptop%20PC%20Battery%20Removed.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Laptop_PC_Battery_Removed.jpg",
+    "credit": "Intel Free Press / Wikimedia Commons — CC BY-SA 2.0 (resized/cropped)"
+  },
+  "usb-c-cable-capabilities": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/USB%20Type-C.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:USB_Type-C.jpg",
+    "credit": "Flanoz / Wikimedia Commons — CC0 (resized/cropped)"
+  },
+  "organize-family-photo-archive": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Family-album.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Family-album.jpg",
+    "credit": "Photolis / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "password-manager-passkeys": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/YubiKey.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:YubiKey.jpg",
+    "credit": "Wikimedia contributor / Wikimedia Commons — See Commons file license (resized/cropped)"
+  },
+  "secure-our-world-four-habits": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/FIDO%20U2F%20Security%20Key%20by%20Plug-up%20International%2001.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:FIDO_U2F_Security_Key_by_Plug-up_International_01.jpg",
+    "credit": "Simon Legner / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "safe-public-wifi-travel": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Computer%20Desk%20at%20Narita%20Airport%201%20(3545071396).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Computer_Desk_at_Narita_Airport_1_(3545071396).jpg",
+    "credit": "D Coetzee / Wikimedia Commons — CC0 (resized/cropped)"
+  },
+  "qr-code-scam-safety": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/QR%20code%20for%20more%20information.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:QR_code_for_more_information.jpg",
+    "credit": "Brian Suda / Wikimedia Commons — CC BY 2.0 (resized/cropped)"
+  },
+  "review-browser-permissions": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Tape%20over%20laptop%20webcam.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Tape_over_laptop_webcam.jpg",
+    "credit": "Santeri Viinamäki / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "stop-cold-drafts-at-home": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Front%20windows%20(4205567878).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Front_windows_(4205567878).jpg",
+    "credit": "mark6mauno / Wikimedia Commons — CC BY 2.0 (resized/cropped)"
+  },
+  "window-condensation-explained": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Windowcondensation.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Windowcondensation.jpg",
+    "credit": "Doggo19292 / Wikimedia Commons — Public domain (resized/cropped)"
+  },
+  "leave-no-trace-forest": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Plogging%20Hikers.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Plogging_Hikers.jpg",
+    "credit": "Ben Nelson / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "fishing-gear-clean-drain-dry": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Fisherman%20cleaning%20fishing%20net%20on%20fishing%20boat.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Fisherman_cleaning_fishing_net_on_fishing_boat.jpg",
+    "credit": "Kikku33 / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "responsible-catch-and-release": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Brown%20trout%20at%20Seedskadee%20National%20Wildlife%20Refuge%20(48841756381).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Brown_trout_at_Seedskadee_National_Wildlife_Refuge_(48841756381).jpg",
+    "credit": "Tom Koerner / USFWS / Wikimedia Commons — Public domain (resized/cropped)"
+  },
+  "warm-water-low-oxygen-fish": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Dead%20fish%20by%20Lake%20Volta.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Dead_fish_by_Lake_Volta.jpg",
+    "credit": "Knowledge and philosophy / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "fish-senses-lateral-line": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Lateral%20line%2002.JPG?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Lateral_line_02.JPG",
+    "credit": "Art of Pogrebnoj-Alexandroff / Wikimedia Commons — CC BY-SA 3.0 (resized/cropped)"
+  },
+  "why-forests-need-fungi": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/The%20root-like%20Mycelium%20of%20a%20fungus.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:The_root-like_Mycelium_of_a_fungus.jpg",
+    "credit": "FungiFriendly / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "lichens-miniature-ecosystems": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Lichen-Covered%20Tree%20Bark%20Close-Up.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Lichen-Covered_Tree_Bark_Close-Up.jpg",
+    "credit": "A S M Jobaer / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "watering-houseplants-right": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Woman%20cares%20for%20plants%20indoors%20in%20a%20plant%20shop.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Woman_cares_for_plants_indoors_in_a_plant_shop.jpg",
+    "credit": "Shixart1985 / Wikimedia Commons — CC BY 2.0 (resized/cropped)"
+  },
+  "home-garden-compost-basics": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Garden%20compost%20bin.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Garden_compost_bin.jpg",
+    "credit": "FotoFree / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "balcony-flowers-for-pollinators": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bee%20on%20Lavender%20Flower.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Bee_on_Lavender_Flower.jpg",
+    "credit": "QUEENBELLAAA / Wikimedia Commons — CC BY 4.0 (resized/cropped)"
+  },
+  "mulch-garden-soil": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Wood%20chip%20pile.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Wood_chip_pile.jpg",
+    "credit": "Geo Lightspeed7 / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "sun-protection-travel-uv": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Beach%20sun%20protection.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Beach_sun_protection.jpg",
+    "credit": "Barbara-Ingeborg / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "day-hike-ten-essentials": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Day%201-%20Hiking%20Essentials%20(19444913913).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Day_1-_Hiking_Essentials_(19444913913).jpg",
+    "credit": "BLM Utah / Wikimedia Commons — Public domain (resized/cropped)"
+  },
+  "thunderstorm-hiking-safety": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Nighttime%20Thunderstorm%20and%20Cloud-to-Cloud%20Lightning.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Nighttime_Thunderstorm_and_Cloud-to-Cloud_Lightning.jpg",
+    "credit": "Wikimedia Commons contributor / Wikimedia Commons — See linked Commons licence (resized/cropped)"
+  },
+  "read-contour-lines": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Map%20Reading%20in%20prep%20for%20hike%20(51873860348).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Map_Reading_in_prep_for_hike_(51873860348).jpg",
+    "credit": "US National Park Service / Wikimedia Commons — Public domain (resized/cropped)"
+  },
+  "physical-activity-after-break": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Walkingexercise.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Walkingexercise.jpg",
+    "credit": "Johnorchard / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "everyday-movement-counts": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Commuting%20by%20bicycle.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Commuting_by_bicycle.jpg",
+    "credit": "Petar Milošević / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "beginner-strength-exercises": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Strength%20training%20session%20with%20dumbbells.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Strength_training_session_with_dumbbells.jpg",
+    "credit": "Shixart1985 / Nenad Stojković / Wikimedia Commons — CC BY 2.0 (resized/cropped)"
+  },
+  "birdwatching-without-disturbance": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Watching%20a%20nest%20(51358316290).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Watching_a_nest_(51358316290).jpg",
+    "credit": "Lisa Hupp / USFWS / Wikimedia Commons — Public domain (resized/cropped)"
+  },
+  "why-dead-trees-matter": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/DECAYING%20LOG.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:DECAYING_LOG.jpg",
+    "credit": "Suglo20 / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "prevent-bird-window-collisions": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/A%20bird%20crashed%20into%20my%20window.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:A_bird_crashed_into_my_window.jpg",
+    "credit": "Leo Fung / Wikimedia Commons — CC BY 2.0 (resized/cropped)"
+  },
+  "animal-tracks-observation": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Animal%20tracks%20in%20snow.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Animal_tracks_in_snow.jpg",
+    "credit": "Tiia Monto / Wikimedia Commons — CC BY-SA 3.0 (resized/cropped)"
+  },
+  "solar-eclipse-eye-safety": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/2017%20Total%20Solar%20Eclipse%20(36739413175).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:2017_Total_Solar_Eclipse_(36739413175).jpg",
+    "credit": "NASA / Aubrey Gemignani / Wikimedia Commons — Public domain (resized/cropped)"
+  },
+  "meteor-showers-observation": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Meteor%20Shower%20(NHQ202508030001).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Meteor_Shower_(NHQ202508030001).jpg",
+    "credit": "NASA / Bill Ingalls / Wikimedia Commons — Public domain (resized/cropped)"
+  },
+  "what-is-a-light-year": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Milky%20Way%20and%20starry%20night%20sky%20(26972689115).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Milky_Way_and_starry_night_sky_(26972689115).jpg",
+    "credit": "NPS / Jacob W. Frank / Wikimedia Commons — Public domain (resized/cropped)"
+  },
+  "why-earth-has-seasons": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Globus%20mit%20Erdachse%2002.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Globus_mit_Erdachse_02.jpg",
+    "credit": "Beat Ruest / Wikimedia Commons — CC BY-SA 4.0 (resized/cropped)"
+  },
+  "raw-meat-cross-contamination": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Photo%20to%20Illustrate%20the%20Need%20for%20Cutting%20Boards%20(FDA%20139)%20(8207031038).jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Photo_to_Illustrate_the_Need_for_Cutting_Boards_(FDA_139)_(8207031038).jpg",
+    "credit": "US FDA / Wikimedia Commons — Public domain (resized/cropped)"
+  },
+  "best-before-vs-use-by-europe": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Parasta%20ennen%202018.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Parasta_ennen_2018.jpg",
+    "credit": "Wikimedia Commons contributor / Wikimedia Commons — See linked Commons licence (resized/cropped)"
+  },
+  "freezer-food-storage": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bags%20of%20frozen%20fruit%20in%20the%20freezer.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Bags_of_frozen_fruit_in_the_freezer.jpg",
+    "credit": "Shixart1985 / Wikimedia Commons — CC BY 2.0 (resized/cropped)"
+  }
+});
 for(const [slug,record] of Object.entries(reviewedArticlePhotos)){
- if(newGuidePhotos[slug])throw Error('Already curated elsewhere: '+slug);
+ // Editorially reviewed article photo intentionally overrides an older generic selection.
  newGuidePhotos[slug]=record;
 }
 const reviewedFiles=new Set(Object.values(reviewedArticlePhotos).map(p=>p.source));
