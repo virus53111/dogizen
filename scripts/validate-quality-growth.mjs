@@ -47,5 +47,5 @@ for(const id of ['europe-freshwater-fish','wild-mushroom-poison-risk']){
  }
 }
 assert.deepEqual(Object.keys(atlasNativeGuides).sort(),['europe-freshwater-fish','wild-mushroom-poison-risk']);
-assert.equal((readFileSync('dist/sitemap.xml','utf8').match(/<url>/g)||[]).length,541,'Incorrect sitemap coverage');
-console.log('PASS: 10 new 2-language sourced guides + 14 newly translated guides, 541 indexable URL entries.');
+assert.equal((readFileSync('dist/sitemap.xml','utf8').match(/<url>/g)||[]).length,547,'Incorrect sitemap coverage');
+console.log('PASS: 10 new 2-language sourced guides + 14 newly translated guides, 547 indexable URL entries.');
