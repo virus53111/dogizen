@@ -10,7 +10,7 @@ assert.deepEqual(Object.keys(revisions).sort(),['backup-321','secure-accounts','
 assert.equal(stories.length,98,'No synthetic topics or doorway pages permitted');
 assert.equal(languages.length,12,'Preserve all supported languages');
 const sitemap=read('dist/sitemap.xml');
-assert.equal((sitemap.match(/<url>/g)||[]).length,623);
+assert.equal((sitemap.match(/<url>/g)||[]).length,625);
 let pages=0;
 for(const lang of ['it','pt','pl']){
  assert.equal(storiesFor(lang).length,8,'Do not introduce unreviewed translations');
@@ -57,4 +57,4 @@ for(const lang of ['it','pt','pl']){
  }
 }
 assert.equal(pages,9);
-console.log('PASS: nine substantive Italian/Portuguese/Polish guide revisions; all other translated routes retained; 623 sitemap URLs.');
+console.log('PASS: nine substantive Italian/Portuguese/Polish guide revisions; all other translated routes retained; 625 sitemap URLs.');
