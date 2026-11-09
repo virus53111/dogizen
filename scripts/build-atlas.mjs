@@ -4,10 +4,13 @@ import {languages,stories,storiesFor,availableIn,topics,copy} from '../lib/atlas
 import {species} from '../lib/world-topics.js';
 import {home,guide,tool,category,speciesPage,trustPage,notFound,url} from '../lib/atlas-site.js';
 import {visualSpecies} from '../lib/species-atlas.js';
+import {bundlePhotographs} from './bundle-photographs.mjs';
 import {editorialArt2026,createEditorialSvg,createGuideFallbackSvg} from '../lib/editorial-art-2026.js';
 const root=path.resolve('dist');
 await rm(root,{recursive:true,force:true});
 await mkdir(root,{recursive:true});
+// Download genuine raster photos and replace image URLs before any HTML, JSON-LD or sitemap is generated.
+await bundlePhotographs({root,stories,topics});
 const write=async(file,body)=>{const dest=path.join(root,file);await mkdir(path.dirname(dest),{recursive:true});await writeFile(dest,body,'utf8')};
 const key='8f6c1e2a9b4d7f30a5c2e18d6b9f43a1';
 for(const file of ['site.css','atlas-visual.css','site.js','favicon.svg','robots.txt'])await copyFile(path.resolve('public',file),path.join(root,file));
