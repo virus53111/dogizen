@@ -15,7 +15,8 @@ const sizes=[320,360,390,430,768];
 const {illustratedGuidesC}=await import('../lib/illustrated-guides-c.js');
 for(const article of illustratedGuidesC)for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+article.id+'/');
 routes.push(...['it','pt','pl'].map(lang=>'/'+lang+'/guides/ssd-vs-hdd/'));
-const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.jpg':'image/jpeg'};
+routes.push('/ai-photo-prompts/','/ru/ai-photo-prompts/');
+const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.jpg':'image/jpeg','.webp':'image/webp'};
 const server=createServer(async(req,res)=>{
  try{
   const u=new URL(req.url||'/', 'http://localhost');
@@ -87,6 +88,15 @@ try{
    await page.locator('.hero h1').click();
    assert.equal(await menu.getAttribute('aria-expanded'),'false','Tap outside menu must close it');
   }
+  if(width===360){
+   await page.goto(base+'/ru/ai-photo-prompts/',{waitUntil:'domcontentloaded'});
+   const samples=page.locator('.ai-preview img');
+   assert.equal(await samples.count(),4,'Four individual AI photo examples required');
+   await samples.first().evaluate(img=>img.decode());
+   assert.ok(await samples.first().evaluate(img=>img.naturalWidth>=700),'Optimized original AI example failed to decode');
+   assert.equal(await page.locator('.ai-copy').count(),4,'Each photo needs its own copy button');
+   console.log('PASS: Four distinct generated AI examples render on 360px mobile');
+  }
   if(browserErrors.length)failures.push({width,issue:'JavaScript runtime errors',errors:browserErrors});
   await page.close();
  }
@@ -111,6 +121,16 @@ try{
  assert.ok(await page.locator('.story-wrap[data-topic="tech"]:visible').count()>0,'Tech filter must display tech stories');
  assert.equal(await page.locator('.story-wrap[data-topic="digital"]:visible').count(),0,'Tech filter should hide digital stories');
  console.log('PASS: mobile topic filter shows only matching stories');
+ await page.goto(base+'/ru/ai-photo-prompts/',{waitUntil:'domcontentloaded'});
+ await page.context().grantPermissions(['clipboard-read','clipboard-write'],{origin:base});
+ await page.locator('.ai-copy').first().click();
+ assert.match(await page.locator('[data-ai-feedback]').first().innerText(),/Скопировано/,'Copy button must report success');
+ const copied=await page.evaluate(()=>navigator.clipboard.readText());
+ assert.match(copied,/Создай гиперреалистичный кинематографический студийный портрет/,'Clipboard must contain full first prompt');
+ await page.locator('.ai-copy').nth(2).click();
+ const third=await page.evaluate(()=>navigator.clipboard.readText());
+ assert.match(third,/Создай динамичное кинематографическое изображение/,'Copy button must target its own prompt');
+ console.log('PASS: AI image prompt buttons copy independent full prompts in mobile Chromium');
  await page.goto(base+'/ru/topics/mushrooms/',{waitUntil:'domcontentloaded'});
  await page.locator('[data-species-search]').fill('amanita');
  const matches=await page.locator('[data-species-entry]:visible').count();
