@@ -350,7 +350,8 @@ async function getJpeg(source){
   url.searchParams.delete('auto');
  }else if(url.hostname!=='commons.wikimedia.org')throw Error('Unexpected photographic host: '+url.hostname);
  let lastError;
- for(let attempt=0;attempt<3;attempt++){
+ const commons=url.hostname==='commons.wikimedia.org';
+ for(let attempt=0;attempt<6;attempt++){
   try{
    const response=await fetch(url,{signal:AbortSignal.timeout(25000),headers:{'Accept':'image/jpeg','User-Agent':'MURDILIMAX-photo-cache/1.0 (public educational site)'}});
    if(!response.ok)throw Error('HTTP '+response.status);
@@ -358,7 +359,15 @@ async function getJpeg(source){
    const bytes=Buffer.from(await response.arrayBuffer());
    if(bytes.length<10000||bytes.length>2600000||!signature(bytes))throw Error('Not a valid JPEG image ('+bytes.length+' bytes)');
    return bytes;
-  }catch(e){lastError=e;console.warn('Photo fetch attempt '+(attempt+1)+' failed '+url.pathname+': '+e.message);}
+  }catch(e){
+   lastError=e;
+   console.warn('Photo fetch attempt '+(attempt+1)+' failed '+url.pathname+': '+e.message);
+   // Commons rejects parallel thumbnail requests with HTTP 429. Retry after a real delay.
+   if(attempt<5){
+    const backoff=commons?Math.min(35000,5000*(attempt+1)):Math.min(10000,1500*(attempt+1));
+    await new Promise(resolve=>setTimeout(resolve,backoff));
+   }
+  }
  }
  throw new Error('Cannot obtain real photograph '+url.pathname+': '+lastError?.message);
 }
@@ -395,11 +404,22 @@ export async function bundlePhotographs({root,stories,topics}){
   usePhoto(s,selected?.url||s.image||topics.find(t=>t.id===s.topic)?.photoOriginal);
  }
  const records=[...bySource.values()];
- await runPool(records.map(record=>async()=>{
+ const download=record=>async()=>{
   const bytes=await getJpeg(record.source);
   await writeFile(path.join(photoDir,record.file),bytes);
   record.bytes=bytes.length;
- }));
+ };
+ // High-throughput Unsplash requests can run in parallel; Commons limits automated clients.
+ // Serialize Commons requests to avoid 429, while downloading Unsplash photos concurrently.
+ const commonsRecords=records.filter(r=>new URL(r.source).hostname==='commons.wikimedia.org');
+ const otherRecords=records.filter(r=>new URL(r.source).hostname!=='commons.wikimedia.org');
+ await Promise.all([
+  runPool(otherRecords.map(download),6),
+  (async()=>{for(const record of commonsRecords){
+   await new Promise(resolve=>setTimeout(resolve,2500));
+   await download(record)();
+  }})()
+ ]);
  const fallbackSource=firstTopicPhotos.tech.split('?')[0];
  const techPhoto=bySource.get(fallbackSource);
  if(!techPhoto)throw new Error('Missing guaranteed real-photo fallback');
