@@ -45,9 +45,9 @@ for(const x of added){
 }
 const sitemap=readFileSync('dist/sitemap.xml','utf8');
 const count=(sitemap.match(/<url>/g)||[]).length;
-assert.equal(count,541,'Sitemap must list only 541 actual, translated indexable pages');
+assert.equal(count,547,'Sitemap must list only 547 actual, translated indexable pages');
 assert.ok(sitemap.includes('/ru/topics/astronomy/'));
 assert.ok(sitemap.includes('/ru/topics/cooking/'));
 assert.ok(!sitemap.includes('/de/topics/astronomy/'));
 assert.ok(!sitemap.includes('/de/guides/moon-phases-explained/'));
-console.log('PASS expansion QA: 16 substantive bilingual guides, 2 sections with 12 translated introductions, 541 honest indexed URLs');
+console.log('PASS expansion QA: 16 substantive bilingual guides, 2 sections with 12 translated introductions, 547 honest indexed URLs');

@@ -1,8 +1,8 @@
 import {mkdir,writeFile,copyFile,rm} from 'node:fs/promises';
 import path from 'node:path';
-import {languages,stories,storiesFor,availableIn,topics} from '../lib/atlas-data.js';
+import {languages,stories,storiesFor,availableIn,topics,copy} from '../lib/atlas-data.js';
 import {species} from '../lib/world-topics.js';
-import {home,guide,tool,category,speciesPage,notFound,url} from '../lib/atlas-site.js';
+import {home,guide,tool,category,speciesPage,trustPage,notFound,url} from '../lib/atlas-site.js';
 import {visualSpecies} from '../lib/species-atlas.js';
 const root=path.resolve('dist');
 await rm(root,{recursive:true,force:true});
@@ -15,6 +15,30 @@ for(const lang of languages){
   const prefix=lang==='en'?'':lang+'/';
   await write(prefix+'index.html',home(lang));
   pages.push({lang,part:'',weight:'0.9'});
+  // Lightweight browser search spans the whole atlas, including species (when translated).
+  const entries=storiesFor(lang).map(s=>({
+    type:'guide',title:s[lang].title,summary:s[lang].subtitle,label:topics.find(t=>t.id===s.topic)?.[lang]||s.topic,
+    keywords:[s.id,s.topic,s.en?.title].filter(Boolean).join(' '),href:url(lang,'guides/'+s.id),image:s.image
+  }));
+  if(['en','ru'].includes(lang))for(const sp of visualSpecies)entries.push({
+    type:'species',title:sp[lang],summary:sp.detail[lang],label:lang==='ru'?'Справочник видов':'Species atlas',
+    keywords:[sp.latin,sp.en,sp.ru,sp.group].join(' '),href:url(lang,'species/'+sp.id),image:sp.image
+  });
+  for(const id of ['percentage','distance','storage']){
+    const k={percentage:'Percent',distance:'Convert',storage:'Storage'}[id];
+    entries.push({type:'tool',title:copy[lang]['tool'+k],summary:copy[lang]['tool'+k+'Desc'],
+      label:lang==='ru'?'Инструменты':'Tools',keywords:id,href:url(lang,'tools/'+id),image:''});
+  }
+  for(const topic of topics.filter(t=>storiesFor(lang).some(s=>s.topic===t.id)||(['en','ru'].includes(lang)&&visualSpecies.some(sp=>sp.group===t.id)))){
+    entries.push({type:'topic',title:topic[lang]||topic.en,summary:'',label:lang==='ru'?'Раздел':'Topic',
+      keywords:[topic.id,topic.en].join(' '),href:url(lang,'topics/'+topic.id),image:topic.image||''});
+  }
+  await write(prefix+'search-index.json',JSON.stringify(entries));
+
+  if(['en','ru'].includes(lang))for(const id of ['about','editorial','privacy']){
+    await write(prefix+id+'/index.html',trustPage(lang,id));
+    pages.push({lang,part:id,weight:'0.4',updated:'2026-11-09'});
+  }
   for(const s of storiesFor(lang)){
     await write(prefix+'guides/'+s.id+'/index.html',guide(lang,s.id));
     pages.push({lang,part:'guides/'+s.id,weight:'0.7',updated:s.updated,story:s,image:s.image});
@@ -38,7 +62,7 @@ const urls=pages.map(p=>site+url(p.lang,p.part));
 const xmlesc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 let sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
 for(const p of pages){
-  const langs=p.species?['en','ru']:(p.story?languages.filter(l=>availableIn(p.story,l)):(p.topic?languages.filter(l=>storiesFor(l).some(s=>s.topic===p.topic)||species.some(s=>s.group===p.topic)||p.topic==='tools'):languages));
+  const langs=['about','editorial','privacy'].includes(p.part)?['en','ru']:(p.species?['en','ru']:(p.story?languages.filter(l=>availableIn(p.story,l)):(p.topic?languages.filter(l=>storiesFor(l).some(s=>s.topic===p.topic)||species.some(s=>s.group===p.topic)||p.topic==='tools'):languages)));
   sitemap+='  <url><loc>'+xmlesc(site+url(p.lang,p.part))+'</loc>';
   if(p.updated)sitemap+='<lastmod>'+p.updated+'</lastmod>';
   if(p.image)sitemap+='<image:image><image:loc>'+xmlesc(p.image)+'</image:loc></image:image>';

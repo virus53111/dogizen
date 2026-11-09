@@ -14,11 +14,82 @@ function applyFilter(topic='all',query=''){
  const empty=$('#no-results');if(empty){empty.hidden=n>0;empty.textContent=dict.empty}
  $$('.filter-btn').forEach(btn=>btn.classList.toggle('active',btn.dataset.filter===topic));
 }
-$$('.filter-btn').forEach(btn=>btn.addEventListener('click',()=>applyFilter(btn.dataset.filter||'all',$('#site-search')?.value||'')));
-$$('[data-filter-link]').forEach(link=>link.addEventListener('click',()=>{const topic=link.dataset.filterLink;setTimeout(()=>applyFilter(topic==='tools'?'all':topic),60)}));
+const search=$('#site-search');
+const universal=$('#universal-results'),universalList=$('#universal-list');
+const articleGrid=$('#story-grid'),filterBar=$('.filters');
+const normalizeSearch=value=>String(value??'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase();
+let searchIndexPromise=null;
+function resetUniversalSearch(){
+ if(universal)universal.hidden=true;
+ if(articleGrid)articleGrid.hidden=false;
+ if(filterBar)filterBar.hidden=false;
+ if(universalList)universalList.replaceChildren();
+}
+function addSearchResult(item){
+ const a=document.createElement('a');a.className='search-hit';a.href=item.href;
+ if(item.image){
+  const cover=document.createElement('span');cover.className='search-hit-media';
+  const im=document.createElement('img');im.src=item.image;im.alt='';im.loading='lazy';im.width=260;im.height=180;
+  cover.appendChild(im);a.appendChild(cover);
+ }else{
+  const symbol=document.createElement('span');symbol.className='search-hit-symbol';symbol.textContent=item.type==='tool'?'✳':'↗';a.appendChild(symbol);
+ }
+ const body=document.createElement('span');body.className='search-hit-body';
+ const meta=document.createElement('small');meta.textContent=item.label||item.type;
+ const title=document.createElement('strong');title.textContent=item.title;
+ const summary=document.createElement('span');summary.textContent=String(item.summary||'').slice(0,220);
+ body.append(meta,title,summary);a.appendChild(body);
+ const arrow=document.createElement('span');arrow.className='search-hit-arrow';arrow.textContent='↗';a.appendChild(arrow);
+ universalList.appendChild(a);
+}
+async function performUniversalSearch(raw){
+ const query=normalizeSearch(raw).trim();
+ if(!query){resetUniversalSearch();applyFilter('all','');return;}
+ if(!universal||!universalList)return;
+ const terms=query.split(/\s+/).filter(Boolean);
+ universal.hidden=false;if(articleGrid)articleGrid.hidden=true;if(filterBar)filterBar.hidden=true;
+ $('#no-results').hidden=true;
+ universalList.replaceChildren();
+ const count=$('#universal-count');if(count)count.textContent=lang==='ru'?'Ищем…':'Searching…';
+ try{
+  if(!searchIndexPromise){
+   const prefix=lang==='en'?'/':'/'+lang+'/';
+   searchIndexPromise=fetch(prefix+'search-index.json').then(response=>{
+    if(!response.ok)throw Error('Search index unavailable');
+    return response.json();
+   }).catch(error=>{searchIndexPromise=null;throw error});
+  }
+  const entries=await searchIndexPromise;
+  const ranked=entries.map(entry=>{
+    const title=normalizeSearch(entry.title),keywords=normalizeSearch(entry.keywords),body=normalizeSearch(entry.summary);
+    if(!terms.every(word=>(title+' '+keywords+' '+body).includes(word)))return null;
+    let score=1;
+    if(title===query)score+=20;
+    else if(title.startsWith(query))score+=10;
+    else if(title.includes(query))score+=5;
+    if(keywords.includes(query))score+=3;
+    if(entry.type==='species'&&title.includes(query))score+=2;
+    return {entry,score};
+  }).filter(Boolean).sort((a,b)=>b.score-a.score||a.entry.title.localeCompare(b.entry.title));
+  if(count)count.textContent=(lang==='ru'?'Найдено: ':'Results: ')+ranked.length;
+  if(!ranked.length){const empty=document.createElement('p');empty.className='search-empty';empty.textContent=dict.empty;universalList.appendChild(empty);}
+  else for(const {entry} of ranked.slice(0,24))addSearchResult(entry);
+ }catch(error){
+  if(count)count.textContent='';
+  const msg=document.createElement('p');msg.className='search-empty';
+  msg.textContent=lang==='ru'?'Поиск временно недоступен. Откройте разделы каталога ниже.':'Search is temporarily unavailable. Browse topics below.';
+  universalList.appendChild(msg);if(articleGrid)articleGrid.hidden=false;if(filterBar)filterBar.hidden=false;
+ }
+}
+$('.filter-btn').forEach(btn=>btn.addEventListener('click',()=>{if(search)search.value='';resetUniversalSearch();applyFilter(btn.dataset.filter||'all','');}));
+$$('[data-filter-link]').forEach(link=>link.addEventListener('click',()=>{const topic=link.dataset.filterLink;setTimeout(()=>{resetUniversalSearch();applyFilter(topic==='tools'?'all':topic)},60)}));
 const searchForm=$('#search-form');
-if(searchForm)searchForm.addEventListener('submit',e=>{e.preventDefault();applyFilter('all',$('#site-search').value);document.getElementById('stories')?.scrollIntoView({behavior:'smooth'})});
-const search=$('#site-search');if(search)search.addEventListener('input',()=>{if(!search.value.trim())applyFilter('all','')});
+if(searchForm)searchForm.addEventListener('submit',e=>{
+ e.preventDefault();performUniversalSearch(search?.value||'');
+ document.getElementById('stories')?.scrollIntoView({behavior:'smooth'});
+});
+if(search)search.addEventListener('input',()=>{if(!search.value.trim()){resetUniversalSearch();applyFilter('all','')}});
+
 const calc=$('.calculator');
 if(calc){
  const kind=calc.dataset.tool,a=$('#value-a'),b=$('#value-b'),out=$('#calc-answer'),detail=$('#calc-description');
