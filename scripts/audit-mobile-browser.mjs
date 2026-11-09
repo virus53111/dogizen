@@ -70,6 +70,42 @@ try{
   if(browserErrors.length)failures.push({width,issue:'JavaScript runtime errors',errors:browserErrors});
   await page.close();
  }
+ // Exercise the interactions which were previously validated only by string checks.
+ const page=await browser.newPage({viewport:{width:360,height:780},deviceScaleFactor:1});
+ await page.route('**/*',route=>{
+  const target=route.request().url();
+  return target.startsWith(base)||target.startsWith('data:')?route.continue():route.abort();
+ });
+ const errors=[];
+ page.on('pageerror',e=>errors.push(e.message));
+ await page.goto(base+'/ru/',{waitUntil:'domcontentloaded'});
+ await page.locator('#site-search').fill('щука');
+ await page.locator('#search-form button[type="submit"]').click();
+ await page.locator('#universal-list a[href="/ru/species/esox-lucius/"]').waitFor({timeout:9000});
+ assert.equal(await page.locator('#universal-results').isVisible(),true,'Search results must be visible');
+ console.log('PASS: Russian atlas search finds pike species profile');
+ await page.locator('.filter-btn[data-filter="tech"]').click();
+ assert.ok(await page.locator('.story-wrap[data-topic="tech"]:visible').count()>0,'Tech filter must display tech stories');
+ assert.equal(await page.locator('.story-wrap[data-topic="digital"]:visible').count(),0,'Tech filter should hide digital stories');
+ console.log('PASS: mobile topic filter shows only matching stories');
+ await page.goto(base+'/ru/topics/mushrooms/',{waitUntil:'domcontentloaded'});
+ await page.locator('[data-species-search]').fill('amanita');
+ const matches=await page.locator('[data-species-entry]:visible').count();
+ assert.ok(matches>0&&matches<26,'Species search must filter scientific names');
+ console.log('PASS: species directory search narrows 26 records to '+matches);
+ await page.goto(base+'/ru/tools/percentage/',{waitUntil:'domcontentloaded'});
+ await page.locator('#value-a').fill('250');
+ await page.locator('#value-b').fill('15');
+ const percent=await page.locator('#calc-answer').innerText();
+ assert.match(percent,/37[,.]5/,'Percentage calculator must show 37.5 for 15% of 250');
+ console.log('PASS: Russian percentage calculator returns '+percent);
+ await page.goto(base+'/ru/tools/distance/',{waitUntil:'domcontentloaded'});
+ await page.locator('#value-a').fill('10');
+ const distance=await page.locator('#calc-answer').innerText();
+ assert.match(distance,/6[,.]2137/,'Distance converter must show approximately 6.21371 miles');
+ console.log('PASS: distance conversion returns '+distance);
+ assert.equal(errors.length,0,'Uncaught client-side JS errors: '+errors.join('; '));
+ await page.close();
 }finally{
  await browser.close();
  server.close();
