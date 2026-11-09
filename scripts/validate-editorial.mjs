@@ -5,7 +5,7 @@ import {stories,storiesFor} from '../lib/atlas-data.js';
 
 assert.equal(editorial2026.length,11);
 assert.equal(new Set(editorial2026.map(x=>x.id)).size,editorial2026.length);
-assert.equal(stories.length,70,'Expected 60 unique guides after quality growth');
+assert.equal(stories.length,70,'Expected 70 unique guides after quality growth');
 const seenGroups=new Set(editorial2026.map(x=>x.topic));
 assert.equal(seenGroups.size,11,'Each new guide must expand a different category');
 for(const article of editorial2026){
