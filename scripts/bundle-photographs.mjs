@@ -429,6 +429,43 @@ for(const [slug,asset] of Object.entries(globalGuidePhotos)){
  if(newGuidePhotos[slug])throw Error('Duplicate photo assignment '+slug);
  newGuidePhotos[slug]=asset;
 }
+// Source-verified, human-shot documentary photographs for clinical awareness and disaster preparedness.
+const medicalSafetyGuidePhotos={
+  "stroke-signs-be-fast": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/WMAS%20Ambulance.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:WMAS_Ambulance.jpg",
+    "credit": "Jpdfive / Wikimedia Commons — CC BY-SA 4.0 (photograph resized/cropped for the web)"
+  },
+  "heart-attack-warning-signs-first-steps": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/ECG%20machine.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:ECG_machine.jpg",
+    "credit": "Zeeshan2907 / Wikimedia Commons — CC BY-SA 4.0 (photograph resized/cropped for the web)"
+  },
+  "measure-blood-pressure-at-home": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Close-up%20of%20a%20woman%20using%20a%20blood%20pressure%20monitor.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Close-up_of_a_woman_using_a_blood_pressure_monitor.jpg",
+    "credit": "Shixart1985 / Wikimedia Commons — CC BY 2.0 (photograph resized/cropped for the web)"
+  },
+  "anaphylaxis-severe-allergy-emergency": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Epi-Pen%20(1).JPG?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Epi-Pen_(1).JPG",
+    "credit": "Intropin / Wikimedia Commons — CC BY 3.0 (photograph resized/cropped for the web)"
+  },
+  "power-outage-refrigerator-food-safety": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Inside%20the%20refrigerator.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Inside_the_refrigerator.jpg",
+    "credit": "Satirdan kahraman / Wikimedia Commons — CC BY-SA 4.0 (photograph resized/cropped for the web)"
+  },
+  "earthquake-drop-cover-hold-on": {
+    "url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Earthquake%20damage%20in%20Khunde%2C%20Nepal.jpg?width=1200",
+    "source": "https://commons.wikimedia.org/wiki/File:Earthquake_damage_in_Khunde%2C_Nepal.jpg",
+    "credit": "Niklassletteland / Wikimedia Commons — CC BY-SA 3.0 (photograph resized/cropped for the web)"
+  }
+};
+for(const [slug,asset] of Object.entries(medicalSafetyGuidePhotos)){
+ if(newGuidePhotos[slug])throw Error('Photo slug collision '+slug);
+ newGuidePhotos[slug]=asset;
+}
 const signature=buffer=>buffer.length>12&&buffer[0]===255&&buffer[1]===216&&buffer[buffer.length-2]===255&&buffer[buffer.length-1]===217;
 async function getJpeg(source){
  const url=new URL(source);
