@@ -114,6 +114,22 @@ try{
  const distance=await page.locator('#calc-answer').innerText();
  assert.match(distance,/6[,.]2137/,'Distance converter must show approximately 6.21371 miles');
  console.log('PASS: distance conversion returns '+distance);
+ await page.goto(base+'/ru/guides/ryzen-upgrade/',{waitUntil:'domcontentloaded'});
+ const contents=page.locator('.article-toc-panel');
+ assert.equal(await contents.evaluate(el=>el.open),false,'Mobile article contents should initially be folded');
+ await contents.locator('summary').click();
+ assert.equal(await contents.evaluate(el=>el.open),true,'Contents must open on a tap');
+ await page.locator('a[data-toc-link="section-3"]').click();
+ assert.equal(await contents.evaluate(el=>el.open),false,'Navigating to chapter should collapse mobile contents');
+ await page.locator('#section-3').scrollIntoViewIfNeeded();
+ await page.waitForTimeout(150);
+ const reading=Number(await page.locator('#reading-progress').getAttribute('aria-valuenow'));
+ assert.ok(reading>0&&reading<=100,'Reading progress must track real scroll position: '+reading);
+ assert.equal(await page.locator('.article-toc-links a[aria-current="location"]').count(),1,'One chapter should be active');
+ console.log('PASS: mobile article contents fold, chapters navigate, active chapter and progress update: '+reading+'%');
+ await page.goto(base+'/de/guides/ddr4-ddr5/',{waitUntil:'domcontentloaded'});
+ assert.ok((await page.locator('.article-toc-panel summary').innerText()).includes('In diesem Artikel'),'Article contents must be translated');
+ console.log('PASS: German article chapter label is localized');
  assert.equal(errors.length,0,'Uncaught client-side JS errors: '+errors.join('; '));
  await page.close();
 }finally{
