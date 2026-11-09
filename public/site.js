@@ -81,7 +81,7 @@ async function performUniversalSearch(raw){
   universalList.appendChild(msg);if(articleGrid)articleGrid.hidden=false;if(filterBar)filterBar.hidden=false;
  }
 }
-$('.filter-btn').forEach(btn=>btn.addEventListener('click',()=>{if(search)search.value='';resetUniversalSearch();applyFilter(btn.dataset.filter||'all','');}));
+$$('.filter-btn').forEach(btn=>btn.addEventListener('click',()=>{if(search)search.value='';resetUniversalSearch();applyFilter(btn.dataset.filter||'all','');}));
 $$('[data-filter-link]').forEach(link=>link.addEventListener('click',()=>{const topic=link.dataset.filterLink;setTimeout(()=>{resetUniversalSearch();applyFilter(topic==='tools'?'all':topic)},60)}));
 const searchForm=$('#search-form');
 if(searchForm)searchForm.addEventListener('submit',e=>{
