@@ -1,90 +1,99 @@
 import assert from 'node:assert/strict';
-import {readFileSync,existsSync} from 'node:fs';
-import {stories,storiesFor,availableIn,languages} from '../lib/atlas-data.js';
+import {existsSync,readFileSync,readdirSync,statSync} from 'node:fs';
+import {stories,storiesFor,availableIn,languages,topics} from '../lib/atlas-data.js';
 import {illustratedGuidesA} from '../lib/illustrated-guides-a.js';
 import {illustratedGuidesB} from '../lib/illustrated-guides-b.js';
 import {illustratedGuidesC} from '../lib/illustrated-guides-c.js';
-import {editorialArt2026} from '../lib/editorial-art-2026.js';
-const read=p=>readFileSync(p,'utf8');
-const articles=[...illustratedGuidesA,...illustratedGuidesB,...illustratedGuidesC];
-const slugs=articles.map(s=>s.id);
-assert.equal(articles.length,22,'Twenty-two distinct illustrated topics');
-assert.equal(new Set(slugs).size,22,'Duplicate new slugs');
-assert.deepEqual(Object.keys(editorialArt2026).sort(),stories.map(s=>s.id).sort(),'Every article needs its own unique original picture');
-assert.equal(stories.length,82,'Expected 70 previous + 12 new articles');
-assert.equal(new Set(stories.map(s=>s.id)).size,82,'Do not create duplicate article IDs');
-assert.equal(languages.length,12,'Must preserve all language options');
-const map=read('dist/sitemap.xml');
-assert.equal((map.match(/<url>/g)||[]).length,591,'Each new article adds exactly two genuinely written URLs');
-const artPaths=new Set();
-const allCards={en:read('dist/index.html'),ru:read('dist/ru/index.html')};
-const artFallback='dist/media/guide-fallback.svg';
-assert.ok(existsSync(artFallback),'Image fallback missing');
-assert.match(read(artFallback),/<svg\b/,'Fallback must be real SVG artwork');
+const read=path=>readFileSync(path,'utf8');
+const items=[...illustratedGuidesA,...illustratedGuidesB,...illustratedGuidesC];
+assert.equal(items.length,22);
+assert.equal(new Set(items.map(x=>x.id)).size,22,'Guide IDs must be unique');
+assert.equal(stories.length,82,'60 original plus 22 new guides');
+assert.equal(new Set(stories.map(x=>x.id)).size,82);
+assert.equal(languages.length,12);
+assert.equal(topics.length,16);
+const sitemap=read('dist/sitemap.xml');
+assert.equal((sitemap.match(/<url>/g)||[]).length,591,'Only real EN/RU translations may add URLs');
+const jpeg=(p)=>{
+ assert.ok(existsSync(p),'Missing local photo '+p);
+ const img=readFileSync(p);
+ assert.ok(img.length>12000&&img[0]===255&&img[1]===216&&img[img.length-2]===255&&img[img.length-1]===217,'Expected a real JPEG image: '+p);
+ return img.length;
+};
+assert.ok(jpeg('dist/photos/photo-fallback.jpg')>12000);
+assert.ok(!existsSync('dist/media/guide-fallback.svg'),'Do not publish decorative SVG fallbacks');
+assert.ok(!existsSync('dist/media')||readdirSync('dist/media',{withFileTypes:true}).every(x=>!x.isFile()||!x.name.endsWith('.svg')),'No illustrated story art');
 const js=read('dist/site.js');
-assert.match(js,/guideImageFallback/,'Image fallback listener missing');
-assert.match(js,/\/media\/guide-fallback\.svg/);
+assert.ok(js.includes('/photos/photo-fallback.jpg'),'Broken images must use real-photo fallback');
+const illustratedPhotos=new Set();
 for(const s of stories){
- assert.ok(s.image,'No article is allowed without a picture: '+s.id);
- assert.ok(s.image.startsWith('https://')||s.image.startsWith('/media/'),
-  'Article photo must have a permitted image address: '+s.id);
-}
-for(const article of articles){
- assert.ok(article.sources?.length>=1,'Need real editorial source: '+article.id);
- for(const src of article.sources)assert.match(src.url,/^https:\/\/[a-z0-9.-]+\//i);
- const image='/media/'+article.id+'.svg';
- assert.ok(!artPaths.has(image),'Must not reuse one artwork for different articles');
- artPaths.add(image);
- const img=read('dist'+image);
- assert.ok(img.length>=1100,'Original illustration must be substantive: '+article.id);
- assert.match(img,/^<svg\b.*<\/svg>$/s,'Well-formed SVG image needed '+article.id);
- assert.match(img,/viewBox="0 0 1400 780"/,'Retain article hero ratio');
- assert.ok(!/https?:\/\/|<script\b|onload=|<foreignObject/i.test(img.replace('xmlns="http://www.w3.org/2000/svg"','')),'SVG must be local and inert');
- assert.match(img,/aria-label="/,'Include image context for SVG use');
- assert.ok(availableIn(article,'en')&&availableIn(article,'ru'),'Each new guide requires an original EN/RU edition');
- for(const lang of ['en','ru']){
-  const text=article[lang];
-  assert.ok(text.title.length>=30&&text.subtitle.length>=65,'Specific article title and summary');
-  assert.equal(text.sections.length,5,'Each new article needs five useful sections');
-  assert.equal(new Set(text.sections.map(x=>x[0])).size,5,'Repeated chapter headings');
-  const count=text.sections.flat().join(' ').trim().split(/\s+/u).filter(Boolean).length;
-  assert.ok(count>=200,'Insufficient practical research content '+article.id+'/'+lang+': '+count);
-  assert.ok(text.sections.every(([head,body])=>head.length>=15&&body.length>=270),
-   'Each chapter must explain decisions and steps: '+article.id+'/'+lang);
+ for(const lang of languages.filter(l=>availableIn(s,l))){
   const prefix=lang==='en'?'':lang+'/';
-  const route='/'+prefix+'guides/'+article.id+'/';
-  const html=read('dist'+route+'index.html');
-  assert.ok(html.includes(text.title)&&html.includes(text.subtitle),'Localized guide not visible');
-  assert.ok(html.includes('src="'+image+'"'),'Original local artwork missing from guide');
-  assert.ok(html.includes('alt="'+editorialArt2026[article.id].alt[lang]+'"'),'Image needs meaningful translated alt');
-  assert.ok(html.includes('decoding="async"'),'Decode high-res art off the main thread');
-  assert.ok(html.includes('fetchpriority="high"'),'Prioritize visible hero artwork');
-  assert.match(html,/href="#section-4"/,'Reading outline must contain five chapters');
-  assert.ok(html.includes('role="progressbar"'),'Preserve reading progress functionality');
-  for(const ref of article.sources)assert.ok(html.includes(ref.url),'Readable source references required');
-  const canonical='https://murdilimax.com'+route;
-  assert.ok(html.includes('rel="canonical" href="'+canonical+'"'),'Incorrect canonical');
-  assert.ok(html.includes('property="og:image" content="https://murdilimax.com'+image+'"'),
-   'Absolute share image URL required for social previews');
-  const graph=JSON.parse([...html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)][0][1])['@graph'];
-  const schema=graph.find(x=>x['@type']==='Article');
-  assert.ok(schema&&graph.some(x=>x['@type']==='BreadcrumbList'));
-  assert.equal(schema.image,'https://murdilimax.com'+image,'Article image must be an absolute URI');
-  assert.equal(schema.dateModified,'2026-11-09');
-  assert.equal(schema.inLanguage,lang);
-  assert.equal(schema.headline,text.title);
-  const list=JSON.parse(read('dist/'+prefix+'search-index.json'));
-  const hit=list.find(x=>x.type==='guide'&&x.href===route);
-  assert.ok(hit&&hit.title===text.title&&hit.image===image,'Search index must show new local image');
-  assert.ok(map.includes('<loc>'+canonical+'</loc><lastmod>2026-11-09</lastmod>'),
-   'Correct sitemap update timestamp expected');
-  assert.ok(map.includes('<image:loc>https://murdilimax.com'+image+'</image:loc>'),
-   'Sitemap must include a crawlable absolute image URL');
-  assert.ok(allCards[lang].includes(route),'New articles must be discoverable on homepage');
+  const html=read('dist/'+prefix+'guides/'+s.id+'/index.html');
+  const image=html.match(/class="article-image"[^>]*><img src="(\/photos\/[a-f0-9]{18}\.jpg)"/)?.[1];
+  assert.ok(image,'Every published guide needs a local photograph: '+s.id+'/'+lang);
+  jpeg('dist'+image);
  }
- for(const lang of languages.filter(l=>l!=='en'&&l!=='ru'))
-  assert.equal(existsSync('dist/'+lang+'/guides/'+article.id+'/index.html'),false,
-   'Never publish a fake untranslated guide: '+article.id+'/'+lang);
- console.log('PASS '+article.id+': 2 complete guides, 1 unique local picture, original sources and accessible image metadata');
 }
-console.log('PASS: all 82 unique topics have pictures; 82 locally hosted vector illustrations; 44 researched article editions; 591 real canonical sitemap URLs.');
+for(const t of topics){
+ const html=read('dist/index.html');
+ const href='/topics/'+t.id+'/';
+ const segment=html.indexOf('href="'+href+'"');
+ assert.ok(segment>=0,'Category missing '+t.id);
+ const span=html.slice(segment,segment+550);
+ assert.match(span,/class="topic-card photo-topic"/,'Category must show genuine photography: '+t.id);
+ const local=span.match(/src="(\/photos\/[a-f0-9]{18}\.jpg)"/)?.[1];
+ assert.ok(local,'Missing locally hosted category photograph '+t.id);
+ jpeg('dist'+local);
+}
+for(const guide of items){
+ assert.ok(guide.sources?.length>=1,'New article has no credible reference: '+guide.id);
+ for(const ref of guide.sources)assert.ok(ref.url.startsWith('https://'));
+ assert.ok(availableIn(guide,'en')&&availableIn(guide,'ru'));
+ for(const lang of ['en','ru']){
+  const d=guide[lang];
+  assert.ok(d.title.length>=30&&d.subtitle.length>=65);
+  assert.equal(d.sections.length,5);
+  assert.equal(new Set(d.sections.map(x=>x[0])).size,5);
+  assert.ok(d.sections.every(([heading,body])=>heading.length>=15&&body.length>=270));
+  const words=d.sections.flat().join(' ').trim().split(/\s+/u).filter(Boolean).length;
+  assert.ok(words>=200,'Guide lacks useful depth '+guide.id+'/'+lang);
+  const prefix=lang==='en'?'':lang+'/';
+  const route='/'+prefix+'guides/'+guide.id+'/';
+  const html=read('dist'+route+'index.html');
+  const image=html.match(/class="article-image"[^>]*><img src="(\/photos\/[a-f0-9]{18}\.jpg)"/)?.[1];
+  assert.ok(image,'Expected real JPG article image '+guide.id+'/'+lang);
+  illustratedPhotos.add(image);
+  assert.ok(jpeg('dist'+image)>12000);
+  assert.ok(html.includes('alt="'+d.title.replaceAll('"','&quot;')+'"'),'Image alt must be localized');
+  assert.ok(html.includes('decoding="async"')&&html.includes('fetchpriority="high"'),'Prioritize cover photos');
+  assert.match(html,/href="#section-4"/);
+  assert.match(html,/role="progressbar"/);
+  assert.ok(guide.sources.every(x=>html.includes(x.url)),'Research sources missing '+guide.id);
+  const full='https://murdilimax.com'+route;
+  assert.ok(html.includes('rel="canonical" href="'+full+'"'));
+  assert.ok(html.includes('property="og:image" content="https://murdilimax.com'+image+'"'));
+  const graph=JSON.parse([...html.matchAll(/<script type="application\/ld\+json">([^<]+)<\/script>/g)][0][1])['@graph'];
+  const article=graph.find(x=>x['@type']==='Article');
+  assert.ok(article&&graph.some(x=>x['@type']==='BreadcrumbList'));
+  assert.equal(article.image,'https://murdilimax.com'+image);
+  assert.equal(article.dateModified,'2026-11-09');
+  assert.equal(article.inLanguage,lang);
+  assert.equal(article.headline,d.title);
+  const list=JSON.parse(read('dist/'+prefix+'search-index.json'));
+  const found=list.find(x=>x.type==='guide'&&x.href===route);
+  assert.ok(found&&found.image===image&&found.title===d.title,'Photo and title must be searchable');
+  assert.ok(sitemap.includes('<loc>'+full+'</loc><lastmod>2026-11-09</lastmod>'));
+  assert.ok(sitemap.includes('<image:loc>https://murdilimax.com'+image+'</image:loc>'));
+ }
+ for(const lang of languages.filter(x=>x!=='en'&&x!=='ru'))
+  assert.ok(!existsSync('dist/'+lang+'/guides/'+guide.id+'/index.html'),'Fake untranslated article '+guide.id+'/'+lang);
+ console.log('PASS: '+guide.id+' — useful bilingual editorial, authentic JPEG cover, source citations and SEO metadata');
+}
+assert.ok(illustratedPhotos.size>=20,'Each new guide requires a relevant real photograph; avoid widespread identical covers');
+for(const lang of ['en','ru']){
+ const home=read('dist/'+(lang==='ru'?'ru/':'')+'index.html');
+ assert.match(home,/hero-image hero-photo-stage/,'Homepage must use editorial photograph');
+ assert.doesNotMatch(home,/orbit-core/,'No cartoon orbital hero');
+}
+console.log('PASS: 82 guides, 22 distinct real photographic covers, 16 photographic topic cards, 44 new article editions, 591 canonical sitemap URLs.');

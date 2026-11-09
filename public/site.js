@@ -253,7 +253,7 @@ document.addEventListener('error',function(ev){
 
  if(!im.dataset.guideImageFallback&&im.closest?.('.article-image,.story-photo,.search-hit-media')){
    im.dataset.guideImageFallback='1';
-   im.src='/media/guide-fallback.svg';
+   im.src='/photos/photo-fallback.jpg';
    im.style.opacity='1';
    return;
  }
