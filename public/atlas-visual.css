@@ -178,3 +178,9 @@ body{background:var(--paper);color:var(--ink)}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
 }
+
+/* Accessibility: keyboard skip link and usable narrow-screen navigation */
+.skip-link{position:fixed;top:12px;left:12px;z-index:500;background:#e8f49e;color:#102128;padding:14px 18px;font-weight:700;transform:translateY(-160%)}
+.skip-link:focus{transform:translateY(0)}
+.mobile-links:not([hidden]){background:#162b33;color:#f6f3eb;border-top:1px solid #40535a}
+@media(max-width:800px){.orbit-label-left{left:4%}}
