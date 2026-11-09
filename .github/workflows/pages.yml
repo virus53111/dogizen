@@ -44,6 +44,8 @@ jobs:
           node --check lib/editorial-refresh-2026.js
           node --check lib/editorial-refresh-nature.js
           node --check lib/editorial-locales-de-es.js
+          node --check lib/editorial-locales-fr-lv.js
+          node --check lib/editorial-storage-fr-lv.js
           node --check lib/atlas-site.js
           node --check public/site.js
           node scripts/build-atlas.mjs
@@ -52,6 +54,7 @@ jobs:
           node scripts/validate-editorial.mjs
           node scripts/validate-editorial-refresh.mjs
           node scripts/validate-locale-editorial.mjs
+          node scripts/validate-locale-fr-lv.mjs
           node scripts/validate-expansion.mjs
           node scripts/validate-quality-growth.mjs
           node scripts/validate-atlas-experience.mjs
