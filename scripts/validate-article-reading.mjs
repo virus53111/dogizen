@@ -30,7 +30,8 @@ for(const lang of languages){
   assert.equal(crumb.itemListElement[2].name,locale.title);
   assert.equal(article.datePublished,undefined,'Do not invent a publication date from the revision date');
   if(s.updated)assert.equal(article.dateModified,s.updated);
-  if(s.sources?.length)assert.deepEqual(article.citation,s.sources.map(x=>x.url));
+  const expectedCitations=[...(s.sources||[]),...(s.localeSources?.[lang]||[])].map(x=>x.url);
+  if(expectedCitations.length)assert.deepEqual(article.citation,expectedCitations,'Article should cite its global and locale-specific references');
   pages++;
  }
 }
