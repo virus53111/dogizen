@@ -45,6 +45,31 @@ for(const newer of illustratedGuidesC){
  }
 }
 assert.equal(stories.length,82);
+// Regression check for hand-reviewed subject-specific article photography.
+// A photograph may be shared across translations, never across the reviewed stories.
+const handReviewed=["heat-exhaustion-signs","check-medical-information","better-sleep-routine","carbon-monoxide-home-safety","wood-stove-sauna-carbon-monoxide","sauna-heat-vs-heatstroke","sauna-safety-guide","smoke-alarm-home-placement","tick-bite-first-steps","mushroom-poisoning-warning-signs","international-travel-documents"];
+const reviewedCovers=new Set();
+for(const id of handReviewed){
+ const html=read('dist/ru/guides/'+id+'/index.html');
+ const match=html.match(/class="article-image"[^>]*><img src="(\/photos\/[a-f0-9]{18}\.jpg)"/);
+ assert.ok(match,'Reviewed photo missing: '+id);
+ assert.ok(!reviewedCovers.has(match[1]),'Reviewed stories share the same photo: '+id);
+ reviewedCovers.add(match[1]);
+ assert.match(html,/class="article-photo-credit"/,'Photo author/licence missing: '+id);
+ assert.match(html,/Wikimedia Commons/,'Photo attribution link missing: '+id);
+}
+assert.equal(reviewedCovers.size,handReviewed.length);
+// A transparent audit of remaining duplicates; future curation can then be incremental.
+const ownersByPhoto=new Map();
+for(const guide of stories){
+ const html=read('dist/guides/'+guide.id+'/index.html');
+ const cover=html.match(/class="article-image"[^>]*><img src="(\/photos\/[a-f0-9]{18}\.jpg)"/)?.[1];
+ if(cover)ownersByPhoto.set(cover,[...(ownersByPhoto.get(cover)||[]),guide.id]);
+}
+const duplicateGroups=[...ownersByPhoto.values()].filter(ids=>ids.length>1);
+console.log('PHOTO UNIQUENESS AUDIT: '+ownersByPhoto.size+' unique photos for '+stories.length+' stories; '+duplicateGroups.length+' reused-photo groups remain.');
+for(const group of duplicateGroups)console.log('REVIEW NEEDED: '+group.join(', '));
+
 assert.equal(illustratedGuidesC.length,12);
 assert.equal(new Set(illustratedGuidesC.map(a=>a.topic)).size,11);
 assert.ok(photos.size>=22,'We expect a meaningful variety of actual photographs');
