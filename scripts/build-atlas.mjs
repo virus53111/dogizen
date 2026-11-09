@@ -1,7 +1,8 @@
 import {mkdir,writeFile,copyFile,rm} from 'node:fs/promises';
 import path from 'node:path';
-import {languages,stories,storiesFor,availableIn} from '../lib/atlas-data.js';
-import {home,guide,tool,notFound,url} from '../lib/atlas-site.js';
+import {languages,stories,storiesFor,availableIn,topics} from '../lib/atlas-data.js';
+import {species} from '../lib/world-topics.js';
+import {home,guide,tool,category,notFound,url} from '../lib/atlas-site.js';
 const root=path.resolve('dist');
 await rm(root,{recursive:true,force:true});
 await mkdir(root,{recursive:true});
@@ -17,6 +18,10 @@ for(const lang of languages){
     await write(prefix+'guides/'+s.id+'/index.html',guide(lang,s.id));
     pages.push({lang,part:'guides/'+s.id,weight:'0.7',updated:s.updated,story:s});
   }
+  for(const t of topics){
+    await write(prefix+'topics/'+t.id+'/index.html',category(lang,t.id));
+    if(storiesFor(lang).some(s=>s.topic===t.id)||species.some(s=>s.group===t.id)||t.id==='tools')pages.push({lang,part:'topics/'+t.id,weight:'0.6',topic:t.id});
+  }
   for(const id of ['percentage','distance','storage']){
     await write(prefix+'tools/'+id+'/index.html',tool(lang,id));
     pages.push({lang,part:'tools/'+id,weight:'0.6'});
@@ -27,7 +32,7 @@ const urls=pages.map(p=>site+url(p.lang,p.part));
 const xmlesc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 let sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n';
 for(const p of pages){
-  const langs=p.story?languages.filter(l=>availableIn(p.story,l)):languages;
+  const langs=p.story?languages.filter(l=>availableIn(p.story,l)):(p.topic?languages.filter(l=>storiesFor(l).some(s=>s.topic===p.topic)||species.some(s=>s.group===p.topic)||p.topic==='tools'):languages);
   sitemap+='  <url><loc>'+xmlesc(site+url(p.lang,p.part))+'</loc>';
   if(p.updated)sitemap+='<lastmod>'+p.updated+'</lastmod>';
   sitemap+='<priority>'+p.weight+'</priority>';
