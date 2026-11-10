@@ -4,7 +4,7 @@ import {curiousWorldAnswers} from '../lib/curious-world-answers.js';
 import {stories,languages} from '../lib/atlas-data.js';
 const read=p=>readFileSync('dist/'+p,'utf8');
 assert.equal(curiousWorldAnswers.length,4);
-assert.equal(stories.length,110);
+assert.equal(stories.length,114);
 const covers=new Set();
 for(const s of curiousWorldAnswers){
  assert.equal(s.sources.length,4);
@@ -34,5 +34,5 @@ for(const s of curiousWorldAnswers){
 assert.match(read('ru/guides/why-honey-crystallizes/index.html'),/младше 12 месяцев/);
 assert.match(read('guides/why-honey-crystallizes/index.html'),/younger than 12 months/);
 assert.match(read('ru/guides/northern-lights-colours-explained/index.html'),/не гарантирует/);
-assert.equal((read('sitemap.xml').match(/<url>/g)||[]).length,651);
-console.log('PASS: four substantive EN/RU science answers, four distinct licensed photos, real translations, sources, search and 651 canonical URLs.');
+assert.equal((read('sitemap.xml').match(/<url>/g)||[]).length,659);
+console.log('PASS: four substantive EN/RU science answers, four distinct licensed photos, real translations, sources, search and 659 canonical URLs.');

@@ -5,7 +5,7 @@ import {stories,story,storiesFor,availableIn} from '../lib/atlas-data.js';
 const read=p=>readFileSync(p,'utf8');
 const slugs=['secure-accounts','backup-321','ssd-vs-hdd'];
 assert.deepEqual(Object.keys(essentialGuidesDeEs).sort(),slugs.slice().sort(),'Three deliberately selected existing topics');
-assert.equal(stories.length,110,'Do not create duplicate SEO guides');
+assert.equal(stories.length,114,'Do not create duplicate SEO guides');
 for(const lang of ['de','es']){
  assert.equal(storiesFor(lang).length,14,'This release updates translations, not new URLs');
  for(const id of slugs){
@@ -53,5 +53,5 @@ for(const lang of ['en','ru','fr','lv']){
  const html=read('dist/'+(lang==='en'?'':lang+'/')+'guides/backup-321/index.html');
  for(const source of essentialGuidesDeEs['backup-321'].sources)assert.ok(!html.includes(source.url)&&!html.includes(source.url.replaceAll('&','&amp;')),'Do not leak DE/ES-only links to '+lang);
 }
-assert.equal((read('dist/sitemap.xml').match(/<url>/g)||[]).length,651,'Expected unchanged 651 real URLs');
-console.log('PASS: six independently rewritten German/Spanish pages, with source-safe citations and 651 URL sitemap.');
+assert.equal((read('dist/sitemap.xml').match(/<url>/g)||[]).length,659,'Expected unchanged 659 real URLs');
+console.log('PASS: six independently rewritten German/Spanish pages, with source-safe citations and 659 URL sitemap.');

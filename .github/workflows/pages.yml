@@ -22,6 +22,7 @@ jobs:
         run: |
           node --check lib/world-events-2026.js
           node --check lib/aviation-and-useful-answers.js
+          node --check lib/everyday-wonders.js
           node --check lib/everyday-discoveries.js
           node --check lib/curious-world-answers.js
           node --check lib/atlas-data.js
@@ -79,6 +80,7 @@ jobs:
           node scripts/validate-it-pt-pl-editorial.mjs
           node scripts/validate-lt-et-nl-editorial.mjs
           node scripts/validate-illustrated-guides.mjs
+          node scripts/validate-everyday-wonders.mjs
           node scripts/validate-everyday-discoveries.mjs
           node scripts/validate-curious-world.mjs
           node scripts/validate-new-answers-seo.mjs

@@ -15,12 +15,12 @@ const photos={
 const read=path=>readFileSync(root+path,'utf8');
 assert.equal(highIntentGuides.length,4,'Exactly four researched originals');
 assert.equal(new Set(highIntentGuides.map(x=>x.id)).size,4);
-assert.equal(stories.length,110,'All 110 genuinely published articles');
-assert.equal(new Set(stories.map(x=>x.id)).size,110,'Duplicate story ID');
+assert.equal(stories.length,114,'All 114 genuinely published articles');
+assert.equal(new Set(stories.map(x=>x.id)).size,114,'Duplicate story ID');
 assert.equal(languages.length,12,'All existing interface languages must remain');
 assert.equal(topics.length,17,'Use existing topic taxonomy');
 const sitemap=read('sitemap.xml');
-assert.equal((sitemap.match(/<url>/g)||[]).length,651,'All six new health guides add 12 pages');
+assert.equal((sitemap.match(/<url>/g)||[]).length,659,'All six new health guides add 12 pages');
 const photosSeen=new Set();
 for(const guide of highIntentGuides){
  assert.ok(topics.some(t=>t.id===guide.topic),'Topic does not exist '+guide.id);
@@ -88,4 +88,4 @@ for(const lang of ['en','ru']){
  const firstLegacy=cards.indexOf('href="/'+prefix+'guides/ryzen-upgrade/');
  assert.ok(firstLegacy>positions.at(-1),'New material should appear before old featured topic in article list '+lang);
 }
-console.log('PASS: four verified original topics, eight detailed new articles, four distinct photographs, 110 guides and 651 genuine indexable URLs.');
+console.log('PASS: four verified original topics, eight detailed new articles, four distinct photographs, 114 guides and 659 genuine indexable URLs.');
