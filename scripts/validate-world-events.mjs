@@ -3,7 +3,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import {languages,stories,topics} from '../lib/atlas-data.js';
 const id='krakow-shooting-november-2026';
 const read=p=>readFileSync('dist/'+p,'utf8');
-assert.equal(stories.length,114);
+assert.equal(stories.length,117);
 assert.equal(topics.length,17);
 for(const lang of ['en','ru']){
  const prefix=lang==='en'?'':lang+'/';
@@ -37,6 +37,6 @@ for(const lang of languages.filter(x=>!['en','ru'].includes(x))){
  assert.ok(!read(lang+'/index.html').includes('/topics/world-events/'));
 }
 const sitemap=read('sitemap.xml');
-assert.equal((sitemap.match(/<url>/g)||[]).length,659);
+assert.equal((sitemap.match(/<url>/g)||[]).length,665);
 assert.equal((sitemap.match(/<loc>[^<]*world-events\//g)||[]).length,2);
 console.log('PASS: dated EN/RU event report, archival photo attribution, two real category editions, existing 625 canonical URLs plus four new pages.');
