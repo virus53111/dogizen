@@ -411,3 +411,5 @@ body{background:var(--paper);color:var(--ink)}
 
 /* Provenance remains readable below documentary photographs. */
 .article-photo-context{max-width:900px;margin:12px auto 32px;line-height:1.65;font-size:14px;overflow-wrap:anywhere}.article-photo-context a{text-decoration:underline}
+
+.article-heading .article-dateline{font-size:14px;line-height:1.6;margin-top:12px}

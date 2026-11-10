@@ -21,6 +21,7 @@ jobs:
       - name: Validate multilingual pages and generate static website
         run: |
           node --check lib/world-events-2026.js
+          node --check lib/aviation-and-useful-answers.js
           node --check lib/atlas-data.js
           node --check lib/world-topics.js
           node --check lib/world-articles.js
@@ -76,6 +77,7 @@ jobs:
           node scripts/validate-it-pt-pl-editorial.mjs
           node scripts/validate-lt-et-nl-editorial.mjs
           node scripts/validate-illustrated-guides.mjs
+          node scripts/validate-new-answers-seo.mjs
           node scripts/validate-world-events.mjs
           node scripts/validate-guide-media.mjs
           node scripts/validate-high-intent-guides.mjs

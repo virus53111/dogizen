@@ -20,7 +20,7 @@ for(const lang of languages){
   assert.equal(scripts.length,1,'Expected one structured-data object per guide');
   const data=JSON.parse(scripts[0][1]);
   assert.ok(Array.isArray(data['@graph']),'Expected @graph with breadcrumbs');
-  const article=data['@graph'].find(x=>x['@type']==='Article');
+  const article=data['@graph'].find(x=>['Article','NewsArticle'].includes(x['@type']));
   const crumb=data['@graph'].find(x=>x['@type']==='BreadcrumbList');
   assert.ok(article&&crumb,'Guide missing article or breadcrumb schema');
   assert.equal(article.inLanguage,lang);
@@ -28,7 +28,7 @@ for(const lang of languages){
   assert.equal(crumb.itemListElement.length,3);
   assert.equal(crumb.itemListElement[0].position,1);
   assert.equal(crumb.itemListElement[2].name,locale.title);
-  assert.equal(article.datePublished,undefined,'Do not invent a publication date from the revision date');
+  assert.equal(article.datePublished,s.published,'Do not invent a publication date from the revision date');
   if(s.updated)assert.equal(article.dateModified,s.updated);
   const expectedCitations=[...(s.sources||[]),...(s.localeSources?.[lang]||[])].map(x=>x.url);
   if(expectedCitations.length)assert.deepEqual(article.citation,expectedCitations,'Article should cite its global and locale-specific references');
