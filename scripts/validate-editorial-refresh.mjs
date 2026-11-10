@@ -6,7 +6,7 @@ import {editorialRefreshNature2026} from '../lib/editorial-refresh-nature.js';
 
 const upgrades={...editorialRefresh2026,...editorialRefreshNature2026};
 assert.equal(Object.keys(upgrades).length,5,'Exactly five selected real articles');
-assert.equal(stories.length,116,'Never inflate URLs merely to boost index size');
+assert.equal(stories.length,117,'Never inflate URLs merely to boost index size');
 const seen=new Set();
 for(const [id,revision] of Object.entries(upgrades)){
  assert.ok(!seen.has(id));seen.add(id);
@@ -42,5 +42,5 @@ for(const lang of languages){
  assert.ok(storiesFor(lang).length>0,'Do not lose any language edition: '+lang);
 }
 const sitemap=readFileSync('dist/sitemap.xml','utf8');
-assert.equal((sitemap.match(/<url>/g)||[]).length,663,'Sitemap should not gain artificial URLs');
-console.log('PASS: Five substantive EN/RU editorial rewrites, ten published pages, primary citations, complete chapters, preserved locale coverage and 663 URLs.');
+assert.equal((sitemap.match(/<url>/g)||[]).length,665,'Sitemap should not gain artificial URLs');
+console.log('PASS: Five substantive EN/RU editorial rewrites, ten published pages, primary citations, complete chapters, preserved locale coverage and 665 URLs.');

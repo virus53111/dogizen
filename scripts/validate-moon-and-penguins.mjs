@@ -1,12 +1,16 @@
 import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
+import {eyeglassCare} from '../lib/eyeglass-care.js';
 import {moonAndPenguins} from '../lib/moon-and-penguins.js';
 import {stories,languages} from '../lib/atlas-data.js';
 const read=p=>readFileSync('dist/'+p,'utf8');
 assert.equal(moonAndPenguins.length,2);
-assert.equal(stories.length,116);
+assert.equal(stories.length,117);
+assert.equal(eyeglassCare.length,1);
+assert.equal(moonAndPenguins[0].topic,'astronomy');
+assert.match(eyeglassCare[0].ru.sections.map(x=>x[1]).join(' '),/Мыть контактные линзы таким способом нельзя/);
 const covers=new Set();
-for(const s of moonAndPenguins){
+for(const s of [...moonAndPenguins,...eyeglassCare]){
  assert.ok(s.sources.length>=4);
  for(const lang of ['en','ru']){
   const p=lang==='en'?'':lang+'/';const d=s[lang];const route=p+'guides/'+s.id+'/';const html=read(route+'index.html');
@@ -31,5 +35,5 @@ for(const s of moonAndPenguins){
  }
  for(const lang of languages.filter(x=>!['en','ru'].includes(x)))assert.ok(!existsSync(`dist/${lang}/guides/${s.id}/index.html`));
 }
-assert.equal((read('sitemap.xml').match(/<url>/g)||[]).length,663);
-console.log('PASS: two sourced EN/RU science guides, licensed photos, search, schema and 663 canonical URLs.');
+assert.equal((read('sitemap.xml').match(/<url>/g)||[]).length,665);
+console.log('PASS: three sourced EN/RU practical and science guides, licensed photos, search, schema and 665 canonical URLs.');

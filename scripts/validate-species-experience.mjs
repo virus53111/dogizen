@@ -43,5 +43,5 @@ for(const lang of languages){
  }
  if(!['en','ru'].includes(lang))assert.equal(index.filter(x=>x.type==='species').length,0,'No unlocalized species result URLs');
 }
-assert.equal((read('dist/sitemap.xml').match(/<url>/g)||[]).length,663,'Species remain intact alongside ten new original illustrated bilingual guides');
+assert.equal((read('dist/sitemap.xml').match(/<url>/g)||[]).length,665,'Species remain intact alongside ten new original illustrated bilingual guides');
 console.log('PASS: 156 species pages, meaningful links, cited hazard notes, breadcrumb markup and 12-language topic discovery.');

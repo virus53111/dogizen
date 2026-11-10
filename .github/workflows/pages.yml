@@ -22,6 +22,7 @@ jobs:
         run: |
           node --check lib/world-events-2026.js
           node --check lib/aviation-and-useful-answers.js
+          node --check lib/eyeglass-care.js
           node --check lib/moon-and-penguins.js
           node --check lib/everyday-wonders.js
           node --check lib/everyday-discoveries.js

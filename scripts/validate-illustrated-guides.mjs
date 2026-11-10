@@ -8,12 +8,12 @@ const read=path=>readFileSync(path,'utf8');
 const items=[...illustratedGuidesA,...illustratedGuidesB,...illustratedGuidesC];
 assert.equal(items.length,22);
 assert.equal(new Set(items.map(x=>x.id)).size,22,'Guide IDs must be unique');
-assert.equal(stories.length,116,'86 previous guides plus 6 global guides');
-assert.equal(new Set(stories.map(x=>x.id)).size,116);
+assert.equal(stories.length,117,'86 previous guides plus 6 global guides');
+assert.equal(new Set(stories.map(x=>x.id)).size,117);
 assert.equal(languages.length,12);
 assert.equal(topics.length,17);
 const sitemap=read('dist/sitemap.xml');
-assert.equal((sitemap.match(/<url>/g)||[]).length,663,'Only real EN/RU translations may add URLs');
+assert.equal((sitemap.match(/<url>/g)||[]).length,665,'Only real EN/RU translations may add URLs');
 const jpeg=(p)=>{
  assert.ok(existsSync(p),'Missing local photo '+p);
  const img=readFileSync(p);
@@ -96,4 +96,4 @@ for(const lang of ['en','ru']){
  assert.match(home,/hero-image hero-photo-stage/,'Homepage must use editorial photograph');
  assert.doesNotMatch(home,/orbit-core/,'No cartoon orbital hero');
 }
-console.log('PASS: 116 guides, 22 distinct real photographic covers, 16 photographic topic cards, 44 new article editions, 663 canonical sitemap URLs.');
+console.log('PASS: 117 guides, 22 distinct real photographic covers, 16 photographic topic cards, 44 new article editions, 665 canonical sitemap URLs.');
