@@ -7,9 +7,9 @@ const read=path=>readFileSync(path,'utf8');
 const rewrites={...accountSecurityLtEtNl,...safeBackupsLtEtNl};
 assert.deepEqual(Object.keys(rewrites).sort(),['backup-321','secure-accounts']);
 assert.equal(languages.length,12,'All twelve language versions must remain available');
-assert.equal(stories.length,102,'Never add empty doorway topics');
+assert.equal(stories.length,106,'Never add empty doorway topics');
 const sitemap=read('dist/sitemap.xml');
-assert.equal((sitemap.match(/<url>/g)||[]).length,635,'Keep canonical sitemap coverage stable');
+assert.equal((sitemap.match(/<url>/g)||[]).length,643,'Keep canonical sitemap coverage stable');
 let pages=0;
 for(const lang of ['lt','et','nl']){
  assert.ok(storiesFor(lang).length>=8,'Original guide collection must be preserved: '+lang);
@@ -55,4 +55,4 @@ for(const lang of ['lt','et','nl']){
  }
 }
 assert.equal(pages,6);
-console.log('PASS: six LT ET NL article refreshes; accurate localized sources, search, dates and all 635 existing sitemap URLs.');
+console.log('PASS: six LT ET NL article refreshes; accurate localized sources, search, dates and all 643 existing sitemap URLs.');
