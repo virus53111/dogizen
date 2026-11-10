@@ -4,7 +4,7 @@ import {everydayDiscoveries} from '../lib/everyday-discoveries.js';
 import {stories,languages} from '../lib/atlas-data.js';
 const read=p=>readFileSync('dist/'+p,'utf8');
 assert.equal(everydayDiscoveries.length,4);
-assert.equal(stories.length,114);
+assert.equal(stories.length,116);
 const covers=new Set();
 for(const s of everydayDiscoveries){
  assert.ok(s.sources.length>=4);
@@ -34,5 +34,5 @@ for(const s of everydayDiscoveries){
 assert.match(read('ru/guides/cloudy-glasses-dishwasher/index.html'),/не смешивайте уксус/);
 assert.match(read('ru/guides/freezer-frost-buildup-checklist/index.html'),/Не откалывайте лёд ножом/);
 assert.match(read('guides/freezer-frost-buildup-checklist/index.html'),/Never chip ice away with a knife/);
-assert.equal((read('sitemap.xml').match(/<url>/g)||[]).length,659);
-console.log('PASS: four substantive EN/RU everyday discoveries, distinct licensed photographs, safe appliance checks, search, schema and 659 canonical URLs.');
+assert.equal((read('sitemap.xml').match(/<url>/g)||[]).length,663);
+console.log('PASS: four substantive EN/RU everyday discoveries, distinct licensed photographs, safe appliance checks, search, schema and 663 canonical URLs.');
