@@ -8,7 +8,7 @@ import {expansionArticlesD} from '../lib/expansion-articles-d.js';
 import {expansionTopics,expansionIntros} from '../lib/atlas-expansion-topics.js';
 const added=[...expansionArticlesA,...expansionArticlesB,...expansionArticlesC,...expansionArticlesD];
 assert.equal(added.length,16);
-assert.equal(stories.length,110);
+assert.equal(stories.length,114);
 assert.equal(topics.length,17);
 assert.equal(languages.length,12);
 assert.equal(new Set(stories.map(x=>x.id)).size,stories.length,'Duplicate article slugs');
@@ -45,9 +45,9 @@ for(const x of added){
 }
 const sitemap=readFileSync('dist/sitemap.xml','utf8');
 const count=(sitemap.match(/<url>/g)||[]).length;
-assert.equal(count,651,'Sitemap must list only 651 actual, translated indexable pages');
+assert.equal(count,659,'Sitemap must list only 659 actual, translated indexable pages');
 assert.ok(sitemap.includes('/ru/topics/astronomy/'));
 assert.ok(sitemap.includes('/ru/topics/cooking/'));
 assert.ok(!sitemap.includes('/de/topics/astronomy/'));
 assert.ok(!sitemap.includes('/de/guides/moon-phases-explained/'));
-console.log('PASS expansion QA: 16 substantive bilingual guides, 2 sections with 12 translated introductions, 651 honest indexed URLs');
+console.log('PASS expansion QA: 16 substantive bilingual guides, 2 sections with 12 translated introductions, 659 honest indexed URLs');
