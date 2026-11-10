@@ -33,5 +33,5 @@ for(const s of stories.filter(x=>x.topic==='world-events'))for(const lang of ['e
 }
 const ru=read('ru/guides/florida-learjet-crash-nathalia-filgueiras-2026/index.html');
 assert.match(ru,/вторым пилотом/);assert.match(ru,/Причина катастрофы ещё не установлена/);assert.match(ru,/Это другой борт/);
-const sm=read('sitemap.xml');assert.equal((sm.match(/<url>/g)||[]).length,635);
+const sm=read('sitemap.xml');assert.equal((sm.match(/<url>/g)||[]).length,643);
 console.log('PASS: three sourced bilingual articles, licensed relevant photos, two NewsArticle editions per event, truthful dates and canonical SEO.');
