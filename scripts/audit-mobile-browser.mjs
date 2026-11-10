@@ -14,6 +14,7 @@ routes.push(
 routes.push('/ru/guides/krakow-shooting-november-2026/','/guides/krakow-shooting-november-2026/','/ru/topics/world-events/','/topics/world-events/');
 for(const id of ['florida-learjet-crash-nathalia-filgueiras-2026','phone-storage-full-safe-cleanup','why-autumn-leaves-change-colour'])for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+id+'/');
 for(const id of ['northern-lights-colours-explained','octopus-three-hearts-blue-blood','why-honey-crystallizes','why-planes-leave-white-trails'])for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+id+'/');
+for(const id of ["why-sea-is-salty", "double-rainbow-explained", "cloudy-glasses-dishwasher", "freezer-frost-buildup-checklist"])for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+id+'/');
 const sizes=[320,360,390,430,768];
 const {illustratedGuidesC}=await import('../lib/illustrated-guides-c.js');
 for(const article of illustratedGuidesC)for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+article.id+'/');
