@@ -12,6 +12,7 @@ routes.push(
  '/ru/guides/cloud-types-field-guide/','/ru/guides/thunderstorm-hiking-safety/','/ru/guides/beginner-stargazing-plan/','/ru/guides/bicycle-visibility-checklist/','/ru/guides/find-water-leaks-home/'
 );
 routes.push('/ru/guides/krakow-shooting-november-2026/','/guides/krakow-shooting-november-2026/','/ru/topics/world-events/','/topics/world-events/');
+for(const id of ['florida-learjet-crash-nathalia-filgueiras-2026','phone-storage-full-safe-cleanup','why-autumn-leaves-change-colour'])for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+id+'/');
 const sizes=[320,360,390,430,768];
 const {illustratedGuidesC}=await import('../lib/illustrated-guides-c.js');
 for(const article of illustratedGuidesC)for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+article.id+'/');

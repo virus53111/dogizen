@@ -41,7 +41,7 @@ for(const path of removed)assert.ok(!sitemap.includes('<loc>https://murdilimax.c
  'Removed classifieds entry in sitemap: '+path);
 assert.ok(!sitemap.includes('<loc>https://murdilimax.com/en/'),
  'Redirect-only alias is not a canonical sitemap page');
-assert.equal((sitemap.match(/<url>/g)||[]).length,629);
+assert.equal((sitemap.match(/<url>/g)||[]).length,635);
 const none=read('dist/lt/topics/construction/index.html');
 assert.match(none,/content="noindex,follow"/);
 assert.doesNotMatch(none,/<link rel="canonical"/,
