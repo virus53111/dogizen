@@ -4,10 +4,10 @@
 // Pinned commit ensures a reproducible, atomic release.
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-const COMMIT = 'f97fafee2479135ff10fd3438a7bdb5be328f197';
+const COMMIT = '1226ade5029cdb13e774eda4260c1fcfa4dcb2a7';
 const BASE = 'https://raw.githubusercontent.com/virus53111/Salik/' + COMMIT + '/';
 const files = [
-  'index.html','styles.css','app.js','app-v3.js','styles-v3.css','data.js','app-v4.js','styles-v4.css','data-v4.js','app-v5.js','styles-v5.css','app-v6.js','styles-v6.css','app-v7.js','styles-v7.css','app-v8.js','styles-v8.css','app-v9.js','styles-v9.css','house-3d-v1.js','app-v10.js','styles-v10.css','room-3d-v1.js','app-v11.js','styles-v11.css','app-v12.js','styles-v12.css','app-v13.js','styles-v13.css','article.css','favicon.svg',
+  'index.html','styles.css','app.js','app-v3.js','styles-v3.css','data.js','app-v4.js','styles-v4.css','data-v4.js','app-v5.js','styles-v5.css','app-v6.js','styles-v6.css','app-v7.js','styles-v7.css','app-v8.js','styles-v8.css','app-v9.js','styles-v9.css','house-3d-v1.js','app-v10.js','styles-v10.css','room-3d-v1.js','app-v11.js','styles-v11.css','app-v12.js','styles-v12.css','app-v13.js','styles-v13.css','app-v14.js','styles-v14.css','article.css','favicon.svg',
   'og.svg','robots.txt','sitemap.xml','site.webmanifest',
   'ru/index.html','metodika/index.html',
   'cenas/flizesana/index.html','cenas/krasosana/index.html',
