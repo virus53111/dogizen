@@ -1,8 +1,9 @@
 import {mkdir,writeFile,copyFile,rm} from 'node:fs/promises';
 import path from 'node:path';
 import {languages,stories,storiesFor,availableIn,topics,copy} from '../lib/atlas-data.js';
+import {freeTools} from '../lib/free-tools-2026.js';
 import {species} from '../lib/world-topics.js';
-import {home,guide,tool,category,speciesPage,trustPage,photoPromptGallery,notFound,url} from '../lib/atlas-site.js';
+import {home,guide,tool,freeTool,category,speciesPage,trustPage,photoPromptGallery,notFound,url} from '../lib/atlas-site.js';
 import {visualSpecies} from '../lib/species-atlas.js';
 import {bundlePhotographs} from './bundle-photographs.mjs';
 const root=path.resolve('dist');
@@ -12,7 +13,7 @@ await mkdir(root,{recursive:true});
 await bundlePhotographs({root,stories,topics});
 const write=async(file,body)=>{const dest=path.join(root,file);await mkdir(path.dirname(dest),{recursive:true});await writeFile(dest,body,'utf8')};
 const key='8f6c1e2a9b4d7f30a5c2e18d6b9f43a1';
-for(const file of ['site.css','atlas-visual.css','site.js','favicon.svg','robots.txt'])await copyFile(path.resolve('public',file),path.join(root,file));
+for(const file of ['site.css','atlas-visual.css','site.js','free-tools.css','free-tools.js','favicon.svg','robots.txt'])await copyFile(path.resolve('public',file),path.join(root,file));
 // Distinct AI generated examples are explicitly separated from authentic documentary guide photographs.
 await copyFile(path.resolve('public/ai-photo-prompts.css'),path.join(root,'ai-photo-prompts.css'));
 await mkdir(path.join(root,'ai-prompts'),{recursive:true});
@@ -40,6 +41,11 @@ for(const lang of languages){
     const k={percentage:'Percent',distance:'Convert',storage:'Storage'}[id];
     entries.push({type:'tool',title:copy[lang]['tool'+k],summary:copy[lang]['tool'+k+'Desc'],
       label:lang==='ru'?'Инструменты':'Tools',keywords:id,href:url(lang,'tools/'+id),image:''});
+  }
+  if(['en','ru'].includes(lang))for(const toolDef of freeTools){
+    entries.push({type:'tool',title:toolDef[lang].name,summary:toolDef[lang].description,
+      label:lang==='ru'?'Инструменты':'Tools',keywords:toolDef.id+' '+toolDef.en.name+' '+toolDef.ru.name,
+      href:url(lang,'tools/'+toolDef.id),image:''});
   }
   for(const topic of topics.filter(t=>storiesFor(lang).some(s=>s.topic===t.id)||visualSpecies.some(sp=>sp.group===t.id))){
     entries.push({type:'topic',title:topic[lang]||topic.en,summary:'',label:lang==='ru'?'Раздел':'Topic',
@@ -71,6 +77,10 @@ for(const lang of languages){
   for(const id of ['percentage','distance','storage']){
     await write(prefix+'tools/'+id+'/index.html',tool(lang,id));
     pages.push({lang,part:'tools/'+id,weight:'0.6'});
+  }
+  if(['en','ru'].includes(lang))for(const g of freeTools){
+    await write(prefix+'tools/'+g.id+'/index.html',freeTool(lang,g.id));
+    pages.push({lang,part:'tools/'+g.id,weight:'0.8',updated:'2026-11-11'});
   }
 }
 const site='https://murdilimax.com';
