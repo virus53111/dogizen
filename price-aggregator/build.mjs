@@ -4,15 +4,34 @@
 // Pinned commit ensures a reproducible, atomic release.
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-const COMMIT = '580f59db017c2891d613ba37a4fe09369c04e724';
+const COMMIT = '53da8e631c748f36379967772f93c822e7a1e914';
 const BASE = 'https://raw.githubusercontent.com/virus53111/Salik/' + COMMIT + '/';
 const files = [
-  'index.html','styles.css','app.js','app-v3.js','styles-v3.css','data.js','article.css','favicon.svg',
+  'index.html','styles.css','app.js','app-v3.js','styles-v3.css','data.js','app-v4.js','styles-v4.css','data-v4.js','article.css','favicon.svg',
   'og.svg','robots.txt','sitemap.xml','site.webmanifest',
   'ru/index.html','metodika/index.html',
   'cenas/flizesana/index.html','cenas/krasosana/index.html',
   'cenas/elektrika/index.html','cenas/laminats/index.html',
-  'cenas/santehnika/index.html','cenas/jumti/index.html'
+  'cenas/santehnika/index.html','cenas/jumti/index.html',
+  'darbi/sienas-griesti/index.html',
+  'darbi/flizu-darbi/index.html',
+  'darbi/gridas/index.html',
+  'darbi/elektromontaza/index.html',
+  'darbi/udens-un-kanalizacija/index.html',
+  'darbi/jumtu-darbi/index.html',
+  'darbi/fasades/index.html',
+  'darbi/labiekartosana/index.html',
+  'darbi/demontaza/index.html',
+  'darbi/zemes-darbi/index.html',
+  'darbi/pamati/index.html',
+  'darbi/konstrukcijas/index.html',
+  'darbi/apkure/index.html',
+  'darbi/ventilacija/index.html',
+  'darbi/logi-durvis/index.html',
+  'darbi/izolacija/index.html',
+  'darbi/projektesana/index.html',
+  'darbi/pakalpojumi/index.html',
+  'darbi/inzeniertikli/index.html'
 ];
 console.log('CenaRadar: downloading ' + files.length + ' versioned site files');
 const assets = await Promise.all(files.map(async path => {
