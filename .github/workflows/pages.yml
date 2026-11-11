@@ -65,6 +65,11 @@ jobs:
           node --check lib/high-intent-november-2026.js
           node --check lib/global-practical-guides-2026-a.js
           node --check lib/global-practical-guides-2026-b.js
+          node --check lib/seo-useful-guides-2026-a.js
+          node --check lib/seo-useful-guides-2026-b.js
+          node --check lib/seo-practical-growth-2026-a.js
+          node --check lib/seo-practical-growth-2026-hotspot.js
+          node --check lib/seo-practical-growth-2026-dishwasher.js
           node --check lib/practical-medicine-and-safety-2026-a.js
           node --check lib/practical-medicine-and-safety-2026-b.js
           node --check lib/ai-photo-prompt-gallery.js
@@ -89,6 +94,7 @@ jobs:
           node scripts/validate-new-answers-seo.mjs
           node scripts/validate-world-events.mjs
           node scripts/validate-guide-media.mjs
+          node scripts/validate-seo-practical-growth.mjs
           node scripts/validate-high-intent-guides.mjs
           node scripts/validate-global-practical-guides.mjs
           node scripts/validate-medical-safety-guides.mjs
