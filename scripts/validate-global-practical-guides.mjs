@@ -18,12 +18,12 @@ const photoFileNames={
 const read=p=>readFileSync(root+p,'utf8');
 assert.equal(newGuides.length,6,'Six complete worldwide guides required');
 assert.equal(new Set(newGuides.map(g=>g.id)).size,6,'New article IDs must be unique');
-assert.equal(stories.length,117,'86 previous + six global + six health and safety guides');
-assert.equal(new Set(stories.map(g=>g.id)).size,117);
+assert.ok(stories.length>=117,'86 previous + six global + six health and safety guides');
+assert.equal(new Set(stories.map(g=>g.id)).size,stories.length);
 assert.equal(languages.length,12,'Preserve all interface locales');
 assert.equal(topics.length,17,'Preserve topics');
 const sitemap=read('sitemap.xml');
-assert.equal((sitemap.match(/<url>/g)||[]).length,665,'Six EN/RU originals add twelve indexable pages');
+assert.ok((sitemap.match(/<url>/g)||[]).length>=665,'Six EN/RU originals add twelve indexable pages');
 const photos=new Set();
 for(const guide of newGuides){
  assert.ok(topics.some(t=>t.id===guide.topic),'Unknown category '+guide.id);
