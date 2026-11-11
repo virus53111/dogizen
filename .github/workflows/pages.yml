@@ -28,6 +28,7 @@ jobs:
           node --check lib/everyday-discoveries.js
           node --check lib/curious-world-answers.js
           node --check lib/atlas-data.js
+          node --check lib/free-tools-2026.js
           node --check lib/world-topics.js
           node --check lib/world-articles.js
           node --check lib/world-intros.js
@@ -77,6 +78,7 @@ jobs:
           node --check scripts/bundle-photographs.mjs
           node --check lib/atlas-site.js
           node --check public/site.js
+          node --check public/free-tools.js
           node scripts/build-atlas.mjs
           node scripts/validate-species-media.mjs
           node scripts/validate-species-experience.mjs
@@ -95,6 +97,7 @@ jobs:
           node scripts/validate-world-events.mjs
           node scripts/validate-guide-media.mjs
           node scripts/validate-seo-practical-growth.mjs
+          node scripts/validate-free-tools.mjs
           node scripts/validate-high-intent-guides.mjs
           node scripts/validate-global-practical-guides.mjs
           node scripts/validate-medical-safety-guides.mjs
