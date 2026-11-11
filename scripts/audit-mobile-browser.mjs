@@ -22,6 +22,9 @@ const {illustratedGuidesC}=await import('../lib/illustrated-guides-c.js');
 for(const article of illustratedGuidesC)for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+article.id+'/');
 routes.push(...['it','pt','pl'].map(lang=>'/'+lang+'/guides/ssd-vs-hdd/'));
 routes.push('/ai-photo-prompts/','/ru/ai-photo-prompts/');
+// Responsive regression coverage for the five new browser-only services.
+routes.push('/tools/qr-code-generator/','/ru/tools/qr-code-generator/','/ru/tools/compress-images/',
+ '/ru/tools/image-converter/','/ru/tools/merge-pdf/','/ru/tools/images-to-pdf/');
 const mime={'.html':'text/html; charset=utf-8','.css':'text/css; charset=utf-8','.js':'text/javascript; charset=utf-8','.json':'application/json; charset=utf-8','.svg':'image/svg+xml','.jpg':'image/jpeg','.webp':'image/webp'};
 const server=createServer(async(req,res)=>{
  try{
