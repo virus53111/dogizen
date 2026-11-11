@@ -22,6 +22,10 @@ const {illustratedGuidesC}=await import('../lib/illustrated-guides-c.js');
 for(const article of illustratedGuidesC)for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+article.id+'/');
 routes.push(...['it','pt','pl'].map(lang=>'/'+lang+'/guides/ssd-vs-hdd/'));
 routes.push('/ai-photo-prompts/','/ru/ai-photo-prompts/');
+// New original SEO how-to pages must have real photograph covers and no horizontal overflow.
+routes.push('/ru/guides/laptop-fan-loud-while-idle/','/ru/guides/turn-off-browser-notifications/',
+ '/ru/guides/remove-photo-location-metadata/','/ru/guides/indoor-humidity-ideal-range/',
+ '/ru/guides/offline-maps-without-internet/','/guides/offline-maps-without-internet/');
 // Responsive regression coverage for the five new browser-only services.
 routes.push('/tools/qr-code-generator/','/ru/tools/qr-code-generator/','/ru/tools/compress-images/',
  '/ru/tools/image-converter/','/ru/tools/merge-pdf/','/ru/tools/images-to-pdf/');
