@@ -4,10 +4,10 @@
 // Pinned commit ensures a reproducible, atomic release.
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-const COMMIT = 'e98250077871cacbd32a3db1899770e2b8294f95';
+const COMMIT = '45a2f27c83bca8ef57702be599e12bd390750c2d';
 const BASE = 'https://raw.githubusercontent.com/virus53111/Salik/' + COMMIT + '/';
 const files = [
-  'index.html','styles.css','app.js','app-v3.js','styles-v3.css','data.js','app-v4.js','styles-v4.css','data-v4.js','app-v5.js','styles-v5.css','app-v6.js','styles-v6.css','app-v7.js','styles-v7.css','article.css','favicon.svg',
+  'index.html','styles.css','app.js','app-v3.js','styles-v3.css','data.js','app-v4.js','styles-v4.css','data-v4.js','app-v5.js','styles-v5.css','app-v6.js','styles-v6.css','app-v7.js','styles-v7.css','app-v8.js','styles-v8.css','article.css','favicon.svg',
   'og.svg','robots.txt','sitemap.xml','site.webmanifest',
   'ru/index.html','metodika/index.html',
   'cenas/flizesana/index.html','cenas/krasosana/index.html',
@@ -31,7 +31,7 @@ const files = [
   'darbi/izolacija/index.html',
   'darbi/projektesana/index.html',
   'darbi/pakalpojumi/index.html',
-  'darbi/inzeniertikli/index.html'
+  'darbi/inzeniertikli/index.html','kalkulatori/majas-buvnieciba/index.html'
 ];
 console.log('CenaRadar: downloading ' + files.length + ' versioned site files');
 const assets = await Promise.all(files.map(async path => {
