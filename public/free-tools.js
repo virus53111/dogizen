@@ -122,7 +122,8 @@ if(kind==='qr-code-generator'){
   const name=$('#ft-qr-name').value.trim(),phone=$('#ft-qr-phone').value.trim(),email=$('#ft-qr-email').value.trim(),org=$('#ft-qr-org').value.trim();
   if(!name)throw Error(note('Enter a contact name.','Введите имя контакта.'));
   if(email&&(!email.includes('@')||/\s/.test(email)))throw Error(note('Check the email address.','Проверьте адрес электронной почты.'));
-  const lines=['BEGIN:VCARD','VERSION:3.0','FN:'+clean(name)];
+  const nameParts=name.trim().split(/\s+/);const family=nameParts.length>1?nameParts.pop():'';const given=nameParts.join(' ')||name;
+  const lines=['BEGIN:VCARD','VERSION:3.0','N:'+clean(family)+';'+clean(given)+';;;','FN:'+clean(name)];
   if(phone)lines.push('TEL;TYPE=CELL:'+clean(phone));
   if(email)lines.push('EMAIL:'+clean(email));
   if(org)lines.push('ORG:'+clean(org));
