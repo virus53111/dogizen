@@ -1,18 +1,22 @@
+// Regression checks for the reactivated CenaRadar domain. Keep the old test path for CI.
 import assert from 'node:assert/strict';
-import {readFileSync,existsSync} from 'node:fs';
-const read=path=>readFileSync(path,'utf8');
-for(const filename of ['dist/index.html','dist/404.html']){
- assert.ok(existsSync(filename),'Missing retired landing page: '+filename);
- const html=read(filename);
- assert.match(html,/CenaRadar/,'Retired-domain branding missing');
- assert.match(html,/noindex,nofollow/,'Retired page must not be indexed');
- assert.doesNotMatch(html,/murdilimax\.com/i,'Retired site must never link or forward to Murdilimax');
- assert.doesNotMatch(html,/<meta[^>]+http-equiv=["']refresh/i,'Meta redirect still active');
- assert.doesNotMatch(html,/location\.(?:replace|assign|href)/,'JavaScript redirect still active');
- assert.doesNotMatch(html,/<link[^>]+rel=["']canonical/i,'Retired pages must not canonicalize to a different site');
-}
-const robots=read('dist/robots.txt');
-assert.equal(robots,'User-agent: *\nDisallow: /\n');
-assert.equal(existsSync('dist/sitemap.xml'),false,'No active sitemap for retired domain');
-assert.equal(existsSync('dist/CNAME'),false,'Never claim a GitHub Pages custom domain from this build');
-console.log('PASS: retired CenaRadar static site has no redirect, cross-domain canonical, sitemap or MURDILIMAX link.');
+import { readFileSync, existsSync } from 'node:fs';
+const read=p=>readFileSync('dist/'+p,'utf8');
+const home=read('index.html');
+assert.match(home,/CenaRadar/);
+assert.match(home,/rel="canonical" href="https:\/\/cenaradar\.online\//);
+assert.doesNotMatch(home,/noindex|murdilimax\.com|http-equiv=["']refresh/i);
+assert.match(home,/id="price-mode"/);
+assert.match(home,/id="export-csv"/);
+assert.match(home,/id="floating-estimate"/);
+const app=read('app.js');
+assert.doesNotMatch(app,/class="pc-source"/);
+assert.match(app,/function exportCsv/);
+assert.match(app,/function applyTemplate/);
+assert.match(read('robots.txt'),/Sitemap: https:\/\/cenaradar\.online\/sitemap\.xml/);
+assert.match(read('sitemap.xml'),/<urlset/);
+assert.ok(existsSync('dist/ru/index.html'));
+assert.ok(existsSync('dist/cenas/flizesana/index.html'));
+assert.equal(existsSync('dist/CNAME'),false);
+assert.match(read('404.html'),/noindex/);
+console.log('PASS: CenaRadar is indexable, has its own canonical and working catalogue assets, no redirect to Murdilimax.');

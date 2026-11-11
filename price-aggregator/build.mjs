@@ -4,7 +4,7 @@
 // Pinned commit ensures a reproducible, atomic release.
 import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
-const COMMIT = '9e57671c75726c872c64f693481140306c18df1d';
+const COMMIT = '67174928f9cc301bbc4bc6141239de8783c122ae';
 const BASE = 'https://raw.githubusercontent.com/virus53111/Salik/' + COMMIT + '/';
 const files = [
   'index.html','styles.css','app.js','data.js','article.css','favicon.svg',
