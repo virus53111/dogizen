@@ -1,6 +1,6 @@
 # MURDILIMAX — 30-topic SEO editorial roadmap (November 2026)
 
-This is a research-led editorial backlog, **not evidence of search volume or ranking**. Eleven complete bilingual guides are integrated in the site's source (final deployment may still be pending); nineteen topics remain as editorial ideas until independently researched, fact-checked and fully written in EN/RU. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
+This is a research-led editorial backlog, **not evidence of search volume or ranking**. Sixteen complete bilingual guides are integrated in the site's source (deployment of latest five pending checks); fourteen topics remain editorial ideas until researched and fully written in EN/RU. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
 
 Each published guide should have one natural main search intent, a distinct title and description, practical H2 sections, primary-source citations, relevant photos with honest alt text, related internal links, canonical and correct hreflang, Article/BreadcrumbList structured data, and sitemap inclusion. Avoid keyword stuffing and factual overreach. Keep existing site-wide architecture.
 
@@ -30,12 +30,12 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Не удаётся раздать интернет с телефона на ноутбук? Проверяем мобильные данные, пароль, диапазон Wi-Fi и настройки.
 - **Category:** tech
 
-### laptop-fan-loud-while-idle — PLANNED
+### laptop-fan-loud-while-idle — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** laptop fan loud idle
-- **EN SEO title:** Why Is My Laptop Fan Loud When Nothing Is Open?
-- **EN meta description:** A laptop fan running loudly at idle can signal updates, background tasks, dust or heat. Learn safe checks.
-- **RU SEO title:** Почему ноутбук шумит без открытых программ
-- **RU meta description:** Вентилятор ноутбука шумит в простое? Проверьте фоновые задачи, обновления, температуру и вентиляцию.
+- **EN SEO title:** Laptop Fan Loud When Idle? 7 Safe Checks
+- **EN meta description:** Laptop fan noisy even with no apps open? Check Task Manager, background updates, vents and power modes before attempting repairs.
+- **RU SEO title:** Почему ноутбук шумит в простое: 7 проверок
+- **RU meta description:** Ноутбук шумит, хотя программы закрыты? Проверьте загрузку процессора, обновления Windows, вентиляцию и режим питания.
 - **Category:** tech
 
 ### wifi-connected-no-internet-windows — IN SOURCE (DEPLOYMENT PENDING)
@@ -72,20 +72,20 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Пошагово переносим фото с телефона на Windows по USB и без провода, проверяем копии и не теряем снимки.
 - **Category:** digital
 
-### turn-off-browser-notifications — PLANNED
+### turn-off-browser-notifications — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** turn off website notifications
-- **EN SEO title:** How to Turn Off Website Notifications in Chrome and Edge
-- **EN meta description:** Stop unwanted website notification pop-ups, remove suspicious permissions and keep useful alerts.
+- **EN SEO title:** Stop Website Notifications in Chrome & Edge
+- **EN meta description:** Annoying website notifications popping up? Block specific sites in Chrome, Edge and Android without losing bookmarks or cookies.
 - **RU SEO title:** Как отключить уведомления сайтов в Chrome и Edge
-- **RU meta description:** Убираем навязчивые уведомления сайтов и проверяем разрешения браузера без удаления нужных данных.
+- **RU meta description:** Постоянно приходят уведомления сайтов? Отключите их в Chrome, Edge и Android без удаления закладок, паролей и истории.
 - **Category:** digital
 
-### remove-photo-location-metadata — PLANNED
+### remove-photo-location-metadata — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** remove location from photo
-- **EN SEO title:** How to Remove Location Data From Photos Before Sharing
-- **EN meta description:** Before posting pictures, inspect GPS metadata and learn how to share a copy without location details.
-- **RU SEO title:** Как удалить геолокацию из фотографии
-- **RU meta description:** Проверяем GPS-метаданные снимка и удаляем сведения о местоположении перед публикацией.
+- **EN SEO title:** Remove GPS Location From Photos Before Sharing
+- **EN meta description:** Learn how to check photo GPS metadata and share pictures without location on iPhone, Android or Windows. Understand EXIF privacy limits.
+- **RU SEO title:** Как удалить геолокацию из фото: iPhone и Android
+- **RU meta description:** Узнайте, как проверить GPS-данные фотографии и отправить снимок без координат на iPhone, Android или Windows. Что важно знать об EXIF.
 - **Category:** digital
 
 ## Home
@@ -138,12 +138,12 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Почему капает смеситель? Проверяем тип крана, картридж, уплотнения и необходимость ремонта.
 - **Category:** construction
 
-### indoor-humidity-ideal-range — PLANNED
+### indoor-humidity-ideal-range — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** ideal indoor humidity
-- **EN SEO title:** Home Humidity Too High or Low? How to Measure It
-- **EN meta description:** Learn how a hygrometer works, why indoor humidity changes and safe ways to reduce condensation.
-- **RU SEO title:** Какая влажность должна быть дома
-- **RU meta description:** Как измерить влажность гигрометром, уменьшить сырость и не пересушивать воздух.
+- **EN SEO title:** Ideal Indoor Humidity: 30–50% and What to Check
+- **EN meta description:** What humidity should a home have? Learn the EPA's 30–50% ideal range, how to use a hygrometer and how to reduce condensation and mold risk.
+- **RU SEO title:** Влажность воздуха дома: норма 30–50% и советы
+- **RU meta description:** Какая влажность должна быть дома? Рекомендации EPA, измерение гигрометром, борьба с конденсатом и сыростью без опасных методов.
 - **Category:** construction
 
 ## Astronomy
@@ -244,12 +244,12 @@ Each published guide should have one natural main search intent, a distinct titl
 
 ## Travel
 
-### offline-maps-without-internet — PLANNED
+### offline-maps-without-internet — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** offline maps without internet
-- **EN SEO title:** How to Use Offline Maps Without Internet When Traveling
-- **EN meta description:** Download maps before a trip, test GPS offline and understand what navigation features still need data.
-- **RU SEO title:** Как пользоваться картами без интернета
-- **RU meta description:** Скачиваем офлайн-карты до поездки, проверяем GPS и узнаём, какие функции без сети недоступны.
+- **EN SEO title:** How to Download Google Maps for Offline Navigation
+- **EN meta description:** Use Google Maps without internet: download a map on Android or iPhone, find it before a trip, and learn what offline driving can and cannot do.
+- **RU SEO title:** Google Maps без интернета: как скачать офлайн-карты
+- **RU meta description:** Как пользоваться Google Maps без интернета? Скачайте карту на Android или iPhone, проверьте маршрут и узнайте ограничения офлайн-режима.
 - **Category:** travel
 
 ### lost-luggage-airport-what-to-do — PLANNED
