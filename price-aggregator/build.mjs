@@ -1,21 +1,34 @@
-// Legacy CenaRadar static build. The old domain is intentionally retired.
-// This build must never forward visitors or search engines to murdilimax.com;
-// the modern MURDILIMAX encyclopedia lives on the separate main branch.
-import {mkdirSync,rmSync,writeFileSync} from 'node:fs';
-rmSync('dist',{recursive:true,force:true});
-mkdirSync('dist',{recursive:true});
-const unavailable=`<!doctype html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="robots" content="noindex,nofollow">
-<title>CenaRadar — сайт отключён</title>
-<style>html{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#263238;background:#f7f9fb}body{max-width:600px;margin:16vh auto;padding:24px}h1{font-size:clamp(2rem,7vw,3rem)}p{font-size:1.1rem;line-height:1.7;color:#4f5962}</style>
-</head>
-<body><main><h1>CenaRadar больше не работает</h1><p>Этот старый проект отключён. Домен больше не перенаправляет посетителей на другой сайт.</p></main></body>
-</html>`;
-writeFileSync('dist/index.html',unavailable);
-writeFileSync('dist/404.html',unavailable);
-writeFileSync('dist/robots.txt','User-agent: *\nDisallow: /\n');
-console.log('CenaRadar legacy site disabled; no automatic redirects and no sitemap.');
+// CenaRadar static build for the existing cenaradar.online Render service.
+// Site source is maintained in the independent public repo virus53111/Salik.
+// This build only writes price-aggregator/dist; it does not touch MurdiliMax.
+// Pinned commit ensures a reproducible, atomic release.
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+const COMMIT = '9e57671c75726c872c64f693481140306c18df1d';
+const BASE = 'https://raw.githubusercontent.com/virus53111/Salik/' + COMMIT + '/';
+const files = [
+  'index.html','styles.css','app.js','data.js','article.css','favicon.svg',
+  'og.svg','robots.txt','sitemap.xml','site.webmanifest',
+  'ru/index.html','metodika/index.html',
+  'cenas/flizesana/index.html','cenas/krasosana/index.html',
+  'cenas/elektrika/index.html','cenas/laminats/index.html',
+  'cenas/santehnika/index.html','cenas/jumti/index.html'
+];
+console.log('CenaRadar: downloading ' + files.length + ' versioned site files');
+const assets = await Promise.all(files.map(async path => {
+  const res = await fetch(BASE + path, { headers: { 'User-Agent': 'CenaRadar-Render-Builder' }, signal: AbortSignal.timeout(30000) });
+  if (!res.ok) throw new Error('Cannot download ' + path + ': HTTP ' + res.status);
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (!buf.length) throw new Error('Empty file: ' + path);
+  return { path, buf };
+}));
+// Only replace the publish directory after ALL files have been downloaded.
+rmSync('dist', { recursive: true, force: true });
+mkdirSync('dist', { recursive: true });
+for (const { path, buf } of assets) {
+  const full = join('dist', path);
+  mkdirSync(dirname(full), { recursive: true });
+  writeFileSync(full, buf);
+}
+writeFileSync('dist/404.html', '<!doctype html><html lang="lv"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>404 — CenaRadar</title><body style="font:16px system-ui;background:#121b15;color:#fff;text-align:center;padding:15vh 20px"><h1 style="font-size:64px">404</h1><h2>Lapa nav atrasta</h2><p><a style="color:#c6f462" href="/">Atgriezties CenaRadar sākumā ↗</a></p></body></html>\n');
+console.log('CenaRadar deployed from GitHub commit ' + COMMIT + ', ' + assets.length + ' assets. robots.txt and sitemap.xml are live.');
