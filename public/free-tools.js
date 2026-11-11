@@ -112,16 +112,28 @@ function wireOrder(fileInput){
  return ()=>files.slice();
 }
 if(kind==='qr-code-generator'){
- const mode=$('#ft-qr-mode'),textField=$('#ft-qr-text'),wifiField=$('#ft-qr-wifi'),make=$('#ft-qr-generate'),png=$('#ft-qr-png'),svg=$('#ft-qr-svg');
+ const mode=$('#ft-qr-mode'),textField=$('#ft-qr-text'),wifiField=$('#ft-qr-wifi'),contactField=$('#ft-qr-contact'),make=$('#ft-qr-generate'),png=$('#ft-qr-png'),svg=$('#ft-qr-svg');
  let pngBlob=null,svgBlob=null;
- mode.addEventListener('change',()=>{const isWifi=mode.value==='wifi';textField.hidden=isWifi;wifiField.hidden=!isWifi;});
+ mode.addEventListener('change',()=>{const isWifi=mode.value==='wifi',isContact=mode.value==='contact';textField.hidden=isWifi||isContact;wifiField.hidden=!isWifi;contactField.hidden=!isContact;});
  const wifiEscape=s=>s.replace(/([\\;,:"])/g,'\\$1');
  function getPayload(){
-  if(mode.value!=='wifi')return $('#ft-qr-content').value.trim();
-  const ssid=$('#ft-qr-ssid').value,pwd=$('#ft-qr-password').value,security=$('#ft-qr-security').value;
-  if(!ssid.trim())throw Error(note('Enter Wi-Fi name.','Введите имя Wi-Fi.'));
-  return 'WIFI:T:'+security+';S:'+wifiEscape(ssid)+';P:'+(security==='nopass'?'':wifiEscape(pwd))+';;';
+ if(mode.value==='contact'){
+  const clean=value=>value.replace(/\r?\n/g,' ').trim().replace(/([\\,;])/g,'\\$1');
+  const name=$('#ft-qr-name').value.trim(),phone=$('#ft-qr-phone').value.trim(),email=$('#ft-qr-email').value.trim(),org=$('#ft-qr-org').value.trim();
+  if(!name)throw Error(note('Enter a contact name.','Введите имя контакта.'));
+  if(email&&(!email.includes('@')||/\s/.test(email)))throw Error(note('Check the email address.','Проверьте адрес электронной почты.'));
+  const lines=['BEGIN:VCARD','VERSION:3.0','FN:'+clean(name)];
+  if(phone)lines.push('TEL;TYPE=CELL:'+clean(phone));
+  if(email)lines.push('EMAIL:'+clean(email));
+  if(org)lines.push('ORG:'+clean(org));
+  lines.push('END:VCARD');
+  return lines.join('\r\n');
  }
+ if(mode.value!=='wifi')return $('#ft-qr-content').value.trim();
+ const ssid=$('#ft-qr-ssid').value,pwd=$('#ft-qr-password').value,security=$('#ft-qr-security').value;
+ if(!ssid.trim())throw Error(note('Enter Wi-Fi name.','Введите имя Wi-Fi.'));
+ return 'WIFI:T:'+security+';S:'+wifiEscape(ssid)+';P:'+(security==='nopass'?'':wifiEscape(pwd))+';;';
+}
  make.addEventListener('click',()=>withBusy(make,async()=>{
   png.disabled=true;svg.disabled=true;pngBlob=null;svgBlob=null;
   const payload=getPayload();
