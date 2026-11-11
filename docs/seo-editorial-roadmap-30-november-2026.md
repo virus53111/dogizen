@@ -1,6 +1,6 @@
 # MURDILIMAX — 30-topic SEO editorial roadmap (November 2026)
 
-This is a research-led editorial backlog, **not evidence of search volume or ranking**. Six complete bilingual guides are integrated in the site's source; remaining topics are ideas only until independent research, factual review and EN/RU texts are complete. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
+This is a research-led editorial backlog, **not evidence of search volume or ranking**. Eleven complete bilingual guides are integrated in the site's source (final deployment may still be pending); nineteen topics remain as editorial ideas until independently researched, fact-checked and fully written in EN/RU. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
 
 Each published guide should have one natural main search intent, a distinct title and description, practical H2 sections, primary-source citations, relevant photos with honest alt text, related internal links, canonical and correct hreflang, Article/BreadcrumbList structured data, and sitemap inclusion. Avoid keyword stuffing and factual overreach. Keep existing site-wide architecture.
 
@@ -14,7 +14,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Наушники подключены по Bluetooth, но молчат? Проверьте вывод звука, громкость, повторное сопряжение и драйверы.
 - **Category:** tech
 
-### usb-drive-not-showing-windows — PLANNED
+### usb-drive-not-showing-windows — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** usb drive not showing windows
 - **EN SEO title:** USB Drive Not Showing Up in Windows? Safe Fixes
 - **EN meta description:** Flash drive missing in File Explorer? Check another port, Disk Management and drive letters without formatting away data.
@@ -22,7 +22,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Флешка не появляется в проводнике? Проверьте порт, Управление дисками и букву диска без потери данных.
 - **Category:** tech
 
-### phone-hotspot-not-working-laptop — PLANNED
+### phone-hotspot-not-working-laptop — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** laptop won't connect to hotspot
 - **EN SEO title:** Laptop Won't Connect to Phone Hotspot? What to Check
 - **EN meta description:** Fix a laptop that cannot connect to an Android or iPhone hotspot: data, password, frequency and network checks.
@@ -38,7 +38,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Вентилятор ноутбука шумит в простое? Проверьте фоновые задачи, обновления, температуру и вентиляцию.
 - **Category:** tech
 
-### wifi-connected-no-internet-windows — PLANNED
+### wifi-connected-no-internet-windows — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** wifi connected no internet windows
 - **EN SEO title:** Wi-Fi Connected but No Internet in Windows: Fixes
 - **EN meta description:** Connected to Wi-Fi but websites will not load? Separate router, DNS and device problems without random resets.
@@ -64,7 +64,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Телефон стал медленно заряжаться? Проверьте кабель, блок питания, разъём, температуру и настройки батареи.
 - **Category:** digital
 
-### transfer-photos-android-to-windows — PLANNED
+### transfer-photos-android-to-windows — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** transfer photos android to pc
 - **EN SEO title:** How to Transfer Android Photos to a Windows PC
 - **EN meta description:** Move photos from Android to Windows by USB or wireless transfer, then verify copies before deleting anything.
@@ -106,7 +106,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Холодильник гудит, но внутри тепло? Проверьте температуру, вентиляцию, дверь и сохранность продуктов.
 - **Category:** construction
 
-### dishwasher-not-draining — PLANNED
+### dishwasher-not-draining — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** dishwasher not draining
 - **EN SEO title:** Dishwasher Not Draining? Safe First Checks
 - **EN meta description:** Dishwasher full of water after a cycle? Check filter, hose and error display before calling service.
