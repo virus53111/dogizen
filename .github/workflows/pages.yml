@@ -22,6 +22,7 @@ jobs:
         run: |
           node --check lib/world-events-2026.js
           node --check lib/aviation-and-useful-answers.js
+          node --check lib/practical-clothing-care.js
           node --check lib/eyeglass-care.js
           node --check lib/moon-and-penguins.js
           node --check lib/everyday-wonders.js
@@ -109,6 +110,7 @@ jobs:
           node scripts/validate-it-pt-pl-editorial.mjs
           node scripts/validate-lt-et-nl-editorial.mjs
           node scripts/validate-illustrated-guides.mjs
+          node scripts/validate-practical-clothing-care.mjs
           node scripts/validate-moon-and-penguins.mjs
           node scripts/validate-everyday-wonders.mjs
           node scripts/validate-everyday-discoveries.mjs
