@@ -22,6 +22,10 @@ const {illustratedGuidesC}=await import('../lib/illustrated-guides-c.js');
 for(const article of illustratedGuidesC)for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+article.id+'/');
 routes.push(...['it','pt','pl'].map(lang=>'/'+lang+'/guides/ssd-vs-hdd/'));
 routes.push('/ai-photo-prompts/','/ru/ai-photo-prompts/');
+// Check new bilingual article templates at mobile widths, including portrait photographs.
+routes.push('/ru/guides/why-bluetooth-keeps-disconnecting/','/ru/guides/kettle-limescale-cleaning/',
+ '/ru/guides/led-bulbs-flickering-causes/','/ru/guides/why-bananas-turn-brown/',
+ '/ru/guides/why-cats-purr-science/','/guides/why-cats-purr-science/');
 // New original SEO how-to pages must have real photograph covers and no horizontal overflow.
 routes.push('/ru/guides/laptop-fan-loud-while-idle/','/ru/guides/turn-off-browser-notifications/',
  '/ru/guides/remove-photo-location-metadata/','/ru/guides/indoor-humidity-ideal-range/',
