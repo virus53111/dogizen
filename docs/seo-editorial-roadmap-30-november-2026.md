@@ -1,6 +1,6 @@
 # MURDILIMAX — 30-topic SEO editorial roadmap (November 2026)
 
-This is a research-led editorial backlog, **not evidence of search volume or ranking**. Twenty-one complete bilingual guides are published in EN and RU on MURDILIMAX and verified live after GitHub Pages deployment; nine topics remain editorial ideas until independently researched and written in EN/RU. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
+This is a research-led editorial backlog, **not evidence of search volume or ranking**. Twenty-one bilingual guides have been verified live, with five additional original guides integrated into source pending deployment; four more topics remain for research and writing. Do not confuse source integration with live publication. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
 
 Each published guide should have one natural main search intent, a distinct title and description, practical H2 sections, primary-source citations, relevant photos with honest alt text, related internal links, canonical and correct hreflang, Article/BreadcrumbList structured data, and sitemap inclusion. Avoid keyword stuffing and factual overreach. Keep existing site-wide architecture.
 
@@ -130,12 +130,12 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Мигает светодиодная лампа в квартире? Проверьте совместимость с диммером, состояние лампы и опасные признаки неполадок проводки.
 - **Category:** construction
 
-### faucet-dripping-repair-basics — PLANNED
+### faucet-dripping-repair-basics — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** faucet dripping
-- **EN SEO title:** Why Is a Faucet Dripping? What You Can Check
-- **EN meta description:** Identify a dripping tap, common washer and cartridge problems and the point to call a plumber.
-- **RU SEO title:** Капает кран: причины и безопасные проверки
-- **RU meta description:** Почему капает смеситель? Проверяем тип крана, картридж, уплотнения и необходимость ремонта.
+- **EN SEO title:** Faucet Dripping? Causes, Safe Checks and Repair
+- **EN meta description:** A kitchen or bathroom faucet keeps dripping after shutoff? Learn how to identify cartridge, washer and seal issues safely before repair.
+- **RU SEO title:** Капает кран: причины, проверки и безопасный ремонт
+- **RU meta description:** Кухонный или ванной кран капает после закрытия? Как проверить картридж, прокладку, уплотнения и когда нужен сантехник.
 - **Category:** construction
 
 ### indoor-humidity-ideal-range — PUBLISHED
@@ -166,12 +166,12 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Как образуется туман, почему он появляется утром и в низинах, чем отличается от облака и когда рассеивается?
 - **Category:** nature
 
-### why-rain-smells-good-petrichor — PLANNED
+### why-rain-smells-good-petrichor — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** why does rain smell good
 - **EN SEO title:** Why Does Rain Smell So Good? Petrichor Explained
-- **EN meta description:** The smell after rain has a scientific name: petrichor. Discover the role of soil compounds and droplets.
-- **RU SEO title:** Почему после дождя пахнет свежестью
-- **RU meta description:** Что такое петрикор и откуда берётся знакомый запах земли после первых капель дождя.
+- **EN meta description:** Why does the air smell earthy after rain? Discover petrichor, geosmin from soil microbes, plant oils and how raindrops lift aromas into the air.
+- **RU SEO title:** Почему пахнет после дождя: петрикор и геосмин
+- **RU meta description:** Откуда берётся запах земли после дождя? Рассказываем о петрикоре, геосмине, растительных маслах и аэрозолях из капель дождя.
 - **Category:** nature
 
 ### why-lightning-zigzags — PLANNED
@@ -208,20 +208,20 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Почему на банане появляются коричневые пятна и чернеет кожура? Объясняем созревание, этилен, холод и способы хранения.
 - **Category:** cooking
 
-### storing-fresh-mushrooms — PLANNED
+### storing-fresh-mushrooms — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** how to store mushrooms
-- **EN SEO title:** How to Store Fresh Mushrooms in the Fridge
-- **EN meta description:** Keep store-bought mushrooms fresher with airflow, sensible packaging and safe signs of spoilage.
-- **RU SEO title:** Как хранить свежие шампиньоны в холодильнике
-- **RU meta description:** Как хранить магазинные грибы, не допускать слизи и понимать, когда продукт лучше выбросить.
+- **EN SEO title:** How to Store Fresh Mushrooms: Fridge and Cleaning
+- **EN meta description:** Keep store-bought mushrooms fresher with the right fridge temperature, original packaging or a paper bag, and safe cleaning before cooking.
+- **RU SEO title:** Как хранить шампиньоны: холодильник и срок хранения
+- **RU meta description:** Как хранить свежие грибы в холодильнике, нужна ли бумажная упаковка, когда мыть и по каким признакам шампиньоны следует выбросить.
 - **Category:** cooking
 
-### avocado-turns-brown — PLANNED
+### avocado-turns-brown — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** why avocado turns brown
-- **EN SEO title:** Why Does Cut Avocado Turn Brown? What Helps
-- **EN meta description:** Learn why avocado flesh oxidizes, what slows browning and when to discard spoiled avocado.
-- **RU SEO title:** Почему авокадо темнеет после разрезания
-- **RU meta description:** Почему авокадо буреет на воздухе и какие способы хранения действительно помогают.
+- **EN SEO title:** Why Does Avocado Turn Brown? Easy Storage Tips
+- **EN meta description:** Cut avocado turns brown within hours? Learn the oxidation science, how lemon and airtight storage help, and when browning means spoilage.
+- **RU SEO title:** Почему авокадо темнеет: как хранить разрезанный
+- **RU meta description:** Разрезали авокадо, а он стал коричневым? Объясняем окисление, лимонный сок, хранение в холодильнике и признаки порчи.
 - **Category:** cooking
 
 ## Wildlife
@@ -234,12 +234,12 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Почему кошка мурлычет от удовольствия, при кормлении котят и даже при боли? Как возникает звук и почему мурлыканье не всегда значит радость.
 - **Category:** wildlife
 
-### why-birds-fly-v-formation — PLANNED
+### why-birds-fly-v-formation — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** why birds fly in v formation
-- **EN SEO title:** Why Do Birds Fly in a V Formation?
-- **EN meta description:** Discover how some migrating birds use formation flight and how scientists study energy saving.
-- **RU SEO title:** Почему птицы летят клином: объяснение
-- **RU meta description:** Почему гуси и другие птицы летят буквой V и как расположение в стае влияет на полёт.
+- **EN SEO title:** Why Do Birds Fly in a V Formation? Science Explained
+- **EN meta description:** Why do geese and cranes fly in a V? Discover the aerodynamics of wingtip upwash, energy savings, leader changes and what research shows.
+- **RU SEO title:** Почему птицы летят клином: аэродинамика и наука
+- **RU meta description:** Почему гуси и журавли летят буквой V? Объясняем экономию энергии, воздушные потоки от крыльев, смену ведущих и научные исследования.
 - **Category:** wildlife
 
 ## Travel
