@@ -38,7 +38,7 @@ for(const lang of ['en','ru']){
  assert.ok(cat.includes('all rights reserved'),'Personal photo rights remain '+lang);
  const commons=read(prefix+'guides/why-do-cats-purr/index.html');
  assert.ok(commons.includes('Wikimedia Commons'),'Commons author and license remains '+lang);
- const species=read(prefix+'species/grey-wolf/index.html');
+ const species=read(prefix+'species/amanita-phalloides/index.html');
  assert.ok(species.includes('v-detail-image'),'Species photo has its caption '+lang);
 }
 console.log('PASS: '+credited+' article photo attributions retained below clean cover images; owner rights, Commons authors and species captions remain, including mobile responsive ratios.');
