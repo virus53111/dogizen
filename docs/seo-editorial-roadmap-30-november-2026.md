@@ -1,6 +1,6 @@
 # MURDILIMAX — 30-topic SEO editorial roadmap (November 2026)
 
-This is a research-led editorial backlog, **not evidence of search volume or ranking**. Sixteen complete bilingual guides are integrated in the site's source (deployment of latest five pending checks); fourteen topics remain editorial ideas until researched and fully written in EN/RU. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
+This is a research-led editorial backlog, **not evidence of search volume or ranking**. Twenty-one complete bilingual guides are integrated in the site's source (latest five pending GitHub Pages deployment); nine topics remain editorial ideas until independently researched and written in EN/RU. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
 
 Each published guide should have one natural main search intent, a distinct title and description, practical H2 sections, primary-source citations, relevant photos with honest alt text, related internal links, canonical and correct hreflang, Article/BreadcrumbList structured data, and sitemap inclusion. Avoid keyword stuffing and factual overreach. Keep existing site-wide architecture.
 
@@ -46,12 +46,12 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Компьютер подключён к Wi-Fi, но сайты не открываются? Как проверить роутер, DNS и соединение.
 - **Category:** tech
 
-### why-bluetooth-keeps-disconnecting — PLANNED
+### why-bluetooth-keeps-disconnecting — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** bluetooth keeps disconnecting
-- **EN SEO title:** Bluetooth Keeps Disconnecting? Causes and Fixes
-- **EN meta description:** Headphones or mouse disconnecting repeatedly? Check interference, battery, multipoint pairing and drivers.
-- **RU SEO title:** Bluetooth постоянно отключается: причины и решения
-- **RU meta description:** Наушники или мышь теряют Bluetooth-соединение? Проверяем помехи, заряд, устройства и драйверы.
+- **EN SEO title:** Bluetooth Keeps Disconnecting? 7 Checks That Help
+- **EN meta description:** Bluetooth headphones or mouse keep disconnecting? Check charge, interference, pairing, power saving and Windows drivers without unsafe resets.
+- **RU SEO title:** Bluetooth постоянно отключается: 7 проверок
+- **RU meta description:** Bluetooth-наушники или мышь теряют связь? Проверьте заряд, помехи, энергосбережение, сопряжение и драйверы Windows без сброса сети.
 - **Category:** tech
 
 ## Digital life
@@ -114,20 +114,20 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** После мойки осталась вода? Проверяем фильтр, сливной шланг и код ошибки безопасно.
 - **Category:** construction
 
-### kettle-limescale-cleaning — PLANNED
+### kettle-limescale-cleaning — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** descale electric kettle
 - **EN SEO title:** How to Descale an Electric Kettle Safely
-- **EN meta description:** Remove kettle limescale using manufacturer-approved methods and learn when not to use household acids.
-- **RU SEO title:** Как безопасно убрать накипь из чайника
-- **RU meta description:** Как очистить электрочайник от накипи и не повредить нагреватель, пластик и уплотнения.
+- **EN meta description:** White chalky buildup in your kettle? Learn how to remove limescale using a maker-approved descaler and avoid damaging the heating element.
+- **RU SEO title:** Как очистить электрочайник от накипи без вреда
+- **RU meta description:** Белая накипь в электрочайнике? Узнайте, как безопасно удалить известковые отложения, выбрать средство и не испортить прибор.
 - **Category:** construction
 
-### led-bulbs-flickering-causes — PLANNED
+### led-bulbs-flickering-causes — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** led lights flickering
-- **EN SEO title:** Why Do LED Lights Flicker? Common Causes
-- **EN meta description:** LED bulb flickering or flashing? Check bulb compatibility and dimmers, and know when an electrician is needed.
-- **RU SEO title:** Почему мигают светодиодные лампы
-- **RU meta description:** Разбираем совместимость ламп и диммеров, качество контактов и признаки опасной электропроводки.
+- **EN SEO title:** Why Do LED Lights Flicker? Safe Checks & Causes
+- **EN meta description:** LED light flickering at home? Check dimmer compatibility, the bulb and power conditions, and learn which warning signs need an electrician.
+- **RU SEO title:** Почему мигает LED-лампа: причины и что делать
+- **RU meta description:** Мигает светодиодная лампа в квартире? Проверьте совместимость с диммером, состояние лампы и опасные признаки неполадок проводки.
 - **Category:** construction
 
 ### faucet-dripping-repair-basics — PLANNED
@@ -200,12 +200,12 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Белые сухие участки на замороженных продуктах: что происходит и как защитить вкус при хранении.
 - **Category:** cooking
 
-### why-bananas-turn-brown — PLANNED
+### why-bananas-turn-brown — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** why do bananas turn brown
-- **EN SEO title:** Why Do Bananas Turn Brown? Ripening and Storage
-- **EN meta description:** Why banana peels develop brown spots, how ethylene speeds ripening and when refrigeration can help.
-- **RU SEO title:** Почему бананы темнеют и как их хранить
-- **RU meta description:** Почему кожура бананов покрывается пятнами и как замедлить созревание без сомнительных лайфхаков.
+- **EN SEO title:** Why Do Bananas Turn Brown? Science & Storage Tips
+- **EN meta description:** Why do bananas develop brown spots or black peels? Learn how ethylene, enzymes and cold affect ripening and how to store them well.
+- **RU SEO title:** Почему бананы темнеют: причины и хранение
+- **RU meta description:** Почему на банане появляются коричневые пятна и чернеет кожура? Объясняем созревание, этилен, холод и способы хранения.
 - **Category:** cooking
 
 ### storing-fresh-mushrooms — PLANNED
@@ -226,12 +226,12 @@ Each published guide should have one natural main search intent, a distinct titl
 
 ## Wildlife
 
-### why-cats-purr-science — PLANNED
+### why-cats-purr-science — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** why do cats purr
-- **EN SEO title:** Why Do Cats Purr? Meaning, Science and Myths
-- **EN meta description:** Cats purr when content, seeking attention or under stress. Explore what research can and cannot explain.
-- **RU SEO title:** Почему кошки мурлыкают: наука и мифы
-- **RU meta description:** Мурлыканье означает не только удовольствие. Разбираем общение котят, поведение и исследования.
+- **EN SEO title:** Why Do Cats Purr? Happiness, Stress & Science
+- **EN meta description:** Why do cats purr when petted, feeding kittens or even in pain? Explore how purring works and why sound alone cannot reveal a cat's mood.
+- **RU SEO title:** Почему кошки мурлыкают: что говорит наука
+- **RU meta description:** Почему кошка мурлычет от удовольствия, при кормлении котят и даже при боли? Как возникает звук и почему мурлыканье не всегда значит радость.
 - **Category:** wildlife
 
 ### why-birds-fly-v-formation — PLANNED
