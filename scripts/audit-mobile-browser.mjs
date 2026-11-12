@@ -22,6 +22,10 @@ const {illustratedGuidesC}=await import('../lib/illustrated-guides-c.js');
 for(const article of illustratedGuidesC)for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+article.id+'/');
 routes.push(...['it','pt','pl'].map(lang=>'/'+lang+'/guides/ssd-vs-hdd/'));
 routes.push('/ai-photo-prompts/','/ru/ai-photo-prompts/');
+// Original bilingual DIY, food science and wildlife answers on mobile screens.
+routes.push('/ru/guides/faucet-dripping-repair-basics/','/ru/guides/storing-fresh-mushrooms/',
+ '/ru/guides/avocado-turns-brown/','/ru/guides/why-rain-smells-good-petrichor/',
+ '/ru/guides/why-birds-fly-v-formation/','/guides/why-birds-fly-v-formation/');
 // Check new bilingual article templates at mobile widths, including portrait photographs.
 routes.push('/ru/guides/why-bluetooth-keeps-disconnecting/','/ru/guides/kettle-limescale-cleaning/',
  '/ru/guides/led-bulbs-flickering-causes/','/ru/guides/why-bananas-turn-brown/',
