@@ -79,6 +79,7 @@ jobs:
           node --check lib/seo-useful-growth-2026-h.js
           node --check lib/seo-useful-growth-2026-i.js
           node --check lib/seo-useful-growth-2026-j.js
+          node --check lib/high-demand-windows-screenshot-2026.js
           node --check lib/practical-medicine-and-safety-2026-a.js
           node --check lib/practical-medicine-and-safety-2026-b.js
           node --check lib/ai-photo-prompt-gallery.js
@@ -110,6 +111,7 @@ jobs:
           node scripts/validate-seo-useful-growth-nov12-second.mjs
           node scripts/validate-seo-useful-growth-nov12-final.mjs
           node scripts/validate-free-tools.mjs
+          node scripts/validate-high-demand-screenshot.mjs
           node scripts/validate-high-intent-guides.mjs
           node scripts/validate-global-practical-guides.mjs
           node scripts/validate-medical-safety-guides.mjs
