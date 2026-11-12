@@ -424,3 +424,12 @@ body{background:var(--paper);color:var(--ink)}
 .article-resource strong{display:block;font:500 12px/1.6 'DM Sans',sans-serif;color:#66756b}
 .article-resource a{display:inline-block;align-self:flex-start;max-width:100%;font:700 15px/1.5 'DM Sans',sans-serif;color:#245a43;text-decoration:underline;text-underline-offset:3px;overflow-wrap:anywhere}
 .article-resource a:focus-visible{outline:2px solid currentColor;outline-offset:3px}
+
+/* Accessible content-first comparison tables on original evergreen guides. */
+.article-fact-region{max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch;margin:2px 0 36px;border:1px solid var(--border,#dce3dc);border-radius:12px;background:transparent}
+.article-fact-region:focus-visible{outline:2px solid #287753;outline-offset:3px}
+.article-fact-table{width:100%;min-width:490px;border-collapse:collapse;text-align:left;table-layout:auto}
+.article-fact-table caption{padding:14px 16px 10px;text-align:left;color:inherit;font:700 16px/1.4 'DM Sans',sans-serif}
+.article-fact-table th,.article-fact-table td{padding:11px 14px;border-top:1px solid var(--border,#dce3dc);font:400 13px/1.55 'DM Sans',sans-serif;vertical-align:top}
+.article-fact-table thead th{font-weight:700;background:rgba(100,130,110,.08)}
+.article-fact-table tbody th{font-weight:700}
