@@ -85,6 +85,7 @@ jobs:
           node --check lib/dog-head-tilt-2026.js
           node --check lib/cat-kneading-before-sleep-2026.js
           node --check lib/latvia-construction-prices-2026.js
+          node --check lib/bathroom-renovation-latvia-2026.js
           node --check lib/practical-medicine-and-safety-2026-a.js
           node --check lib/practical-medicine-and-safety-2026-b.js
           node --check lib/ai-photo-prompt-gallery.js
@@ -123,6 +124,7 @@ jobs:
           node scripts/validate-dog-head-tilt.mjs
           node scripts/validate-cat-kneading-before-sleep.mjs
           node scripts/validate-latvia-construction-prices.mjs
+          node scripts/validate-bathroom-renovation-latvia.mjs
           node scripts/validate-high-intent-guides.mjs
           node scripts/validate-global-practical-guides.mjs
           node scripts/validate-medical-safety-guides.mjs
