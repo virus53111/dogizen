@@ -22,6 +22,10 @@ const {illustratedGuidesC}=await import('../lib/illustrated-guides-c.js');
 for(const article of illustratedGuidesC)for(const prefix of ['','/ru'])routes.push(prefix+'/guides/'+article.id+'/');
 routes.push(...['it','pt','pl'].map(lang=>'/'+lang+'/guides/ssd-vs-hdd/'));
 routes.push('/ai-photo-prompts/','/ru/ai-photo-prompts/');
+// Finish SEO expansion: verified responsive layout for the last science and travel answers.
+routes.push('/ru/guides/why-lightning-zigzags/','/ru/guides/why-ice-floats-water/',
+ '/ru/guides/freezer-burn-what-it-means/','/ru/guides/lost-luggage-airport-what-to-do/',
+ '/guides/lost-luggage-airport-what-to-do/');
 // Original bilingual DIY, food science and wildlife answers on mobile screens.
 routes.push('/ru/guides/faucet-dripping-repair-basics/','/ru/guides/storing-fresh-mushrooms/',
  '/ru/guides/avocado-turns-brown/','/ru/guides/why-rain-smells-good-petrichor/',
