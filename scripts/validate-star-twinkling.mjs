@@ -1,0 +1,50 @@
+// Independent article regression: no duplicates, true locales, unique real JPEG, trusted science citations.
+import assert from 'node:assert/strict';
+import {existsSync,readFileSync} from 'node:fs';
+import {stories,availableIn} from '../lib/atlas-data.js';
+import {starTwinklingGuide as g} from '../lib/star-twinkling-2026.js';
+const read=p=>readFileSync('dist/'+p,'utf8');
+const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll("'",'&#39;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+assert.equal(stories.filter(x=>x.id===g.id).length,1,'Only one twinkling guide');
+assert.ok(stories.length>=155,'Keep existing 154 articles');
+assert.equal(g.topic,'astronomy');
+assert.equal(g.photoAsset.licenseLabel,'CC0 1.0');
+assert.equal(g.sources.length,5);
+const sitemap=read('sitemap.xml'),others=['de','es','fr','lv','pt','it','pl','lt','et','nl'];
+let photo;
+for(const lang of ['en','ru']){
+ const prefix=lang==='en'?'':'ru/';
+ const slug='guides/'+g.id+'/',path=prefix+slug+'index.html';
+ assert.ok(availableIn(g,lang)&&existsSync('dist/'+path),'Guide locale '+lang);
+ const html=read(path),d=g[lang],canonical='https://murdilimax.com/'+prefix+slug;
+ assert.ok(html.includes('<h1>'+esc(d.title)+'</h1>'),'H1 '+lang);
+ assert.ok(html.includes('<title>'+esc(d.seoTitle)+' | MURDILIMAX</title>'),'SEO title '+lang);
+ assert.ok(html.includes('<meta name="description" content="'+esc(d.description)+'">'),'SEO description '+lang);
+ assert.ok(html.includes('<link rel="canonical" href="'+canonical+'">'),'Canonical '+lang);
+ assert.ok(html.includes('hreflang="en"')&&html.includes('hreflang="ru"'),'True language links '+lang);
+ for(const other of others)assert.ok(!html.includes('hreflang="'+other+'"'),'Invented language '+lang+'/'+other);
+ assert.ok(html.includes('alt="'+esc(g.mediaAlt[lang])+'"'),'Localized photo alt '+lang);
+ assert.ok(html.includes('href="'+esc(g.photoAsset.source)+'"')&&html.includes(esc(g.photoAsset.licenseLabel)),'Photo author credit and CC0 '+lang);
+ const found=html.match(/class="article-image"[^>]*><img src="(\/photos\/[a-f0-9]{18}\.jpg)"/)?.[1];
+ assert.ok(found&&existsSync('dist'+found),'Real local star photograph '+lang);
+ const bytes=readFileSync('dist'+found);
+ assert.ok(bytes.length>12000&&bytes[0]===255&&bytes[1]===216&&bytes[bytes.length-2]===255&&bytes[bytes.length-1]===217,'Complete genuine JPEG '+lang);
+ if(photo)assert.equal(photo,found,'Shared photo across genuine translations');else photo=found;
+ for(const s of stories.filter(x=>x.id!==g.id))assert.notEqual(s.image,found,'Separate cover from earlier articles');
+ assert.equal(d.sections.length,6,'Six substantial sections '+lang);
+ for(const [heading,body] of d.sections){assert.ok(body.length>=570,'Deep section '+lang+'/'+heading);assert.ok(html.includes('<h2>'+esc(heading)+'</h2>'),'Chapter heading '+lang+'/'+heading)}
+ for(const s of g.sources)assert.ok(html.includes(esc(s.url)),'Scientific source missing '+lang+'/'+s.url);
+ assert.ok(sitemap.includes('<loc>'+canonical+'</loc>'),'New sitemap URL '+lang);
+ const record=sitemap.split('\n').find(line=>line.includes('<loc>'+canonical+'</loc>'));
+ assert.ok(record&&record.includes('hreflang="en"')&&record.includes('hreflang="ru"'),'True sitemap alternates '+lang);
+ for(const other of others)assert.ok(!record.includes('hreflang="'+other+'"'),'Sitemap fake translation '+lang+'/'+other);
+ const home=read(prefix+'index.html'),topic=read(prefix+'topics/astronomy/index.html'),index=JSON.parse(read(prefix+'search-index.json'));
+ assert.ok(home.includes('/'+prefix+slug)&&topic.includes('/'+prefix+slug),'Home/topic discovery '+lang);
+ assert.ok(index.some(x=>x.type==='guide'&&x.href==='/'+prefix+slug),'Search discovery '+lang);
+ const moon=read(prefix+'guides/why-moon-visible-daytime/index.html');
+ assert.ok(moon.includes('class="article-image"'),'Original moon guide preserved');
+ assert.ok(html.includes('href="/'+prefix+'guides/why-moon-visible-daytime/"'),'Original moon guide internal link '+lang);
+}
+for(const other of others)assert.ok(!existsSync('dist/'+other+'/guides/'+g.id+'/index.html'),'No invented translation '+other);
+assert.ok(read('ru/guides/why-cats-knead-before-sleep/index.html').includes('Owner-supplied photograph'),'Owner cat photograph retained');
+console.log('PASS: original bilingual stars-vs-planets article, five NASA/ESO/Greenwich sources, unique real CC0 photograph, accurate SEO and real language routes.');
