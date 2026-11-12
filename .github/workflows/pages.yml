@@ -73,6 +73,8 @@ jobs:
           node --check lib/seo-practical-growth-2026-dishwasher.js
           node --check lib/seo-useful-growth-2026-c.js
           node --check lib/seo-useful-growth-2026-d.js
+          node --check lib/seo-useful-growth-2026-e.js
+          node --check lib/seo-useful-growth-2026-f.js
           node --check lib/practical-medicine-and-safety-2026-a.js
           node --check lib/practical-medicine-and-safety-2026-b.js
           node --check lib/ai-photo-prompt-gallery.js
@@ -100,6 +102,7 @@ jobs:
           node scripts/validate-guide-media.mjs
           node scripts/validate-seo-practical-growth.mjs
           node scripts/validate-seo-useful-growth.mjs
+          node scripts/validate-seo-useful-growth-nov12.mjs
           node scripts/validate-free-tools.mjs
           node scripts/validate-high-intent-guides.mjs
           node scripts/validate-global-practical-guides.mjs
