@@ -522,8 +522,29 @@ export async function bundlePhotographs({root,stories,topics}){
   entry.image='/photos/'+id+'.jpg';
  };
  for(const t of topics)usePhoto(t,firstTopicPhotos[t.id]||t.image);
+ // Owner-supplied, locally versioned photography: permission for this publication is
+ // NOT a Creative Commons or public-reuse licence. Never try to fetch this photo remotely.
+ const localPhotographs=[];
  for(const s of stories){
   const selected=s.photoAsset||newGuidePhotos[s.id];
+  if(selected?.localFile){
+   if(!/^assets\/owner-photos\/[a-z0-9-]+\.jpg$/.test(selected.localFile))
+    throw Error('Unapproved owner-supplied photo path '+selected.localFile);
+   if(!selected.credit||!selected.rights||selected.license)
+    throw Error('Owner photo must credit permission without inventing a CC licence: '+s.id);
+   const bytes=await readFile(path.resolve(selected.localFile));
+   if(!signature(bytes)||bytes.length<12000||bytes.length>2600000)
+    throw Error('Owner photo must be a valid local JPEG: '+s.id);
+   const id=createHash('sha256').update(bytes).digest('hex').slice(0,18);
+   const file=id+'.jpg';
+   s.image='/photos/'+file;
+   s.photoCredit=selected.credit;
+   s.photoCreditUrl=s.image;
+   if(localPhotographs.some(p=>p.file===file)||[...bySource.values()].some(p=>p.file===file))
+    throw Error('Duplicate owner photograph '+file);
+   localPhotographs.push({file,bytes});
+   continue;
+  }
   if(selected){
    s.photoCredit=selected.credit;
    s.photoCreditUrl=selected.source;
@@ -541,6 +562,7 @@ export async function bundlePhotographs({root,stories,topics}){
  const commonsRecords=records.filter(r=>new URL(r.source).hostname==='commons.wikimedia.org');
  const otherRecords=records.filter(r=>new URL(r.source).hostname!=='commons.wikimedia.org');
  await Promise.all([
+  Promise.all(localPhotographs.map(p=>writeFile(path.join(photoDir,p.file),p.bytes))),
   runPool(otherRecords.map(download),6),
   (async()=>{for(const record of commonsRecords){
    await new Promise(resolve=>setTimeout(resolve,2500));
@@ -551,6 +573,8 @@ export async function bundlePhotographs({root,stories,topics}){
  const techPhoto=bySource.get(fallbackSource);
  if(!techPhoto)throw new Error('Missing guaranteed real-photo fallback');
  await writeFile(path.join(photoDir,'photo-fallback.jpg'),await readFile(path.join(photoDir,techPhoto.file)));
- console.log('PHOTO ASSET PASS: '+records.length+' unique genuine JPEG photographs, '+stories.length+' article covers, '+topics.length+' topic covers, '+records.reduce((n,x)=>n+x.bytes,0)+' total bytes; all stored locally.');
- return records.length;
+ const photoCount=records.length+localPhotographs.length;
+ const photoBytes=records.reduce((n,x)=>n+x.bytes,0)+localPhotographs.reduce((n,x)=>n+x.bytes.length,0);
+ console.log('PHOTO ASSET PASS: '+photoCount+' unique genuine JPEG photographs, '+stories.length+' article covers, '+topics.length+' topic covers, '+photoBytes+' total bytes; all stored locally.');
+ return photoCount;
 }
