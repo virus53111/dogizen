@@ -29,7 +29,7 @@ for(const lang of ['en','ru']){
  for(const [heading,body] of d.sections){assert.ok(body.length>380,'Substantive source-led section '+lang);assert.ok(html.includes('<h2>'+esc(heading)+'</h2>'),'Missing heading '+heading)}
  for(const src of g.sources)assert.ok(html.includes(esc(src.url)),'Missing source '+src.url);
  assert.ok(sm.includes('<loc>'+canonical+'</loc>'),'Sitemap omission '+lang);
- const entry=sm.split('\\n').find(s=>s.includes('<loc>'+canonical+'</loc>'));
+ const entry=sm.split('\n').find(s=>s.includes('<loc>'+canonical+'</loc>'));
  assert.ok(entry.includes('hreflang="en"')&&entry.includes('hreflang="ru"'),'Sitemap hreflang pair '+lang);
  for(const no of ['de','es','fr','lv','pt','it','pl','lt','et','nl'])assert.ok(!entry.includes('hreflang="'+no+'"'),'Phantom sitemap translation '+no);
  const home=read(prefix+'index.html'),topic=read(prefix+'topics/tech/index.html'),search=JSON.parse(read(prefix+'search-index.json'));
