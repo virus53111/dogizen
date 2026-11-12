@@ -1,6 +1,6 @@
 # MURDILIMAX — 30-topic SEO editorial roadmap (November 2026)
 
-This is a research-led editorial backlog, **not evidence of search volume or ranking**. Twenty-one complete bilingual guides are integrated in the site's source (latest five pending GitHub Pages deployment); nine topics remain editorial ideas until independently researched and written in EN/RU. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
+This is a research-led editorial backlog, **not evidence of search volume or ranking**. Twenty-one complete bilingual guides are published in EN and RU on MURDILIMAX and verified live after GitHub Pages deployment; nine topics remain editorial ideas until independently researched and written in EN/RU. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
 
 Each published guide should have one natural main search intent, a distinct title and description, practical H2 sections, primary-source citations, relevant photos with honest alt text, related internal links, canonical and correct hreflang, Article/BreadcrumbList structured data, and sitemap inclusion. Avoid keyword stuffing and factual overreach. Keep existing site-wide architecture.
 
@@ -14,7 +14,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Наушники подключены по Bluetooth, но молчат? Проверьте вывод звука, громкость, повторное сопряжение и драйверы.
 - **Category:** tech
 
-### usb-drive-not-showing-windows — IN SOURCE (DEPLOYMENT PENDING)
+### usb-drive-not-showing-windows — PUBLISHED
 - **Search intent:** usb drive not showing windows
 - **EN SEO title:** USB Drive Not Showing Up in Windows? Safe Fixes
 - **EN meta description:** Flash drive missing in File Explorer? Check another port, Disk Management and drive letters without formatting away data.
@@ -22,7 +22,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Флешка не появляется в проводнике? Проверьте порт, Управление дисками и букву диска без потери данных.
 - **Category:** tech
 
-### phone-hotspot-not-working-laptop — IN SOURCE (DEPLOYMENT PENDING)
+### phone-hotspot-not-working-laptop — PUBLISHED
 - **Search intent:** laptop won't connect to hotspot
 - **EN SEO title:** Laptop Won't Connect to Phone Hotspot? What to Check
 - **EN meta description:** Fix a laptop that cannot connect to an Android or iPhone hotspot: data, password, frequency and network checks.
@@ -30,7 +30,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Не удаётся раздать интернет с телефона на ноутбук? Проверяем мобильные данные, пароль, диапазон Wi-Fi и настройки.
 - **Category:** tech
 
-### laptop-fan-loud-while-idle — IN SOURCE (DEPLOYMENT PENDING)
+### laptop-fan-loud-while-idle — PUBLISHED
 - **Search intent:** laptop fan loud idle
 - **EN SEO title:** Laptop Fan Loud When Idle? 7 Safe Checks
 - **EN meta description:** Laptop fan noisy even with no apps open? Check Task Manager, background updates, vents and power modes before attempting repairs.
@@ -38,7 +38,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Ноутбук шумит, хотя программы закрыты? Проверьте загрузку процессора, обновления Windows, вентиляцию и режим питания.
 - **Category:** tech
 
-### wifi-connected-no-internet-windows — IN SOURCE (DEPLOYMENT PENDING)
+### wifi-connected-no-internet-windows — PUBLISHED
 - **Search intent:** wifi connected no internet windows
 - **EN SEO title:** Wi-Fi Connected but No Internet in Windows: Fixes
 - **EN meta description:** Connected to Wi-Fi but websites will not load? Separate router, DNS and device problems without random resets.
@@ -46,7 +46,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Компьютер подключён к Wi-Fi, но сайты не открываются? Как проверить роутер, DNS и соединение.
 - **Category:** tech
 
-### why-bluetooth-keeps-disconnecting — IN SOURCE (DEPLOYMENT PENDING)
+### why-bluetooth-keeps-disconnecting — PUBLISHED
 - **Search intent:** bluetooth keeps disconnecting
 - **EN SEO title:** Bluetooth Keeps Disconnecting? 7 Checks That Help
 - **EN meta description:** Bluetooth headphones or mouse keep disconnecting? Check charge, interference, pairing, power saving and Windows drivers without unsafe resets.
@@ -64,7 +64,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Телефон стал медленно заряжаться? Проверьте кабель, блок питания, разъём, температуру и настройки батареи.
 - **Category:** digital
 
-### transfer-photos-android-to-windows — IN SOURCE (DEPLOYMENT PENDING)
+### transfer-photos-android-to-windows — PUBLISHED
 - **Search intent:** transfer photos android to pc
 - **EN SEO title:** How to Transfer Android Photos to a Windows PC
 - **EN meta description:** Move photos from Android to Windows by USB or wireless transfer, then verify copies before deleting anything.
@@ -72,7 +72,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Пошагово переносим фото с телефона на Windows по USB и без провода, проверяем копии и не теряем снимки.
 - **Category:** digital
 
-### turn-off-browser-notifications — IN SOURCE (DEPLOYMENT PENDING)
+### turn-off-browser-notifications — PUBLISHED
 - **Search intent:** turn off website notifications
 - **EN SEO title:** Stop Website Notifications in Chrome & Edge
 - **EN meta description:** Annoying website notifications popping up? Block specific sites in Chrome, Edge and Android without losing bookmarks or cookies.
@@ -80,7 +80,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Постоянно приходят уведомления сайтов? Отключите их в Chrome, Edge и Android без удаления закладок, паролей и истории.
 - **Category:** digital
 
-### remove-photo-location-metadata — IN SOURCE (DEPLOYMENT PENDING)
+### remove-photo-location-metadata — PUBLISHED
 - **Search intent:** remove location from photo
 - **EN SEO title:** Remove GPS Location From Photos Before Sharing
 - **EN meta description:** Learn how to check photo GPS metadata and share pictures without location on iPhone, Android or Windows. Understand EXIF privacy limits.
@@ -106,7 +106,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Холодильник гудит, но внутри тепло? Проверьте температуру, вентиляцию, дверь и сохранность продуктов.
 - **Category:** construction
 
-### dishwasher-not-draining — IN SOURCE (DEPLOYMENT PENDING)
+### dishwasher-not-draining — PUBLISHED
 - **Search intent:** dishwasher not draining
 - **EN SEO title:** Dishwasher Not Draining? Safe First Checks
 - **EN meta description:** Dishwasher full of water after a cycle? Check filter, hose and error display before calling service.
@@ -114,7 +114,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** После мойки осталась вода? Проверяем фильтр, сливной шланг и код ошибки безопасно.
 - **Category:** construction
 
-### kettle-limescale-cleaning — IN SOURCE (DEPLOYMENT PENDING)
+### kettle-limescale-cleaning — PUBLISHED
 - **Search intent:** descale electric kettle
 - **EN SEO title:** How to Descale an Electric Kettle Safely
 - **EN meta description:** White chalky buildup in your kettle? Learn how to remove limescale using a maker-approved descaler and avoid damaging the heating element.
@@ -122,7 +122,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Белая накипь в электрочайнике? Узнайте, как безопасно удалить известковые отложения, выбрать средство и не испортить прибор.
 - **Category:** construction
 
-### led-bulbs-flickering-causes — IN SOURCE (DEPLOYMENT PENDING)
+### led-bulbs-flickering-causes — PUBLISHED
 - **Search intent:** led lights flickering
 - **EN SEO title:** Why Do LED Lights Flicker? Safe Checks & Causes
 - **EN meta description:** LED light flickering at home? Check dimmer compatibility, the bulb and power conditions, and learn which warning signs need an electrician.
@@ -138,7 +138,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Почему капает смеситель? Проверяем тип крана, картридж, уплотнения и необходимость ремонта.
 - **Category:** construction
 
-### indoor-humidity-ideal-range — IN SOURCE (DEPLOYMENT PENDING)
+### indoor-humidity-ideal-range — PUBLISHED
 - **Search intent:** ideal indoor humidity
 - **EN SEO title:** Ideal Indoor Humidity: 30–50% and What to Check
 - **EN meta description:** What humidity should a home have? Learn the EPA's 30–50% ideal range, how to use a hygrometer and how to reduce condensation and mold risk.
@@ -200,7 +200,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Белые сухие участки на замороженных продуктах: что происходит и как защитить вкус при хранении.
 - **Category:** cooking
 
-### why-bananas-turn-brown — IN SOURCE (DEPLOYMENT PENDING)
+### why-bananas-turn-brown — PUBLISHED
 - **Search intent:** why do bananas turn brown
 - **EN SEO title:** Why Do Bananas Turn Brown? Science & Storage Tips
 - **EN meta description:** Why do bananas develop brown spots or black peels? Learn how ethylene, enzymes and cold affect ripening and how to store them well.
@@ -226,7 +226,7 @@ Each published guide should have one natural main search intent, a distinct titl
 
 ## Wildlife
 
-### why-cats-purr-science — IN SOURCE (DEPLOYMENT PENDING)
+### why-cats-purr-science — PUBLISHED
 - **Search intent:** why do cats purr
 - **EN SEO title:** Why Do Cats Purr? Happiness, Stress & Science
 - **EN meta description:** Why do cats purr when petted, feeding kittens or even in pain? Explore how purring works and why sound alone cannot reveal a cat's mood.
@@ -244,7 +244,7 @@ Each published guide should have one natural main search intent, a distinct titl
 
 ## Travel
 
-### offline-maps-without-internet — IN SOURCE (DEPLOYMENT PENDING)
+### offline-maps-without-internet — PUBLISHED
 - **Search intent:** offline maps without internet
 - **EN SEO title:** How to Download Google Maps for Offline Navigation
 - **EN meta description:** Use Google Maps without internet: download a map on Android or iPhone, find it before a trip, and learn what offline driving can and cannot do.
