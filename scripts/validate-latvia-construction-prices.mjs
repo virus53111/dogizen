@@ -1,0 +1,55 @@
+// Real 2026 prices, genuine Riga photo, true RU/LV/EN editions and transparent owner-site linking.
+import assert from 'node:assert/strict';
+import {existsSync,readFileSync} from 'node:fs';
+import {stories,availableIn} from '../lib/atlas-data.js';
+import {latviaConstructionPricesGuide as g} from '../lib/latvia-construction-prices-2026.js';
+const read=p=>readFileSync('dist/'+p,'utf8');
+const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll("'",'&#39;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+const raw=read('atlas-visual.css');
+assert.match(raw,/\.article-resource a\{/,'Related resource style should not reuse overlay');
+assert.equal(stories.filter(x=>x.id===g.id).length,1,'One new guide only');
+assert.ok(stories.length>=153,'Keep 152 existing guides');
+assert.equal(g.topic,'construction');
+assert.equal(g.resourceLink.url,'https://cenaradar.online/');
+assert.equal(g.photoAsset.licenseLabel,'CC0 1.0');
+assert.equal(g.sources.length,5);
+assert.equal(g.sources[0].url,'https://cenaradar.online/');
+const sitemap=read('sitemap.xml'),langs=['en','ru','lv'],others=['de','es','fr','pt','it','pl','lt','et','nl'];
+let photo=null;
+for(const lang of langs){
+ const prefix=lang==='en'?'':lang+'/';
+ const path=prefix+'guides/'+g.id+'/index.html';
+ assert.ok(availableIn(g,lang)&&existsSync('dist/'+path),'No translated guide '+lang);
+ const html=read(path),d=g[lang],canonical='https://murdilimax.com/'+prefix+'guides/'+g.id+'/';
+ assert.ok(html.includes('<h1>'+esc(d.title)+'</h1>'),'H1 '+lang);
+ assert.ok(html.includes('<title>'+esc(d.seoTitle)+' | MURDILIMAX</title>'),'SEO title '+lang);
+ assert.ok(html.includes('<meta name="description" content="'+esc(d.description)+'">'),'SEO description '+lang);
+ assert.ok(html.includes('<link rel="canonical" href="'+canonical+'">'),'Canonical '+lang);
+ for(const l of langs)assert.ok(html.includes('hreflang="'+l+'"'),'True alternate '+lang+' / '+l);
+ for(const l of others)assert.ok(!html.includes('hreflang="'+l+'"'),'Invented locale '+lang+' / '+l);
+ assert.ok(html.includes('alt="'+esc(g.mediaAlt[lang])+'"'),'Localized photo '+lang);
+ assert.ok(html.includes('href="'+esc(g.photoAsset.source)+'"')&&html.includes(esc(g.photoAsset.licenseLabel)),'Photo credit and CC0 '+lang);
+ const found=html.match(/class="article-image"[^>]*><img src="(\/photos\/[a-f0-9]{18}\.jpg)"/)?.[1];
+ assert.ok(found&&existsSync('dist'+found),'Locally bundled genuine image '+lang);
+ const bytes=readFileSync('dist'+found);
+ assert.ok(bytes.length>12000&&bytes[0]===255&&bytes[1]===216&&bytes[bytes.length-2]===255&&bytes[bytes.length-1]===217,'JPEG must be genuine '+lang);
+ if(photo)assert.equal(photo,found,'One genuine photo reused across translated editions');else photo=found;
+ assert.ok(html.includes('<aside class="article-resource"'),'Visible editorial resource link '+lang);
+ assert.ok(html.includes('href="https://cenaradar.online/" target="_blank" rel="noopener noreferrer"'),'Clickable exact external owner site '+lang);
+ assert.ok(html.includes(esc(g.resourceLink[lang].label))&&html.includes(esc(g.resourceLink[lang].note)),'Localized ownership disclosure '+lang);
+ assert.ok(html.indexOf('<aside class="article-resource"')>html.indexOf('<div class="article-text"'),'Link positioned in actual article body '+lang);
+ assert.equal(d.sections.length,6,'Six useful editorial sections '+lang);
+ for(const [heading,body] of d.sections){assert.ok(body.length>550,'Substantive localized prose '+lang+' '+heading);assert.ok(html.includes('<h2>'+esc(heading)+'</h2>'),'Heading '+lang+' '+heading)}
+ for(const s of g.sources)assert.ok(html.includes(esc(s.url)),'Citation '+lang+' '+s.url);
+ assert.ok(sitemap.includes('<loc>'+canonical+'</loc>'),'Sitemap inclusion '+lang);
+ const record=sitemap.split('\n').find(x=>x.includes('<loc>'+canonical+'</loc>'));
+ assert.ok(record&&langs.every(l=>record.includes('hreflang="'+l+'"')),'Sitemap real three-language set '+lang);
+ for(const other of others)assert.ok(!record.includes('hreflang="'+other+'"'),'False sitemap translation '+lang+' '+other);
+ const home=read(prefix+'index.html'),topic=read(prefix+'topics/construction/index.html'),index=JSON.parse(read(prefix+'search-index.json'));
+ assert.ok(home.includes('/'+prefix+'guides/'+g.id+'/')&&topic.includes('/'+prefix+'guides/'+g.id+'/'),'Homepage and topic discovery '+lang);
+ assert.ok(index.some(x=>x.type==='guide'&&x.href==='/'+prefix+'guides/'+g.id+'/'),'Search index '+lang);
+}
+for(const other of others)assert.ok(!existsSync('dist/'+other+'/guides/'+g.id+'/index.html'),'Never create fake translated pages '+other);
+const last=read('ru/guides/why-cats-knead-before-sleep/index.html');
+assert.ok(last.includes('Owner-supplied photograph'),'User photo remains preserved');
+console.log('PASS: 3 real EN/RU/LV price guides, 2026 indicative labour prices, real Riga CC0 photograph, visible attributed owner-site link, SEO, sitemap, and old user photographs preserved.');
