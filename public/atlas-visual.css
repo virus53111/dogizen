@@ -433,3 +433,6 @@ body{background:var(--paper);color:var(--ink)}
 .article-fact-table th,.article-fact-table td{padding:11px 14px;border-top:1px solid var(--border,#dce3dc);font:400 13px/1.55 'DM Sans',sans-serif;vertical-align:top}
 .article-fact-table thead th{font-weight:700;background:rgba(100,130,110,.08)}
 .article-fact-table tbody th{font-weight:700}
+
+/* The useful-tools category shows its calculators first and a separate grid of editorial guides below. */
+.tools-guide-grid{margin-top:32px}
