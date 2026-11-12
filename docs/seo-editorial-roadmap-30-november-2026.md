@@ -1,6 +1,6 @@
 # MURDILIMAX — 30-topic SEO editorial roadmap (November 2026)
 
-This is a research-led editorial backlog, **not evidence of search volume or ranking**. The 30-topic bilingual editorial collection is fully written and integrated in source (latest nine pages pending GitHub Pages deployment and live verification). Do not confuse integrated source with live publication. Expand only after measuring Search Console queries and quality. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
+This is a research-led editorial backlog, **not evidence of search volume or ranking**. All 30 topic guides are fully written and published in both English and Russian on MURDILIMAX; the final nine Russian routes were verified directly after a successful GitHub Pages deployment on November 12, 2026. Future expansion should follow primary-source review and free Google Search Console query data; rankings are not guaranteed. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
 
 Each published guide should have one natural main search intent, a distinct title and description, practical H2 sections, primary-source citations, relevant photos with honest alt text, related internal links, canonical and correct hreflang, Article/BreadcrumbList structured data, and sitemap inclusion. Avoid keyword stuffing and factual overreach. Keep existing site-wide architecture.
 
@@ -130,7 +130,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Мигает светодиодная лампа в квартире? Проверьте совместимость с диммером, состояние лампы и опасные признаки неполадок проводки.
 - **Category:** construction
 
-### faucet-dripping-repair-basics — IN SOURCE (DEPLOYMENT PENDING)
+### faucet-dripping-repair-basics — PUBLISHED
 - **Search intent:** faucet dripping
 - **EN SEO title:** Faucet Dripping? Causes, Safe Checks and Repair
 - **EN meta description:** A kitchen or bathroom faucet keeps dripping after shutoff? Learn how to identify cartridge, washer and seal issues safely before repair.
@@ -166,7 +166,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Как образуется туман, почему он появляется утром и в низинах, чем отличается от облака и когда рассеивается?
 - **Category:** nature
 
-### why-rain-smells-good-petrichor — IN SOURCE (DEPLOYMENT PENDING)
+### why-rain-smells-good-petrichor — PUBLISHED
 - **Search intent:** why does rain smell good
 - **EN SEO title:** Why Does Rain Smell So Good? Petrichor Explained
 - **EN meta description:** Why does the air smell earthy after rain? Discover petrichor, geosmin from soil microbes, plant oils and how raindrops lift aromas into the air.
@@ -174,7 +174,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Откуда берётся запах земли после дождя? Рассказываем о петрикоре, геосмине, растительных маслах и аэрозолях из капель дождя.
 - **Category:** nature
 
-### why-lightning-zigzags — IN SOURCE (DEPLOYMENT PENDING)
+### why-lightning-zigzags — PUBLISHED
 - **Search intent:** why does lightning zigzag
 - **EN SEO title:** Why Does Lightning Zigzag? Branches Explained
 - **EN meta description:** Why is lightning jagged instead of straight? Learn how stepped leaders, air charge and branching electrical paths create a zigzag flash.
@@ -182,7 +182,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Почему молния не прямая? Объясняем ступенчатые лидеры, разветвления электрического разряда и яркую обратную волну.
 - **Category:** nature
 
-### why-ice-floats-water — IN SOURCE (DEPLOYMENT PENDING)
+### why-ice-floats-water — PUBLISHED
 - **Search intent:** why ice floats on water
 - **EN SEO title:** Why Does Ice Float on Water? Simple Science
 - **EN meta description:** Why does solid ice float instead of sink? Explore water's unusual density, hydrogen bonds and why lakes freeze from the top.
@@ -192,7 +192,7 @@ Each published guide should have one natural main search intent, a distinct titl
 
 ## Food
 
-### freezer-burn-what-it-means — IN SOURCE (DEPLOYMENT PENDING)
+### freezer-burn-what-it-means — PUBLISHED
 - **Search intent:** freezer burn food
 - **EN SEO title:** Freezer Burn: Is Frozen Food Still Safe to Eat?
 - **EN meta description:** White dry patches on frozen meat or vegetables? Learn what freezer burn means for flavor, why it happens and how to prevent it safely.
@@ -208,7 +208,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Почему на банане появляются коричневые пятна и чернеет кожура? Объясняем созревание, этилен, холод и способы хранения.
 - **Category:** cooking
 
-### storing-fresh-mushrooms — IN SOURCE (DEPLOYMENT PENDING)
+### storing-fresh-mushrooms — PUBLISHED
 - **Search intent:** how to store mushrooms
 - **EN SEO title:** How to Store Fresh Mushrooms: Fridge and Cleaning
 - **EN meta description:** Keep store-bought mushrooms fresher with the right fridge temperature, original packaging or a paper bag, and safe cleaning before cooking.
@@ -216,7 +216,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Как хранить свежие грибы в холодильнике, нужна ли бумажная упаковка, когда мыть и по каким признакам шампиньоны следует выбросить.
 - **Category:** cooking
 
-### avocado-turns-brown — IN SOURCE (DEPLOYMENT PENDING)
+### avocado-turns-brown — PUBLISHED
 - **Search intent:** why avocado turns brown
 - **EN SEO title:** Why Does Avocado Turn Brown? Easy Storage Tips
 - **EN meta description:** Cut avocado turns brown within hours? Learn the oxidation science, how lemon and airtight storage help, and when browning means spoilage.
@@ -234,7 +234,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Почему кошка мурлычет от удовольствия, при кормлении котят и даже при боли? Как возникает звук и почему мурлыканье не всегда значит радость.
 - **Category:** wildlife
 
-### why-birds-fly-v-formation — IN SOURCE (DEPLOYMENT PENDING)
+### why-birds-fly-v-formation — PUBLISHED
 - **Search intent:** why birds fly in v formation
 - **EN SEO title:** Why Do Birds Fly in a V Formation? Science Explained
 - **EN meta description:** Why do geese and cranes fly in a V? Discover the aerodynamics of wingtip upwash, energy savings, leader changes and what research shows.
@@ -252,7 +252,7 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Как пользоваться Google Maps без интернета? Скачайте карту на Android или iPhone, проверьте маршрут и узнайте ограничения офлайн-режима.
 - **Category:** travel
 
-### lost-luggage-airport-what-to-do — IN SOURCE (DEPLOYMENT PENDING)
+### lost-luggage-airport-what-to-do — PUBLISHED
 - **Search intent:** lost luggage what to do
 - **EN SEO title:** Lost Luggage at the Airport? What to Do First
 - **EN meta description:** Checked bag missing after a flight? Report it at the baggage desk, keep your tags and receipts, track the case and learn how claims work.
