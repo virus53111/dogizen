@@ -10,7 +10,10 @@ const slugs=['backup-321','secure-accounts','ssd-vs-hdd'];
 assert.deepEqual(Object.keys(upgrades).sort(),slugs.slice().sort(),'Only three useful topics');
 assert.ok(stories.length>=117,'No artificial guide URL additions');
 for(const lang of ['fr','lv']){
- assert.equal(storiesFor(lang).length,14,'Existing translations are revised, not expanded with duplicates');
+ // French still has its existing 14 pages; Latvian now gains one complete,
+ // independently written construction-pricing article, not a duplicate translation.
+ assert.equal(storiesFor(lang).length,lang==='lv'?15:14,'Maintain genuine FR translations and one new LV market guide');
+ if(lang==='lv')assert.ok(storiesFor('lv').some(s=>s.id==='construction-work-prices-latvia-2026'),'Only add a real Latvian article');
  for(const id of slugs){
   const revision=upgrades[id][lang],data=story(id);
   assert.deepEqual(data[lang],revision,'Stored revision differs from editorial text: '+id+'/'+lang);
