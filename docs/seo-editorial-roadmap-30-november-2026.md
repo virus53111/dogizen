@@ -1,6 +1,6 @@
 # MURDILIMAX — 30-topic SEO editorial roadmap (November 2026)
 
-This is a research-led editorial backlog, **not evidence of search volume or ranking**. Twenty-one bilingual guides have been verified live, with five additional original guides integrated into source pending deployment; four more topics remain for research and writing. Do not confuse source integration with live publication. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
+This is a research-led editorial backlog, **not evidence of search volume or ranking**. The 30-topic bilingual editorial collection is fully written and integrated in source (latest nine pages pending GitHub Pages deployment and live verification). Do not confuse integrated source with live publication. Expand only after measuring Search Console queries and quality. Do not create empty localized pages or invent publish/update dates. Search Console data should govern revisions.
 
 Each published guide should have one natural main search intent, a distinct title and description, practical H2 sections, primary-source citations, relevant photos with honest alt text, related internal links, canonical and correct hreflang, Article/BreadcrumbList structured data, and sitemap inclusion. Avoid keyword stuffing and factual overreach. Keep existing site-wide architecture.
 
@@ -174,30 +174,30 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Откуда берётся запах земли после дождя? Рассказываем о петрикоре, геосмине, растительных маслах и аэрозолях из капель дождя.
 - **Category:** nature
 
-### why-lightning-zigzags — PLANNED
+### why-lightning-zigzags — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** why does lightning zigzag
-- **EN SEO title:** Why Does Lightning Zigzag Across the Sky?
-- **EN meta description:** Explore stepped lightning leaders, branching channels and safe places during thunderstorms.
-- **RU SEO title:** Почему молния зигзагообразная
-- **RU meta description:** Почему канал молнии ветвится и что происходит во время грозы — простое объяснение.
+- **EN SEO title:** Why Does Lightning Zigzag? Branches Explained
+- **EN meta description:** Why is lightning jagged instead of straight? Learn how stepped leaders, air charge and branching electrical paths create a zigzag flash.
+- **RU SEO title:** Почему молния идёт зигзагом: научное объяснение
+- **RU meta description:** Почему молния не прямая? Объясняем ступенчатые лидеры, разветвления электрического разряда и яркую обратную волну.
 - **Category:** nature
 
-### why-ice-floats-water — PLANNED
+### why-ice-floats-water — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** why ice floats on water
 - **EN SEO title:** Why Does Ice Float on Water? Simple Science
-- **EN meta description:** Ice is less dense than liquid water. Learn how hydrogen bonding changes volume and why lakes freeze on top.
-- **RU SEO title:** Почему лёд плавает в воде
-- **RU meta description:** Объясняем плотность воды, расширение при замерзании и почему озёра покрываются льдом сверху.
+- **EN meta description:** Why does solid ice float instead of sink? Explore water's unusual density, hydrogen bonds and why lakes freeze from the top.
+- **RU SEO title:** Почему лёд не тонет в воде: плотность и молекулы
+- **RU meta description:** Почему лёд плавает, хотя он твёрдый? Объясняем плотность воды, водородные связи, расширение при замерзании и лёд на озёрах.
 - **Category:** nature
 
 ## Food
 
-### freezer-burn-what-it-means — PLANNED
+### freezer-burn-what-it-means — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** freezer burn food
-- **EN SEO title:** Freezer Burn Explained: Is the Food Still Safe?
-- **EN meta description:** White dry patches on frozen food? Learn what freezer burn means for quality and how proper wrapping helps.
-- **RU SEO title:** Что такое морозильный ожог продуктов
-- **RU meta description:** Белые сухие участки на замороженных продуктах: что происходит и как защитить вкус при хранении.
+- **EN SEO title:** Freezer Burn: Is Frozen Food Still Safe to Eat?
+- **EN meta description:** White dry patches on frozen meat or vegetables? Learn what freezer burn means for flavor, why it happens and how to prevent it safely.
+- **RU SEO title:** Морозильный ожог мяса: можно ли есть и как избежать
+- **RU meta description:** Белые сухие пятна на замороженном мясе или овощах? Разбираем морозильный ожог, безопасность еды, упаковку и температуру морозилки.
 - **Category:** cooking
 
 ### why-bananas-turn-brown — PUBLISHED
@@ -252,12 +252,12 @@ Each published guide should have one natural main search intent, a distinct titl
 - **RU meta description:** Как пользоваться Google Maps без интернета? Скачайте карту на Android или iPhone, проверьте маршрут и узнайте ограничения офлайн-режима.
 - **Category:** travel
 
-### lost-luggage-airport-what-to-do — PLANNED
+### lost-luggage-airport-what-to-do — IN SOURCE (DEPLOYMENT PENDING)
 - **Search intent:** lost luggage what to do
-- **EN SEO title:** Airline Lost Your Luggage? What to Do at the Airport
-- **EN meta description:** Baggage did not arrive? Report it before leaving, keep receipts and understand carrier claim steps.
-- **RU SEO title:** Авиакомпания потеряла багаж: что делать
-- **RU meta description:** Куда обращаться в аэропорту, как оформить розыск и какие документы сохранить для претензии.
+- **EN SEO title:** Lost Luggage at the Airport? What to Do First
+- **EN meta description:** Checked bag missing after a flight? Report it at the baggage desk, keep your tags and receipts, track the case and learn how claims work.
+- **RU SEO title:** Потеряли багаж в аэропорту: действия и претензия
+- **RU meta description:** Чемодан не прилетел? Куда обратиться, как оформить PIR, сохранить бирку и чеки, отследить багаж и подать претензию авиакомпании.
 - **Category:** travel
 
 ## Editorial approval checklist
