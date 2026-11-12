@@ -90,6 +90,7 @@ jobs:
           node --check lib/zebra-stripes-2026.js
           node --check lib/flamingo-one-leg-2026.js
           node --check lib/global-evergreen-demand-guides-2026.js
+          node --check lib/jobs-jewellery-evergreen-2026.js
           node --check lib/practical-medicine-and-safety-2026-a.js
           node --check lib/practical-medicine-and-safety-2026-b.js
           node --check lib/ai-photo-prompt-gallery.js
@@ -133,6 +134,7 @@ jobs:
           node scripts/validate-zebra-stripes.mjs
           node scripts/validate-flamingo-one-leg.mjs
           node scripts/validate-global-evergreen-guides.mjs
+          node scripts/validate-jobs-jewellery-evergreen.mjs
           node scripts/validate-high-intent-guides.mjs
           node scripts/validate-global-practical-guides.mjs
           node scripts/validate-medical-safety-guides.mjs
