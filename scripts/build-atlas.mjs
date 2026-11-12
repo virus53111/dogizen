@@ -80,7 +80,7 @@ for(const lang of languages){
   }
   if(['en','ru'].includes(lang))for(const g of freeTools){
     await write(prefix+'tools/'+g.id+'/index.html',freeTool(lang,g.id));
-    pages.push({lang,part:'tools/'+g.id,weight:'0.8',updated:'2026-11-11'});
+    pages.push({lang,part:'tools/'+g.id,weight:'0.8',updated:g.id==='word-counter'?'2026-11-12':'2026-11-11'});
   }
 }
 const site='https://murdilimax.com';
@@ -88,7 +88,7 @@ const urls=pages.map(p=>site+url(p.lang,p.part));
 const xmlesc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
 let sitemap='<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n';
 for(const p of pages){
-  const langs=['about','editorial','privacy','ai-photo-prompts'].includes(p.part)?['en','ru']:(p.species?['en','ru']:(p.story?languages.filter(l=>availableIn(p.story,l)):(p.topic?languages.filter(l=>storiesFor(l).some(s=>s.topic===p.topic)||species.some(s=>s.group===p.topic)||p.topic==='tools'):languages)));
+  const langs=freeTools.some(g=>p.part==='tools/'+g.id)?['en','ru']:['about','editorial','privacy','ai-photo-prompts'].includes(p.part)?['en','ru']:(p.species?['en','ru']:(p.story?languages.filter(l=>availableIn(p.story,l)):(p.topic?languages.filter(l=>storiesFor(l).some(s=>s.topic===p.topic)||species.some(s=>s.group===p.topic)||p.topic==='tools'):languages)));
   sitemap+='  <url><loc>'+xmlesc(site+url(p.lang,p.part))+'</loc>';
   if(p.updated)sitemap+='<lastmod>'+p.updated+'</lastmod>';
   if(p.image)sitemap+='<image:image><image:loc>'+xmlesc(p.image.startsWith('/')?site+p.image:p.image)+'</image:loc></image:image>';

@@ -6,10 +6,10 @@ import {freeTools} from '../lib/free-tools-2026.js';
 const read=path=>readFileSync('dist/'+path,'utf8');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll("'",'&#39;').replaceAll('<','&lt;').replaceAll('>','&gt;');
 const ids=freeTools.map(x=>x.id);
-assert.equal(ids.length,5,'Require five usable free services');
-assert.equal(new Set(ids).size,5,'Each tool needs a unique slug');
+assert.equal(ids.length,6,'Require six usable free services');
+assert.equal(new Set(ids).size,6,'Each tool needs a unique slug');
 const sm=read('sitemap.xml');
-assert.ok((sm.match(/<url>/g)||[]).length>=697,'Tool additions must add ten real crawlable pages');
+assert.ok((sm.match(/<url>/g)||[]).length>=699,'Six tools must have twelve crawlable pages');
 
 for(const lang of ['en','ru']){
  const prefix=lang==='ru'?'ru/':'';
@@ -36,6 +36,10 @@ for(const lang of ['en','ru']){
   assert.ok(html.includes('id="ft-status"')&&html.includes('aria-live="polite"'),'Accessible status missing '+file);
   assert.ok(html.includes('/free-tools.js')&&html.includes('/free-tools.css'),'Tool code or styles missing '+file);
   assert.ok(sm.includes('<loc>'+canonical+'</loc>'),'Sitemap does not include '+canonical);
+  const sitemapEntry=sm.split('\n').find(line=>line.includes('<loc>'+canonical+'</loc>'));
+  assert.ok(sitemapEntry.includes('hreflang="en"')&&sitemapEntry.includes('hreflang="ru"'),'Missing sitemap alternates '+file);
+  for(const unsupported of ['de','fr','lv','pt','it','pl','lt','et','nl','es'])assert.ok(!sitemapEntry.includes('hreflang="'+unsupported+'"'),'Phantom sitemap language '+unsupported+'/'+file);
+  if(tool.id==='word-counter')assert.ok(html.includes("id='ft-word-input'")&&html.includes("id='ft-word-words'"),'Missing live word counter form '+file);
   assert.ok(home.includes('/'+prefix+'tools/'+tool.id+'/'),'Homepage discovery missing '+file);
   assert.ok(topic.includes('/'+prefix+'tools/'+tool.id+'/'),'Tools category discovery missing '+file);
   assert.ok(index.some(x=>x.type==='tool'&&x.href==='/'+prefix+'tools/'+tool.id+'/'),'Search index entry missing '+file);
@@ -53,6 +57,6 @@ for(const lang of ['de','fr','lv','pt','it','pl','lt','et','nl','es'])for(const 
 }
 for(const asset of ['free-tools.js','free-tools.css'])assert.ok(existsSync('dist/'+asset),'Missing deployed asset '+asset);
 const js=read('free-tools.js');
-for(const term of ['window.qrcode','PDFDocument','createImageBitmap','createObjectURL','ft-qr-svg','ft-qr-png'])assert.ok(js.includes(term),'Tool implementation missing '+term);
+for(const term of ['window.qrcode','PDFDocument','createImageBitmap','createObjectURL','ft-qr-svg','ft-qr-png',"kind==='word-counter'"])assert.ok(js.includes(term),'Tool implementation missing '+term);
 assert.ok(!js.includes('fetch('),'File handling must not send uploads to an API');
-console.log('PASS: five EN/RU free tools, 10 unique SEO pages, real browser forms, local processing assets, correct structured data and sitemap.');
+console.log('PASS: six EN/RU free tools, 12 SEO pages, local processing, canonical and hreflang sitemap validation.');

@@ -240,5 +240,43 @@ if(kind==='qr-code-generator'){
   resultLink(blob,'murdilimax-images.pdf',note('PDF with '+files.length+' page(s) · '+fmt(blob.size),'PDF на '+files.length+' страниц · '+fmt(blob.size)));
   setStatus(note('Your PDF is ready. Open it to verify clarity and page order.','PDF готов. Откройте его и проверьте читаемость и порядок страниц.'));
  }));
+}else if(kind==='word-counter'){
+ const field=$('#ft-word-input'),reset=$('#ft-word-clear');
+ const locale=ru?'ru':'en',number=new Intl.NumberFormat(ru?'ru-RU':'en-US');
+ const supported=typeof Intl.Segmenter==='function';
+ const wordsSegmenter=supported?new Intl.Segmenter(locale,{granularity:'word'}):null;
+ const charsSegmenter=supported?new Intl.Segmenter(locale,{granularity:'grapheme'}):null;
+ const sentencesSegmenter=supported?new Intl.Segmenter(locale,{granularity:'sentence'}):null;
+ const hasWord=/[\p{L}\p{N}]/u;
+ function graphemes(value){
+  if(!charsSegmenter)return Array.from(value).length;
+  let count=0;for(const part of charsSegmenter.segment(value))count++;
+  return count;
+ }
+ function countWords(value){
+  if(wordsSegmenter){let n=0;for(const part of wordsSegmenter.segment(value))if(part.isWordLike)n++;return n;}
+  return (value.match(/[\p{L}\p{N}]+(?:['’][\p{L}\p{N}]+)*/gu)||[]).length;
+ }
+ function countSentences(value){
+  if(!hasWord.test(value))return 0;
+  if(sentencesSegmenter){let n=0;for(const part of sentencesSegmenter.segment(value))if(hasWord.test(part.segment))n++;return n;}
+  return value.split(/[.!?。！？]+(?:\s+|$)/u).filter(s=>hasWord.test(s)).length;
+ }
+ function refresh(){
+  const value=field.value,wordCount=countWords(value);
+  const stats={
+   words:wordCount,
+   chars:graphemes(value),
+   'no-spaces':graphemes(value.replace(/\p{White_Space}/gu,'')),
+   sentences:countSentences(value),
+   paragraphs:value.trim()?value.trim().split(/\r?\n[ \t]*\r?\n+/u).filter(s=>hasWord.test(s)).length:0
+  };
+  for(const [key,val] of Object.entries(stats))$('#ft-word-'+key).textContent=number.format(val);
+  const minutes=wordCount?Math.max(1,Math.ceil(wordCount/200)):0;
+  $('#ft-word-reading').textContent=(minutes?'≈ ':'')+number.format(minutes)+note(' min',' мин');
+ }
+ field.addEventListener('input',()=>{refresh();setStatus('');});
+ reset.addEventListener('click',()=>{field.value='';refresh();field.focus();setStatus(note('Text cleared.','Текст очищен.'));});
+ refresh();
 }
 })();
