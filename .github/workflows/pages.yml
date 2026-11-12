@@ -109,6 +109,7 @@ jobs:
           node scripts/validate-new-answers-seo.mjs
           node scripts/validate-world-events.mjs
           node scripts/validate-guide-media.mjs
+          node scripts/validate-photo-attribution-layout.mjs
           node scripts/validate-seo-practical-growth.mjs
           node scripts/validate-seo-useful-growth.mjs
           node scripts/validate-seo-useful-growth-nov12.mjs

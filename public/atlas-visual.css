@@ -391,14 +391,18 @@ body{background:var(--paper);color:var(--ink)}
 .topic-card.photo-topic::after{background:linear-gradient(180deg,transparent 48%,rgba(6,22,24,.58) 100%)}
 .topic-card.photo-topic .topic-info{z-index:3}
 .topic-card.photo-topic .topic-info strong{text-shadow:0 2px 14px #0009}
-.article-image{position:relative;margin:0;overflow:hidden}
-.article-image img{display:block;width:100%;height:100%;object-fit:cover}
-.article-photo-credit{position:absolute;right:15px;bottom:13px;z-index:3;max-width:calc(100% - 30px);background:#14282dc9;padding:7px 10px;color:#fff;font:600 11px/1.5 'DM Sans',sans-serif}
-.article-photo-credit a{color:inherit;text-decoration:underline}
+.article-image{position:relative;margin:0;overflow:visible;aspect-ratio:auto;background:transparent}
+.article-image img{display:block;width:100%;height:auto;aspect-ratio:1.9;object-fit:cover}
+/* Topic photo credits also sit under the image rather than over it. */
+.atlas-photo-wrap{display:flex;flex-direction:column;min-width:0}
+.atlas-photo-wrap>.atlas-photo{flex:1}
+.article-photo-credit{position:static;max-width:100%;margin:0;padding:10px 0 0;background:transparent;color:#54665c;font:500 12px/1.55 'DM Sans',sans-serif;overflow-wrap:anywhere}
+.article-photo-credit a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 @media(max-width:900px){
  .hero-image.hero-photo-stage{min-height:480px}
 }
 @media(max-width:740px){
+ .article-image img{aspect-ratio:1.4}
  .hero-image.hero-photo-stage{min-height:390px}
  .hero-photo-stage .hero-photo-caption{bottom:27px}
  .hero-photo-stage .hero-photo-caption strong{font-size:28px}
