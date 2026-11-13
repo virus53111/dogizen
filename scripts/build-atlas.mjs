@@ -1,11 +1,13 @@
 import {mkdir,writeFile,copyFile,rm} from 'node:fs/promises';
 import path from 'node:path';
 import {languages,stories,storiesFor,availableIn,topics,copy} from '../lib/atlas-data.js';
-import {freeTools} from '../lib/free-tools-2026.js';
+import {freeTools as existingFreeTools} from '../lib/free-tools-2026.js';
+import {ryzenTool} from '../lib/ryzen-am4-checker.js';
 import {species} from '../lib/world-topics.js';
 import {home,guide,tool,freeTool,category,speciesPage,trustPage,photoPromptGallery,notFound,url} from '../lib/atlas-site.js';
 import {visualSpecies} from '../lib/species-atlas.js';
 import {bundlePhotographs} from './bundle-photographs.mjs';
+const freeTools = [ryzenTool, ...existingFreeTools];
 const root=path.resolve('dist');
 await rm(root,{recursive:true,force:true});
 await mkdir(root,{recursive:true});
@@ -88,7 +90,7 @@ for(const lang of languages){
   }
   if(['en','ru'].includes(lang))for(const g of freeTools){
     await write(prefix+'tools/'+g.id+'/index.html',freeTool(lang,g.id));
-    pages.push({lang,part:'tools/'+g.id,weight:'0.8',updated:g.id==='word-counter'?'2026-11-12':'2026-11-11'});
+    pages.push({lang,part:'tools/'+g.id,weight:'0.8',updated:g.id==='ryzen-am4-checker'?'2026-11-13':g.id==='word-counter'?'2026-11-12':'2026-11-11'});
   }
 }
 const site='https://murdilimax.com';
