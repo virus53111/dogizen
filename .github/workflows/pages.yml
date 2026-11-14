@@ -24,6 +24,7 @@ jobs:
           node --check lib/aviation-and-useful-answers.js
           node --check lib/phone-cold-weather.js
           node --check lib/everyday-photo-induction.js
+          node --check lib/global-lifetime-guides-2026.js
           node --check lib/winter-car-answers.js
           node --check lib/seasonal-home-plants.js
           node --check lib/practical-clothing-care.js
@@ -144,6 +145,7 @@ jobs:
           node scripts/validate-zebra-stripes.mjs
           node scripts/validate-flamingo-one-leg.mjs
           node scripts/validate-global-evergreen-guides.mjs
+          node scripts/validate-global-lifetime-guides.mjs
           node scripts/validate-jobs-jewellery-evergreen.mjs
           node scripts/validate-high-intent-guides.mjs
           node scripts/validate-global-practical-guides.mjs
