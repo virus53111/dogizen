@@ -38,6 +38,12 @@ for (const block of blocks) {
   if (canonical !== raw) errors.push('Canonical mismatch for ' + raw + ': ' + (canonical || 'missing'));
   if (/<meta name="robots" content="noindex/i.test(html)) errors.push('Sitemap includes noindex page: ' + raw);
 
+  // Verify local language, as the sitemap covers 12 independently localized sections.
+  const pageLang = html.match(/<html lang="([^"]+)"/)?.[1];
+  const expectedLang = url.pathname.split('/').filter(Boolean)[0];
+  const locale = ['ru','de','es','fr','lv','pt','it','pl','lt','et','nl'].includes(expectedLang) ? expectedLang : 'en';
+  if (pageLang !== locale) errors.push('HTML locale mismatch for ' + raw + ': ' + (pageLang || 'missing'));
+
   const date = block.match(/<lastmod>([^<]+)<\/lastmod>/)?.[1];
   if (date && (!/^\d{4}-\d{2}-\d{2}$/.test(date) ||
       !Number.isFinite(Date.parse(date)) || new Date(date).toISOString().slice(0,10) !== date)) {
