@@ -8,7 +8,7 @@ The multilingual independent knowledge project at [murdilimax.com](https://murdi
 - Static HTML, per-language canonical URLs, reciprocal hreflang, robots.txt and a generated sitemap.xml.
 - The previous classifieds product is no longer part of the live project. Historical code remains only in a separate backup branch.
 - Editorial, about and privacy pages are available in English and Russian; other languages link to the English policies until translations are written.
-- As of November 2026, the deployed code does not include an advertising or analytics integration. External images and fonts load from third-party providers.
+- Google Analytics 4 is integrated behind an opt-in consent flow; there is currently no advertising integration. External images and fonts may load from third-party providers.
 
 ## Build and verification
 Node 22: `npm run build`. The workflow runs article-coverage, species media, SEO and editorial checks, and auto-publishes only when the `main` build succeeds.
