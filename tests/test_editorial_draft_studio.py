@@ -67,10 +67,11 @@ class StudioTests(unittest.TestCase):
             report = root / "report.md"
             report.write_text("# Radar\n", encoding="utf-8")
             data = studio.produce({"shortlist": items}, root / "drafts", report,
-                                  ai=True, api_key="", generated_at="2026-11-14 12:00")
+                                  ai=False, generated_at="2026-11-14 12:00")
             self.assertEqual(len(data["topics_prepared"]), 2)
             self.assertEqual(data["ai_drafts"], 0)
-            self.assertFalse(data["api_enabled"])
+            self.assertFalse(data["free_anonymous_inference_enabled"])
+            self.assertEqual(data["paid_api_calls"], 0)
             self.assertEqual(data["publishing"], "disabled")
             self.assertEqual(len(list((root / "drafts").glob("*-brief.md"))), 2)
             self.assertEqual(len(list((root / "drafts").glob("*-ai-draft.md"))), 0)
@@ -95,15 +96,51 @@ class StudioTests(unittest.TestCase):
             result = studio.produce({"shortlist": [
                 topic("Why does the sky change color?", 91),
                 topic("Why do stars flicker?", 88),
-            ]}, Path(directory), ai=True, api_key="test-secret",
-                generated_at="2026-11-14 12:00")
+            ]}, Path(directory), ai=True, generated_at="2026-11-14 12:00")
             self.assertEqual(result["ai_drafts"], 1)
             self.assertEqual(mock.call_count, 1)
             draft = list(Path(directory).glob("*-ai-draft.md"))[0].read_text()
             self.assertIn("NOT VERIFIED", draft)
             self.assertIn("[VERIFY:", draft.replace("\\[", "["))
             self.assertIn("Publication blocked", draft)
-            self.assertNotIn("test-secret", draft)
+            self.assertNotIn("api.openai.com", draft)
+
+    def test_anonymous_model_never_sends_credentials_or_hits_paid_api(self):
+        import io
+        request_seen = []
+        response = {"choices": [{"message": {"content": '{"title":"Test","sections":[]}'}}]}
+        class FakeResponse:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+            def read(self, maximum=-1):
+                return json.dumps(response).encode("utf-8")
+        def urlopen(request, timeout):
+            request_seen.append(request)
+            return FakeResponse()
+        with patch.object(studio.urllib.request, "urlopen", side_effect=urlopen):
+            parsed = studio.model_request(topic())
+        self.assertEqual(parsed["title"], "Test")
+        self.assertEqual(len(request_seen), 1)
+        req = request_seen[0]
+        self.assertEqual(req.full_url, studio.FREE_ENDPOINT)
+        self.assertNotIn("Authorization", req.headers)
+        body = json.loads(req.data)
+        self.assertEqual(body["model"], studio.FREE_MODEL)
+        self.assertLessEqual(body["max_tokens"], 2200)
+        with self.assertRaises(ValueError):
+            studio.model_request(topic(), model="paid-proprietary-model")
+
+    def test_anonymous_ai_can_select_nonbreaking_music_explainer(self):
+        music = topic("country music", priority=42,
+                      type_name="trend-led explainer; investigate evergreen value")
+        music["category"] = "Culture & entertainment"
+        breaking = topic("What time does a new game release?", priority=99)
+        self.assertTrue(studio.eligible_for_ai(music))
+        self.assertFalse(studio.eligible_for_ai(breaking))
+        picked = studio.select_topics([breaking, music])
+        self.assertEqual(picked[0]["term"], "country music")
 
     def test_model_validation_fails_html_and_short_fake_drafts(self):
         with self.assertRaises(ValueError):
