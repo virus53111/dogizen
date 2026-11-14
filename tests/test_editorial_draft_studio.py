@@ -48,6 +48,18 @@ class StudioTests(unittest.TestCase):
         duplicate["possible_existing_article"] = True
         self.assertFalse(studio.eligible_for_ai(duplicate))
 
+    def test_evergreen_first_and_release_news_never_auto_drafted(self):
+        urgent = topic("What time does GTA 6 come out?", priority=96)
+        evergreen = topic("Why do stars twinkle?", priority=52)
+        self.assertTrue(studio.likely_time_sensitive(urgent))
+        self.assertFalse(studio.eligible_for_ai(urgent))
+        self.assertFalse(studio.likely_time_sensitive(evergreen))
+        selected = studio.select_topics([urgent, evergreen], maximum=2)
+        self.assertEqual(selected[0]["term"], evergreen["term"])
+        self.assertEqual(selected[1]["term"], urgent["term"])
+        self.assertTrue(studio.likely_time_sensitive(topic("Japan vs Brazil", priority=95,
+            type_name="time-sensitive context")))
+
     def test_offline_mode_writes_only_review_briefs(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
