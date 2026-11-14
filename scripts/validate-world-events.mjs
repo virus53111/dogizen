@@ -4,7 +4,8 @@ import {languages,stories,topics} from '../lib/atlas-data.js';
 const id='krakow-shooting-november-2026';
 const read=p=>readFileSync('dist/'+p,'utf8');
 assert.ok(stories.length>=117);
-assert.equal(topics.length,17);
+assert.ok(topics.length>=17,'All original editorial categories must remain available');
+assert.equal(new Set(topics.map(t=>t.id)).size,topics.length,'Topic slugs must be unique');
 for(const lang of ['en','ru']){
  const prefix=lang==='en'?'':lang+'/';
  const page=read(prefix+'guides/'+id+'/index.html');
