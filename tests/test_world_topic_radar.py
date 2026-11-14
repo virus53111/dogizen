@@ -39,6 +39,17 @@ class RadarTests(unittest.TestCase):
         self.assertTrue(first["is_question"])
         self.assertEqual(len(first["references"]), 1)
 
+    def test_cross_language_match_names_and_category(self):
+        a = {"term": "japan vs brazil", "signal": "google_trends_search",
+             "region": "GB", "references": [], "source_url": "https://trends.google.com/trending/rss?geo=GB"}
+        b = {"term": "japón - brasil", "signal": "google_trends_search",
+             "region": "ES", "references": [], "source_url": "https://trends.google.com/trending/rss?geo=ES"}
+        combined = radar.normalize_topics([a, b])
+        self.assertEqual(len(combined), 1)
+        self.assertEqual(set(combined[0]["regions"]), {"GB", "ES"})
+        self.assertEqual(combined[0]["category"], "Sports")
+        self.assertEqual(radar.classify("country music"), "Culture & entertainment")
+
     def test_wikipedia_top_articles_are_view_signals_not_searches(self):
         page = {"items": [{"articles": [
             {"article": "Main_Page", "views": 999999},

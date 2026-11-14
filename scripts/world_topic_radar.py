@@ -54,6 +54,22 @@ def norm(value: str) -> str:
     return re.sub(r"[^\w]+", " ", unicodedata.normalize("NFKC", value).casefold()).strip()
 
 
+def topic_key(value: str) -> str:
+    """Conservatively collapse cross-language variants of common country-versus-country matches."""
+    folded = "".join(c for c in unicodedata.normalize("NFKD", value.casefold())
+                     if not unicodedata.combining(c))
+    parts = re.split(r"\s+(?:vs\.?|versus|-)\s+", folded)
+    if len(parts) != 2 or not all(2 <= len(part) <= 35 for part in parts):
+        return norm(value)
+    country_aliases = {"japon": "japan", "japao": "japan", "japan": "japan",
+                       "brasil": "brazil", "bresil": "brazil", "brazil": "brazil",
+                       "espana": "spain", "espanha": "spain", "spain": "spain",
+                       "alemania": "germany", "deutschland": "germany", "germany": "germany",
+                       "francia": "france", "franca": "france", "france": "france"}
+    pair = [country_aliases.get(norm(part), norm(part)) for part in parts]
+    return "match:" + "|".join(sorted(pair))
+
+
 def safe_url(value: str) -> str:
     parsed = urllib.parse.urlparse(value.strip())
     return value if parsed.scheme == "https" and parsed.netloc and not parsed.username else ""
@@ -107,6 +123,11 @@ def parse_wikipedia(payload: dict, lang: str, date: dt.date) -> list[dict]:
 
 def classify(term: str) -> str:
     lower = " " + term.casefold() + " "
+    if topic_key(term).startswith("match:") or re.search(r"\bvs\.?\b|\bversus\b", lower):
+        return "Sports"
+    if any(word in lower for word in (" music ", " album ", " actor ", " actress ",
+                                      " singer ", " song ", " red-carpet ", " grammy ")):
+        return "Culture & entertainment"
     for category, words in CATEGORIES.items():
         if any(word in lower for word in words):
             return category
@@ -142,7 +163,7 @@ def read_source(kind: str, code: str, day: dt.date) -> list[dict]:
 def normalize_topics(rows: list[dict]) -> list[dict]:
     by_key: dict[str, dict] = {}
     for row in rows:
-        key = (row["signal"], norm(row["term"]))
+        key = (row["signal"], topic_key(row["term"]))
         if not key[1]:
             continue
         if key not in by_key:
@@ -197,13 +218,16 @@ def shortlist(topics: list[dict], titles: list[str], count: int) -> list[dict]:
     selected = []
     for item in topics:
         item["possible_existing_article"] = possible_duplicate(item["term"], titles)
-        if item["possible_existing_article"] or per_category[item["category"]] >= 3:
-            continue
-        # Keep international diversity; this is a research queue, never a publication list.
-        selected.append(item)
-        per_category[item["category"]] += 1
-        if len(selected) >= count:
-            break
+    # Choose up to three from each area first, then fill remaining slots with
+    # other useful signals; this avoids leaving the daily report half empty.
+    for cap in (3, 6):
+        for item in topics:
+            if item["possible_existing_article"] or item in selected or per_category[item["category"]] >= cap:
+                continue
+            selected.append(item)
+            per_category[item["category"]] += 1
+            if len(selected) >= count:
+                return selected
     return selected
 
 
