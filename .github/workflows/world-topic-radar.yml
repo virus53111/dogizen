@@ -1,0 +1,64 @@
+name: MURDILIMAX — World Topic Radar
+on:
+  # Research only: scheduled runs never publish articles or send forum replies.
+  schedule:
+    - cron: '17 7 * * *'
+  workflow_dispatch:
+  # First report runs automatically when this workflow is merged to main.
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/world_topic_radar.py'
+      - 'tests/test_world_topic_radar.py'
+      - '.github/workflows/world-topic-radar.yml'
+  pull_request:
+    paths:
+      - 'scripts/world_topic_radar.py'
+      - 'tests/test_world_topic_radar.py'
+      - '.github/workflows/world-topic-radar.yml'
+permissions:
+  contents: read
+  issues: write
+concurrency:
+  group: world-topic-radar-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test feed parsing, source safety and deduplication offline
+        run: python -m unittest discover -s tests -p 'test_world_topic_radar.py' -v
+      - name: Collect global public interest signals
+        if: github.event_name != 'pull_request'
+        run: >-
+          python scripts/world_topic_radar.py
+          --geos US,GB,DE,FR,ES,IN,BR,JP,LV,CA
+          --wikis en,de,es,fr,ru
+          --count 12
+          --output reports/world-topic-radar
+      - name: Save the report and research data for review
+        if: always() && github.event_name != 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: murdilimax-world-topic-radar
+          path: reports/world-topic-radar/
+          retention-days: 30
+          if-no-files-found: warn
+      - name: Create or refresh one editorial review issue
+        if: success() && github.event_name != 'pull_request'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title='MURDILIMAX World Topic Radar'
+          issue="$(gh issue list --state open --search 'MURDILIMAX World Topic Radar in:title' --limit 50 --json number,title --jq '.[] | select(.title == "MURDILIMAX World Topic Radar") | .number' | head -n 1)"
+          if [ -n "$issue" ]; then
+            gh issue edit "$issue" --body-file reports/world-topic-radar/report.md
+          else
+            gh issue create --title "$title" --body-file reports/world-topic-radar/report.md
+          fi
