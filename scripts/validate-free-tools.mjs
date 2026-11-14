@@ -5,9 +5,13 @@ import {freeTools} from '../lib/free-tools-2026.js';
 
 const read=path=>readFileSync('dist/'+path,'utf8');
 const esc=s=>String(s).replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll("'",'&#39;').replaceAll('<','&lt;').replaceAll('>','&gt;');
-const ids=freeTools.map(x=>x.id);
-assert.equal(ids.length,6,'Require six usable free services');
-assert.equal(new Set(ids).size,6,'Each tool needs a unique slug');
+// This validation suite checks the original six file/text utilities.
+// New standalone visual calculators have their own build assertions and UI.
+const originalIds=['qr-code-generator','compress-images','image-converter','merge-pdf','images-to-pdf','word-counter'];
+const originalTools=originalIds.map(id=>freeTools.find(x=>x.id===id));
+assert.ok(originalTools.every(Boolean),'All six original utilities must remain available');
+const ids=originalIds;
+assert.equal(new Set(freeTools.map(x=>x.id)).size,freeTools.length,'All tool slugs must remain unique');
 const sm=read('sitemap.xml');
 assert.ok((sm.match(/<url>/g)||[]).length>=699,'Six tools must have twelve crawlable pages');
 
@@ -15,7 +19,7 @@ for(const lang of ['en','ru']){
  const prefix=lang==='ru'?'ru/':'';
  const home=read(prefix+'index.html'),topic=read(prefix+'topics/tools/index.html');
  const index=JSON.parse(read(prefix+'search-index.json'));
- for(const tool of freeTools){
+ for(const tool of originalTools){
   const d=tool[lang];
   assert.ok(d.title.length>=38&&d.title.length<90,'SEO title '+tool.id+'/'+lang);
   assert.ok(d.description.length>=100&&d.description.length<=180,'SEO description '+tool.id+'/'+lang);
