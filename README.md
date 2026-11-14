@@ -18,8 +18,8 @@ Expand one content cluster at a time, cite primary sources where possible, publi
 
 ## World Topic Radar (research-only automation)
 
-The scheduled [World Topic Radar](.github/workflows/world-topic-radar.yml) runs once
-per day at 07:17 UTC (or manually through GitHub Actions). It checks public
+The scheduled [World Topic Radar](.github/workflows/world-topic-radar.yml) runs twice
+per day at 07:17 and 19:17 UTC (or manually through GitHub Actions). It checks public
 Google Trends RSS feeds for ten countries and Wikimedia's public top-pageview
 signals for five Wikipedia languages. The signals cover **all subjects**:
 science, technology, nature, health, culture, travel, sport, finance, world
@@ -41,7 +41,39 @@ original analysis, factual checks, license validation and editorial approval
 before publication. Higher-risk health, finance, politics and emergency topics
 require additional care. The system does not claim search-volume forecasts.
 
-Run offline tests: `python -m unittest discover -s tests -p 'test_world_topic_radar.py' -v`.
+Run offline tests: `python -m unittest discover -s tests -p 'test_*.py' -v`.
 Run a live research pass: `python scripts/world_topic_radar.py --output reports/world-topic-radar`.
 Network/source errors are listed in the report; if every source is unavailable,
 the command fails rather than presenting fabricated results.
+
+## Traffic intelligence and syndication (no bulk auto-publishing)
+
+The additional `scripts/topic_opportunity_engine.py` enriches the international
+research report with a **transparent editorial priority score** (0–100),
+question/answer angle, tentative language targets, fact-check checklists, and
+time-sensitive or sensitive-topic warnings. The priority is a heuristic for
+human research triage, **not** a predicted click count, conversion rate,
+keyword volume, or Google ranking forecast. No article is authored or
+published by this workflow, and no user is contacted.
+
+For a more grounded opportunity list, an editor may optionally import a
+**site-owned aggregate Google Search Console query CSV** using:
+`python scripts/world_topic_radar.py --gsc-csv /path/to/Queries.csv`.
+Expected English columns are `Top queries` (or `Query`), `Clicks`,
+`Impressions`, `CTR`, and `Position`. Queries with at least 50 impressions
+and an observed average position from 3 to 20 appear in a separate
+*inspect-first* quick-wins table. This file should be kept off the public
+repository; none is bundled or required. The scheduled workflow makes no
+Search Console requests unless a CSV is explicitly supplied. The GSC data
+is aggregate and never identifies individual searchers.
+
+**Article RSS subscriptions**: the build generates `/feed.xml` (English)
+and `/ru/feed.xml` (Russian) from the 30 most recently published, actually
+localized guides. Feed links are discoverable in page metadata and the
+footer, for RSS readers and permitted aggregators. They are tested against
+the generated canonical guide pages. An RSS feed is a distribution channel,
+not a guarantee of indexing or higher Google rankings.
+
+The next editorial step remains **research → original draft → source
+verification → manual review → PR and CI → publication**, rather than
+mass-generating low-value pages based on noisy trends.

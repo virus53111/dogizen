@@ -1,0 +1,14 @@
+# Generated website and local build dependencies
+dist/
+node_modules/
+
+# Private/local research exports. GitHub Actions uploads its reports as artifacts.
+reports/world-topic-radar/
+reports/gsc-exports/
+
+# Python execution artifacts
+__pycache__/
+*.py[cod]
+
+# Never commit locally exported Search Console performance data.
+*search-console-queries*.csv

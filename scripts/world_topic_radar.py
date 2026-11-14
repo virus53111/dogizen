@@ -17,6 +17,12 @@ import xml.etree.ElementTree as ET
 from collections import defaultdict
 from pathlib import Path
 
+# Keep both "python scripts/world_topic_radar.py" and package-based unittest imports working.
+try:
+    from scripts.topic_opportunity_engine import enrich, load_gsc_csv, quick_wins
+except ModuleNotFoundError:
+    from topic_opportunity_engine import enrich, load_gsc_csv, quick_wins
+
 USER_AGENT = "MURDILIMAX-World-Topic-Radar/1.0 (https://murdilimax.com/about/)"
 TRENDS_NAMESPACE = "{https://trends.google.com/trending/rss}"
 DEFAULT_GEOS = ("US", "GB", "DE", "FR", "ES", "IN", "BR", "JP", "LV", "CA")
@@ -235,7 +241,8 @@ def escape_md(value: str) -> str:
     return clean(value, 260).replace("|", "\\|").replace("[", "\\[").replace("]", "\\]").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def render_report(items: list[dict], all_items: list[dict], errors: list[str], timestamp: str) -> str:
+def render_report(items: list[dict], all_items: list[dict], errors: list[str], timestamp: str,
+                  gsc_wins: list[dict] | None = None) -> str:
     lines = ["# 🌍 MURDILIMAX — World Topic Radar", "",
              "Generated: " + timestamp + " UTC", "",
              "**Research leads only. No article was generated or published, and nobody was contacted.**",
@@ -243,8 +250,8 @@ def render_report(items: list[dict], all_items: list[dict], errors: list[str], t
              "Wikipedia counts *page views*, not searches. These are different signals and must not be added together.",
              "",
              "## Shortlist — editorial verification required", "",
-             "| # | Topic / possible reader interest | Signal | Category | Review |",
-             "|---|---|---|---|---|"]
+             "| # | Topic / possible reader interest | Editorial priority* | Signal | Category | Review |",
+             "|---|---|---|---|---|---|"]
     for i, item in enumerate(items, 1):
         signal = ("Google Trends: " + ",".join(item["regions"]) + " · " +
                   (item.get("observed_bucket") or "traffic bucket unavailable")
@@ -252,24 +259,48 @@ def render_report(items: list[dict], all_items: list[dict], errors: list[str], t
                   else "Wikipedia " + ",".join(item["regions"]) + " · " +
                   f"{item.get('views', 0):,} views on selected day")
         review = ", ".join(item["requires_review"]) if item["requires_review"] else "Editorial check"
-        lines.append(f"| {i} | {escape_md(item['term'])} | {escape_md(signal)} | "
+        priority = item.get("opportunity", {}).get("editorial_priority", "—")
+        lines.append(f"| {i} | {escape_md(item['term'])} | {priority}/100 | {escape_md(signal)} | "
                      f"{escape_md(item['category'])} | {escape_md(review)} |")
     if not items:
-        lines.append("| — | No verified source data available | — | — | — |")
+        lines.append("| — | No verified source data available | — | — | — | — |")
     lines.extend(["", "## Briefs and source links", ""])
     for i, item in enumerate(items, 1):
         lines.extend([f"### {i}. {escape_md(item['term'])}",
                       f"- **Suggested research angle (not a verbatim searched question):** {escape_md(item['editorial_angle'])}",
+                      f"- **Proposed user question (editorial hypothesis, not a measured search phrase):** {escape_md(item.get('opportunity', {}).get('working_question', item['term']))}",
+                      f"- **Article type:** {escape_md(item.get('opportunity', {}).get('type', 'Research explainer'))}",
+                      f"- **Candidate languages to research (no translations generated):** {', '.join(item.get('opportunity', {}).get('candidate_languages', ['en']))}",
+                      f"- **Editorial priority rationale:** {'; '.join(item.get('opportunity', {}).get('priority_reasons', []))}",
                       f"- **Source signal:** [{escape_md(item['signal'])}]({item['source_url']})",
                       f"- **Regional signals:** {', '.join(item['regions'])}",
                       "- **Research before drafting:** confirm context and date; locate primary sources; "
                       "check existing MURDILIMAX coverage; decide if an enduring useful answer is possible.",
                       "- **Safety gate:** human fact-check and editorial approval for every topic; "
                       "extra specialist review for health, financial, political or emergency issues."])
+        for gsc_row in item.get("opportunity", {}).get("gsc_matches", [])[:2]:
+            lines.append("- **Own-site GSC query for investigation:** "
+                         + f"`{escape_md(gsc_row['query'])}` — {gsc_row['impressions']} impressions, "
+                         + f"{gsc_row['clicks']} clicks, average position {gsc_row['position']}. "
+                         + "Verify the actual landing page before editing.")
         for ref in item["references"][:2]:
             lines.append("- Related coverage for context (not independently verified): "
                          + f"[{escape_md(ref['title'] or 'Source')}]({ref['url']})")
         lines.append("")
+    if gsc_wins:
+        lines.extend(["## Optional Search Console quick wins (user-supplied CSV)", "",
+                      "Only measured aggregate queries supplied by the site owner. "
+                      "These are **not** external keyword search volumes or traffic forecasts.",
+                      "",
+                      "| Query | Impressions | Clicks | Observed CTR | Avg position |",
+                      "|---|---:|---:|---:|---:|"])
+        for row in gsc_wins:
+            lines.append(f"| {escape_md(row['query'])} | {row['impressions']:,} | "
+                         f"{row['clicks']:,} | {row['ctr']:.1%} | {row['position']} |")
+        lines.extend(["", "Inspect the actual ranking URL and search intent first; "
+                      "do not replace existing content simply because a query appears here.", ""])
+    lines.extend(["**Priority score is an explainable editorial triage heuristic, "
+                  "not a prediction of clicks, rankings, search volumes or commercial value.**", ""])
     lines.extend(["## Collection notes", "",
                   f"- Candidate signals: {len(all_items)} after source-level de-duplication.",
                   f"- Topics shortlisted: {len(items)}; broad categories and multiple countries are allowed.",
@@ -290,6 +321,7 @@ def main() -> int:
     parser.add_argument("--output", default="reports/world-topic-radar")
     parser.add_argument("--count", type=int, default=12)
     parser.add_argument("--repo", default=".")
+    parser.add_argument("--gsc-csv", default="", help="Optional site-owner Search Console query export; not committed or required")
     args = parser.parse_args()
     geos = [x for x in args.geos.upper().split(",") if re.fullmatch(r"[A-Z]{2}", x)][:16]
     wikis = [x for x in args.wikis.lower().split(",") if re.fullmatch(r"[a-z]{2,3}", x)][:10]
@@ -308,16 +340,22 @@ def main() -> int:
             except (OSError, ValueError, ET.ParseError, urllib.error.URLError, KeyError, IndexError) as ex:
                 errors.append(f"{kind}/{code}: {type(ex).__name__}: {clean(str(ex), 100)}")
     topics = normalize_topics(rows)
-    picks = shortlist(topics, existing_titles(Path(args.repo)), max(1, min(args.count, 30)))
+    gsc_rows = load_gsc_csv(Path(args.gsc_csv)) if args.gsc_csv else []
+    titles = existing_titles(Path(args.repo))
+    for item in topics:
+        item["possible_existing_article"] = possible_duplicate(item["term"], titles)
+    topics = enrich(topics, gsc_rows)
+    picks = shortlist(topics, titles, max(1, min(args.count, 30)))
     folder = Path(args.output)
     folder.mkdir(parents=True, exist_ok=True)
     stamp = now.strftime("%Y-%m-%d %H:%M")
-    report = render_report(picks, topics, errors, stamp)
+    report = render_report(picks, topics, errors, stamp, quick_wins(gsc_rows))
     (folder / "report.md").write_text(report, encoding="utf-8")
     (folder / "topics.json").write_text(json.dumps({
         "generated_at": now.isoformat(), "geographies": geos, "wiki_languages": wikis,
         "sources_ok": len(jobs) - len(errors), "source_errors": errors,
-        "candidate_count": len(topics), "shortlist": picks,
+        "candidate_count": len(topics), "gsc_rows_loaded": len(gsc_rows),
+        "gsc_quick_wins": quick_wins(gsc_rows), "shortlist": picks,
     }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"World Topic Radar: {len(picks)} leads / {len(topics)} signals / {len(errors)} source errors")
     return 0 if rows else 2

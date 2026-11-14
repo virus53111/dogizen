@@ -12,6 +12,7 @@ import {species} from '../lib/world-topics.js';
 import {home,guide,tool,freeTool,category,speciesPage,trustPage,photoPromptGallery,notFound,url} from '../lib/atlas-site.js';
 import {visualSpecies} from '../lib/species-atlas.js';
 import {bundlePhotographs} from './bundle-photographs.mjs';
+import {writeRssFeeds} from './write-rss.mjs';
 const freeTools = [uploadPdfTool, ocrTool, trimTool, seatingTool, movingTool, ryzenTool, ...existingFreeTools];
 const root=path.resolve('dist');
 await rm(root,{recursive:true,force:true});
@@ -114,6 +115,7 @@ for(const p of pages){
 }
 sitemap+='</urlset>\n';
 await write('sitemap.xml',sitemap);
+await writeRssFeeds({root,storiesFor,url,topics,site});
 await write(key+'.txt',key);
 await write('404.html',notFound('en'));
 await write('CNAME','murdilimax.com\n');
