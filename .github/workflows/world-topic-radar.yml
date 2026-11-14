@@ -2,7 +2,7 @@ name: MURDILIMAX — World Topic Radar
 on:
   # Research only: scheduled runs never publish articles or send forum replies.
   schedule:
-    - cron: '17 7 * * *'
+    - cron: '17 7,19 * * *'
   workflow_dispatch:
   # First report runs automatically when this workflow is merged to main.
   push:
@@ -10,11 +10,15 @@ on:
     paths:
       - 'scripts/world_topic_radar.py'
       - 'tests/test_world_topic_radar.py'
+      - 'scripts/topic_opportunity_engine.py'
+      - 'tests/test_topic_opportunity_engine.py'
       - '.github/workflows/world-topic-radar.yml'
   pull_request:
     paths:
       - 'scripts/world_topic_radar.py'
       - 'tests/test_world_topic_radar.py'
+      - 'scripts/topic_opportunity_engine.py'
+      - 'tests/test_topic_opportunity_engine.py'
       - '.github/workflows/world-topic-radar.yml'
 permissions:
   contents: read
@@ -32,7 +36,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Test feed parsing, source safety and deduplication offline
-        run: python -m unittest discover -s tests -p 'test_world_topic_radar.py' -v
+        run: python -m unittest discover -s tests -p 'test_*.py' -v
       - name: Collect global public interest signals
         if: github.event_name != 'pull_request'
         run: >-
