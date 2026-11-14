@@ -1,0 +1,41 @@
+/* Visual calculators: original vector hero art, mobile-first cards and typography. */
+.hc-page{padding-top:22px;padding-bottom:100px}
+.hc-page [hidden]{display:none!important}
+.hc-hero{margin:28px 0 34px;display:grid;grid-template-columns:minmax(0,1.02fr) minmax(0,1fr);min-height:350px;border-radius:26px;overflow:hidden;background:#173f35;color:#fff}
+.hc-intro{padding:clamp(30px,5vw,66px);align-self:center}
+.hc-eyebrow{color:#c7ed94;font-weight:750;letter-spacing:.13em;font-size:.73rem;text-transform:uppercase}
+.hc-intro h1{color:#fff;font-family:Syne,"DM Sans",sans-serif;font-weight:800;font-size:clamp(2.25rem,4.6vw,4.5rem);line-height:1.1;letter-spacing:-.055em;margin:18px 0}
+.hc-intro p{color:#dfebdf;font-size:clamp(.97rem,1.35vw,1.15rem);line-height:1.75;max-width:520px}
+.hc-start{display:inline-flex;color:#173f35!important;background:#d9ed9e;padding:13px 22px;text-decoration:none!important;border-radius:99px;font-weight:800;margin-top:15px}
+.hc-start:hover{background:#fff}
+.hc-art{display:flex;align-items:center;justify-content:center;padding:22px;background:#e4efe7}
+.hc-art svg{display:block;width:100%;height:auto;max-width:650px;filter:drop-shadow(0 16px 22px rgba(21,63,51,.10))}
+.hc-workspace{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(310px,.75fr);gap:20px;align-items:start}
+.hc-panel{border:1px solid #d7e2d8;border-radius:23px;background:#fff;padding:clamp(24px,3vw,35px);box-shadow:0 15px 45px rgba(20,50,40,.06)}
+.hc-panel-title{font:800 14px Syne,"DM Sans",sans-serif;letter-spacing:.015em;margin-bottom:23px;color:#153f33}
+.hc-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:17px}
+.hc-field{display:flex;flex-direction:column;gap:9px;font-size:.86rem;font-weight:700;color:#305044}
+.hc-field input,.hc-field select{box-sizing:border-box;width:100%;border:1px solid #bfcfc3;background:#f8faf5;color:#183b30;border-radius:11px;padding:13px 15px;font:600 1rem "DM Sans",sans-serif;min-height:48px}
+.hc-field input:focus-visible,.hc-field select:focus-visible,.hc-check input:focus-visible,.hc-start:focus-visible,.hc-related a:focus-visible{outline:3px solid #6caa8b;outline-offset:3px}
+.hc-check{display:flex;gap:12px;align-items:center;grid-column:1/-1;font-size:.92rem;font-weight:700;padding:12px 3px;color:#234b38}
+.hc-check input{width:22px;height:22px;accent-color:#185847}
+.hc-hint{color:#60786c;font-size:.85rem;line-height:1.65;margin:22px 0 0}
+.hc-results{background:#e7f1e6;border-color:#c7dcc9}
+.hc-results-grid{display:grid;gap:12px}
+.hc-result{background:#fff;border:1px solid #c9dbcb;border-radius:14px;padding:19px;display:grid;gap:8px}
+.hc-result:first-child{background:#173f35;color:#fff;border-color:#173f35}
+.hc-result span{font-size:.84rem;color:#577364}
+.hc-result:first-child span{color:#d0e3d0}
+.hc-result strong{font:800 clamp(1.45rem,2.3vw,2.2rem) Syne,"DM Sans",sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-.04em;overflow-wrap:anywhere}
+.hc-error{color:#a72a2a;line-height:1.5;font-size:.9rem;font-weight:700;min-height:12px}
+.hc-editorial{max-width:850px;margin-top:70px}
+.hc-editorial h2{font:800 clamp(1.5rem,3vw,2.2rem) Syne,"DM Sans",sans-serif;letter-spacing:-.04em;margin:40px 0 26px}
+.hc-editorial article{border-bottom:1px solid #d9e3d9;padding:13px 0 23px;margin-bottom:10px}
+.hc-editorial h3{font:750 1.15rem Syne,"DM Sans",sans-serif;color:#204a3b;margin:7px 0 11px}
+.hc-editorial p{font-size:1rem;color:#4e6055;line-height:1.82;max-width:790px}
+.hc-editorial details{border:1px solid #d9e3d9;border-radius:12px;padding:16px 20px;margin:10px 0;background:#fff}
+.hc-editorial summary{font-weight:750;cursor:pointer}
+.hc-related{border-top:1px solid #d9e3d9;display:flex;gap:18px;flex-wrap:wrap;align-items:center;margin-top:45px;padding-top:23px}
+.hc-related a{font-weight:700;color:#1b573b}
+@media(max-width:900px){.hc-hero{grid-template-columns:minmax(0,1fr)}.hc-art{max-height:360px}.hc-art svg{max-width:540px}.hc-workspace{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:540px){.hc-page{padding-bottom:65px}.hc-hero{border-radius:18px}.hc-intro{padding:31px 23px}.hc-art{padding:10px}.hc-panel{padding:22px 17px;border-radius:17px}.hc-fields{gap:14px 11px}.hc-field{font-size:.78rem}.hc-field input,.hc-field select{padding:11px 10px}.hc-result strong{font-size:1.7rem}}
