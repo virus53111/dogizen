@@ -28,7 +28,7 @@ const write = async (file, body) => {
   await writeFile(dest, content, 'utf8');
 };
 const key='8f6c1e2a9b4d7f30a5c2e18d6b9f43a1';
-for(const file of ['site.css','atlas-visual.css','site.js','free-tools.css','free-tools.js','favicon.svg','robots.txt'])await copyFile(path.resolve('public',file),path.join(root,file));
+for(const file of ['site.css','atlas-visual.css','site.js','free-tools.css','free-tools.js','home-calculators.css','home-calculators.js','favicon.svg','robots.txt'])await copyFile(path.resolve('public',file),path.join(root,file));
 // Distinct AI generated examples are explicitly separated from authentic documentary guide photographs.
 await copyFile(path.resolve('public/ai-photo-prompts.css'),path.join(root,'ai-photo-prompts.css'));
 await mkdir(path.join(root,'ai-prompts'),{recursive:true});
@@ -95,7 +95,7 @@ for(const lang of languages){
   }
   if(['en','ru'].includes(lang))for(const g of freeTools){
     await write(prefix+'tools/'+g.id+'/index.html',freeTool(lang,g.id));
-    pages.push({lang,part:'tools/'+g.id,weight:'0.8',updated:g.id===uploadPdfTool.id?'2026-11-14':(g.id===ocrTool.id||g.id===trimTool.id||g.id===seatingTool.id||g.id===movingTool.id||g.id===ryzenTool.id)?'2026-11-13':g.id==='word-counter'?'2026-11-12':'2026-11-11'});
+    pages.push({lang,part:'tools/'+g.id,weight:'0.8',updated:g.id===uploadPdfTool.id?'2026-11-14':(g.id===ocrTool.id||g.id===trimTool.id||g.id===seatingTool.id||g.id===movingTool.id||g.id===ryzenTool.id)?'2026-11-13':['paint-calculator','electricity-cost-calculator'].includes(g.id)?'2026-11-14':g.id==='word-counter'?'2026-11-12':'2026-11-11'});
   }
 }
 const site='https://murdilimax.com';
