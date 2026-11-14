@@ -12,6 +12,8 @@ on:
       - 'tests/test_world_topic_radar.py'
       - 'scripts/topic_opportunity_engine.py'
       - 'tests/test_topic_opportunity_engine.py'
+      - 'scripts/editorial_draft_studio.py'
+      - 'tests/test_editorial_draft_studio.py'
       - '.github/workflows/world-topic-radar.yml'
   pull_request:
     paths:
@@ -19,6 +21,8 @@ on:
       - 'tests/test_world_topic_radar.py'
       - 'scripts/topic_opportunity_engine.py'
       - 'tests/test_topic_opportunity_engine.py'
+      - 'scripts/editorial_draft_studio.py'
+      - 'tests/test_editorial_draft_studio.py'
       - '.github/workflows/world-topic-radar.yml'
 permissions:
   contents: read
@@ -45,6 +49,15 @@ jobs:
           --wikis en,de,es,fr,ru
           --count 12
           --output reports/world-topic-radar
+      - name: Prepare limited editor-reviewable briefs and optional AI draft
+        if: github.event_name != 'pull_request'
+        timeout-minutes: 4
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          DRAFT_MODEL: ${{ vars.DRAFT_MODEL || 'gpt-4.1-mini' }}
+        run: |
+          python scripts/editorial_draft_studio.py --ai --max-ai 1 --output reports/world-topic-radar/drafts
+          printf '\n- [Open this workflow run to download the draft artifacts](%s/%s/actions/runs/%s)\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> reports/world-topic-radar/report.md
       - name: Save the report and research data for review
         if: always() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
