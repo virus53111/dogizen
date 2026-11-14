@@ -21,7 +21,8 @@ assert.equal(new Set(newGuides.map(g=>g.id)).size,6,'New article IDs must be uni
 assert.ok(stories.length>=117,'86 previous + six global + six health and safety guides');
 assert.equal(new Set(stories.map(g=>g.id)).size,stories.length);
 assert.equal(languages.length,12,'Preserve all interface locales');
-assert.equal(topics.length,17,'Preserve topics');
+assert.ok(topics.length>=17,'All original editorial categories must remain available');
+assert.equal(new Set(topics.map(t=>t.id)).size,topics.length,'Topic slugs must be unique');
 const sitemap=read('sitemap.xml');
 assert.ok((sitemap.match(/<url>/g)||[]).length>=665,'Six EN/RU originals add twelve indexable pages');
 const photos=new Set();

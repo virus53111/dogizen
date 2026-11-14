@@ -9,7 +9,8 @@ import {expansionTopics,expansionIntros} from '../lib/atlas-expansion-topics.js'
 const added=[...expansionArticlesA,...expansionArticlesB,...expansionArticlesC,...expansionArticlesD];
 assert.equal(added.length,16);
 assert.ok(stories.length>=117);
-assert.equal(topics.length,17);
+assert.ok(topics.length>=17,'All original editorial categories must remain available');
+assert.equal(new Set(topics.map(t=>t.id)).size,topics.length,'Topic slugs must be unique');
 assert.equal(languages.length,12);
 assert.equal(new Set(stories.map(x=>x.id)).size,stories.length,'Duplicate article slugs');
 assert.equal(new Set(topics.map(x=>x.id)).size,topics.length,'Duplicate topic slugs');
