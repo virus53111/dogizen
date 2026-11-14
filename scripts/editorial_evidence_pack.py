@@ -295,6 +295,37 @@ def build_preview(topic: dict, evidence: dict, draft: str | None) -> str:
             '<li>Approve manually in GitHub and pass CI.</li></ul></aside></div></main></body></html>')
 
 
+def gallery_page(previews: list[dict]) -> str:
+    """One offline index page for navigating the GitHub Actions artifact."""
+    cards = []
+    for p in previews:
+        title = html.escape(safe_text(p["topic"], 160))
+        href = html.escape(p["preview"], quote=True)
+        status = "Unverified AI draft" if p["ai_draft_exists"] else "Source research outline"
+        image_text = "Commons license verified" if p["licensed_commons_image"] else "Original SVG"
+        cards.append('<a class="card" href="' + href + '"><div class="kind">OPEN EDITORIAL PREVIEW ↗</div>'
+                     '<h2>' + title + '</h2><p>' + status + '</p><div class="meta">'
+                     + image_text + ' · Approval required</div></a>')
+    return ('<!doctype html><html lang="en"><head><meta charset="utf-8">'
+            '<meta name="robots" content="noindex,nofollow"><meta name="viewport" '
+            'content="width=device-width,initial-scale=1"><title>MURDILIMAX Draft Studio — Research Previews</title>'
+            '<style>body{margin:0;background:#ecf2ed;color:#183d34;font:17px/1.6 system-ui,Arial}'
+            'header{background:#19483a;color:white;padding:50px max(22px,5vw)}'
+            'h1{font-size:clamp(2rem,6vw,4.6rem);line-height:1.05;max-width:920px;margin:12px 0}'
+            'header p{max-width:840px;color:#deebe2}main{max-width:1120px;margin:28px auto;padding:0 20px}'
+            '.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:17px}'
+            '.card{display:block;padding:25px;border-radius:17px;border:1px solid #d1e0d3;background:#fffdf8;'
+            'color:#19483a;text-decoration:none;box-shadow:0 3px 18px #193f3514}'
+            '.card:hover{transform:translateY(-3px)}.card:focus-visible{outline:3px solid #337e5a}'
+            '.kind{font-size:.7rem;letter-spacing:.12em;font-weight:800;color:#628a75}'
+            'h2{line-height:1.15;margin:18px 0}.meta{font-size:.8rem;color:#68776b}</style></head><body>'
+            '<header><div style="font-weight:800;letter-spacing:.14em">MURDILIMAX / GLOBAL EDITORIAL STUDIO</div>'
+            '<h1>Preview the next useful answers</h1><p>These are unpublished research previews. Source URLs, images and '
+            'claims must be checked by an editor before any article is placed on the public website. '
+            'No paid API, automatic publishing or public forum messages are involved.</p></header>'
+            '<main><div class="grid">' + "".join(cards) + '</div></main></body></html>')
+
+
 def produce_previews(data: dict, output: Path, drafts_dir: Path, online: bool = True) -> dict:
     selected = select_topics(data.get("shortlist", []), 2)
     output.mkdir(parents=True, exist_ok=True)
@@ -315,6 +346,7 @@ def produce_previews(data: dict, output: Path, drafts_dir: Path, online: bool = 
             "sources_confirmed_independently": False, "needs_human_approval": True,
         })
     summary = {"previews": previews, "pages_published": 0, "paid_calls": 0}
+    (output / "index.html").write_text(gallery_page(previews), encoding="utf-8")
     (output / "preview-summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print("Editorial preview: " + str(len(previews)) + " HTML pages (not deployed)")
@@ -327,11 +359,31 @@ def main() -> int:
     p.add_argument("--output", default="reports/world-topic-radar/previews")
     p.add_argument("--drafts-dir", default="reports/world-topic-radar/drafts")
     p.add_argument("--offline", action="store_true", help="Generate previews without Wikimedia requests")
+    p.add_argument("--report", default="reports/world-topic-radar/report.md")
     args = p.parse_args()
     raw = Path(args.input).read_bytes()
     if len(raw) > 3_000_000:
         raise ValueError("Research input exceeds size cap")
-    produce_previews(json.loads(raw), Path(args.output), Path(args.drafts_dir), online=not args.offline)
+    outcome = produce_previews(json.loads(raw), Path(args.output), Path(args.drafts_dir),
+                               online=not args.offline)
+    report = Path(args.report)
+    if report.exists():
+        lines = ["", "## Visual editorial previews (NOT published)", "",
+                 f"- HTML preview cards generated: {len(outcome['previews'])}",
+                 f"- Actual website pages published: {outcome['pages_published']}",
+                 "- Preview source audit checks Wikimedia availability and Commons image licenses, "
+                 "but **does not independently verify article claims**.",
+                 "- Open the GitHub Actions artifact and start with previews/index.html.",
+                 ""]
+        for preview in outcome["previews"]:
+            lines.append("- " + safe_text(preview["topic"]) + " — "
+                         + ("AI draft preview" if preview["ai_draft_exists"]
+                            else "research outline, no article drafted")
+                         + "; Commons image: "
+                         + ("verified license" if preview["licensed_commons_image"]
+                            else "original SVG"))
+        with report.open("a", encoding="utf-8") as stream:
+            stream.write("\n".join(lines) + "\n")
     return 0
 
 
