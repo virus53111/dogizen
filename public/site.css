@@ -120,3 +120,10 @@
 .article-share-actions .share-social:hover,.article-share-actions .share-btn:hover{background:var(--pine);color:#fff}
 .article-share-actions .share-social:focus-visible,.article-share-actions .share-btn:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
 @media (max-width:740px){.article-heading .byline{flex-wrap:wrap}.article-share-actions{width:100%;margin-left:0}.article-share-actions .share-social,.article-share-actions .share-btn{flex:1 1 auto;text-align:center}}
+
+
+/* A quiet, readable sharing prompt after the article's final advice. */
+.article-bottom-share{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:24px 0;margin:24px 0 32px}
+.article-bottom-share>p{font:700 13px var(--bold);margin:0 0 14px;color:var(--pine)}
+.article-bottom-share .article-share-actions{justify-content:flex-start;margin-left:0}
+.article-bottom-share .share-social,.article-bottom-share .share-btn{font-size:12px}
