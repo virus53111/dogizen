@@ -75,6 +75,10 @@ class EvidencePackTests(unittest.TestCase):
             self.assertEqual(summary["paid_calls"], 0)
             self.assertEqual(len(summary["previews"]), 2)
             self.assertFalse(summary["previews"][0]["sources_confirmed_independently"])
+            gallery = (root / "previews" / "index.html").read_text()
+            self.assertIn("Preview the next useful answers", gallery)
+            self.assertIn('noindex,nofollow', gallery)
+            self.assertIn("editor-preview.html", gallery)
             rendered = list((root / "previews").glob("*-editor-preview.html"))
             self.assertEqual(len(rendered), 2)
             for filename in rendered:
