@@ -1,0 +1,18 @@
+/* Renovation budget line-item layout, based on the existing illustrated calculator system. */
+.rb-work{display:grid;grid-template-columns:minmax(0,1.52fr) minmax(310px,.7fr);align-items:start;gap:20px}
+.rb-items{display:grid;gap:14px}
+.rb-row{display:grid;grid-template-columns:minmax(130px,1.8fr) minmax(80px,.8fr) 65px minmax(100px,1fr) minmax(100px,1fr) 36px;align-items:end;gap:8px;padding:16px;background:#f6f9f4;border:1px solid #d9e6dc;border-radius:14px}
+.rb-field{display:grid;gap:6px;min-width:0}
+.rb-field span{font-size:.72rem;line-height:1.4;color:#496859;font-weight:700}
+.rb-field input{font:650 .9rem "DM Sans",sans-serif;color:#193f32;background:#fff;box-sizing:border-box;width:100%;border:1px solid #c5d3c7;border-radius:9px;padding:10px 8px;min-height:44px;min-width:0}
+.rb-row input:focus-visible,.rb-add:focus-visible,.rb-remove:focus-visible{outline:3px solid #6caa8b;outline-offset:3px}
+.rb-remove{height:44px;border:1px solid #d4d8d0;background:#fff;color:#9a3838;font-size:1.7rem;cursor:pointer;border-radius:10px}
+.rb-add{margin-top:20px;border:1px solid #185542;background:#185542;color:#fff;border-radius:10px;min-height:47px;padding:10px 19px;font-weight:750;cursor:pointer}
+.rb-add:hover{background:#286f51}
+.rb-allowances{margin-top:36px;border-top:1px solid #d8e5db;padding-top:16px}
+.rb-allowances h2{font:750 1.2rem Syne,"DM Sans",sans-serif;color:#173f35}
+.rb-allowances .hc-fields{grid-template-columns:repeat(3,minmax(0,1fr))}
+.rb-page .hc-result:first-child strong{font-size:clamp(1.6rem,2.7vw,2.6rem)}
+@media(max-width:1100px){.rb-work{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:800px){.rb-row{grid-template-columns:repeat(2,minmax(0,1fr)) 38px}.rb-field:first-child{grid-column:1/-2}.rb-remove{grid-column:3;grid-row:1}.rb-allowances .hc-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:510px){.rb-row{padding:12px;gap:10px}.rb-row .rb-field span{font-size:.72rem}.rb-row .rb-field input{font-size:.91rem}.rb-allowances .hc-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
