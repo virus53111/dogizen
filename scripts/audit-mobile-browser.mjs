@@ -4,6 +4,7 @@ import {readFile,stat} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import path from 'node:path';
 import {chromium} from 'playwright';
+import {topics} from '../lib/atlas-data.js';
 
 const root=path.resolve('dist');
 const routes=['/ru/','/','/ru/guides/ryzen-upgrade/','/ru/topics/mushrooms/','/ru/species/amanita-phalloides/','/ru/tools/percentage/','/ru/privacy/','/fr/guides/secure-accounts/','/fr/guides/backup-321/','/fr/guides/ssd-vs-hdd/','/lv/guides/secure-accounts/','/lv/guides/backup-321/','/lv/guides/ssd-vs-hdd/','/it/guides/secure-accounts/','/it/guides/backup-321/','/pt/guides/secure-accounts/','/pt/guides/backup-321/','/pl/guides/secure-accounts/','/pl/guides/backup-321/','/lt/guides/secure-accounts/','/lt/guides/backup-321/','/et/guides/secure-accounts/','/et/guides/backup-321/','/nl/guides/secure-accounts/','/nl/guides/backup-321/'];
@@ -219,14 +220,17 @@ try{
  console.log('PASS: broken photo replaced with a real local JPEG fallback');
  await page.goto(base+'/',{waitUntil:'domcontentloaded'});
  const topicPhotos=page.locator('.topic-card.photo-topic img.topic-image');
- assert.equal(await topicPhotos.count(),17,'Every category must have a real photo');
- for(let i=0;i<17;i++){
+ const visibleTopics=topics.filter(topic=>!topic.languages||topic.languages.includes('en'));
+ assert.ok(visibleTopics.length>0,'Homepage must include editorial categories');
+ assert.equal(await page.locator('.topic-card').count(),visibleTopics.length,'Every available category must appear');
+ assert.equal(await topicPhotos.count(),visibleTopics.length,'Every category must have a real photo');
+ for(let i=0;i<visibleTopics.length;i++){
   const img=topicPhotos.nth(i);
   await img.scrollIntoViewIfNeeded();
   await img.evaluate(el=>el.decode());
   assert.ok((await img.evaluate(el=>el.naturalWidth))>=900,'Category photo failed to decode: '+i);
  }
- console.log('PASS: all 17 category photos display genuine JPEGs on mobile');
+ console.log('PASS: all '+visibleTopics.length+' category photos display genuine JPEGs on mobile');
 
  // Verify translated chapter controls stay interactive on the newly expanded pages.
  for(const [language,expected] of [['lt','Šiame straipsnyje'],['et','Selles artiklis'],['nl','In dit artikel']]){
