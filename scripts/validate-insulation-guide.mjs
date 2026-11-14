@@ -17,7 +17,7 @@ for(const lang of ['en','ru']){
  const target=url(lang,'tools/'+insulationCalculator.id);
  const guideTarget=url(lang,'guides/'+insulationGuide2026.id);
  for(const [name,html,needles] of [
-  ['guide',article,['href="'+target+'"','href="https://cenaradar.online/"','creativecommons.org/licenses/by-sa/3.0','rel="canonical" href="'+base+guideTarget+'"']],
+  ['guide',article,['href="'+target+'"','insulation-next-steps','href="https://cenaradar.online/"','creativecommons.org/licenses/by-sa/3.0','rel="canonical" href="'+base+guideTarget+'"']],
   ['tool',tool,['data-insulation-calculator','insulation-calculator.js','hc-results-grid','<svg ','href="'+guideTarget+'"','href="https://cenaradar.online/"','rel="canonical" href="'+base+target+'"']]
  ])for(const needle of needles)if(!html.includes(needle))throw Error(name+' '+lang+' missing '+needle);
  for(const needle of [insulationCalculator.id,insulationGuide2026.id])if(!index.includes(needle))throw Error('Search index missing '+needle+' in '+lang);
