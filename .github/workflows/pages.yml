@@ -195,6 +195,11 @@ jobs:
           grep -q 'upload.wikimedia.org' dist/ru/topics/mushrooms/index.html
           grep -q 'Бледная поганка' dist/ru/species/amanita-phalloides/index.html
           grep -q 'Где встречается' dist/ru/species/amanita-phalloides/index.html
+          test -s dist/ru/guides/ryzen-upgrade/index.html
+          grep -q 'facebook.com/sharer/sharer.php' dist/ru/guides/ryzen-upgrade/index.html
+          grep -q 'twitter.com/intent/tweet' dist/ru/guides/ryzen-upgrade/index.html
+          grep -q 'article-share-actions' dist/ru/guides/ryzen-upgrade/index.html
+          grep -q 'id="share-button"' dist/ru/guides/ryzen-upgrade/index.html
           grep -q 'image:loc' dist/sitemap.xml
           grep -q 'xhtml:link' dist/sitemap.xml
           node --input-type=module -e "import {visualSpecies} from './lib/species-atlas.js'; if(visualSpecies.length !== 78||visualSpecies.some(x=>!x.image||!x.photoCredit||!x.detail.ru||!x.detail.en)) process.exit(2);"
