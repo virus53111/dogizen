@@ -42,7 +42,7 @@ CATEGORIES = {
     "Culture & entertainment": ("film", "movie", "actor", "music", "concert", "album", "series", "book", "game"),
 }
 WIKI_EXCLUDE = ("Main_Page", "Special:", "Wikipedia:", "File:", "Template:", "Portal:",
-                "List_of_", "Category:", "-", "Cookie_", "Privacy_policy")
+                "List of ", "Category:", "Cookie ", "Privacy policy")
 
 
 def clean(value: str, limit: int = 180) -> str:
