@@ -111,3 +111,12 @@
 
 /* Four editorial navigation items need a compact menu on medium-width screens. */
 @media(min-width:741px) and (max-width:950px){.nav-links{display:none}.menu-button{display:flex}.mobile-links:not([hidden]){display:grid;gap:17px;padding-top:8px;padding-bottom:20px;font-weight:700;font-size:14px}}
+
+
+/* Article sharing: keyboard-accessible actions, no third-party scripts. */
+.article-share-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-left:auto}
+.article-share-actions .share-btn{margin-left:0;cursor:pointer}
+.article-share-actions .share-social{display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:9px 13px;border:1px solid var(--line);border-radius:99px;text-decoration:none;color:inherit;font:700 11px var(--bold);letter-spacing:normal}
+.article-share-actions .share-social:hover,.article-share-actions .share-btn:hover{background:var(--pine);color:#fff}
+.article-share-actions .share-social:focus-visible,.article-share-actions .share-btn:focus-visible{outline:3px solid #2563eb;outline-offset:3px}
+@media (max-width:740px){.article-heading .byline{flex-wrap:wrap}.article-share-actions{width:100%;margin-left:0}.article-share-actions .share-social,.article-share-actions .share-btn{flex:1 1 auto;text-align:center}}
