@@ -36,6 +36,7 @@ jobs:
           node --check lib/everyday-discoveries.js
           node --check lib/curious-world-answers.js
           node --check lib/atlas-data.js
+          node --check lib/country-music-origins-2026.js
           node --check lib/editor-reviewed-guides.js
           node --check lib/free-tools-2026.js
           node --check lib/world-topics.js
@@ -162,6 +163,7 @@ jobs:
           node scripts/validate-related-guide-links.mjs
           node scripts/validate-home-calculators.mjs
           node scripts/validate-insulation-guide.mjs
+          node scripts/validate-country-music-radar-guide.mjs
           node scripts/validate-renovation-budget.mjs
           node scripts/validate-site-links.mjs
           node scripts/validate-legacy-migration.mjs
