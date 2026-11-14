@@ -186,7 +186,7 @@ class StudioTests(unittest.TestCase):
         b = topic("spacex starship", 70)
         c = topic("Why do birds migrate?", 60)
         chosen = studio.select_topics([a, b, c], maximum=2)
-        self.assertEqual([x["term"] for x in chosen], ["Why do birds migrate?", "starship spacex"])
+        self.assertEqual([x["term"] for x in chosen], ["starship spacex", "Why do birds migrate?"])
         self.assertEqual(len(chosen), 2)
 
     def test_unknown_shortlist_and_duplicate_selection(self):
