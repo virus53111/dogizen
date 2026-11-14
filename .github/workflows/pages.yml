@@ -2,6 +2,8 @@ name: Publish MURDILIMAX — The Answer Atlas
 on:
   push:
     branches: [main, 'feature/**']
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 permissions:
   contents: read
@@ -160,6 +162,7 @@ jobs:
           node scripts/validate-mobile-readability.mjs
           node scripts/validate-trust-search.mjs
           node scripts/validate-runtime-interactions.mjs
+          node scripts/validate-sitemap-integrity.mjs
           node scripts/report-content-health.mjs
           test -s dist/index.html
           test -s dist/ru/guides/ryzen-upgrade/index.html
