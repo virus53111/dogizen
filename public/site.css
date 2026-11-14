@@ -127,3 +127,14 @@
 .article-bottom-share>p{font:700 13px var(--bold);margin:0 0 14px;color:var(--pine)}
 .article-bottom-share .article-share-actions{justify-content:flex-start;margin-left:0}
 .article-bottom-share .share-social,.article-bottom-share .share-btn{font-size:12px}
+
+
+/* Guide → calculator → related owner-operated price catalogue. */
+.insulation-next-steps{background:#eaf2e6;border:1px solid #cbdcc8;border-radius:20px;padding:clamp(20px,3vw,32px);margin:24px 0 33px;display:grid;gap:17px}
+.insulation-next-steps h2{font:800 clamp(1.4rem,2.5vw,1.9rem) Syne,"DM Sans",sans-serif;letter-spacing:-.04em;color:#173f35;margin:13px 0 12px}
+.insulation-next-steps p{font-size:.96rem;line-height:1.65;color:#415c4d;margin:0}
+.insulation-next-links{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.insulation-next-links a{display:inline-flex;text-decoration:none;border:1px solid #6e9981;color:#174a39;border-radius:99px;padding:12px 17px;font:750 .86rem "DM Sans",sans-serif}
+.insulation-next-links .insulation-primary-link{color:#fff;background:#174a39;border-color:#174a39}
+.insulation-next-links a:hover{box-shadow:0 3px 12px rgba(20,65,40,.12)}
+.insulation-next-links a:focus-visible{outline:3px solid #367757;outline-offset:3px}
