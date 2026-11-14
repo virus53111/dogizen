@@ -16,6 +16,8 @@ on:
       - 'tests/test_editorial_draft_studio.py'
       - 'scripts/editorial_evidence_pack.py'
       - 'tests/test_editorial_evidence_pack.py'
+      - 'scripts/prepare_publication_candidate.py'
+      - 'tests/test_prepare_publication_candidate.py'
       - '.github/workflows/world-topic-radar.yml'
   pull_request:
     paths:
@@ -27,6 +29,8 @@ on:
       - 'tests/test_editorial_draft_studio.py'
       - 'scripts/editorial_evidence_pack.py'
       - 'tests/test_editorial_evidence_pack.py'
+      - 'scripts/prepare_publication_candidate.py'
+      - 'tests/test_prepare_publication_candidate.py'
       - '.github/workflows/world-topic-radar.yml'
 permissions:
   contents: read
