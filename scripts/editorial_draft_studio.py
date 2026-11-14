@@ -112,7 +112,9 @@ def editorial_rank(topic: dict) -> tuple:
 
 def select_topics(shortlist: list[dict], maximum: int = 2) -> list[dict]:
     unique, chosen = set(), []
-    for item in sorted(shortlist, key=editorial_rank):
+    # Pick one well-scoped anonymous-AI candidate first when one exists;
+    # keep other useful research leads in the remaining brief slots.
+    for item in sorted(shortlist, key=lambda x: (not eligible_for_ai(x), editorial_rank(x))):
         term = safe_text(item.get("term", ""))
         if len(term) < 4 or not isinstance(item.get("references", []), list):
             continue
@@ -145,7 +147,13 @@ def eligible_for_ai(topic: dict) -> bool:
     opp = topic.get("opportunity", {})
     return (not topic.get("requires_review")
             and not topic.get("possible_existing_article")
-            and opp.get("type") == "question-led evergreen explainer"
+            and (opp.get("type") == "question-led evergreen explainer"
+                 or (opp.get("type") in (
+                     "trend-led explainer; investigate evergreen value",
+                     "background explainer; validate current relevance")
+                     and topic.get("category") in (
+                         "Science & space", "Nature & animals",
+                         "Culture & entertainment")))
             and not likely_time_sensitive(topic)
             and topic.get("category") in SAFE_CATEGORIES
             and len(source_links(topic)) >= 2)
