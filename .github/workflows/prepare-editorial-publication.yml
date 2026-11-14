@@ -35,7 +35,7 @@ jobs:
           [[ "$TOPIC_SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || { echo "Invalid safe slug"; exit 1; }
           mkdir -p "$RUNNER_TEMP/radar-artifact"
           gh run download "$RADAR_RUN_ID" --repo "$GITHUB_REPOSITORY" --name murdilimax-world-topic-radar --dir "$RUNNER_TEMP/radar-artifact"
-          python scripts/prepare-publication-candidate.py \
+          python scripts/prepare_publication_candidate.py \
             --artifact-dir "$RUNNER_TEMP/radar-artifact" \
             --slug "$TOPIC_SLUG" --output-dir editorial/approved
           echo "Candidate is PENDING, not published; independent editorial review is REQUIRED."
