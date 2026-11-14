@@ -77,3 +77,42 @@ not a guarantee of indexing or higher Google rankings.
 The next editorial step remains **research → original draft → source
 verification → manual review → PR and CI → publication**, rather than
 mass-generating low-value pages based on noisy trends.
+
+
+## International Editorial Draft Studio (review-only)
+
+The World Topic Radar workflow now runs scripts/editorial_draft_studio.py
+after each successful collection. It selects at most two editorial
+opportunities, prepares a separate Markdown research brief for each, and
+places the files in the existing GitHub Actions artifact named
+murdilimax-world-topic-radar. The existing World Topic Radar GitHub issue
+gets a short review queue plus a workflow-run link to retrieve the artifacts.
+
+**Optional AI-assisted article draft:** In repository Settings > Secrets and
+variables > Actions, create a repository secret OPENAI_API_KEY from your own
+separately billed OpenAI API account. Optionally set Actions variable
+DRAFT_MODEL (default gpt-4.1-mini). ChatGPT subscriptions do not include API
+credits; no credential is needed for radar research briefs. The credential
+is never stored in or printed into public report files.
+
+With an API key, the studio can request **at most one AI-assisted draft per
+run** and only for a lower-risk evergreen question with at least two
+research-source links. Sources are leads, NOT verified citations. AI must not
+claim it has read them and is instructed to mark uncertain statements
+[VERIFY: ...]. Malformed model outputs are rejected. The request uses the
+OpenAI Responses API with JSON output and max 2,600 output tokens. With the
+current twice-daily schedule this permits up to two paid calls per day.
+Review API billing/usage and set spending limits before enabling.
+
+Generated Markdown files under reports/world-topic-radar/drafts/ are NOT
+imported into atlas-data, the sitemap or GitHub Pages and cannot auto-post
+to any external forum. No new published article is created, and no PR
+containing editorial content is automatically approved. Every draft
+requires independent source verification, image-license checks, editorial
+review, accurate localized versions and CI verification before publication.
+
+Manual research-only run:
+  python scripts/editorial_draft_studio.py
+
+Offline regression tests:
+  python -m unittest discover -s tests -p 'test_*.py' -v
