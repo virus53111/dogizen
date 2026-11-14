@@ -89,7 +89,10 @@ OVHcloud AI Endpoints model Meta-Llama-3_3-70B-Instruct. The URL is
 https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions.
 OVHcloud documents anonymous access at 2 requests/minute per IP/model.
 The script sends **no Authorization header**, contains no API credential,
-and cannot switch to a paid model or provider. Free anonymous availability
+and cannot switch to a paid model or provider.
+One anonymous request is attempted; on a network timeout the job can retry
+once after 35 seconds (maximum two requests per scan). It does not retry
+provider 403/429 restrictions or ever route to a paid provider. Free anonymous availability
 is third-party-dependent and may change; 403/429/outages or bad model
 responses fall back to source-checking briefs without interrupting the radar.
 

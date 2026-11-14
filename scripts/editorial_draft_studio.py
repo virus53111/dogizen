@@ -14,13 +14,14 @@ import json
 import os
 import re
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
 
 MAX_INPUT_BYTES = 3_000_000
-MAX_MODEL_OUTPUT = 2200
+MAX_MODEL_OUTPUT = 1600
 FREE_MODEL = "Meta-Llama-3_3-70B-Instruct"
 DEFAULT_MODEL = FREE_MODEL
 FREE_ENDPOINT = "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions"
@@ -238,10 +239,22 @@ def model_request(topic: dict, model: str = FREE_MODEL) -> dict:
         method="POST",
     )
     # Never set an Authorization header, even if credentials exist in env.
-    with urllib.request.urlopen(req, timeout=45) as result:
-        response_data = result.read(150_000)
-        response = json.loads(response_data)
-    choices = response.get("choices") or []
+    # At most two anonymous requests; retry only once on connectivity failure.
+    # A 35-second delay respects OVHcloud's anonymous IP/model rate limit.
+    response = None
+    for attempt in range(2):
+        try:
+            with urllib.request.urlopen(req, timeout=50) as result:
+                response = json.loads(result.read(150_000))
+            break
+        except urllib.error.HTTPError:
+            # 403/429 are policy or rate-limit responses: do NOT retry.
+            raise
+        except (TimeoutError, ConnectionError, urllib.error.URLError):
+            if attempt:
+                raise
+            time.sleep(35)
+    choices = (response or {}).get("choices") or []
     if not choices:
         raise ValueError("Anonymous inference returned no choices")
     raw = choices[0].get("message", {}).get("content", "")
