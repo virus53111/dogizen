@@ -167,6 +167,7 @@ jobs:
           node scripts/validate-trust-search.mjs
           node scripts/validate-runtime-interactions.mjs
           node scripts/validate-sitemap-integrity.mjs
+          node scripts/validate-rss.mjs
           node scripts/report-content-health.mjs
           test -s dist/index.html
           test -s dist/ru/guides/ryzen-upgrade/index.html
