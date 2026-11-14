@@ -79,40 +79,42 @@ verification → manual review → PR and CI → publication**, rather than
 mass-generating low-value pages based on noisy trends.
 
 
-## International Editorial Draft Studio (review-only)
 
-The World Topic Radar workflow now runs scripts/editorial_draft_studio.py
-after each successful collection. It selects at most two editorial
-opportunities, prepares a separate Markdown research brief for each, and
-places the files in the existing GitHub Actions artifact named
-murdilimax-world-topic-radar. The existing World Topic Radar GitHub issue
-gets a short review queue plus a workflow-run link to retrieve the artifacts.
+## Editorial Draft Studio — free, no API key, no billing
 
-**Optional AI-assisted article draft:** In repository Settings > Secrets and
-variables > Actions, create a repository secret OPENAI_API_KEY from your own
-separately billed OpenAI API account. Optionally set Actions variable
-DRAFT_MODEL (default gpt-4.1-mini). ChatGPT subscriptions do not include API
-credits; no credential is needed for radar research briefs. The credential
-is never stored in or printed into public report files.
+The MURDILIMAX World Topic Radar workflow runs twice a day and generates
+two research briefs, free of charge and with no signup. It also tries
+**at most one anonymous AI draft per run** with the public, rate-limited
+OVHcloud AI Endpoints model Meta-Llama-3_3-70B-Instruct. The URL is
+https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions.
+OVHcloud documents anonymous access at 2 requests/minute per IP/model.
+The script sends **no Authorization header**, contains no API credential,
+and cannot switch to a paid model or provider. Free anonymous availability
+is third-party-dependent and may change; 403/429/outages or bad model
+responses fall back to source-checking briefs without interrupting the radar.
 
-With an API key, the studio can request **at most one AI-assisted draft per
-run** and only for a lower-risk evergreen question with at least two
-research-source links. Sources are leads, NOT verified citations. AI must not
-claim it has read them and is instructed to mark uncertain statements
-[VERIFY: ...]. Malformed model outputs are rejected. The request uses the
-OpenAI Responses API with JSON output and max 2,600 output tokens. With the
-current twice-daily schedule this permits up to two paid calls per day.
-Review API billing/usage and set spending limits before enabling.
+The free service never provides researched citations on its own: it receives
+unverified trend terms and links, not independently vetted sources. AI
+outputs are clearly labelled **unverified**, list claims needing human
+fact-checking, and are kept only in the workflow artifact alongside research
+briefs. We do **not** automatically publish any AI content, add articles to
+the sitemap, post comments on forums or contact individual searchers.
 
-Generated Markdown files under reports/world-topic-radar/drafts/ are NOT
-imported into atlas-data, the sitemap or GitHub Pages and cannot auto-post
-to any external forum. No new published article is created, and no PR
-containing editorial content is automatically approved. Every draft
-requires independent source verification, image-license checks, editorial
-review, accurate localized versions and CI verification before publication.
+The workflow requires only GitHub Actions and Python's standard library.
+No OpenAI API key, separate AI subscription, trial credits or payment
+card are required. GitHub Actions itself remains subject to the repository
+plan's compute limits, and third-party anonymous access can be restricted;
+these are operational limits, not a hidden paid upgrade.
 
-Manual research-only run:
-  python scripts/editorial_draft_studio.py
+Run a free research-and-draft attempt manually after running the radar:
 
+    python scripts/editorial_draft_studio.py --ai --max-ai 1
+
+To run **strictly offline** without querying a model, omit the --ai flag.
 Offline regression tests:
-  python -m unittest discover -s tests -p 'test_*.py' -v
+
+    python -m unittest discover -s tests -p 'test_*.py' -v
+
+Review the results under reports/world-topic-radar/drafts and the
+existing World Topic Radar GitHub issue. Human editorial review remains
+mandatory before publication.

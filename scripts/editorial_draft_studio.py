@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
-"""Prepare editor-reviewable worldwide topic briefs; optionally AI-assisted *drafts*.
+"""Prepare editor-reviewable worldwide topic briefs with free anonymous AI attempts.
 
 Never touches published site data, never sends messages and never auto-publishes.
-The optional AI call is limited to one eligible topic per run by default.
+No paid inference API is called. One anonymous OVHcloud request at most per run;
+when unavailable, research briefs still work normally.
 """
 from __future__ import annotations
 
@@ -19,8 +20,10 @@ import urllib.request
 from pathlib import Path
 
 MAX_INPUT_BYTES = 3_000_000
-MAX_MODEL_OUTPUT = 2600
-DEFAULT_MODEL = "gpt-4.1-mini"
+MAX_MODEL_OUTPUT = 2200
+FREE_MODEL = "Meta-Llama-3_3-70B-Instruct"
+DEFAULT_MODEL = FREE_MODEL
+FREE_ENDPOINT = "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions"
 SAFE_CATEGORIES = {"Science & space", "Technology & AI", "Nature & animals",
                    "Travel & places", "Culture & entertainment",
                    "World & everyday questions"}
@@ -109,7 +112,9 @@ def editorial_rank(topic: dict) -> tuple:
 
 def select_topics(shortlist: list[dict], maximum: int = 2) -> list[dict]:
     unique, chosen = set(), []
-    for item in sorted(shortlist, key=editorial_rank):
+    # Pick one well-scoped anonymous-AI candidate first when one exists;
+    # keep other useful research leads in the remaining brief slots.
+    for item in sorted(shortlist, key=lambda x: (not eligible_for_ai(x), editorial_rank(x))):
         term = safe_text(item.get("term", ""))
         if len(term) < 4 or not isinstance(item.get("references", []), list):
             continue
@@ -142,7 +147,13 @@ def eligible_for_ai(topic: dict) -> bool:
     opp = topic.get("opportunity", {})
     return (not topic.get("requires_review")
             and not topic.get("possible_existing_article")
-            and opp.get("type") == "question-led evergreen explainer"
+            and (opp.get("type") == "question-led evergreen explainer"
+                 or (opp.get("type") in (
+                     "trend-led explainer; investigate evergreen value",
+                     "background explainer; validate current relevance")
+                     and topic.get("category") in (
+                         "Science & space", "Nature & animals",
+                         "Culture & entertainment")))
             and not likely_time_sensitive(topic)
             and topic.get("category") in SAFE_CATEGORIES
             and len(source_links(topic)) >= 2)
@@ -189,64 +200,54 @@ def build_brief(topic: dict, generated_at: str) -> str:
     return "\n".join(lines)
 
 
-def model_request(topic: dict, api_key: str, model: str) -> dict:
-    """Use the Responses API only when explicitly enabled and a secret exists."""
+def model_request(topic: dict, model: str = FREE_MODEL) -> dict:
+    """ONE anonymous, keyless inference request. Never contact a paid endpoint.
+
+    OVHcloud documents 2 anonymous requests/minute/IP/model. Free access,
+    availability and accepted model names can change without notice. In that
+    case our caller records a warning and retains the source-research brief.
+    """
+    # Deliberately hardcoded host and model: no token, BYOK or paid fallback.
+    if model != FREE_MODEL:
+        raise ValueError("Only the free anonymous inference model is allowed")
     sources = source_links(topic)
-    payload = {
+    request_data = {
         "model": model,
-        "instructions": SYSTEM,
-        "input": json.dumps({
-            "term": safe_text(topic.get("term")), "proposed_question":
-                safe_text(topic.get("opportunity", {}).get("working_question"), 240),
-            "category": safe_text(topic.get("category")),
-            "editorial_type": safe_text(topic.get("opportunity", {}).get("type")),
-            "sources_for_human_research_not_preverified": sources,
-            "must_mark_uncertain_facts": True,
-        }, ensure_ascii=False),
-        "text": {"format": {
-            "type": "json_schema", "name": "editorial_draft",
-            "strict": True,
-            "schema": {
-                "type": "object",
-                "properties": {
-                    "title": {"type": "string"},
-                    "standfirst": {"type": "string"},
-                    "sections": {"type": "array", "items": {
-                        "type": "object",
-                        "properties": {
-                            "heading": {"type": "string"},
-                            "body": {"type": "string"}
-                        },
-                        "required": ["heading", "body"],
-                        "additionalProperties": False
-                    }},
-                    "claims_to_verify": {"type": "array", "items": {"type": "string"}},
-                    "editorial_notes": {"type": "array", "items": {"type": "string"}}
-                },
-                "required": ["title", "standfirst", "sections", "claims_to_verify", "editorial_notes"],
-                "additionalProperties": False
-            }
-        }},
-        "max_output_tokens": MAX_MODEL_OUTPUT,
-        "store": False,
+        "messages": [
+            {"role": "system", "content": SYSTEM},
+            {"role": "user", "content": json.dumps({
+                "term": safe_text(topic.get("term")),
+                "proposed_question": safe_text(
+                    topic.get("opportunity", {}).get("working_question"), 240),
+                "category": safe_text(topic.get("category")),
+                "editorial_type": safe_text(topic.get("opportunity", {}).get("type")),
+                "unverified_research_links": sources,
+                "must_label_unverified_claims": True,
+            }, ensure_ascii=False)}
+        ],
+        "response_format": {"type": "json_object"},
+        "temperature": 0.2,
+        "max_tokens": MAX_MODEL_OUTPUT,
+        "stream": False,
     }
     req = urllib.request.Request(
-        "https://api.openai.com/v1/responses",
-        data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
-        headers={"Authorization": "Bearer " + api_key,
-                 "Content-Type": "application/json"},
+        FREE_ENDPOINT,
+        data=json.dumps(request_data, ensure_ascii=False).encode("utf-8"),
+        headers={"Content-Type": "application/json",
+                 "User-Agent": "MURDILIMAX-Research-Draft-Studio/1.0"},
         method="POST",
     )
-    with urllib.request.urlopen(req, timeout=85) as result:
-        response = json.loads(result.read(600_000))
-    chunks = []
-    for entry in response.get("output", []):
-        if entry.get("type") == "message":
-            chunks.extend(part.get("text", "") for part in entry.get("content", [])
-                          if part.get("type") == "output_text")
-    if not chunks:
-        raise ValueError("AI returned no text; do not publish or store an empty draft")
-    return json.loads("".join(chunks))
+    # Never set an Authorization header, even if credentials exist in env.
+    with urllib.request.urlopen(req, timeout=45) as result:
+        response_data = result.read(150_000)
+        response = json.loads(response_data)
+    choices = response.get("choices") or []
+    if not choices:
+        raise ValueError("Anonymous inference returned no choices")
+    raw = choices[0].get("message", {}).get("content", "")
+    if not isinstance(raw, str) or not raw.strip():
+        raise ValueError("Anonymous inference returned no article text")
+    return json.loads(raw)
 
 
 def validate_ai_draft(result: dict) -> dict:
@@ -300,7 +301,7 @@ def render_ai_draft(result: dict, topic: dict) -> str:
 
 def produce(data: dict, output: Path, report: Path | None = None,
             ai: bool = False, max_ai: int = 1,
-            model: str = DEFAULT_MODEL, api_key: str = "", generated_at: str = "") -> dict:
+            model: str = DEFAULT_MODEL, generated_at: str = "") -> dict:
     if not isinstance(data.get("shortlist"), list):
         raise ValueError("Expected a world radar JSON object with a shortlist array")
     selected = select_topics(data["shortlist"], maximum=2)
@@ -312,10 +313,10 @@ def produce(data: dict, output: Path, report: Path | None = None,
         slug = topic_slug(safe_text(item.get("term")))
         (output / (slug + "-brief.md")).write_text(build_brief(item, now), encoding="utf-8")
         status = "editorial brief only"
-        if ai and api_key and used_ai < min(max_ai, 1) and eligible_for_ai(item):
+        if ai and used_ai < min(max_ai, 1) and eligible_for_ai(item):
             used_ai += 1
             try:
-                draft = model_request(item, api_key=api_key, model=model)
+                draft = model_request(item, model=model)
                 body = render_ai_draft(draft, item)
                 (output / (slug + "-ai-draft.md")).write_text(body, encoding="utf-8")
                 status = "unverified AI-assisted draft; requires human review"
@@ -327,7 +328,8 @@ def produce(data: dict, output: Path, report: Path | None = None,
                         "priority": item.get("opportunity", {}).get("editorial_priority")})
     summary = {"generated_utc": now, "topics_prepared": drafted,
                "ai_drafts": sum(1 for i in drafted if i["status"].startswith("unverified AI")),
-               "api_enabled": bool(ai and api_key), "warnings": errors,
+               "free_anonymous_inference_enabled": bool(ai), "paid_api_calls": 0,
+               "free_provider": "OVHcloud anonymous (subject to availability)", "warnings": errors,
                "publishing": "disabled", "forum_replies": "disabled"}
     (output / "summary.json").write_text(
         json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -336,7 +338,7 @@ def produce(data: dict, output: Path, report: Path | None = None,
              f"- Unverified AI-assisted drafts: {summary['ai_drafts']}",
              "- The GitHub Actions artifact contains individual Markdown drafts and briefing files.",
              "- No article was added to the website; every draft needs a human editor.",
-             "- A model API secret is optional; without it, only source-checking research **tasks** are prepared.",
+             "- Uses at most one anonymous OVHcloud AI request (no account, key or paid API); if unavailable, source-checking briefs remain.",
              ""]
     for item in drafted:
         lines.append("- **" + md(item["term"]) + "** — " + item["status"])
@@ -354,17 +356,16 @@ def main() -> int:
     parser.add_argument("--input", default="reports/world-topic-radar/topics.json")
     parser.add_argument("--output", default="reports/world-topic-radar/drafts")
     parser.add_argument("--report", default="reports/world-topic-radar/report.md")
-    parser.add_argument("--ai", action="store_true", help="Use optional OPENAI_API_KEY, max one low-risk draft")
+    parser.add_argument("--ai", action="store_true", help="Try one anonymous free-model draft; never use a paid API")
     parser.add_argument("--max-ai", type=int, default=1)
-    parser.add_argument("--model", default=os.environ.get("DRAFT_MODEL", DEFAULT_MODEL))
+    parser.add_argument("--model", default=FREE_MODEL, choices=[FREE_MODEL])
     args = parser.parse_args()
     raw = Path(args.input).read_bytes()
     if len(raw) > MAX_INPUT_BYTES:
         raise ValueError("Too much input data")
     data = json.loads(raw)
     produce(data, Path(args.output), Path(args.report), ai=args.ai,
-            max_ai=args.max_ai, model=args.model,
-            api_key=os.environ.get("OPENAI_API_KEY", ""))
+            max_ai=args.max_ai, model=args.model)
     return 0
 
 
