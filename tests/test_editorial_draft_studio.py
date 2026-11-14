@@ -181,6 +181,14 @@ class StudioTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             studio.validate_ai_draft(result)
 
+    def test_same_topic_reversed_word_order_only_once(self):
+        a = topic("starship spacex", 80)
+        b = topic("spacex starship", 70)
+        c = topic("Why do birds migrate?", 60)
+        chosen = studio.select_topics([a, b, c], maximum=2)
+        self.assertEqual([x["term"] for x in chosen], ["Why do birds migrate?", "starship spacex"])
+        self.assertEqual(len(chosen), 2)
+
     def test_unknown_shortlist_and_duplicate_selection(self):
         with tempfile.TemporaryDirectory() as directory:
             with self.assertRaises(ValueError):
