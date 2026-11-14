@@ -68,7 +68,11 @@ def https_url(value: object) -> str:
     parsed = urllib.parse.urlsplit(url)
     if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
         return ""
-    if parsed.port not in (None, 443) or len(url) > 1100:
+    try:
+        port = parsed.port
+    except ValueError:
+        return ""
+    if port not in (None, 443) or len(url) > 1100:
         return ""
     return url
 
@@ -176,7 +180,30 @@ def model_request(topic: dict, api_key: str, model: str) -> dict:
             "sources_for_human_research_not_preverified": sources,
             "must_mark_uncertain_facts": True,
         }, ensure_ascii=False),
-        "text": {"format": {"type": "json_object"}},
+        "text": {"format": {
+            "type": "json_schema", "name": "editorial_draft",
+            "strict": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "title": {"type": "string"},
+                    "standfirst": {"type": "string"},
+                    "sections": {"type": "array", "items": {
+                        "type": "object",
+                        "properties": {
+                            "heading": {"type": "string"},
+                            "body": {"type": "string"}
+                        },
+                        "required": ["heading", "body"],
+                        "additionalProperties": False
+                    }},
+                    "claims_to_verify": {"type": "array", "items": {"type": "string"}},
+                    "editorial_notes": {"type": "array", "items": {"type": "string"}}
+                },
+                "required": ["title", "standfirst", "sections", "claims_to_verify", "editorial_notes"],
+                "additionalProperties": False
+            }
+        }},
         "max_output_tokens": MAX_MODEL_OUTPUT,
         "store": False,
     }
