@@ -32,7 +32,7 @@ for(const s of phoneColdWeather){
   assert.ok(read(p+'index.html').includes('/'+route));
   assert.match(html,/hreflang="en"/);assert.match(html,/hreflang="ru"/);assert.ok(!html.includes('hreflang="de"'));
   const graph=JSON.parse(html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)[1])['@graph'];
-  const article=graph.find(x=>x['@type']==='Article');assert.equal(article.headline,d.title);assert.equal(article.dateModified,'2026-11-13');
+  const article=graph.find(x=>x['@type']==='Article');assert.equal(article.headline,d.title);assert.equal(article.dateModified,'2026-11-14');
   assert.deepEqual(article.citation,s.sources.map(x=>x.url));
  }
  for(const lang of languages.filter(x=>!['en','ru'].includes(x)))assert.ok(!existsSync(`dist/${lang}/guides/${s.id}/index.html`));
