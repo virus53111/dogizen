@@ -83,11 +83,33 @@ def topic_slug(topic: str) -> str:
     return stem + "-" + hashlib.sha256(topic.encode("utf-8")).hexdigest()[:9]
 
 
+def likely_time_sensitive(topic: dict) -> bool:
+    """Separate short-lived updates from the evergreen editorial queue."""
+    label = topic.get("opportunity", {}).get("type", "")
+    term = safe_text(topic.get("term", "")).casefold()
+    if label == "time-sensitive context" or topic.get("category") == "Sports":
+        return True
+    return bool(re.search(
+        r"\b(?:today|tonight|tomorrow|yesterday|live|latest|breaking|release|"
+        r"released|launch|launched|update|updates|score|result|match|"
+        r"202[0-9]|when is|what time|come out|comes out|"
+        r"this week|next week)\b", term
+    ) or re.search(r"\s+[–—]\s+", term))
+
+
+def editorial_rank(topic: dict) -> tuple:
+    """Low-risk evergreen research first; AI eligibility is checked separately."""
+    opp = topic.get("opportunity", {})
+    return (bool(topic.get("requires_review")),
+            likely_time_sensitive(topic),
+            opp.get("type") != "question-led evergreen explainer",
+            -int(opp.get("editorial_priority", 0)),
+            safe_text(topic.get("term", "")).casefold())
+
+
 def select_topics(shortlist: list[dict], maximum: int = 2) -> list[dict]:
     unique, chosen = set(), []
-    for item in sorted(shortlist, key=lambda x:
-                       (-int(x.get("opportunity", {}).get("editorial_priority", 0)),
-                        safe_text(x.get("term", "")).casefold())):
+    for item in sorted(shortlist, key=editorial_rank):
         term = safe_text(item.get("term", ""))
         if len(term) < 4 or not isinstance(item.get("references", []), list):
             continue
@@ -121,6 +143,7 @@ def eligible_for_ai(topic: dict) -> bool:
     return (not topic.get("requires_review")
             and not topic.get("possible_existing_article")
             and opp.get("type") == "question-led evergreen explainer"
+            and not likely_time_sensitive(topic)
             and topic.get("category") in SAFE_CATEGORIES
             and len(source_links(topic)) >= 2)
 
@@ -313,7 +336,7 @@ def produce(data: dict, output: Path, report: Path | None = None,
              f"- Unverified AI-assisted drafts: {summary['ai_drafts']}",
              "- The GitHub Actions artifact contains individual Markdown drafts and briefing files.",
              "- No article was added to the website; every draft needs a human editor.",
-             "- A model API secret is optional; without it, only verified-source research **tasks** are prepared.",
+             "- A model API secret is optional; without it, only source-checking research **tasks** are prepared.",
              ""]
     for item in drafted:
         lines.append("- **" + md(item["term"]) + "** — " + item["status"])
