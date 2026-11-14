@@ -128,9 +128,37 @@ class StudioTests(unittest.TestCase):
         self.assertNotIn("Authorization", req.headers)
         body = json.loads(req.data)
         self.assertEqual(body["model"], studio.FREE_MODEL)
-        self.assertLessEqual(body["max_tokens"], 2200)
+        self.assertLessEqual(body["max_tokens"], 1600)
         with self.assertRaises(ValueError):
             studio.model_request(topic(), model="paid-proprietary-model")
+
+    def test_free_timeout_retries_at_most_once_and_http_limits_do_not_retry(self):
+        import urllib.error
+        from unittest.mock import MagicMock
+        class DummyResponse:
+            def __enter__(self):
+                return self
+            def __exit__(self, *args):
+                return False
+            def read(self, size=-1):
+                return json.dumps({"choices": [{"message": {"content": '{"title":"OK"}'}}]}).encode()
+
+        with patch.object(studio.urllib.request, "urlopen",
+                          side_effect=[TimeoutError("temporary"), DummyResponse()]) as request, \
+             patch.object(studio.time, "sleep") as sleep:
+            result = studio.model_request(topic())
+        self.assertEqual(result["title"], "OK")
+        self.assertEqual(request.call_count, 2)
+        sleep.assert_called_once_with(35)
+
+        throttle = urllib.error.HTTPError(
+            studio.FREE_ENDPOINT, 429, "Rate limited", {}, None)
+        with patch.object(studio.urllib.request, "urlopen", side_effect=throttle) as request, \
+             patch.object(studio.time, "sleep") as sleep:
+            with self.assertRaises(urllib.error.HTTPError):
+                studio.model_request(topic())
+        self.assertEqual(request.call_count, 1)
+        sleep.assert_not_called()
 
     def test_anonymous_ai_can_select_nonbreaking_music_explainer(self):
         music = topic("country music", priority=42,
