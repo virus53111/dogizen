@@ -14,6 +14,8 @@ on:
       - 'tests/test_topic_opportunity_engine.py'
       - 'scripts/editorial_draft_studio.py'
       - 'tests/test_editorial_draft_studio.py'
+      - 'scripts/editorial_evidence_pack.py'
+      - 'tests/test_editorial_evidence_pack.py'
       - '.github/workflows/world-topic-radar.yml'
   pull_request:
     paths:
@@ -23,6 +25,8 @@ on:
       - 'tests/test_topic_opportunity_engine.py'
       - 'scripts/editorial_draft_studio.py'
       - 'tests/test_editorial_draft_studio.py'
+      - 'scripts/editorial_evidence_pack.py'
+      - 'tests/test_editorial_evidence_pack.py'
       - '.github/workflows/world-topic-radar.yml'
 permissions:
   contents: read
@@ -56,6 +60,11 @@ jobs:
         run: |
           python scripts/editorial_draft_studio.py --ai --max-ai 1 --output reports/world-topic-radar/drafts
           printf '\n- [Open this workflow run to download the draft artifacts](%s/%s/actions/runs/%s)\n' "$GITHUB_SERVER_URL" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID" >> reports/world-topic-radar/report.md
+      - name: Build original visual article previews with source and image-license audit
+        if: github.event_name != 'pull_request'
+        timeout-minutes: 3
+        run: |
+          python scripts/editorial_evidence_pack.py --output reports/world-topic-radar/previews --drafts-dir reports/world-topic-radar/drafts
       - name: Save the report and research data for review
         if: always() && github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4

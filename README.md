@@ -121,3 +121,45 @@ Offline regression tests:
 Review the results under reports/world-topic-radar/drafts and the
 existing World Topic Radar GitHub issue. Human editorial review remains
 mandatory before publication.
+
+
+## Free visual article research previews (source-audited, not published)
+
+After the free editorial briefs are generated, GitHub Actions also runs
+`scripts/editorial_evidence_pack.py`. It prepares an **HTML preview gallery**
+at `reports/world-topic-radar/previews/index.html` plus one visually designed
+HTML research preview and one source-audit JSON file per shortlisted topic.
+These files appear in the existing `murdilimax-world-topic-radar` workflow
+artifact, accessible from the single World Topic Radar GitHub issue.
+
+The research pack attempts to retrieve a matching English Wikipedia summary
+as **secondary contextual information** and to discover an illustrative
+Wikimedia Commons photograph. A photograph is used only when Commons
+metadata confirms a recognized public-domain or compatible Creative Commons
+license, image file URL, attribution author and a source file page. The
+preview displays the author, license and source link; editors must still
+verify the image actually depicts the intended topic and satisfies any
+share-alike requirements. Without suitable licensed media, the preview uses
+a **new original SVG illustration** suited to the topic category.
+
+Crucially, retrieving a Wikipedia article or a Commons image does **not**
+independently verify factual claims in the article. Research leads and
+Wikipedia excerpts are clearly marked as unverified source context; the
+program never mislabels its output as vetted journalism. Unavailable
+Wikimedia endpoints do not interrupt generating an illustrated review
+outline. If the free anonymous model has produced a draft, the HTML preview
+renders it with a prominent `UNVERIFIED / REVIEW REQUIRED` banner. Otherwise
+a clearly marked research outline is displayed instead of a fabricated
+article. Generated HTML is text-escaped, uses no externally loaded scripts
+and has `noindex,nofollow`; it is **not** copied into the site's `dist/`
+folder or sitemap.
+
+For a local test without any external network:
+`python scripts/editorial_evidence_pack.py --offline`
+(after producing radar JSON). Full offline regression suite:
+`python -m unittest discover -s tests -p 'test_*.py' -v`.
+
+**Publication still requires an editor** to verify independent primary
+sources, completeness and originality, relevant imagery and licensing,
+correct language adaptation, SEO metadata, links and all automated tests.
+No paid API or extra account is used to create these previews.
