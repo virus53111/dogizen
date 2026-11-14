@@ -23,6 +23,7 @@ jobs:
           node --check lib/world-events-2026.js
           node --check lib/aviation-and-useful-answers.js
           node --check lib/phone-cold-weather.js
+          node --check lib/everyday-photo-induction.js
           node --check lib/winter-car-answers.js
           node --check lib/seasonal-home-plants.js
           node --check lib/practical-clothing-care.js
@@ -117,6 +118,7 @@ jobs:
           node scripts/validate-seasonal-home-plants.mjs
           node scripts/validate-winter-car-answers.mjs
           node scripts/validate-phone-cold-weather.mjs
+          node scripts/validate-everyday-photo-induction.mjs
           node scripts/validate-moon-and-penguins.mjs
           node scripts/validate-everyday-wonders.mjs
           node scripts/validate-everyday-discoveries.mjs
