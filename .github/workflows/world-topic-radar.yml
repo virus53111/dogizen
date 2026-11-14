@@ -4,6 +4,13 @@ on:
   schedule:
     - cron: '17 7 * * *'
   workflow_dispatch:
+  # First report runs automatically when this workflow is merged to main.
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/world_topic_radar.py'
+      - 'tests/test_world_topic_radar.py'
+      - '.github/workflows/world-topic-radar.yml'
   pull_request:
     paths:
       - 'scripts/world_topic_radar.py'
