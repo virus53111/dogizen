@@ -185,7 +185,32 @@ if(calc){
  };
  a.addEventListener('input',()=>{active='a';recalc()});b.addEventListener('input',()=>{active='b';recalc()});recalc();
 }
-const share=$('#share-button');if(share)share.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(location.href);share.textContent='✓ '+dict.copied}catch(e){share.textContent=location.href}});
+// Both article sharing locations copy the canonical page URL, not a fragment.
+// The social-network links themselves need no JavaScript or third-party widgets.
+document.querySelectorAll('#share-button,[data-share-copy]').forEach(share=>{
+ share.addEventListener('click',async()=>{
+  const canonical=document.querySelector('link[rel="canonical"]')?.href||location.href.split('#')[0];
+  const originalLabel=share.textContent;
+  try {
+   await navigator.clipboard.writeText(canonical);
+   share.textContent='✓ '+dict.copied;
+  } catch (error) {
+   const input=document.createElement('textarea');
+   input.value=canonical;
+   input.setAttribute('readonly','');
+   input.style.position='fixed';
+   input.style.opacity='0';
+   document.body.append(input);
+   input.select();
+   let copied=false;
+   try{copied=document.execCommand('copy')}catch(e){copied=false}
+   input.remove();
+   share.textContent=copied?'✓ '+dict.copied:canonical;
+  }
+  share.setAttribute('aria-live','polite');
+  share.setAttribute('aria-label',share.textContent);
+ });
+});
 
 // Reader navigation is optional: other page types remain free of scroll listeners.
 const articleToc=document.querySelector('.article-toc-panel');
