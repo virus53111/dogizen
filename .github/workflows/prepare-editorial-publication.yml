@@ -1,0 +1,76 @@
+name: Prepare MURDILIMAX article PR for editorial approval
+on:
+  workflow_dispatch:
+    inputs:
+      radar_run_id:
+        description: "Successful World Topic Radar run ID containing an AI draft and source audit"
+        required: true
+        type: string
+      topic_slug:
+        description: "Exact article slug from the Radar archive (for example spacex-starship-6db69a374)"
+        required: true
+        type: string
+permissions:
+  contents: write
+  actions: read
+  pull-requests: write
+jobs:
+  prepare-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate input and download the original Radar archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RADAR_RUN_ID: ${{ inputs.radar_run_id }}
+          TOPIC_SLUG: ${{ inputs.topic_slug }}
+        run: |
+          [[ "$RADAR_RUN_ID" =~ ^[0-9]{1,14}$ ]] || { echo "Invalid run ID"; exit 1; }
+          [[ "$TOPIC_SLUG" =~ ^[a-z0-9]+(-[a-z0-9]+)*$ ]] || { echo "Invalid safe slug"; exit 1; }
+          mkdir -p "$RUNNER_TEMP/radar-artifact"
+          gh run download "$RADAR_RUN_ID" --repo "$GITHUB_REPOSITORY" --name murdilimax-world-topic-radar --dir "$RUNNER_TEMP/radar-artifact"
+          python scripts/prepare-publication-candidate.py \
+            --artifact-dir "$RUNNER_TEMP/radar-artifact" \
+            --slug "$TOPIC_SLUG" --output-dir editorial/approved
+          echo "Candidate is PENDING, not published; independent editorial review is REQUIRED."
+      - name: Create a non-publishing draft review pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RADAR_RUN_ID: ${{ inputs.radar_run_id }}
+          TOPIC_SLUG: ${{ inputs.topic_slug }}
+        run: |
+          short_slug="$(echo "$TOPIC_SLUG" | cut -c1-50)"
+          branch="editorial/review-$short_slug-$RADAR_RUN_ID"
+          git config user.name "MURDILIMAX Editorial Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add "editorial/approved/$TOPIC_SLUG.json"
+          git commit -m "draft(editorial): prepare $TOPIC_SLUG for independent fact checking"
+          git push origin "$branch"
+          cat > "$RUNNER_TEMP/review-body.md" <<'BODY'
+          ## Unverified AI candidate — NOT published
+
+          This draft pull request was generated from a World Topic Radar artifact. The original AI text and source links are research leads, not independently verified evidence.
+
+          **Before approving and merging this PR:**
+          - Verify and rewrite every date, name, numerical claim, and VERIFY marker against original trustworthy sources.
+          - Provide three or more independent useful sources spanning at least two distinct hostnames.
+          - Write at least four substantial, original sections that solve a real reader question.
+          - Verify the photo subject, author, Wikimedia Commons file page, licence, real alt text and source attribution.
+          - Confirm the appropriate topic category, English edition, and any independently reviewed Russian edition.
+          - Set the JSON approval block status to approved ONLY after checking facts, originality and media rights, with a real reviewer and review date.
+          - Check that website CI passes, then merge the pull request to publish automatically to GitHub Pages.
+
+          Pending content is ignored by site generation. Merely opening or merging a pending draft PR will NOT publish it.
+
+          **No paid API and no unsupervised publication of unverified AI articles.**
+          BODY
+          gh pr create --draft --base main --head "$branch" \
+            --title "Editorial review: $TOPIC_SLUG (PENDING; do not publish)" \
+            --body-file "$RUNNER_TEMP/review-body.md"
