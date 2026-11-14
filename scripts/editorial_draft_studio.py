@@ -119,7 +119,10 @@ def select_topics(shortlist: list[dict], maximum: int = 2) -> list[dict]:
         term = safe_text(item.get("term", ""))
         if len(term) < 4 or not isinstance(item.get("references", []), list):
             continue
-        norm = re.sub(r"\W+", " ", term.casefold()).strip()
+        # Reordered words describe the same story: "Starship SpaceX"
+        # and "SpaceX Starship" should not consume both editorial slots.
+        words = re.findall(r"[\w]+", term.casefold())
+        norm = " ".join(sorted(words))
         if norm in unique or item.get("possible_existing_article"):
             continue
         unique.add(norm)
