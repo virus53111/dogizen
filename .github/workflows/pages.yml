@@ -36,6 +36,7 @@ jobs:
           node --check lib/everyday-discoveries.js
           node --check lib/curious-world-answers.js
           node --check lib/atlas-data.js
+          node --check lib/editor-reviewed-guides.js
           node --check lib/free-tools-2026.js
           node --check lib/world-topics.js
           node --check lib/world-articles.js
@@ -107,6 +108,7 @@ jobs:
           node --check lib/atlas-site.js
           node --check public/site.js
           node --check public/free-tools.js
+          node scripts/validate-reviewed-publication.mjs
           node scripts/build-atlas.mjs
           node scripts/validate-species-media.mjs
           node scripts/validate-species-experience.mjs
@@ -168,6 +170,7 @@ jobs:
           node scripts/validate-runtime-interactions.mjs
           node scripts/validate-sitemap-integrity.mjs
           node scripts/validate-rss.mjs
+          node scripts/validate-reviewed-publication.mjs --built
           node scripts/report-content-health.mjs
           test -s dist/index.html
           test -s dist/ru/guides/ryzen-upgrade/index.html
