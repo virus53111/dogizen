@@ -199,6 +199,8 @@ jobs:
           grep -q 'facebook.com/sharer/sharer.php' dist/ru/guides/ryzen-upgrade/index.html
           grep -q 'twitter.com/intent/tweet' dist/ru/guides/ryzen-upgrade/index.html
           grep -q 'article-share-actions' dist/ru/guides/ryzen-upgrade/index.html
+          grep -q 'article-bottom-share' dist/ru/guides/ryzen-upgrade/index.html
+          grep -q 'data-share-copy="bottom"' dist/ru/guides/ryzen-upgrade/index.html
           grep -q 'id="share-button"' dist/ru/guides/ryzen-upgrade/index.html
           grep -q 'image:loc' dist/sitemap.xml
           grep -q 'xhtml:link' dist/sitemap.xml
