@@ -123,7 +123,7 @@ export async function renderAutonomousAnswers(root){
   await writeFile(homepage,htmlText.replace('</main>',teaser+'</main>'),'utf8');
   const indexFile=path.join(root,lang==='en'?'search-index.json':'ru/search-index.json');
   const search=JSON.parse(await readFile(indexFile,'utf8'));
-  for(const item of items)search.push({type:'guide',title:item[lang].title,summary:item[lang].intro,
+  for(const item of items)search.push({type:'automated',title:item[lang].title,summary:item[lang].intro,
     label:t.label,href:(lang==='en'?'/':'/ru/')+'answers/'+item.id+'/',keywords:item.origin.topic,image:''});
   await writeFile(indexFile,JSON.stringify(search),'utf8');
  }
