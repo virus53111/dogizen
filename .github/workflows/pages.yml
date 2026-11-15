@@ -27,6 +27,8 @@ jobs:
           node-version: '22'
       - name: Validate multilingual pages and generate static website
         run: |
+          node --check scripts/render-autonomous-answers.mjs
+          node tests/test-autonomous-render.mjs
           node --check lib/world-events-2026.js
           node --check lib/aviation-and-useful-answers.js
           node --check lib/phone-cold-weather.js
