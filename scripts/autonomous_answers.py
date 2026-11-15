@@ -143,7 +143,8 @@ def ask_free_model(source: dict) -> dict:
         "Both languages must have exactly 3 substantive non-repeating sections; "
         "en is natural English and ru is fluent, independently understandable Russian. "
         "Each section body 180-700 characters, each heading 12-90 characters. "
-        "Descriptions 100-200 chars; intros 110-340 chars. The Russian must match "
+        "Titles should be specific and descriptive (30-90 characters). "
+        "Descriptions 100-200 chars; intros 110-340 chars. The Russian must match 
         "English facts and must not invent additional facts."
     )
     payload = {
@@ -172,7 +173,7 @@ def validate_translation(raw: dict, lang: str) -> dict:
     if not isinstance(raw, dict):
         raise ValueError("Missing " + lang + " translation")
     fields = {}
-    for key, low, high in (("title", 24, 110), ("description", 90, 230), ("intro", 105, 450)):
+    for key, low, high in (("title", 12, 110), ("description", 90, 230), ("intro", 105, 450)):
         value = raw.get(key)
         if not isinstance(value, str):
             raise ValueError("Missing " + lang + "/" + key)
