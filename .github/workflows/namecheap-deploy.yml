@@ -1,6 +1,8 @@
-name: Deploy Murdilimax to Namecheap (disabled until verified)
+name: Deploy Murdilimax to Namecheap
 on:
   push:
+    branches: [main]
+  pull_request:
     branches: [main]
   workflow_dispatch:
 permissions:
@@ -9,14 +11,35 @@ concurrency:
   group: namecheap-murdilimax-com
   cancel-in-progress: false
 jobs:
+  validate:
+    name: Validate static build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify site output
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm run build
+          test -s dist/index.html
+          test -s dist/sitemap.xml
   deploy:
+    needs: validate
     # Set this repository variable only after the correct Namecheap target,
     # SSH host fingerprint, deploy key and domain marker have been verified.
-    if: ${{ vars.NAMECHEAP_DEPLOY_ENABLED == 'true' }}
+    if: ${{ github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && vars.NAMECHEAP_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -44,9 +67,10 @@ jobs:
           SSH_PORT="${SSH_PORT:-21098}"
           [[ "$SSH_PORT" =~ ^[0-9]{2,5}$ ]] || exit 1
           [[ "$DEPLOY_DIR" =~ ^/home/[A-Za-z0-9_-]+(/[A-Za-z0-9._-]+)+$ ]] || { echo 'Unsafe deployment path'; exit 1; }
+          [[ "$DEPLOY_DIR" == '/home/murducxr/murdilimax.com' ]] || { echo 'Unexpected document root'; exit 1; }
           umask 077
           printf '%s\n' "$SSH_PRIVATE_KEY" > "$RUNNER_TEMP/namecheap_deploy_key"
           printf '%s\n' "$SSH_KNOWN_HOSTS" > "$RUNNER_TEMP/namecheap_known_hosts"
-          ssh_opts="-i $RUNNER_TEMP/namecheap_deploy_key -p $SSH_PORT -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$RUNNER_TEMP/namecheap_known_hosts -o BatchMode=yes"
+          ssh_opts="-i $RUNNER_TEMP/namecheap_deploy_key -p $SSH_PORT -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o GlobalKnownHostsFile=/dev/null -o UserKnownHostsFile=$RUNNER_TEMP/namecheap_known_hosts -o BatchMode=yes"
           ssh $ssh_opts "$SSH_USER@$SSH_HOST" "test -d '$DEPLOY_DIR' && test -f '$DEPLOY_DIR/.deploy-domain' && grep -Fxq 'murdilimax.com' '$DEPLOY_DIR/.deploy-domain'" || { echo 'Domain marker missing or wrong directory; upload refused'; exit 1; }
-          rsync -rtz --exclude='CNAME' --exclude='.deploy-domain' -e "ssh $ssh_opts" dist/ "$SSH_USER@$SSH_HOST:$DEPLOY_DIR/"
+          rsync -rtz --delay-updates --exclude='CNAME' --exclude='.deploy-domain' -e "ssh $ssh_opts" dist/ "$SSH_USER@$SSH_HOST:$DEPLOY_DIR/"
