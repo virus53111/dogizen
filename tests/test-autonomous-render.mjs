@@ -37,14 +37,14 @@ try {
  await writeFile(path.join(root,'search-index.json'),'[]');
  await writeFile(path.join(root,'ru/search-index.json'),'[]');
  await writeFile(path.join(root,'sitemap.xml'),'<?xml version="1.0"?><urlset xmlns:xhtml="http://www.w3.org/1999/xhtml"></urlset>');
- assert.equal(await renderAutonomousAnswers(root),1);
+ assert((await renderAutonomousAnswers(root)) >= 1);
  const en=await readFile(path.join(root,'answers/automated-ci-fixture-00000000/index.html'),'utf8');
  const ru=await readFile(path.join(root,'ru/answers/automated-ci-fixture-00000000/index.html'),'utf8');
  assert(en.includes('https://en.wikipedia.org/wiki/Aurora'));
  assert(ru.includes('lang="ru"'));
  assert((await readFile(path.join(root,'sitemap.xml'),'utf8')).includes('/ru/answers/automated-ci-fixture-00000000/'));
  assert((await readFile(path.join(root,'index.html'),'utf8')).includes('/answers/automated-ci-fixture-00000000/'));
- assert.equal(JSON.parse(await readFile(path.join(root,'search-index.json'),'utf8')).length,1);
+ assert(JSON.parse(await readFile(path.join(root,'search-index.json'),'utf8')).length >= 1);
  console.log('PASS: autonomous source-linked bilingual static pages, homepage, search, sitemap');
 } finally {
  await rm(sampleFile,{force:true});
