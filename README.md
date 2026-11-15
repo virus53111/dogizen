@@ -163,3 +163,11 @@ For a local test without any external network:
 sources, completeness and originality, relevant imagery and licensing,
 correct language adaptation, SEO metadata, links and all automated tests.
 No paid API or extra account is used to create these previews.
+
+## Autonomous Answers (separate from human-reviewed editorial)
+
+The optional **MURDILIMAX — Autonomous Answers** GitHub Actions workflow runs twice weekly and on initial activation. It uses the existing public Wikipedia pageview radar to find low-risk science, nature and technology topics, retrieves an English Wikipedia summary, and makes **at most one** anonymous no-payment model request. If the free model is unavailable, a topic is too sensitive, a source is insufficient, or the bilingual content fails quality checks, the run **publishes nothing**. No AI subscription or paid fallback is configured. Free-tier access and GitHub Actions schedule execution are not guaranteed.
+
+When a candidate passes automated checks, the workflow builds the site, verifies the generated pages and commits one EN/RU article into `editorial/autonomous/`. On a successful workflow completion, the existing GitHub Pages build runs again using that commit and publishes the separate `/answers/` and `/ru/answers/` sections. Their articles appear on the two homepages, in on-site search and in `sitemap.xml`. The Namecheap workflow also responds to the successful automation run **only when** it has been independently enabled and configured by the owner.
+
+The published articles disclose that they are automatically generated and **have not received independent human fact-checking**. They link to the Wikipedia source and Creative Commons attribution. The standard human-reviewed `editorial/approved/` workflow remains unchanged. This is not a web-scraping copy machine, a promise of SEO rankings, or a guarantee that every schedule produces an article. Reviewers should monitor accuracy and pause this workflow if issues appear. Limit: at most two attempts per week, one article per run.

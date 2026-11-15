@@ -5,6 +5,10 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+  workflow_run:
+    workflows: ['MURDILIMAX — Autonomous Answers']
+    types: [completed]
+    branches: [main]
 permissions:
   contents: read
   pages: write
@@ -14,6 +18,7 @@ concurrency:
   cancel-in-progress: true
 jobs:
   build:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -22,6 +27,8 @@ jobs:
           node-version: '22'
       - name: Validate multilingual pages and generate static website
         run: |
+          node --check scripts/render-autonomous-answers.mjs
+          node tests/test-autonomous-render.mjs
           node --check lib/world-events-2026.js
           node --check lib/aviation-and-useful-answers.js
           node --check lib/phone-cold-weather.js

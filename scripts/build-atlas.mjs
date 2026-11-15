@@ -121,3 +121,6 @@ await write('404.html',notFound('en'));
 await write('CNAME','murdilimax.com\n');
 await write('.nojekyll','');
 console.log('MURDILIMAX generated '+pages.length+' crawlable pages in '+languages.length+' languages; '+stories.length+' unique topics. Sitemap URLs '+urls.length);
+// Separate low-risk autonomous articles never impersonate human-reviewed guide approval.
+const {renderAutonomousAnswers}=await import('./render-autonomous-answers.mjs');
+await renderAutonomousAnswers(root);
