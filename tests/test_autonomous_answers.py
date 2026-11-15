@@ -24,12 +24,19 @@ class AutonomousAnswersTests(unittest.TestCase):
             {**self.lead("Aurora"), "signal": "google_trends_search"},
         ]}
         results = bot.choose_leads(topics, [])
-        self.assertEqual([r["term"] for r in results], ["Aurora"])
+        self.assertEqual(results[0]["term"], "Aurora")
+        self.assertFalse(any(r["term"] == "President Election" for r in results))
+
+    def test_safe_fallback_used_when_radar_is_all_news(self):
+        items = bot.choose_leads({"shortlist": [self.lead("President Election")]}, [])
+        self.assertTrue(items)
+        self.assertTrue(all(x["source_url"].startswith("https://en.wikipedia.org/wiki/") for x in items))
+        self.assertTrue(all(not bot.BLOCKED.search(x["term"]) for x in items))
 
     def test_prior_article_is_not_repeated(self):
         lead = self.lead("Aurora")
         prior = [{"origin": {"wiki": lead["source_url"]}}]
-        self.assertEqual(bot.choose_leads({"shortlist": [lead]}, prior), [])
+        self.assertFalse(any(x["term"] == "Aurora" for x in bot.choose_leads({"shortlist": [lead]}, prior)))
 
     def test_model_output_must_have_genuine_bilingual_sections(self):
         valid = {

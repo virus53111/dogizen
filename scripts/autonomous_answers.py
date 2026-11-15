@@ -23,6 +23,20 @@ WIKI = "https://en.wikipedia.org/api/rest_v1/page/summary/"
 MODEL = "https://oai.endpoints.kepler.ai.cloud.ovh.net/v1/chat/completions"
 MODEL_NAME = "Meta-Llama-3_3-70B-Instruct"
 SAFE_CATEGORIES = {"Science & space", "Nature & animals", "Technology & AI"}
+# Backstop when breaking-news-heavy pageviews contain no safe educational subject.
+# These are suggestions, not articles: each run still downloads a real encyclopedia
+# summary, checks relevance and uses the same optional free model and quality gates.
+EVERGREEN_BACKSTOP = (
+    "Bioluminescence", "Tardigrade", "Magnetosphere", "Capillary action",
+    "Plate tectonics", "Tidal locking", "Coral reef", "Solar wind",
+    "Volcanic lightning", "Atmospheric refraction", "Axolotl",
+    "Mantis shrimp", "Sundew", "Geode", "Permafrost",
+    "Tree ring", "Phosphorescence", "Comet", "Meteorite",
+    "Pulsar", "Snowflake", "Glacier", "Solar sail",
+    "Mycorrhiza", "Ocean current", "Lagrange point", "Fossil",
+    "Cave", "Ant colony", "Saturn", "Black hole",
+)
+
 BLOCKED = re.compile(
     r"\b(?:death|died|murder|election|president|prime minister|war|attack|"
     r"bomb|gun|crime|lawsuit|stock|finance|investment|bitcoin|crypto|loan|"
@@ -77,7 +91,25 @@ def choose_leads(radar: dict, prior: list[dict]) -> list[dict]:
         if not slugify(term):
             continue
         leads.append(item)
-    return leads
+    # Always retain a small live-interest lead set, then add genuine evergreen
+    # encyclopedia subjects. Rotate by date so one unavailable article cannot
+    # permanently block future independent attempts.
+    today = dt.datetime.now(dt.timezone.utc).date().toordinal()
+    offset = today % len(EVERGREEN_BACKSTOP)
+    order = EVERGREEN_BACKSTOP[offset:] + EVERGREEN_BACKSTOP[:offset]
+    existing_keys = {str(x.get("term", "")).casefold() for x in leads}
+    backstop = []
+    for title in order:
+        canonical = "https://en.wikipedia.org/wiki/" + urllib.parse.quote(title.replace(" ", "_"))
+        if canonical.casefold() in seen or title.casefold() in existing_keys:
+            continue
+        backstop.append({
+            "term": title, "signal": "wikipedia_pageviews",
+            "category": "Science & space", "requires_review": [],
+            "possible_existing_article": False, "source_url": canonical,
+            "origin_label": "curated evergreen fallback; not a trending search claim",
+        })
+    return leads[:6] + backstop[:16]
 
 
 def fetch_source(item: dict) -> dict:
@@ -181,7 +213,7 @@ def publish_one(radar_path: Path, output_dir: Path) -> str | None:
             raise ValueError("Existing automated article is unreadable: " + file.name)
     leads = choose_leads(radar, existing)
     # Read a handful of source pages; NO model calls until a suitable page is found.
-    for item in leads[:10]:
+    for item in leads[:20]:
         try:
             source = fetch_source(item)
         except (ValueError, urllib.error.URLError, TimeoutError, KeyError, TypeError):
