@@ -67,7 +67,8 @@ jobs:
           SSH_PORT="${SSH_PORT:-21098}"
           [[ "$SSH_PORT" =~ ^[0-9]{2,5}$ ]] || exit 1
           [[ "$DEPLOY_DIR" =~ ^/home/[A-Za-z0-9_-]+(/[A-Za-z0-9._-]+)+$ ]] || { echo 'Unsafe deployment path'; exit 1; }
-          [[ "$DEPLOY_DIR" == '/home/murducxr/murdilimax.com' ]] || { echo 'Unexpected document root'; exit 1; }
+          [[ "$SSH_USER" =~ ^[A-Za-z0-9_-]+$ ]] || { echo 'Invalid SSH username'; exit 1; }
+          [[ "$DEPLOY_DIR" == "/home/${SSH_USER}/murdilimax.com" ]] || { echo 'Unexpected document root'; exit 1; }
           umask 077
           printf '%s\n' "$SSH_PRIVATE_KEY" > "$RUNNER_TEMP/namecheap_deploy_key"
           printf '%s\n' "$SSH_KNOWN_HOSTS" > "$RUNNER_TEMP/namecheap_known_hosts"
