@@ -144,7 +144,7 @@ def ask_free_model(source: dict) -> dict:
         "en is natural English and ru is fluent, independently understandable Russian. "
         "Each section body 180-700 characters, each heading 12-90 characters. "
         "Titles should be specific and descriptive (30-90 characters). "
-        "Descriptions 100-200 chars; intros 110-340 chars. The Russian must match 
+        "Descriptions 100-200 chars; intros 110-340 chars. The Russian must match "
         "English facts and must not invent additional facts."
     )
     payload = {
