@@ -451,3 +451,36 @@ body{background:var(--paper);color:var(--ink)}
 .article-step-card p{font:400 13px/1.65 'DM Sans',sans-serif;margin:0;color:#43564b;overflow-wrap:anywhere}
 @media(max-width:640px){.article-step-showcase{padding:15px;margin:20px 0 36px}.article-step-grid{grid-template-columns:minmax(0,1fr)}.article-step-card:last-child:nth-child(odd){grid-column:auto}}
 @media(prefers-reduced-motion:reduce){.article-step-card{transition:none}}
+
+
+/* Keep the practical phone-notification diagnosis readable on narrow screens:
+   avoid three-column clipped tables; show every cell as a labelled card field. */
+@media (max-width: 720px) {
+  .phone-notification-facts { overflow-x: visible; border: 0; border-radius: 0; background: transparent; }
+  .phone-notification-facts .article-fact-table { display: block; width: 100%; min-width: 0; }
+  .phone-notification-facts .article-fact-table caption {
+    display: block; max-width: 100%; padding: 0 0 14px; text-align: left;
+    white-space: normal; overflow-wrap: anywhere; font-size: 17px; line-height: 1.4;
+  }
+  .phone-notification-facts .article-fact-table thead {
+    position: absolute; width: 1px; height: 1px; padding: 0;
+    margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;
+  }
+  .phone-notification-facts .article-fact-table tbody { display: grid; gap: 12px; }
+  .phone-notification-facts .article-fact-table tbody tr {
+    display: block; min-width: 0; border: 1px solid var(--border,#dce3dc);
+    border-radius: 12px; background: rgba(107,134,114,.06); overflow: hidden;
+  }
+  .phone-notification-facts .article-fact-table tbody th,
+  .phone-notification-facts .article-fact-table tbody td {
+    display: block; width: 100%; min-width: 0; border: 0; padding: 10px 14px 0;
+    text-align: left; white-space: normal; overflow-wrap: anywhere;
+    font-size: 14px; line-height: 1.55;
+  }
+  .phone-notification-facts .article-fact-table tbody th { font-weight: 750; font-size: 15px; }
+  .phone-notification-facts .article-fact-table tbody td::before {
+    content: attr(data-label); display: block; font-size: 11px; font-weight: 750;
+    line-height: 1.4; margin: 0 0 4px; opacity: .78; text-transform: none;
+  }
+  .phone-notification-facts .article-fact-table tbody td:last-child { padding-bottom: 14px; }
+}
