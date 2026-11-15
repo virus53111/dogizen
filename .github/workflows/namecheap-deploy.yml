@@ -3,10 +3,6 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
-  workflow_run:
-    workflows: ['MURDILIMAX — Autonomous Answers']
-    types: [completed]
-    branches: [main]
 permissions:
   contents: read
 concurrency:
@@ -16,7 +12,7 @@ jobs:
   deploy:
     # Set this repository variable only after the correct Namecheap target,
     # SSH host fingerprint, deploy key and domain marker have been verified.
-    if: vars.NAMECHEAP_DEPLOY_ENABLED == 'true' && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
+    if: ${{ vars.NAMECHEAP_DEPLOY_ENABLED == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
