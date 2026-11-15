@@ -228,7 +228,7 @@ def publish_one(radar_path: Path, output_dir: Path) -> str | None:
             en = validate_translation(generated.get("en"), "en")
             ru = validate_translation(generated.get("ru"), "ru")
         except (ValueError, urllib.error.URLError, TimeoutError, KeyError, TypeError) as exc:
-            print("SKIPPED: free AI or quality gate: " + type(exc).__name__)
+            print("SKIPPED: free AI or quality gate: " + type(exc).__name__ + (": " + clean(exc, 160) if isinstance(exc, ValueError) else ""))
             return None
         published = dt.datetime.now(dt.timezone.utc).date().isoformat()
         item_out = {
