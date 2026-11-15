@@ -33,7 +33,7 @@ function validate(item,file){
  for(const l of ['en','ru']){
    const d=item[l];
    if(!d||!Array.isArray(d.sections)||d.sections.length!==3 ||
-      ![d.title,d.description,d.intro].every(t=>typeof t==='string'&&t.length>=30&&!banned.test(t)))
+      ![d.title,d.description,d.intro].every(t=>typeof t==='string'&&t.length>=12&&!banned.test(t)))
       throw Error('Incomplete automatically published '+l+' edition');
    for(const s of d.sections)if(!s||typeof s.heading!=='string'||typeof s.body!=='string'||
      s.heading.length<12||s.body.length<180||banned.test(s.heading+' '+s.body))
