@@ -53,6 +53,7 @@ jobs:
           set -euo pipefail
           python -m unittest discover -s tests -p 'test_*.py' -q
           node --check scripts/render-autonomous-answers.mjs
+          node tests/test-autonomous-render.mjs
           npm run build
           test -s dist/answers/index.html
           test -s dist/ru/answers/index.html
