@@ -30,6 +30,8 @@ const write = async (file, body) => {
 };
 const key='8f6c1e2a9b4d7f30a5c2e18d6b9f43a1';
 for(const file of ['site.css','atlas-visual.css','site.js','free-tools.css','free-tools.js','home-calculators.css','home-calculators.js','insulation-calculator.js','renovation-budget.js','renovation-budget.css','favicon.svg','robots.txt'])await copyFile(path.resolve('public',file),path.join(root,file));
+// Keep the webmaster verification file byte-for-byte unchanged (no analytics injection).
+await copyFile(path.resolve('public','yandex_e5943604a45ffc23.html'),path.join(root,'yandex_e5943604a45ffc23.html'));
 // Distinct AI generated examples are explicitly separated from authentic documentary guide photographs.
 await copyFile(path.resolve('public/ai-photo-prompts.css'),path.join(root,'ai-photo-prompts.css'));
 await mkdir(path.join(root,'ai-prompts'),{recursive:true});
