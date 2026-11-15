@@ -4,6 +4,12 @@ on:
     # Twice weekly; at most one low-risk, source-linked EN/RU article per run.
     - cron: '43 10 * * 2,5'
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/autonomous_answers.py'
+      - 'scripts/render-autonomous-answers.mjs'
+      - '.github/workflows/autonomous-answers.yml'
 permissions:
   contents: write
 concurrency:
