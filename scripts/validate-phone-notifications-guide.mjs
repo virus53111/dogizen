@@ -28,6 +28,11 @@ for(const lang of ['en','ru']){
  assert(html.includes(g.photoAsset.source)&&html.includes('CC BY 2.0'),'Image attribution missing '+lang);
  assert(html.includes('alt="'+g.mediaAlt[lang]+'"'),'Alt text missing '+lang);
  assert(html.includes('<table class="article-fact-table">'),'Symptom table not rendered '+lang);
+ assert(!html.includes('article-photo-context'),'Do not repeat a pointless photo description under this guide: '+lang);
+ assert.equal((html.match(/class="article-photo-credit"/g)||[]).length,1,'Exactly one photograph credit required: '+lang);
+ assert(!html.includes('photograph resized/cropped for MURDILIMAX'),'Remove editor-facing photograph commentary: '+lang);
+ assert(html.includes('class="article-fact-region phone-notification-facts"'),'Mobile table class missing: '+lang);
+ assert(html.includes('data-label="'+d.factTable.headers[1]+'"'),'Localized mobile table labels missing: '+lang);
  assert(html.includes('class="article-step-showcase"'),'Six-step interactive-style checklist missing '+lang);
  assert(d.sections.length===6&&d.sections.every(x=>x[1].length>700),'Long practical sections missing '+lang);
  assert(d.stepGuide.steps.length===6&&d.factTable.rows.length===5);
@@ -44,6 +49,8 @@ for(const lang of ['en','ru']){
 }
 for(const lang of ['de','es','fr','lv','pt','it','pl','lt','et','nl'])
  assert(!existsSync('dist/'+lang+'/guides/'+g.id+'/index.html'),'Unwritten '+lang+' translation must not be public');
+const visualCSS=readFileSync('dist/atlas-visual.css','utf8');
+assert(visualCSS.includes('@media (max-width: 720px)')&&visualCSS.includes('.phone-notification-facts')&&visualCSS.includes('attr(data-label)'),'Mobile stacked cards CSS required');
 const bytes=readFileSync('dist'+photoFile);
 assert(bytes.length>12000&&bytes[0]===255&&bytes[1]===216&&bytes.at(-2)===255&&bytes.at(-1)===217,
  'Bundled photograph must be authentic JPEG with sufficient pixels');
