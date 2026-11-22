@@ -1,0 +1,14 @@
+name = "MurdiliMax"
+[auth]
+enabled = true
+providers = ["email"]
+
+[db.tables.mm_listings]
+read = "public"
+write = "own"
+owner_column = "owner_id"
+
+[db.tables.mm_favorites]
+read = "own"
+write = "own"
+owner_column = "user_id"
