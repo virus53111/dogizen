@@ -1,8 +1,7 @@
 import { db, storage } from "hatchable";
 export const access="user";
 export const methods=["POST"];
-const CATEGORIES=new Set(["dating","women-men","women-serious","women-women","men-women","men-serious","men-men","couples","trans-dating","social","open-relationships","swinger","bdsm","events","clubs","escort-women","escort-men","massage","online","show","apartments","vacancies","job-seeking","goods","advice","stories","other"]);
-const RESTRICTED=new Set(["escort-women","escort-men","massage"]);
+const CATEGORIES=new Set(["dating", "women-men", "women-serious", "women-women", "men-women", "men-serious", "men-men", "couples", "trans-dating", "social", "events"]);
 export default async function(req,res){
  const b=req.body||{};
  const str=(v,n)=>String(v||"").trim().slice(0,n);
@@ -15,7 +14,7 @@ export default async function(req,res){
  if(!CATEGORIES.has(category))return res.status(400).json({error:"Выберите существующую категорию"});
  if(!/^[A-Z]{2,3}$/.test(country))return res.status(400).json({error:"Неверный код страны"});
  if(!name||!city||description.length<20||!Number.isInteger(age)||age<18||age>85)return res.status(400).json({error:"Укажите корректные имя, город, возраст от 18 лет и описание от 20 символов"});
- if(commercial || RESTRICTED.has(category))return res.status(400).json({error:"Размещение коммерческих интимных объявлений для выбранной страны пока недоступно из-за правовых ограничений"});
+ if(commercial)return res.status(400).json({error:"Допускаются только некоммерческие знакомства и общение"});
  const files=(req.files||[]).filter(f=>f.field==="photo"&&f.filename&&f.buffer?.length>0);
  if(files.length>6)return res.status(400).json({error:"Не более 6 фотографий"});
  for(const f of files){if(!["image/jpeg","image/png","image/webp"].includes(f.contentType)||f.buffer.length>4*1024*1024)return res.status(400).json({error:"Фотографии должны быть JPG, PNG или WebP размером до 4 МБ каждая"})}
