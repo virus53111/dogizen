@@ -8,7 +8,7 @@ lv:{navCategories:"Kategorijas",gallery:"Foto",headline:"Sludinājuma virsraksts
 };
 window.mmExtra={min_age:"",max_age:"",sort:"newest",photo:"",commercial:"",featured:"",page:1};
 const ex=k=>(X[state.lang]||X.ru)[k]||X.ru[k]||k;
-let collapsed=false;
+let collapsed=window.matchMedia("(max-width: 780px)").matches;
 function titleFor(id){return window.MM_categoryLabel(id,state.lang)}
 function groupMarkup(g){const items=window.MM_CATEGORIES.filter(x=>x.group===g.id);return '<div class="category-group"><div class="category-group-title"><span class="group-ico">'+g.icon+'</span><span>'+escapeHTML(g.name[state.lang]||g.name.ru)+'</span></div><div class="category-group-links">'+items.map(c=>'<button type="button" class="cat-item '+(state.category===c.id?"active":"")+'" data-category="'+c.id+'"><span class="cat-glyph">'+c.icon+'</span><span>'+escapeHTML(titleFor(c.id))+'</span></button>').join("")+'</div></div>'}
 function drawGroups(){const exp=document.getElementById("categoryExplorer");if(!exp)return;exp.classList.toggle("collapsed",collapsed);exp.innerHTML='<div class="category-explorer-head"><div><h3>✧ '+ex("categoryHeadline")+'</h3><p>'+ex("categorySub")+'</p></div><button type="button" class="cat-collapse" id="toggleCategories">'+(collapsed?ex("showCategories"):ex("hideCategories"))+' '+(collapsed?"⌄":"⌃")+'</button></div><div class="category-groups">'+window.MM_CATEGORY_GROUPS.map(groupMarkup).join("")+'</div>';document.getElementById("toggleCategories").onclick=()=>{collapsed=!collapsed;drawGroups()}}

@@ -1,0 +1,31 @@
+.directory-search{background:#29202c;color:#fff8ef;padding:24px 0 22px;border-bottom:4px solid #da976a}
+.directory-search h1{font:600 clamp(30px,4vw,48px)/1.1 Georgia,serif;letter-spacing:-.035em;margin:0 0 16px}
+.directory-search .search-box{position:static;color:#30262e;padding:10px;border-radius:12px;box-shadow:none;background:#fffaf5}
+.directory-search .search-fields{align-items:stretch}
+.directory-search .search-btn,.nav-post{background:#833754;color:white}
+.discover#catalog{display:grid;grid-template-columns:minmax(185px,225px) minmax(0,1fr);align-items:start;gap:24px;padding-top:22px;padding-bottom:36px}
+.listing-feed{min-width:0}
+#categoryExplorer{margin:0;border-radius:12px;background:#faf6f2}
+#categoryExplorer .category-explorer-head{padding:14px;flex-wrap:wrap}
+#categoryExplorer .category-explorer-head p{display:none}
+#categoryExplorer .category-groups{grid-template-columns:1fr}
+#categoryExplorer .category-group{border:0;border-top:1px solid #e7ded9;padding:12px}
+#categoryExplorer .category-group-title{margin-bottom:4px}
+#categoryExplorer .cat-item{font-size:13px;padding:5px 7px;color:#4a3944}
+#advancedFilters{margin:8px 0;padding:9px 12px}
+#advancedFilters .advanced-label{cursor:pointer;margin:0}
+#advancedFilters[open] .advanced-grid{margin-top:12px;grid-template-columns:repeat(auto-fit,minmax(94px,1fr))}
+#cards{grid-template-columns:repeat(auto-fill,minmax(min(195px,100%),1fr))}
+.listing-feed .result-bar{flex-wrap:wrap;gap:8px}
+@media(max-width:780px){
+.discover#catalog{grid-template-columns:1fr;gap:10px;padding-top:12px}
+.directory-search{padding:14px 0}
+.directory-search h1{font-size:29px;margin-bottom:9px}
+.directory-search .search-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.directory-search .search-field{min-width:0;padding:5px 8px}
+.directory-search .search-field select{width:100%;min-width:0}
+.directory-search .search-btn{grid-column:1/-1;min-height:36px}
+#categoryExplorer .category-explorer-head{padding:8px 12px}
+#categoryExplorer .category-groups{grid-template-columns:repeat(2,minmax(0,1fr))}
+.listing-feed .toolbar{flex-wrap:wrap}
+}

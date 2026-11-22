@@ -3,7 +3,7 @@
 <head><meta name="robots" content="noindex, nofollow, noarchive">
  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
  <meta name="theme-color" content="#181525"><meta name="description" content="MurdiliMax — международный каталог знакомств и объявлений 18+ с выбором страны, города и района.">
- <title>MurdiliMax — Европа ближе</title>
+ <title>MurdiliMax — объявления и знакомства 18+</title>
  <link rel="preconnect" href="https://fonts.googleapis.com">
  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,13 +14,13 @@
  <script defer src="/app.js"></script>
  <script defer src="/catalog-v2.js"></script>
  <script defer src="/social-v4.js"></script>
- <link rel="stylesheet" href="/social-v4.css">
+ <link rel="stylesheet" href="/social-v4.css"><link rel="stylesheet" href="/directory.css">
 </head>
 <body>
  <div class="age-gate" id="ageGate" role="dialog" aria-modal="true" aria-labelledby="ageTitle">
   <div class="age-box">
    <div class="age-symbol">18<span>+</span></div>
-   <div class="eyebrow">MURDILIMAX · PRIVATE SPACE</div>
+   <div class="eyebrow">MURDILIMAX</div>
    <h2 id="ageTitle" data-t="ageTitle">Это пространство для взрослых</h2>
    <p data-t="ageDescription">Сайт предназначен только для совершеннолетних. Подтвердите, что вам исполнилось 18 лет.</p>
    <button class="btn btn-primary wide" id="enterAge" data-t="enter">Мне исполнилось 18 лет</button>
@@ -31,30 +31,13 @@
  <header class="nav-wrap">
   <div class="nav container">
    <a class="brand" href="/" aria-label="MurdiliMax"><span class="brand-icon">m<span>•</span></span><span>murdili<span class="brand-pink">max</span></span></a>
-   <div class="nav-center"><span class="nav-item active" data-t="navExplore">Каталог</span><a class="nav-item" href="#categoryExplorer" data-t="navCategories">Рубрики</a><a href="#how" class="nav-item" data-t="navAbout">О платформе</a><a href="#safety" class="nav-item" data-t="navSafety">Безопасность</a></div>
+   <div class="nav-center"><a class="nav-item active" href="#catalog" data-t="navExplore">Каталог</a><a class="nav-item" href="#categoryExplorer" data-t="navCategories">Рубрики</a><a href="#how" class="nav-item" data-t="navAbout">О платформе</a><a href="#safety" class="nav-item" data-t="navSafety">Безопасность</a></div>
    <div class="nav-actions"><select id="language" aria-label="Language" class="lang-select"><option value="ru">🇷🇺 RU</option><option value="en">🇬🇧 EN</option><option value="de">🇩🇪 DE</option><option value="lv">🇱🇻 LV</option></select><button class="nav-shortcut" id="favoritesBtn" type="button" title="Избранное">♡ <span data-t="favorites">Избранное</span></button><button class="nav-shortcut" id="inboxBtn" type="button" title="Сообщения">✉ <span data-t="messages">Сообщения</span></button><button class="btn btn-outline nav-login" id="loginBtn" data-t="login">Войти</button><button class="btn btn-dark nav-post" id="postBtn"><span>＋</span> <span data-t="postAd">Разместить</span></button></div>
   </div>
  </header>
  <main>
-  <section class="hero">
-   <div class="hero-orb hero-orb-one"></div><div class="hero-orb hero-orb-two"></div>
-   <div class="container hero-inner">
-    <div class="hero-copy">
-     <div class="hero-pill"><span class="small-star">✦</span> <span data-t="heroBadge">НОВОЕ ПРОСТРАНСТВО ДЛЯ ЗНАКОМСТВ 18+</span></div>
-     <h1 data-t-html="heroTitle">Твой город.<br>Твои <em>правила.</em></h1>
-     <p data-t="heroText">Международное пространство объявлений и знакомств для взрослых. Открой новые знакомства в любом городе Европы.</p>
-     <div class="hero-points"><span>◉ <span data-t="pointOne">Вся Европа</span></span><span>◇ <span data-t="pointTwo">18+ сообщество</span></span><span>✧ <span data-t="pointThree">Удобный поиск</span></span></div>
-    </div>
-    <div class="hero-art" aria-hidden="true">
-      <div class="art-ellipse ellipse-back"></div>
-      <div class="art-card art-card-a"><div class="art-circle cc1">✦</div><div><div class="art-line"></div><div class="art-line short"></div></div><span class="art-dot"></span></div>
-      <div class="art-ring">✺</div>
-      <div class="art-card art-card-b"><span class="map-spark">⌖</span><div><strong>EUROPE</strong><br><span>Discover your place</span></div></div>
-      <div class="art-card art-card-c"><div class="art-circle cc2">✿</div><div><div class="art-line"></div><div class="art-line short"></div></div></div>
-      <div class="art-stars">✳</div>
-    </div>
-   </div>
-   <div class="container floating-search">
+  <section class="directory-search"><div class="container">
+   <h1 data-t="navExplore">Каталог</h1>
     <div class="search-box">
       <div class="search-fields">
        <label class="search-field"><span data-t="fromCountry">Страна</span><select id="countryFilter"></select></label>
@@ -67,16 +50,17 @@
    </div>
   </section>
   <section class="discover container" id="catalog">
-    <div class="section-top"><div><span class="kicker"><span class="star-icon">✦</span> MURDILIMAX DIRECTORY</span><h2 data-t="browseTitle">Откройте интересное рядом</h2><p class="section-sub" data-t="browseSubtitle">Просматривайте профили и события по городам Европы</p></div><div class="section-badge">✦ <span data-t="trusted">Каталог 18+</span></div></div>
-    <div id="categoryExplorer" class="category-explorer"></div>
+    <aside id="categoryExplorer" class="category-explorer"></aside>
+    <div class="listing-feed">
     <div class="category-strip" id="categoryChips"><button class="chip selected" data-cat=""><span>✧</span> <span data-t="all">Все</span></button><button class="chip" data-cat="social">♡ <span data-t="social">Общение</span></button><button class="chip" data-cat="dating">✿ <span data-t="dating">Знакомства</span></button><button class="chip" data-cat="events">✦ <span data-t="events">События</span></button></div>
-    <div class="advanced-filters" id="advancedFilters"><div class="advanced-label">⚙ <span data-t="advancedSearch">Расширенный поиск</span></div><div class="advanced-grid"><label><span data-t="ageFrom">Возраст от</span><input id="minAge" type="number" min="18" max="85" value="18"></label><label><span data-t="ageTo">До</span><input id="maxAge" type="number" min="18" max="85" value="85"></label><label><span data-t="sortBy">Сортировка</span><select id="sortFilter"><option value="newest">Новые сначала</option><option value="oldest">Старые сначала</option><option value="age_asc">Возраст ↑</option><option value="age_desc">Возраст ↓</option></select></label><label class="filter-check"><input type="checkbox" id="photoOnly"> <span data-t="onlyPhoto">Только с фото</span></label><label class="filter-check"><input type="checkbox" id="commercialOnly"> <span data-t="onlyCommercial">Коммерческие</span></label><button class="btn btn-outline filter-reset" id="resetAdvanced" data-t="resetExtra">Очистить</button></div></div>
+    <details class="advanced-filters" id="advancedFilters"><summary class="advanced-label" data-t="advancedSearch">Расширенный поиск</summary><div class="advanced-grid"><label><span data-t="ageFrom">Возраст от</span><input id="minAge" type="number" min="18" max="85" value="18"></label><label><span data-t="ageTo">До</span><input id="maxAge" type="number" min="18" max="85" value="85"></label><label><span data-t="sortBy">Сортировка</span><select id="sortFilter"><option value="newest">Новые сначала</option><option value="oldest">Старые сначала</option><option value="age_asc">Возраст ↑</option><option value="age_desc">Возраст ↓</option></select></label><label class="filter-check"><input type="checkbox" id="photoOnly"> <span data-t="onlyPhoto">Только с фото</span></label><label class="filter-check"><input type="checkbox" id="commercialOnly"> <span data-t="onlyCommercial">Коммерческие</span></label><button class="btn btn-outline filter-reset" id="resetAdvanced" data-t="resetExtra">Очистить</button></div></details>
     <div class="result-bar"><div class="results-count"><strong id="totalCount">—</strong> <span data-t="profilesFound">профилей в каталоге</span><small id="resultsDetail"></small></div><div class="toolbar"><label class="sr-only" for="keyword">Search</label><div class="mini-search">⌕ <input type="search" id="keyword" data-t-placeholder="keyword" placeholder="Имя или описание"></div><div class="view-switch"><button id="gridViewBtn" class="current" data-t-title="grid" title="Карточки">▦ <span data-t="grid">Список</span></button><button id="galleryViewBtn" title="Фотографии">▧ <span data-t="gallery">Фото</span></button><button id="mapViewBtn" data-t-title="map" title="Карта">⌖ <span data-t="map">Карта</span></button></div></div></div>
     <div class="demo-warning" id="demoWarning"><span>ⓘ</span><span data-t="demoNotice">Пока показаны демонстрационные анкеты. Это не реальные люди и не предложения услуг.</span></div>
     <div class="profiles-grid" id="cards"></div>
     <div class="map-panel hidden" id="mapPanel"><div class="map-top"><div><strong data-t="mapHeader">Карта объявлений</strong><p data-t="mapDescription">Метки указывают только приблизительный район города</p></div><span class="map-label" id="mapCount">0</span></div><div id="mapCanvas"></div><div id="mapFallback" class="map-fallback hidden">🌍 <span data-t="mapOffline">Карта недоступна. Переключитесь на список.</span></div></div>
     <div id="pagination" class="pagination hidden"></div>
     <div class="empty hidden" id="emptyState"><span>⌕</span><h3 data-t="emptyTitle">Здесь пока тихо</h3><p data-t="emptyText">Попробуйте выбрать другую страну, город или категорию.</p><button class="btn btn-outline" id="resetFilters" data-t="clearFilters">Сбросить фильтры</button></div>
+    </div>
   </section>
   <section class="bottom-cta" id="how"><div class="container cta-inner"><div><div class="eyebrow">YOUR SPACE · YOUR CITY</div><h2 data-t="ctaTitle">Хочешь быть здесь?</h2><p data-t="ctaText">Создайте профиль и откройте новые знакомства. Все публикации проходят модерацию.</p></div><button class="btn btn-white" id="ctaPost">＋ <span data-t="postProfile">Создать анкету</span></button></div></section>
  </main>
