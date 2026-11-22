@@ -1,2 +1,7 @@
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /api/
+Disallow: /admin
+Disallow: /media/
+Disallow: /login
+Sitemap: https://murdilimax.com/sitemap.xml

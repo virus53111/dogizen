@@ -10,6 +10,7 @@
  <link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/catalog-v2.css">
  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+ <script defer src="/locales.js"></script>
  <script defer src="/categories.js"></script>
  <script defer src="/app.js"></script>
  <script defer src="/catalog-v2.js"></script>
@@ -37,7 +38,7 @@
  </header>
  <main>
   <section class="directory-search"><div class="container">
-   <h1 data-t="navExplore">Каталог</h1>
+   <h1>{{heading}}</h1><p class="catalog-intro">{{intro}}</p>
     <div class="search-box">
       <div class="search-fields">
        <label class="search-field"><span data-t="fromCountry">Страна</span><select id="countryFilter"></select></label>
@@ -64,7 +65,7 @@
   </section>
   <section class="bottom-cta" id="how"><div class="container cta-inner"><div><div class="eyebrow">YOUR SPACE · YOUR CITY</div><h2 data-t="ctaTitle">Хочешь быть здесь?</h2><p data-t="ctaText">Создайте профиль и откройте новые знакомства. Все публикации проходят модерацию.</p></div><button class="btn btn-white" id="ctaPost">＋ <span data-t="postProfile">Создать анкету</span></button></div></section>
  </main>
- <footer class="footer" id="safety"><div class="container footer-content"><div><a class="brand footer-brand" href="/"><span class="brand-icon">m<span>•</span></span><span>murdili<span class="brand-pink">max</span></span></a><p data-t="footerBlurb">Международный каталог для взрослых. Только 18+. Без незаконного и принудительного контента.</p></div><div class="footer-links"><a href="/rules.html" data-t="rules">Правила</a><a href="/privacy.html" data-t="privacy">Приватность</a><button class="footer-link" id="myAdsBtn" data-t="myAds">Мои объявления</button><button class="footer-link" id="footerInbox" data-t="messages">Сообщения</button><button class="footer-link" id="footerFavorites" data-t="favorites">Избранное</button></div></div><div class="container footer-end"><span>© 2026 MurdiliMax. 18+</span><span data-t="legalDisclaimer">Демонстрационная версия · платежи не подключены</span></div></footer>
+ <footer class="footer" id="safety"><div class="container footer-content"><div><a class="brand footer-brand" href="/"><span class="brand-icon">m<span>•</span></span><span>murdili<span class="brand-pink">max</span></span></a><p data-t="footerBlurb">Международный каталог для взрослых. Только 18+. Без незаконного и принудительного контента.</p></div><div class="footer-links"><a href="/rules.html" data-t="rules">Правила</a><a href="/privacy.html" data-t="privacy">Приватность</a><button class="footer-link" id="myAdsBtn" data-t="myAds">Мои объявления</button><button class="footer-link" id="footerInbox" data-t="messages">Сообщения</button><button class="footer-link" id="footerFavorites" data-t="favorites">Избранное</button></div></div><nav class="container language-links" aria-label="Languages">{{languages}}</nav><div class="container footer-end"><span>© 2026 MurdiliMax. 18+</span><span data-t="legalDisclaimer">Демонстрационная версия · платежи не подключены</span></div></footer>
  <dialog id="profileModal" class="modal"><button class="modal-x" data-close aria-label="Закрыть">×</button><div id="profileContent"></div></dialog>
  <dialog id="postModal" class="modal modal-form"><button class="modal-x" data-close aria-label="Закрыть">×</button><h2 data-t="createTitle">Создать анкету</h2><p data-t="createHelp">Публикация бесплатна. После проверки анкета появится в каталоге.</p><form id="postForm">
   <label><span data-t="headline">Заголовок объявления</span><input maxlength="120" name="headline" placeholder="Коротко о вашем объявлении"></label>
