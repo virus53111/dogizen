@@ -30,3 +30,5 @@
 .listing-feed .toolbar{flex-wrap:wrap}
 }
 .catalog-intro{max-width:65ch;line-height:1.55;margin:.5rem 0 1.25rem}.language-links{display:flex;gap:1rem;flex-wrap:wrap;padding-block:1rem}.language-links a{color:inherit;text-underline-offset:.2em}
+
+.tag-demo{font-size:.8rem;letter-spacing:normal;background:#fff;color:#30223c}.demo-warning{font-size:.9rem}

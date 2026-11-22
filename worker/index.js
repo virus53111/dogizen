@@ -85,6 +85,10 @@ async function dispatch(request,env){
     const heading=gone?"Эта страница снята с публикации":"Страница не найдена";
     return new Response(request.method==="HEAD"?null:`<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${heading} | MurdiliMax</title><link rel="stylesheet" href="/style.css"><main class="container"><h1>${heading}</h1><a href="/">Перейти в каталог знакомств</a></main></html>`,{status:gone?410:404,headers:{"Content-Type":"text/html; charset=utf-8","X-Robots-Tag":"noindex"}});
   }
+  if(file.encoded){
+    const bytes=request.method==="HEAD"?null:Uint8Array.from(atob(file.encoded),ch=>ch.charCodeAt(0));
+    return new Response(bytes,{headers:{"Content-Type":file.type,"X-Robots-Tag":"noindex","Cache-Control":"public, max-age=3600"}});
+  }
   return new Response(request.method==="HEAD"?null:file.content,{headers:{"Content-Type":file.type+"; charset=utf-8","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer","Cache-Control":"no-cache","X-Robots-Tag":url.hostname==="murdilimax.com" && catalogPaths.has(path) && !url.search?"index, follow":"noindex, follow"}});
 }
 export default {async fetch(request,env){try{return await dispatch(request,env)}catch{return json({error:"Сервис временно недоступен"},503)}}};
