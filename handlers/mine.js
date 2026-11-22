@@ -1,0 +1,20 @@
+export const access="user";
+export const methods=["GET","POST"];
+export default async function(req,res){
+ const db=req.db;
+ const owner=req.user.id;
+ if(req.method==="POST"){
+  const id=String(req.body?.id||""),action=String(req.body?.action||"");
+  if(!/^[0-9a-f-]{36}$/i.test(id))return res.status(400).json({error:"Неверная анкета"});
+  if(action==="delete"){const r=await db.query("DELETE FROM mm_listings WHERE id=$1 AND owner_id=$2 RETURNING id",[id,owner]);return res.json({ok:!!r.rows.length})}
+  if(action==="edit"){
+    const headline=String(req.body.headline||"").trim().slice(0,120),description=String(req.body.description||"").trim().slice(0,1600);
+    if(description.length<20)return res.status(400).json({error:"Описание должно быть длиннее 20 символов"});
+    const r=await db.query("UPDATE mm_listings SET headline=$1,description=$2,status='pending',updated_at=CURRENT_TIMESTAMP WHERE id=$3 AND owner_id=$4 RETURNING id,status",[headline,description,id,owner]);
+    return res.json({ok:!!r.rows.length,listing:r.rows[0]||null});
+  }
+  return res.status(400).json({error:"Неизвестная операция"});
+ }
+ const r=await db.query("SELECT id,display_name,headline,description,city,country,category,status,created_at FROM mm_listings WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 100",[owner]);
+ res.json({listings:r.rows});
+}

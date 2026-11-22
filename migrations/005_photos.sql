@@ -1,1 +1,0 @@
-CREATE TABLE IF NOT EXISTS mm_listing_photos (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), listing_id UUID NOT NULL REFERENCES mm_listings(id) ON DELETE CASCADE, photo_url TEXT NOT NULL, sort_order INTEGER NOT NULL DEFAULT 0, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW())

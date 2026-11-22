@@ -1,1 +1,0 @@
-CREATE TABLE IF NOT EXISTS mm_favorites (user_id TEXT NOT NULL, listing_id UUID NOT NULL REFERENCES mm_listings(id) ON DELETE CASCADE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY (user_id, listing_id))

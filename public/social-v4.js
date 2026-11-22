@@ -14,7 +14,7 @@ const safe=s=>escapeHTML(s);
 let chats=[],activeChat=null,loading=false;
 function isUUID(s){return /^[0-9a-f-]{36}$/i.test(s||"")}
 function loginRedirect(query){toast(V("signin"));location.href="/login?next="+encodeURIComponent("/"+(query?"?"+query:""))}
-async function authUser(){try{return (await window.hatchable?.auth?.getSession())?.user||null}catch{return null}}
+async function authUser(){try{return (await fetch("/api/session").then(r=>r.json()))?.user||null}catch{return null}}
 function applyTranslations(){
  document.querySelectorAll("[data-t]").forEach(el=>{if(I18N[state.lang]?.[el.dataset.t])el.textContent=V(el.dataset.t)});
  const area=$("#chatText");if(area)area.placeholder=V("chatText");

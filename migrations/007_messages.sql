@@ -1,1 +1,0 @@
-CREATE TABLE IF NOT EXISTS mm_messages (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), conversation_id UUID NOT NULL REFERENCES mm_conversations(id) ON DELETE CASCADE, sender_id TEXT NOT NULL, body TEXT NOT NULL CHECK (char_length(body) BETWEEN 1 AND 1200), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), seen_at TIMESTAMPTZ DEFAULT NULL)
