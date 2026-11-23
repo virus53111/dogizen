@@ -1,2 +1,8 @@
+# MurdiliMax: public content is crawlable. No duplicate indexing from staging Render URL.
 User-agent: *
-Disallow: /
+Allow: /
+Disallow: /api/
+Disallow: /auth/
+Disallow: /admin.html
+Disallow: /login
+Sitemap: https://murdilimax.com/sitemap.xml
