@@ -15,7 +15,8 @@ for (const [lang, filename] of pages) {
     const src = await fs.readFile(filename, 'utf8');
     assert.match(src, /window\.MM_authReady=new Promise/);
     assert.match(src, /src="\/auth\/refresh\.js"/);
-    assert.ok(src.indexOf('MM_authReady') < src.indexOf('src="/app.js"'));
+    assert.match(src, /<script defer src="\/app\.js"/);
+    assert.ok(src.indexOf('MM_authReady') < src.indexOf('</head>'));
     assert.ok(src.includes('lang="' + lang + '"'));
   });
 }
