@@ -52,5 +52,5 @@ test('legacy profile remains read-only before verified owner claims it',async()=
  assert.match(sql,/mm_legacy_imports/);
  assert.match(listing,/mm_public_listings/);
  assert.match(details,/messaging_enabled===false/);
- assert.match(ui,/messageButton\.disabled=true/);
+ assert.match(ui,/messageButton\.remove\(\)/);
 });
