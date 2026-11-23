@@ -129,7 +129,8 @@ test('private account export includes interests and favorites from the unified t
  });
  assert.equal(res.body.sections.profiles[0].interests,'Походы');
  assert.equal(res.body.sections.favorites[0].listing_id,ID);
- assert.equal(calls.length,9);
+ assert.ok('my_likes' in res.body.sections);
+ assert.equal(calls.length,10);
 });
 test('new member forms and profile editor are translated in all four languages',async()=>{
  const locales=JSON.parse((await fs.readFile('public/locales.js','utf8')).trim().replace(/^window.MM_I18N=/,'').replace(/;$/,''));
