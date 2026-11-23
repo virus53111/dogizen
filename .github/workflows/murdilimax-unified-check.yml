@@ -1,0 +1,23 @@
+name: MurdiliMax unified syntax check
+on:
+  push:
+    branches:
+      - release/murdilimax-unified-20261123
+    paths:
+      - 'dating-site/**'
+      - '.github/workflows/murdilimax-unified-check.yml'
+  workflow_dispatch:
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dating-site
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --omit=dev
+      - run: npm run check
+      - run: find api public render -type f -name '*.js' -print0 | xargs -0 -n1 node --check
