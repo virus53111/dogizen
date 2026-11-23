@@ -1,0 +1,17 @@
+# MurdiliMax: adopt the EXISTING Render web service, not a new copy.
+# Do not add a Render database: the private DATABASE_URL remains set in the service.
+# GitHub branch is shared by standard ChatGPT and ChatGPT Work.
+services:
+  - type: web
+    name: murdilimax-unified
+    runtime: node
+    plan: free
+    region: frankfurt
+    repo: https://github.com/virus53111/dogizen
+    branch: release/murdilimax-unified-20261123
+    buildCommand: cd dating-site && npm install --omit=dev
+    startCommand: cd dating-site && npm start
+    healthCheckPath: /healthz
+    autoDeployTrigger: checksPass
+    domains:
+      - murdilimax.com
