@@ -62,7 +62,7 @@ body{background:#120b1c!important;color:#f7eff8!important;font:15px/1.55 Manrope
 <form id="manualForm" autocomplete="off">
 <input type="hidden" name="action" value="create"><input type="hidden" name="id" value="">
 <div class="mm-grid">
-<label class="mm-field full">50 заготовок по городам и странам <select id="geoPreset"><option value="">Выбрать город и направление знакомства</option></select><small>Добавляются только страна, город и направление. Для публикации нужны настоящие данные, фото и согласие человека.</small></label>
+<label class="mm-field full">50 заполненных черновиков объявлений <select id="geoPreset"><option value="">Выбрать черновик — имя, возраст, город</option></select><small>При выборе заполняются имя, возраст, город, категория и текст. Проверь все сведения и соответствие фотографии реальному человеку. Без согласия человека публиковать нельзя.</small></label>
 <label class="mm-field">Имя или псевдоним <input name="display_name" maxlength="65" placeholder="Например, Анна" required></label>
 <label class="mm-field">Возраст, 18–85 <input name="age" type="number" min="18" max="85" inputmode="numeric" required></label>
 <label class="mm-field">Страна <select name="country" required>
@@ -78,7 +78,7 @@ body{background:#120b1c!important;color:#f7eff8!important;font:15px/1.55 Manrope
 <label class="mm-field">Языки <input name="languages" maxlength="200" placeholder="Русский, латышский"></label>
 <label class="mm-field">Фото человека <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG или WebP · до 4 МБ. При редактировании фото менять необязательно.</small><img id="photoPreview" alt="Предпросмотр фото"></label>
 <label class="mm-check"><input type="checkbox" name="adultConfirmed" required>Подтверждаю, что человеку исполнилось 18 лет.</label>
-<label class="mm-check"><input type="checkbox" name="consentConfirmed" required>Подтверждаю, что этот человек разрешил разместить сведения и именно эту фотографию на MurdiliMax.</label>
+<label class="mm-check"><input type="checkbox" name="consentConfirmed" required>Подтверждаю, что человек разрешил разместить именно эту фотографию и сведения, и что возраст, город и текст соответствуют действительности.</label>
 <div class="mm-actions"><button class="mm-btn primary" id="submitBtn" type="submit">Опубликовать анкету</button><button class="mm-btn" id="cancelEdit" type="button" hidden>Отменить редактирование</button><a href="/#catalog" style="color:#edc995">Посмотреть каталог</a></div>
 </div>
 </form><p class="mm-status" id="formStatus" role="status" aria-live="polite"></p>

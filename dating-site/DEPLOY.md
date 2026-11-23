@@ -49,3 +49,8 @@ Only **public** listing data was backed up. Private messages/users/photos may be
 - Added localized `/formats/` informational pages, homepage links, canonical/hreflang metadata, and entries in the existing sitemap. Staging Render remains non-indexed; no Namecheap DNS cutover is authorized.
 - Added 50 geography/gender-direction presets to the existing owner-only admin profile form. No fictional members were created; real photos, adult status and consent remain mandatory for publication.
 - Search Console submission could not be completed because the connected GSC Wizard account requires an active subscription.
+
+## Admin profile drafts — 2026-11-23
+- The existing 50 geographic presets in `public/admin-manual.js` now prefill 50 distinct, editable ad copy drafts (25 women-oriented and 25 men-oriented). They are client-side form templates, **not** accounts or visible listings, and no database write occurs on selection.
+- Each publication still requires the operator to verify age/location/description, upload the actual consenting adult's photo, and affirm consent. `api/admin/manual.js` rejects creation without an image or the two required attestations. Pseudonyms and ages in starter copy must be corrected where they do not match the actual person.
+- Published and hidden profiles remain manageable in the same admin interface. Public catalogue remains unaffected until the owner submits an individual listing.
