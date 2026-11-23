@@ -57,7 +57,7 @@ test('remove deletes legacy and catalog favorites to prevent resurfacing',async(
  assert.equal(res.statusCode,200);
  assert.equal(calls.length,2);
 });
-test('GET returns only current published profiles owned by this user's favorite list',async()=>{
+test('GET returns only current published profiles saved by this member',async()=>{
  const {res,calls}=await call(request('GET'),(sql,args)=>{
   assert.match(sql,/JOIN mm_public_listings p ON/);
   assert.match(sql,/p.status='approved'/);
