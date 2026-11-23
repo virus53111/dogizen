@@ -1,0 +1,1 @@
+ALTER TABLE mm_listings ADD CONSTRAINT mm_approved_dating_only CHECK (status <> 'approved' OR (is_commercial IS FALSE AND category IN ('dating','women-men','women-serious','women-women','men-women','men-serious','men-men','couples','trans-dating','social','events')))
