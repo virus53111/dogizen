@@ -1,0 +1,51 @@
+<!doctype html><html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<title>Мои данные и приватность — MurdiliMax</title>
+<link rel="stylesheet" href="/auth/account.css"><link rel="stylesheet" href="/auth/luxury-auth.css">
+<style>
+body{background:#170d20;color:#f7f0ff}
+main{max-width:620px;margin:40px auto;padding:28px}
+p,li{line-height:1.6}
+section{border:1px solid #6e556e;border-radius:14px;margin:22px 0;padding:19px}
+label{display:block;margin:15px 0}
+input{width:100%;max-width:100%;padding:12px}
+#privacyStatus{white-space:pre-wrap;min-height:32px}
+button{min-height:44px}
+a{color:#f6c9e3}
+small{display:block;line-height:1.5}
+</style>
+<script>window.MM_authReady=new Promise(resolve=>window.MM_finishAuth=resolve)</script>
+<script type="module" src="/auth/refresh.js"></script>
+<script defer src="/account-data.js"></script>
+</head><body><main>
+<a class="brand" href="/">MurdiliMax</a>
+<h1>Мои данные и приватность</h1>
+<p>Здесь можно скачать сведения, относящиеся к вашему аккаунту, и отправить запрос на его удаление.</p>
+<div id="privacyLogin" hidden>
+<p>Для защиты личных данных необходимо войти в подтверждённый аккаунт.</p>
+<a href="/login?next=%2Faccount-data.html">Войти в аккаунт</a>
+</div>
+<div id="privacyControls" hidden>
+<p id="accountIdentity"></p>
+<section>
+<h2>Скачать данные</h2>
+<p>JSON-архив содержит ваш профиль аккаунта, созданные вами анкеты, собственные сообщения, избранное и свои жалобы. Изображения и данные Firebase Auth в этот файл не входят.</p>
+<a id="dataDownload" class="primary" href="/api/privacy/export" download="murdilimax-my-data.json">Скачать мои данные (JSON)</a>
+</section>
+<section>
+<h2>Запросить удаление аккаунта</h2>
+<p><strong>Это запрос на проверку, а не мгновенное удаление.</strong> Администратор проверит связанные анкеты, переписки, фотографии, а также данные Firebase и основания для их хранения. До обработки данные останутся на сайте.</p>
+<form id="privacyRequestForm">
+<label for="confirmation">Для подтверждения напишите: <strong>УДАЛИТЬ АККАУНТ</strong></label>
+<input id="confirmation" name="confirmation" type="text" maxlength="30" required autocomplete="off" spellcheck="false" placeholder="УДАЛИТЬ АККАУНТ">
+<button id="privacySubmit" type="submit" class="primary">Отправить запрос на удаление</button>
+</form>
+<h3>Мои запросы</h3>
+<div id="myRequests">Загружаем...</div>
+</section>
+</div>
+<p id="privacyStatus" role="status" aria-live="polite"></p>
+<p><a href="/privacy.html">О приватности</a> · <a href="/">Назад в каталог</a></p>
+</main></body></html>
