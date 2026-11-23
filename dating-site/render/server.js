@@ -111,7 +111,7 @@ app.get('/api/session', (req, res) => {
 app.get('/media/*', async (req, res, next) => {
   try {
     const key = String(req.params[0] || '');
-    if (!/^murdilimax\\/(?:photos|admin-profiles|admin-edited|legacy)\\/[a-z0-9._-]{1,120}$/i.test(key))
+    if (!/^murdilimax\/(?:photos|admin-profiles|admin-edited|legacy)\/[a-z0-9._-]{1,120}$/i.test(key))
       return res.status(404).end();
     const file = await storage.get(key);
     if (!file) return res.status(404).end();
