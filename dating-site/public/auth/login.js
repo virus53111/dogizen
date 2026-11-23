@@ -1,5 +1,5 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,inMemoryPersistence,setPersistence} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,browserLocalPersistence,setPersistence} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
 const form=document.querySelector("#account");
 const email=document.querySelector("#email");
@@ -23,7 +23,7 @@ modeButton.onclick=()=>{
 const config=await fetch("/auth/config").then(response=>response.json());
 const auth=getAuth(initializeApp(config));
 auth.languageCode="ru";
-await setPersistence(auth,inMemoryPersistence);
+await setPersistence(auth,browserLocalPersistence);
 
 const requested=new URLSearchParams(location.search).get("next")||"/";
 let destination="/";

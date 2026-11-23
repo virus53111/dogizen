@@ -9,7 +9,7 @@ const safe=s=>escapeHTML(s);
 let chats=[],activeChat=null,loading=false;
 function isUUID(s){return /^[0-9a-f-]{36}$/i.test(s||"")}
 function loginRedirect(params){toast(V("signin"));location.assign(loginPath(params))}
-async function authUser(){try{return (await fetch("/api/session").then(r=>r.json()))?.user||null}catch{return null}}
+async function authUser(){try{if(window.MM_authReady)await window.MM_authReady;return (await fetch("/api/session").then(r=>r.json()))?.user||null}catch{return null}}
 function applyTranslations(){
  document.querySelectorAll("[data-t]").forEach(el=>{if(I18N[state.lang]?.[el.dataset.t])el.textContent=V(el.dataset.t)});
  const area=$("#chatText");if(area)area.placeholder=V("chatText");
@@ -48,10 +48,10 @@ async function selectChat(id){
  $("#chatMessages").innerHTML=list.length?list.map(m=>'<div class="chat-msg '+(m.mine?"mine":"")+'">'+safe(m.body)+'<time>'+shortDate(m.created_at)+'</time></div>').join(""):'<div class="chat-panel-empty">'+safe(V("noContent"))+'</div>';
  $("#chatMessages").scrollTop=$("#chatMessages").scrollHeight;
  const blocked=!!d.blocked;
- $("#chatText").disabled=blocked||!state.user?.canMessage;$("#chatSendBtn").disabled=$("#chatText").disabled;
+ $("#chatText").disabled=blocked;$("#chatSendBtn").disabled=$("#chatText").disabled;
  $("#chatBlockBtn").disabled=blocked&&!d.blocked_by_me;
  $("#chatBlockBtn").textContent=d.blocked_by_me?V("unblock"):V("block");
- setError(blocked?V("blocked"):state.user?.canMessage?"":t("paidDm"));
+ setError(blocked?V("blocked"):"");
  const c=chats.find(x=>x.id===id);if(c)c.unread=0;
  renderChats();
 }
@@ -65,12 +65,12 @@ async function sendCurrent(e){
   const d=await r.json();if(!r.ok)throw Error(d.error||V("error"));
   $("#chatText").value="";
   await selectChat(activeChat.id);await fetchChats();
- }catch(err){setError(err.message)}finally{button.disabled=!!activeChat?.blocked||!state.user?.canMessage;loading=false}
+ }catch(err){setError(err.message)}finally{button.disabled=!!activeChat?.blocked;loading=false}
 }
 window.mmStartChat=async function(id){
  if(!isUUID(id))return toast(V("missingProfile"));
  if(!await ensureLogin({chat:id}))return;
- if(!state.user.canMessage)return toast(t("paidDm"));
+ 
  try{
   const r=await fetch("/api/chat/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({listing_id:id})});
   const d=await r.json();if(!r.ok)throw Error(d.error||V("error"));
