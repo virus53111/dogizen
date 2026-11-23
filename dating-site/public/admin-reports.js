@@ -44,7 +44,7 @@ function bind(){
    const body=await r.json();if(!r.ok||!body.ok)throw Error(body.error||"Не удалось изменить статус");await load();
   }catch(err){$("#reportError").textContent=err.message}finally{b.disabled=false}
  };
- load()
+ Promise.resolve(window.MM_authReady).then(()=>load(),()=>load());
 }
 document.addEventListener("DOMContentLoaded",bind);
 })();

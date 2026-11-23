@@ -92,4 +92,4 @@ editForm.addEventListener("submit",async e=>{
 $("#editCancel").onclick=()=>editDialog.close();
 editDialog.addEventListener("click",e=>{if(e.target===editDialog)editDialog.close()});
 document.querySelectorAll("[data-status]").forEach(b=>b.addEventListener("click",()=>{status=b.dataset.status;refresh()}));
-refresh();
+Promise.resolve(window.MM_authReady).then(()=>refresh(),()=>refresh());

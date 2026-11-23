@@ -24,5 +24,6 @@
   finally{button.disabled=false}
  }
  button.addEventListener("click",refreshPrivacy);
+ if(window.MM_authReady)await window.MM_authReady;
  await refreshPrivacy();
 })();
