@@ -84,6 +84,7 @@ app.post('/auth/logout', (req, res) => {
 });
 app.get('/login', (req, res) => {
   const dest = safeNext(req.query.next);
+  if (owner(req.user)) return res.redirect('/admin.html');
   res.redirect(req.user ? dest : '/auth/login.html?next=' + encodeURIComponent(dest));
 });
 app.get('/api/session', (req, res) => {
