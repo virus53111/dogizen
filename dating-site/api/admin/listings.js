@@ -32,7 +32,13 @@ export default async function(req,res){
   db.query("SELECT status,count(*)::integer AS total FROM mm_listings GROUP BY status"),
   db.query("SELECT status,count(*)::integer AS total FROM mm_manual_profiles GROUP BY status"),
   db.query("SELECT mapping_state AS status,count(*)::integer AS total FROM mm_legacy_imports a WHERE NOT EXISTS(SELECT 1 FROM mm_listings m WHERE m.id=a.legacy_id) GROUP BY mapping_state"),
-  db.query("SELECT r.id,r.reason,r.created_at,l.id AS listing_id,l.display_name FROM mm_reports r JOIN mm_listings l ON l.id=r.listing_id ORDER BY r.created_at DESC LIMIT 30")
+  db.query(`SELECT id,reason,created_at,listing_id,display_name FROM (
+    SELECT r.id,r.reason,r.created_at,l.id AS listing_id,l.display_name
+      FROM mm_reports r JOIN mm_listings l ON l.id=r.listing_id
+    UNION ALL
+    SELECT r.id,r.reason,r.created_at,r.listing_id,r.display_name
+      FROM mm_catalog_reports r
+  ) recent ORDER BY created_at DESC LIMIT 30`)
  ]);
  const adminAdded=status==="pending"?{rows:[]}:await db.query("SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,FALSE AS is_commercial,featured,CASE WHEN status='hidden' THEN 'rejected' ELSE 'approved' END::text AS status,created_at,'manual'::text AS source FROM mm_manual_profiles WHERE status=$1 ORDER BY created_at DESC LIMIT 150",[status==="approved"?"approved":"hidden"]);
  const archive=status==="pending"?{rows:[]}:await db.query(

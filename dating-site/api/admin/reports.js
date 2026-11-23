@@ -12,9 +12,15 @@ export default async function(req,res){
  if(req.method==="POST"){
    const id=String(req.body?.id||""),status=String(req.body?.status||"");
    if(!/^[0-9a-f-]{36}$/i.test(id)||!["open","resolved","dismissed"].includes(status))return res.status(400).json({error:"Недопустимый статус"});
-   const table=type==="chat"?"mm_chat_reports":"mm_reports";
-   const r=await db.query("UPDATE "+table+" SET status=$1,handled_at=CASE WHEN $1='open' THEN NULL ELSE NOW() END WHERE id=$2 RETURNING id,status",[status,id]);
-   return res.json({ok:!!r.rows.length,report:r.rows[0]||null});
+   // Keep compatibility with reports submitted before the unified catalog.
+   // Listing complaints are checked against both the new all-profile table and
+   // the original member-only moderation table; the chat table is unchanged.
+   const tables=type==="chat"?["mm_chat_reports"]:["mm_catalog_reports","mm_reports"];
+   for(const table of tables){
+     const r=await db.query("UPDATE "+table+" SET status=$1,handled_at=CASE WHEN $1='open' THEN NULL ELSE NOW() END WHERE id=$2 RETURNING id,status",[status,id]);
+     if(r.rows.length)return res.json({ok:true,report:r.rows[0]});
+   }
+   return res.status(404).json({ok:false,error:"Жалоба не найдена"});
  }
  const status=String(req.query?.status||"open");
  if(!["open","resolved","dismissed"].includes(status))return res.status(400).json({error:"Недопустимый статус"});
@@ -22,6 +28,24 @@ export default async function(req,res){
    const r=await db.query("SELECT r.id,r.reason,r.details,r.status,r.created_at,c.listing_id,l.display_name,(SELECT STRING_AGG(m.body, ' | ' ORDER BY m.created_at DESC) FROM (SELECT body,created_at FROM mm_messages WHERE conversation_id=c.id ORDER BY created_at DESC LIMIT 3) m) AS excerpt FROM mm_chat_reports r JOIN mm_conversations c ON c.id=r.conversation_id JOIN mm_listings l ON l.id=c.listing_id WHERE r.status=$1 ORDER BY r.created_at DESC LIMIT 100",[status]);
    return res.json({reports:r.rows,type,status});
  }
- const r=await db.query("SELECT r.id,r.reason,r.details,r.status,r.created_at,r.listing_id,l.display_name,l.city,l.country,l.category FROM mm_reports r JOIN mm_listings l ON l.id=r.listing_id WHERE r.status=$1 ORDER BY r.created_at DESC LIMIT 100",[status]);
+ const r=await db.query(`
+   SELECT id,reason,details,status,created_at,listing_id,display_name,city,country,category,source,target_source
+   FROM (
+     SELECT r.id,r.reason,r.details,r.status,r.created_at,r.listing_id,
+            l.display_name,l.city,l.country,l.category,
+            'member'::text AS source,
+            'member'::text AS target_source
+       FROM mm_reports r JOIN mm_listings l ON l.id=r.listing_id
+       WHERE r.status=$1
+     UNION ALL
+     SELECT r.id,r.reason,r.details,r.status,r.created_at,r.listing_id,
+            r.display_name,r.city,r.country,r.category,r.source::text AS source,
+            CASE WHEN EXISTS(SELECT 1 FROM mm_listings x WHERE x.id=r.listing_id) THEN 'member'
+                 WHEN EXISTS(SELECT 1 FROM mm_manual_profiles x WHERE x.id=r.listing_id) THEN 'manual'
+                 WHEN EXISTS(SELECT 1 FROM mm_legacy_imports x WHERE x.legacy_id=r.listing_id) THEN 'legacy'
+                 ELSE NULL END AS target_source
+       FROM mm_catalog_reports r WHERE r.status=$1
+   ) complaints ORDER BY created_at DESC LIMIT 100
+ `,[status]);
  res.json({reports:r.rows,type,status});
 }
