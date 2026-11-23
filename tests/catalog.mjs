@@ -8,7 +8,7 @@ sqlite.exec(readFileSync("drizzle/0001_admin.sql","utf8"));
 function query(sql,params=[]){
  return {bind(...args){return query(sql,args)},async run(){return sqlite.prepare(sql).run(...params)},async all(){return {results:sqlite.prepare(sql).all(...params)}},async first(){return sqlite.prepare(sql).get(...params)}};
 }
-const env={DB:{prepare:query,async batch(stmts){sqlite.exec("BEGIN");try{for(const stmt of stmts)await stmt.all();sqlite.exec("COMMIT")}catch(e){sqlite.exec("ROLLBACK");throw e}}},BUCKET:{}};
+const env={DB:{prepare:query,async batch(stmts){sqlite.exec("BEGIN");try{const results=[];for(const stmt of stmts)results.push(await stmt.all());sqlite.exec("COMMIT");return results}catch(e){sqlite.exec("ROLLBACK");throw e}}},BUCKET:{}};
 async function request(path,who,body){
  const headers={Origin:"https://mm.example","Content-Type":"application/json"};
  if(who)headers["oai-authenticated-user-id"]=who;
@@ -51,3 +51,39 @@ assert.equal((await verify()).status,403);
 assert.equal((await worker.fetch(new Request(origin+"/api/admin/listings?status=approved",{headers:{...owner,Cookie:cookie}}),env)).status,200);
 assert.equal((await worker.fetch(new Request(origin+"/api/admin/listings",{headers:{...owner,Cookie:cookie,"oai-authenticated-user-id":"different"}}),env)).status,403);
 console.log("Passed MFA enrollment, code replay rejection, second-factor session and identity binding checks.");
+const ownerSession={...owner,Cookie:cookie};
+for(const status of ["rejected","approved"]){
+ const moderation=await worker.fetch(new Request(origin+"/api/admin/listings",{method:"POST",headers:{...ownerSession,"Content-Type":"application/json"},body:JSON.stringify({id,status})}),env);
+ assert.equal(moderation.status,200);
+ assert.equal((await request("/api/listing?id="+id)).status,status==="approved"?200:404);
+}
+console.log("Passed moderation and public listing visibility checks.");
+assert.equal((await request("/api/create",null,draft)).status,401);
+for(let i=0;i<5;i++)assert.equal((await request("/api/create","limit-user",draft)).status,200);
+assert.equal((await request("/api/create","limit-user",draft)).status,429);
+const guestLogin=await worker.fetch(new Request(origin+"/login?next=%2Fadmin"),env);
+assert.equal(guestLogin.status,302);
+assert.equal(new URL(guestLogin.headers.get("location")).pathname,"/signin-with-chatgpt");
+assert.equal((await request("/api/admin/me","reader")).status,403);
+assert.equal((await worker.fetch(new Request(origin+"/api/admin/me",{headers:ownerSession}),env)).status,200);
+console.log("Passed sign-in handoff, owner access and daily quota checks.");
+const stored=new Map();
+env.BUCKET={
+ async put(key,body,opts){stored.set(key,{body,httpMetadata:opts.httpMetadata})},
+ async get(key){return stored.get(key)},
+ async delete(key){stored.delete(key)}
+};
+const form=new FormData();
+for(const [k,v] of Object.entries(draft))form.set(k,String(v));
+const png=Uint8Array.from(atob("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jKZkAAAAASUVORK5CYII="),c=>c.charCodeAt(0));
+form.append("photo",new Blob([png],{type:"image/png"}),"photo.png");
+const uploaded=await worker.fetch(new Request(origin+"/api/create",{method:"POST",body:form,headers:{Origin:origin,"oai-authenticated-user-id":"photo-user"}}),env);
+assert.equal(uploaded.status,200);
+const photoId=(await uploaded.json()).listing.id;
+const media=sqlite.prepare("SELECT avatar_url FROM mm_listings WHERE id=?").get(photoId).avatar_url;
+assert.equal((await request(media)).status,404);
+assert.equal((await request(media,"photo-user")).status,200);
+const approved=await worker.fetch(new Request(origin+"/api/admin/listings",{method:"POST",headers:{...ownerSession,"Content-Type":"application/json"},body:JSON.stringify({id:photoId,status:"approved"})}),env);
+assert.equal(approved.status,200);
+assert.deepEqual(new Uint8Array(await (await request(media)).arrayBuffer()),png);
+console.log("Passed photo upload, moderation and media access checks.");

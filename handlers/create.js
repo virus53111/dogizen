@@ -27,9 +27,13 @@ export default async function(req,res){
      await req.bucket.put(key,file.buffer,{httpMetadata:{contentType:file.contentType}});
      photos.push({id:photoId,key,url:"/media/"+key});
    }
-   const statements=[db.statement("INSERT INTO mm_listings(id,owner_id,display_name,headline,age,country,city,district,category,languages,description,avatar_url) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)",[id,req.user.id,name,headline,age,country,city,district,category,languages,description,photos[0]?.url??null])];
-   photos.forEach((photo,index)=>statements.push(db.statement("INSERT INTO mm_listing_photos(id,listing_id,photo_url,sort_order) VALUES(?,?,?,?)",[photo.id,id,photo.url,index])));
-   await req.database.batch(statements);
+   const statements=[db.statement("INSERT INTO mm_listings(id,owner_id,display_name,headline,age,country,city,district,category,languages,description,avatar_url) SELECT ?,?,?,?,?,?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM mm_listings WHERE owner_id=? AND created_at>datetime('now','-1 day'))<5 RETURNING id",[id,req.user.id,name,headline,age,country,city,district,category,languages,description,photos[0]?.url??null,req.user.id])];
+   photos.forEach((photo,index)=>statements.push(db.statement("INSERT INTO mm_listing_photos(id,listing_id,photo_url,sort_order) SELECT ?,?,?,? WHERE EXISTS(SELECT 1 FROM mm_listings WHERE id=?)",[photo.id,id,photo.url,index,id])));
+   const [inserted]=await req.database.batch(statements);
+   if(!inserted.results.length){
+     await Promise.all(photos.map(photo=>req.bucket.delete(photo.key)));
+     return res.status(429).json({error:"За 24 часа можно создать до пяти анкет"});
+   }
  } catch(error) {
    await Promise.allSettled(photos.map(photo=>req.bucket.delete(photo.key)));
    throw error;

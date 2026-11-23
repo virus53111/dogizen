@@ -43,13 +43,21 @@ async function dispatch(request,env){
   const id=request.headers.get("oai-authenticated-user-id");
   const user=id?{id,email:request.headers.get("oai-authenticated-user-email")||""}:null;
   if(request.method==="POST" && request.headers.get("Origin")!==url.origin)return json({error:"Запрос отклонён"},403);
-  if(path==="/api/session")return json({user});
+  if(path==="/api/session"){
+    let ownerPanel=false;
+    if(user?.email.toLowerCase()===adminEmail){
+      const bound=await env.DB.prepare("SELECT user_id FROM mm_admin WHERE singleton=1").first();
+      ownerPanel=!bound||bound.user_id===user.id;
+    }
+    return json({user:user?{...user,ownerPanel}:null});
+  }
   if(path==="/login"||path==="/login.html"){
     const next=url.searchParams.get("next")||"/";
     const back=new URL(next,url.origin);
     const dest=back.origin===url.origin?back.pathname+back.search:"/";
     return Response.redirect(new URL(user?dest:"/signin-with-chatgpt?return_to="+encodeURIComponent(dest),url.origin),302);
   }
+  if(path==="/api/admin/me")return await adminSession(request,user,env)?json({admin:true}):json({admin:false},403);
   if(path==="/admin/verify")return adminLogin(request,user,env);
   if(path.startsWith("/api/admin/")||path==="/admin"||path==="/admin.html"){
     if(!await adminSession(request,user,env)){
@@ -85,10 +93,6 @@ async function dispatch(request,env){
     const heading=gone?"Эта страница снята с публикации":"Страница не найдена";
     return new Response(request.method==="HEAD"?null:`<!doctype html><html lang="ru"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${heading} | MurdiliMax</title><link rel="stylesheet" href="/style.css"><main class="container"><h1>${heading}</h1><a href="/">Перейти в каталог знакомств</a></main></html>`,{status:gone?410:404,headers:{"Content-Type":"text/html; charset=utf-8","X-Robots-Tag":"noindex"}});
   }
-  if(file.encoded){
-    const bytes=request.method==="HEAD"?null:Uint8Array.from(atob(file.encoded),ch=>ch.charCodeAt(0));
-    return new Response(bytes,{headers:{"Content-Type":file.type,"X-Robots-Tag":"noindex","Cache-Control":"public, max-age=3600"}});
-  }
-  return new Response(request.method==="HEAD"?null:file.content,{headers:{"Content-Type":file.type+"; charset=utf-8","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer","Cache-Control":"no-cache","X-Robots-Tag":url.hostname==="murdilimax.com" && catalogPaths.has(path) && !url.search?"index, follow":"noindex, follow"}});
+  return new Response(request.method==="HEAD"?null:file.content,{headers:{"Content-Type":file.type+"; charset=utf-8","X-Content-Type-Options":"nosniff","Referrer-Policy":"no-referrer","Cache-Control":path==="/admin.html"?"private, no-store":"no-cache","X-Robots-Tag":url.hostname==="murdilimax.com" && catalogPaths.has(path) && !url.search?"index, follow":"noindex, follow"}});
 }
 export default {async fetch(request,env){try{return await dispatch(request,env)}catch{return json({error:"Сервис временно недоступен"},503)}}};

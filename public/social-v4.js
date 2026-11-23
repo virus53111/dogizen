@@ -68,7 +68,7 @@ async function sendCurrent(e){
  }catch(err){setError(err.message)}finally{button.disabled=!!activeChat?.blocked;loading=false}
 }
 window.mmStartChat=async function(id){
- if(!isUUID(id))return toast(V("demoChat"));
+ if(!isUUID(id))return toast(V("missingProfile"));
  if(!await ensureLogin("chat="+encodeURIComponent(id)))return;
  try{
   const r=await fetch("/api/chat/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({listing_id:id})});
@@ -118,8 +118,7 @@ async function hydrateSaved(){
  const user=await authUser();if(!user)return;
  try{
   const favorites=await fetchFavorites();
-  const local=getFavs().filter(x=>x.startsWith("demo-"));
-  localStorage.setItem("mm-favs",JSON.stringify([...new Set([...local,...favorites.map(x=>x.id)])]));render()
+  localStorage.setItem("mm-favs",JSON.stringify(favorites.map(x=>x.id)));render()
  }catch{}
 }
 function bind(){
