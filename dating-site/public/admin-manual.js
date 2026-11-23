@@ -29,7 +29,7 @@ function reset(){
 }
 function startEdit(entry){
  editing=entry.id;
- const names=["display_name","age","country","city","district","category","headline","description","languages","consent_note"];
+ const names=["display_name","age","country","city","district","category","headline","description","languages"];
  for(const name of names)field(name).value=entry[name]??"";
  field("action").value="edit";field("id").value=entry.id;
  field("adultConfirmed").checked=false;field("consentConfirmed").checked=false;

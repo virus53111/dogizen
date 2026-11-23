@@ -19,14 +19,12 @@ function fields(body) {
   age:Number(body.age),country:trim(body.country,3).toUpperCase(),
   city:trim(body.city,100),district:trim(body.district,100),
   category:trim(body.category,40),languages:trim(body.languages,200),
-  description:trim(body.description,1600),consent_note:trim(body.consent_note,1000)
+  description:trim(body.description,1600),consent_note:trim(body.consent_note,1000)||"Отметка администратора в форме; отдельное подтверждение не загружено"
  };
  if(!x.display_name||!x.city||x.description.length<20||!Number.isInteger(x.age)||x.age<18||x.age>85)
   return {error:"Укажите имя, город, возраст 18–85 лет и описание не короче 20 символов"};
  if(!/^[A-Z]{2,3}$/.test(x.country)||!CATEGORIES.has(x.category))
   return {error:"Выберите страну и категорию знакомства"};
- if(x.consent_note.length<10)
-  return {error:"Укажите, когда и каким способом человек разрешил публикацию (минимум 10 символов)"};
  if(!["true","on"].includes(String(body.adultConfirmed))||!["true","on"].includes(String(body.consentConfirmed)))
   return {error:"Нужно подтвердить, что человек совершеннолетний и разрешил публикацию анкеты и фото"};
  return {value:x};
