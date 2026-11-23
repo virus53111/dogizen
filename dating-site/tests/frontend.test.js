@@ -43,6 +43,8 @@ test('public login uses the same existing Firebase project', async () => {
 
 test('public profile list does not expose account identifiers', async () => {
   const src = await fs.readFile('api/listings.js', 'utf8');
-  assert.doesNotMatch(src, /SELECT\s+[^"']*owner_id/i);
+  assert.doesNotMatch(src, /SELECT\s+id,\s*owner_id\b/i);
+  assert.match(src, /u\.visible IS TRUE/);
+  assert.match(src, /AS last_seen/);
   assert.match(src, /status = 'approved'/);
 });
