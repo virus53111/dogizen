@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "start": "node render/server.js",
-    "check": "node --check render/server.js && node --check render/runtime.js"
+    "check": "node --check render/server.js && node --check render/runtime.js",
+    "test": "node --test tests/*.test.js"
   },
   "engines": {
     "node": ">=20"
