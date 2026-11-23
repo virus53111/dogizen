@@ -4,7 +4,7 @@ export const access = 'user';
 export const methods = ['POST'];
 const ADMIN = 'dshtriters@gmail.com';
 const UUID = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
-const emailDigest = email => createHash('sha256').update(email.trim().toLowerCase()).digest('hex');
+const emailBinding = (token, email) => createHash('sha256').update(token + '\x00' + email.trim().toLowerCase()).digest('hex');
 
 export default async function(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -36,7 +36,7 @@ export default async function(req, res) {
       created_at=NOW()
     RETURNING manual_profile_id
   `;
-  const result = await db.query(sql, [id, tokenHash, emailDigest(email), req.user.id]);
+  const result = await db.query(sql, [id, tokenHash, emailBinding(token, email), req.user.id]);
   if (!result.rows.length) return res.status(404).json({ error: 'Анкета не найдена' });
   // The secret is shown once. URL fragment is not transmitted as an HTTP request.
   res.json({

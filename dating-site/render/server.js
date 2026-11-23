@@ -1,6 +1,7 @@
 import express from 'express';
 import { createHash } from 'node:crypto';
 import { getCookie, rateLimit } from './security.js';
+import { canReadPhoto } from './media-access.js';
 import multer from 'multer';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 import fs from 'node:fs/promises';
@@ -117,8 +118,12 @@ app.get('/media/*', async (req, res, next) => {
     const key = String(req.params[0] || '');
     if (!/^murdilimax\/(?:photos|admin-profiles|admin-edited|legacy)\/[a-z0-9._-]{1,120}$/i.test(key))
       return res.status(404).end();
+    const access = await canReadPhoto(db, '/media/' + key, req.user, owner(req.user));
+    if (!access.allowed) return res.status(404).end();
     const file = await storage.get(key);
     if (!file) return res.status(404).end();
+    res.set('Cache-Control', access.public ? 'public, max-age=60' : 'no-store');
+    res.set('Cross-Origin-Resource-Policy', 'same-origin');
     res.type(file.contentType).send(file.buffer);
   } catch (e) { next(e); }
 });

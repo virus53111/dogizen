@@ -50,7 +50,8 @@ test('invite is one-time, bound to verified email and stored only as a hash',asy
   const saved=queries.find(q=>q.sql.includes('INSERT INTO mm_profile_claim_invites'));
   assert.equal(saved.params[0],uuid);
   assert.equal(saved.params[1],digest(raw));
-  assert.equal(saved.params[2],digest(claimant.email));
+  assert.equal(saved.params[2],digest(raw+'\x00'+claimant.email));
+  assert.notEqual(saved.params[2],digest(claimant.email));
   assert.ok(!JSON.stringify(saved.params).includes(raw));
   assert.ok(!JSON.stringify(saved.params).includes(claimant.email));
 });
@@ -69,7 +70,7 @@ test('invalid claim consent and stolen or mismatched email cannot take a profile
   assert.equal(x.statusCode,403);
   assert.equal(lookups.length,1);
   assert.equal(lookups[0].params[0],digest(token));
-  assert.equal(lookups[0].params[1],digest(claimant.email));
+  assert.equal(lookups[0].params[1],digest(token+'\x00'+claimant.email));
   assert.ok(!lookups[0].sql.includes('DELETE FROM mm_manual_profiles'));
 });
 

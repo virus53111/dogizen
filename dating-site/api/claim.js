@@ -3,6 +3,8 @@ import { db } from 'hatchable';
 export const access = 'user';
 export const methods = ['POST'];
 const sha = s => createHash('sha256').update(s).digest('hex');
+// A token-bound hash prevents email enumeration if the invitation table is leaked.
+const emailBinding = (token, email) => sha(token + '\x00' + email.trim().toLowerCase());
 
 export default async function(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -23,7 +25,7 @@ export default async function(req, res) {
       WHERE i.token_hash=$1 AND i.recipient_email_hash=$2
         AND i.expires_at > NOW()
       FOR UPDATE OF i,p
-    `, [sha(token), sha(user.email.trim().toLowerCase())]);
+    `, [sha(token), emailBinding(token, user.email)]);
     const profile = found.rows[0];
     if (!profile) return null;
     const status = profile.status === 'approved' ? 'approved' : 'pending';
