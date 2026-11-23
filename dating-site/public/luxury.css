@@ -90,12 +90,13 @@ button,input,select,textarea{font-family:inherit}
   color:#fff
 }
 .directory-search:before{
-  content:"";position:absolute;inset:0 0 0 36%;z-index:-1;
+  content:"";position:absolute;inset:0 13% 0 27%;z-index:-1;
   background:
-   linear-gradient(90deg,#210d2b 0%,rgba(26,9,35,.52) 16%,rgba(17,5,24,.08) 51%),
-   linear-gradient(0deg,#13091b 2%,transparent 42%),
-   url("/night-heart.webp") center 45%/cover no-repeat;
-  opacity:.93;mask-image:linear-gradient(90deg,transparent,#000 21%);
+   linear-gradient(90deg,#210d2b 0%,rgba(26,9,35,.78) 14%,rgba(17,5,24,.07) 52%),
+   linear-gradient(0deg,#13091b 0%,transparent 39%),
+   linear-gradient(270deg,rgba(17,6,25,.48),transparent 26%),
+   url("/lux-couple.jpg") 50% 20%/cover no-repeat;
+  opacity:.95;mask-image:linear-gradient(90deg,transparent 0%,#000 18%,#000 80%,transparent 100%);
 }
 .directory-search:after{
   content:"";position:absolute;z-index:-1;
