@@ -134,7 +134,7 @@ app.post('/api/room', userOnly, async (req, res, next) => {
 });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 6, fields: 40 } });
 const routes = ['listings', 'listing', 'create', 'mine', 'favorites', 'report', 'chat/list', 'chat/start',
-  'chat/messages', 'chat/block', 'chat/report', 'admin/me', 'admin/listings', 'admin/reports'];
+  'chat/messages', 'chat/block', 'chat/report', 'legacy/claim', 'admin/me', 'admin/listings', 'admin/reports'];
 for (const slug of routes) {
   const mod = await import('../api/' + slug + '.js');
   app.all('/api/' + slug, ...(slug === 'create' ? [upload.any()] : []), async (req, res, next) => {

@@ -151,7 +151,36 @@ function consumeReturnKey(key) {
 }
 function updateLogin(){const btn=$("#loginBtn");if(state.user){btn.textContent=state.user.email?.split("@")[0]||t("myAds");btn.onclick=e=>{e.preventDefault();showMy()}}else{btn.textContent=t("accountEntry");btn.href=loginPath();btn.onclick=null}}
 async function openPost(){state.user=await getSession();updateLogin();if(!state.user){toast(t("loginRequired"));location.assign(loginPath({publish:"1"}));return}$("#postModal").showModal()}
-async function showMy(){state.user=await getSession();if(!state.user){location.assign(loginPath({panel:"mine"}));return}if(!$("#myModal").open)$("#myModal").showModal();$("#myContent").textContent=t("loading");try{const r=await fetch("/api/mine");if(!r.ok)throw Error();const data=await r.json();$("#myContent").innerHTML=data.listings.length?'<div class="my-list">'+data.listings.map(x=>'<div class="my-item"><div><strong>'+escapeHTML(x.display_name)+'</strong><br><small>'+escapeHTML(x.city)+'</small></div><span class="status '+escapeHTML(x.status)+'">'+t(x.status)+'</span></div>').join("")+'</div>':'<p>'+t("noMy")+'</p>';if(window.mmEnhanceMine)window.mmEnhanceMine(data.listings)}catch{$("#myContent").textContent=t("error")}}
+async function showMy(){state.user=await getSession();if(!state.user){location.assign(loginPath({panel:"mine"}));return}if(!$("#myModal").open)$("#myModal").showModal();$("#myContent").textContent=t("loading");try{const r=await fetch("/api/mine");if(!r.ok)throw Error();const data=await r.json();$("#myContent").innerHTML=data.listings.length?'<div class="my-list">'+data.listings.map(x=>'<div class="my-item"><div><strong>'+escapeHTML(x.display_name)+'</strong><br><small>'+escapeHTML(x.city)+'</small></div><span class="status '+escapeHTML(x.status)+'">'+t(x.status)+'</span></div>').join("")+'</div>':'<p>'+t("noMy")+'</p>';if(window.mmEnhanceMine)window.mmEnhanceMine(data.listings);
+if(state.user.ownerPanel){
+ const ar=await fetch("/api/legacy/claim");
+ if(ar.ok){
+  const legacy=await ar.json();
+  const labels={
+   ru:["Восстановить мою старую анкету","Подтвердить, что это ваша анкета?"],
+   en:["Restore my previous profile","Confirm this is your profile?"],
+   de:["Mein früheres Profil wiederherstellen","Ist das Ihr eigenes Profil?"],
+   lv:["Atjaunot manu iepriekšējo profilu","Apstiprināt, ka šis ir jūsu profils?"]
+  };
+  const words=labels[state.lang]||labels.ru;
+  for(const old of legacy.listings||[]){
+   const btn=document.createElement("button");
+   btn.type="button";btn.className="btn btn-outline";
+   btn.textContent=words[0]+": "+old.display_name;
+   btn.style.marginTop="13px";
+   btn.onclick=async()=>{
+    if(!confirm(words[1]))return;
+    btn.disabled=true;
+    try{
+     const response=await fetch("/api/legacy/claim",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:old.id})});
+     const body=await response.json();if(!response.ok)throw Error(body.error||t("error"));
+     await loadListings();await showMy();
+    }catch(err){toast(err.message);btn.disabled=false}
+   };
+   $("#myContent").append(btn);
+  }
+ }
+}}catch{$("#myContent").textContent=t("error")}}
 function bind(){
  if(localStorage.getItem("mm-over18")==="yes")$("#ageGate").classList.add("dismissed");
  $("#enterAge").onclick=()=>{localStorage.setItem("mm-over18","yes");$("#ageGate").classList.add("dismissed")};
