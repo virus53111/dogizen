@@ -36,3 +36,10 @@ Only **public** listing data was backed up. Private messages/users/photos may be
 2. End-to-end test registration, photo uploads, two real member accounts, free DMs, blocking/reporting and admin access. Free Render/Neon plans can sleep and carry resource caps.
 3. Export original ChatGPT Sites private users/listings/photos/chats and import with validated ownership mapping. Do not treat an empty new database as a successful migration.
 4. Reconcile rows, photos, chats and verify backups. Only then approve the single Namecheap cutover; old publication stays until successful cutover.
+
+## Continuous deployment (approved 2026-11-23)
+- Existing Render web service `srv-dc22e9ivcj2c73a1oajg` is adopted by Blueprint `exs-dc23o2ec6qcc73car12g` (file `render-murdilimax-production.yaml`).
+- Blueprint autoSync is enabled; service `autoDeployTrigger=checksPass`, branch `release/murdilimax-unified-20261123`, health check `/healthz`.
+- `murdilimax.com` was added to Render custom domains by the approved Blueprint. **Namecheap DNS records have not been changed**; the existing public domain remains on ChatGPT Sites until explicit cutover authorization.
+- The original ChatGPT Sites user-created profile (Mila) remains archived in `mm_legacy_imports` with owner mapping unverified. Do not transfer DNS based only on a successful build.
+- A documentation-only GitHub commit tests whether the end-to-end webhook/CI → Render auto-deploy actually happens; do not assume the trigger works without verifying the resulting deploy and SHA.
