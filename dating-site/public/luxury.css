@@ -487,3 +487,18 @@ button,input,select,textarea{font-family:inherit}
 @media(prefers-reduced-motion:reduce){
   *,*:before,*:after{scroll-behavior:auto!important;transition:none!important}
 }
+
+/* Legal information retains excellent contrast in the same visual language. */
+body > main:has(> .kicker){
+  width:min(940px,calc(100% - 32px));max-width:940px;
+  margin:42px auto 70px;padding:clamp(25px,4vw,58px);
+  border:1px solid rgba(224,161,224,.27);border-radius:22px;
+  background:linear-gradient(145deg,rgba(55,31,65,.88),rgba(22,15,33,.96));
+  box-shadow:0 20px 60px rgba(0,0,0,.25)
+}
+body > main:has(> .kicker) .kicker{color:var(--gold);letter-spacing:.18em}
+body > main:has(> .kicker) h1{color:#fff0f6;font:500 clamp(37px,5vw,54px)/1.1 var(--display)}
+body > main:has(> .kicker) h2{color:#fbe1f1;font:600 29px/1.2 var(--display)}
+body > main:has(> .kicker) p,
+body > main:has(> .kicker) li{color:#d5c0dc;font-size:14px;line-height:1.8}
+body > main:has(> .kicker) a{color:#ffce9c}
