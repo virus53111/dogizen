@@ -43,3 +43,9 @@ Only **public** listing data was backed up. Private messages/users/photos may be
 - `murdilimax.com` was added to Render custom domains by the approved Blueprint. **Namecheap DNS records have not been changed**; the existing public domain remains on ChatGPT Sites until explicit cutover authorization.
 - The original ChatGPT Sites user-created profile (Mila) remains archived in `mm_legacy_imports` with owner mapping unverified. Do not transfer DNS based only on a successful build.
 - A documentation-only GitHub commit tests whether the end-to-end webhook/CI → Render auto-deploy actually happens; do not assume the trigger works without verifying the resulting deploy and SHA.
+
+## Relationship format categories and SEO — 2026-11-23
+- Added `noncommercial` and `support` categories across RU/EN/DE/LV, together with server validations and SQL migration 017. `support` means lawful relationships involving mutual support; it is **not** permission to advertise paid sexual services, which remains prohibited.
+- Added localized `/formats/` informational pages, homepage links, canonical/hreflang metadata, and entries in the existing sitemap. Staging Render remains non-indexed; no Namecheap DNS cutover is authorized.
+- Added 50 geography/gender-direction presets to the existing owner-only admin profile form. No fictional members were created; real photos, adult status and consent remain mandatory for publication.
+- Search Console submission could not be completed because the connected GSC Wizard account requires an active subscription.

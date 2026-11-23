@@ -3,6 +3,23 @@
 const $=sel=>document.querySelector(sel);
 let current=[];
 let editing=null;
+/* Geographic planning presets; no synthetic users or listings are published. */
+const GEO_PRESETS=[["LV","Рига"],["LV","Даугавпилс"],["LV","Лиепая"],["LV","Юрмала"],["LV","Вентспилс"],["EE","Таллин"],["EE","Тарту"],["EE","Нарва"],["LT","Вильнюс"],["LT","Каунас"],["LT","Клайпеда"],["DE","Берлин"],["DE","Гамбург"],["DE","Мюнхен"],["DE","Франкфурт"],["DE","Кёльн"],["PL","Варшава"],["PL","Краков"],["PL","Гданьск"],["PL","Вроцлав"],["FR","Париж"],["FR","Лион"],["FR","Марсель"],["ES","Мадрид"],["ES","Барселона"],["ES","Валенсия"],["IT","Рим"],["IT","Милан"],["IT","Турин"],["SE","Стокгольм"],["SE","Гётеборг"],["FI","Хельсинки"],["FI","Тампере"],["NO","Осло"],["NO","Берген"],["NL","Амстердам"],["NL","Роттердам"],["BE","Брюссель"],["BE","Антверпен"],["AT","Вена"],["AT","Грац"],["CH","Цюрих"],["CH","Женева"],["IE","Дублин"],["IE","Корк"],["CZ","Прага"],["CZ","Брно"],["DK","Копенгаген"],["DK","Орхус"],["PT","Лиссабон"]];
+const geoPreset=document.querySelector("#geoPreset");
+if(geoPreset){
+ GEO_PRESETS.forEach(([country,city],index)=>{
+  const option=document.createElement("option");option.value=String(index);
+  option.textContent=String(index+1).padStart(2,"0")+" · "+(index%2===0?"Женщина ищет мужчину":"Мужчина ищет женщину")+" · "+city+" ("+country+")";geoPreset.append(option);
+ });
+ geoPreset.addEventListener("change",()=>{
+  if(editing||geoPreset.value==="")return;
+  const data=GEO_PRESETS[Number(geoPreset.value)];if(!data)return;
+  field("country").value=data[0];field("city").value=data[1];
+  field("category").value=Number(geoPreset.value)%2===0?"women-men":"men-women";
+  notice("Город выбран. Заполните реальные сведения и подтвердите согласие человека на публикацию.");
+ });
+}
+
 const form=$("#manualForm"),stat=$("#formStatus"),gate=$("#accessGate"),workspace=$("#workspace"),photo=$("#photo");
 function notice(message,error=false,location=stat){
  location.textContent=message||"";

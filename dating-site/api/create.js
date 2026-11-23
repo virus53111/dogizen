@@ -1,7 +1,7 @@
 import { db, storage } from "hatchable";
 export const access="user";
 export const methods=["POST"];
-const CATEGORIES=new Set(["dating", "women-men", "women-serious", "women-women", "men-women", "men-serious", "men-men", "couples", "trans-dating", "social", "events"]);
+const CATEGORIES=new Set(["dating", "women-men", "women-serious", "women-women", "men-women", "men-serious", "men-men", "couples", "trans-dating", "social", "events", "noncommercial", "support"]);
 export default async function(req,res){
  const b=req.body||{};
  const str=(v,n)=>String(v||"").trim().slice(0,n);
@@ -14,7 +14,7 @@ export default async function(req,res){
  if(!CATEGORIES.has(category))return res.status(400).json({error:"Выберите существующую категорию"});
  if(!/^[A-Z]{2,3}$/.test(country))return res.status(400).json({error:"Неверный код страны"});
  if(!name||!city||description.length<20||!Number.isInteger(age)||age<18||age>85)return res.status(400).json({error:"Укажите корректные имя, город, возраст от 18 лет и описание от 20 символов"});
- if(commercial)return res.status(400).json({error:"Допускаются только некоммерческие знакомства и общение"});
+ if(commercial)return res.status(400).json({error:"Реклама платных сексуальных услуг и продажа интимных встреч запрещены. Выберите допустимый формат знакомства."});
  const recent=await db.query("SELECT COUNT(*)::integer AS n FROM mm_listings WHERE owner_id=$1 AND created_at > NOW() - INTERVAL '24 hours'",[req.user.id]);
  if((recent.rows[0]?.n||0)>=5)return res.status(429).json({error:"Вы достигли лимита: не более 5 анкет за 24 часа"});
  function hasImageSignature(bytes,type){

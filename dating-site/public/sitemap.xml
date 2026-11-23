@@ -96,4 +96,36 @@
     <xhtml:link rel="alternate" hreflang="lv" href="https://murdilimax.com/lv/riga/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://murdilimax.com/riga/" />
   </url>
+  <url>
+    <loc>https://murdilimax.com/formats/</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://murdilimax.com/formats/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://murdilimax.com/en/formats/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://murdilimax.com/de/formats/" />
+    <xhtml:link rel="alternate" hreflang="lv" href="https://murdilimax.com/lv/formats/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://murdilimax.com/formats/" />
+  </url>
+  <url>
+    <loc>https://murdilimax.com/en/formats/</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://murdilimax.com/formats/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://murdilimax.com/en/formats/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://murdilimax.com/de/formats/" />
+    <xhtml:link rel="alternate" hreflang="lv" href="https://murdilimax.com/lv/formats/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://murdilimax.com/formats/" />
+  </url>
+  <url>
+    <loc>https://murdilimax.com/de/formats/</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://murdilimax.com/formats/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://murdilimax.com/en/formats/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://murdilimax.com/de/formats/" />
+    <xhtml:link rel="alternate" hreflang="lv" href="https://murdilimax.com/lv/formats/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://murdilimax.com/formats/" />
+  </url>
+  <url>
+    <loc>https://murdilimax.com/lv/formats/</loc>
+    <xhtml:link rel="alternate" hreflang="ru" href="https://murdilimax.com/formats/" />
+    <xhtml:link rel="alternate" hreflang="en" href="https://murdilimax.com/en/formats/" />
+    <xhtml:link rel="alternate" hreflang="de" href="https://murdilimax.com/de/formats/" />
+    <xhtml:link rel="alternate" hreflang="lv" href="https://murdilimax.com/lv/formats/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://murdilimax.com/formats/" />
+  </url>
 </urlset>

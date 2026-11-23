@@ -62,6 +62,7 @@ body{background:#120b1c!important;color:#f7eff8!important;font:15px/1.55 Manrope
 <form id="manualForm" autocomplete="off">
 <input type="hidden" name="action" value="create"><input type="hidden" name="id" value="">
 <div class="mm-grid">
+<label class="mm-field full">50 заготовок по городам и странам <select id="geoPreset"><option value="">Выбрать город и направление знакомства</option></select><small>Добавляются только страна, город и направление. Для публикации нужны настоящие данные, фото и согласие человека.</small></label>
 <label class="mm-field">Имя или псевдоним <input name="display_name" maxlength="65" placeholder="Например, Анна" required></label>
 <label class="mm-field">Возраст, 18–85 <input name="age" type="number" min="18" max="85" inputmode="numeric" required></label>
 <label class="mm-field">Страна <select name="country" required>
@@ -70,7 +71,7 @@ body{background:#120b1c!important;color:#f7eff8!important;font:15px/1.55 Manrope
 <label class="mm-field">Город <input name="city" maxlength="100" placeholder="Рига" required></label>
 <label class="mm-field">Район (необязательно) <input name="district" maxlength="100" placeholder="Центр"></label>
 <label class="mm-field">Тип знакомства <select name="category">
-<option value="social">Общение и дружба</option><option value="dating">Знакомства</option><option value="women-men">Женщина ищет мужчину</option><option value="men-women">Мужчина ищет женщину</option><option value="women-women">Женщина ищет женщину</option><option value="men-men">Мужчина ищет мужчину</option><option value="women-serious">Женщина — серьёзные отношения</option><option value="men-serious">Мужчина — серьёзные отношения</option><option value="couples">Пары</option><option value="trans-dating">Транс-знакомства</option><option value="events">Совместные события</option>
+<option value="social">Общение и дружба</option><option value="dating">Знакомства</option><option value="noncommercial">Без материальных ожиданий</option><option value="support">Отношения с поддержкой</option><option value="women-men">Женщина ищет мужчину</option><option value="men-women">Мужчина ищет женщину</option><option value="women-women">Женщина ищет женщину</option><option value="men-men">Мужчина ищет мужчину</option><option value="women-serious">Женщина — серьёзные отношения</option><option value="men-serious">Мужчина — серьёзные отношения</option><option value="couples">Пары</option><option value="trans-dating">Транс-знакомства</option><option value="events">Совместные события</option>
 </select></label>
 <label class="mm-field full">Короткий заголовок <input name="headline" maxlength="120" placeholder="Давай знакомиться"></label>
 <label class="mm-field full">Описание человека <textarea name="description" maxlength="1600" minlength="20" placeholder="Чем увлекается, кого хочет встретить, что любит..." required></textarea></label>
