@@ -2,7 +2,7 @@ import { db, storage } from "hatchable";
 export const access="user";
 export const methods=["POST"];
 const UUID=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
-const categories=new Set(["dating","women-men","women-serious","women-women","men-women","men-serious","men-men","couples","trans-dating","social","events"]);
+const categories=new Set(["dating","women-men","women-serious","women-women","men-women","men-serious","men-men","couples","trans-dating","social","events","noncommercial","support"]);
 const str=(s,n)=>String(s??"").trim().slice(0,n);
 function photoValid(f){
  if(!f?.buffer||f.buffer.length<12||f.buffer.length>4194304)return false;

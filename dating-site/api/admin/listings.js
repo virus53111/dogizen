@@ -19,7 +19,7 @@ export default async function(req,res){
   const status=String(req.body?.status||"");
   if(!["approved","rejected","pending"].includes(status))return res.status(400).json({error:"Неверный статус"});
   const r=await db.query(
-    "UPDATE mm_listings SET status=$1,updated_at=NOW() WHERE id=$2 AND ($1 <> 'approved' OR (NOT is_commercial AND category IN ('dating','women-men','women-serious','women-women','men-women','men-serious','men-men','couples','trans-dating','social','events'))) RETURNING id,status",
+    "UPDATE mm_listings SET status=$1,updated_at=NOW() WHERE id=$2 AND ($1 <> 'approved' OR (NOT is_commercial AND category IN ('dating','women-men','women-serious','women-women','men-women','men-serious','men-men','couples','trans-dating','social','events','noncommercial','support'))) RETURNING id,status",
     [status,id]
   );
   if(!r.rows.length)return res.status(409).json({error:"Анкета недоступна для выбранного действия"});

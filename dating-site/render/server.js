@@ -1,4 +1,6 @@
 import express from 'express';
+import { createHash } from 'node:crypto';
+import { getCookie, rateLimit } from './security.js';
 import multer from 'multer';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 import fs from 'node:fs/promises';
@@ -12,8 +14,15 @@ const keys = createRemoteJWKSet(new URL('https://www.googleapis.com/service_acco
 const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
-app.use(express.json({ limit: '200kb' }), express.urlencoded({ extended: false }));
+const reportRate = rateLimit({ limit: 6, windowMs: 60 * 60 * 1000 });
+const sessionRate = rateLimit({ limit: 30, windowMs: 5 * 60 * 1000 });
+const writeRate = rateLimit({ limit: 100, windowMs: 60 * 1000 });
 app.use((req, res, next) => {
+  res.set('X-Frame-Options', 'DENY');
+  res.set('Content-Security-Policy', "frame-ancestors 'none'; base-uri 'self'; object-src 'none'");
+  res.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (req.secure && ['murdilimax.com', 'www.murdilimax.com'].includes(req.hostname))
+    res.set('Strict-Transport-Security', 'max-age=15552000');
   res.set('X-Content-Type-Options', 'nosniff');
   res.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   if (!['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
@@ -24,13 +33,14 @@ app.use((req, res, next) => {
     if (site && !['same-origin', 'none'].includes(site))
       return res.status(403).json({ error: 'Недопустимый источник' });
   }
+  if (req.method === 'POST') {
+    if (req.path === '/api/report') return reportRate(req, res, next);
+    if (req.path === '/auth/session') return sessionRate(req, res, next);
+    if (req.path.startsWith('/api/')) return writeRate(req, res, next);
+  }
   next();
 });
-function getCookie(req, name) {
-  const item = (req.get('cookie') || '').split(';').map(s => s.trim())
-    .find(s => s.startsWith(name + '='));
-  return item ? decodeURIComponent(item.slice(name.length + 1)) : '';
-}
+app.use(express.json({ limit: '200kb' }), express.urlencoded({ extended: false }));
 async function verify(token) {
   if (!token || token.length > 10000) return null;
   try {
@@ -44,10 +54,12 @@ async function verify(token) {
   } catch { return null; }
 }
 app.use(async (req, res, next) => {
-  const bearer = req.get('authorization') || '';
-  const token = bearer.startsWith('Bearer ') ? bearer.slice(7) : getCookie(req, 'mm_token');
-  req.user = await verify(token);
-  next();
+  try {
+    const bearer = req.get('authorization') || '';
+    const token = bearer.startsWith('Bearer ') ? bearer.slice(7) : getCookie(req, 'mm_token');
+    req.user = await verify(token);
+    next();
+  } catch (error) { next(error); }
 });
 const owner = u => !!u && u.verified && u.email.toLowerCase() === 'dshtriters@gmail.com';
 const session = u => u ? {
@@ -74,12 +86,12 @@ app.post('/auth/session', async (req, res) => {
   const user = await verify(token);
   if (!user) return res.status(401).json({ error: 'Подтвердите email и войдите повторно' });
   await db.query("INSERT INTO users(id,email,email_verified_at) VALUES ($1,$2,NOW()) ON CONFLICT(id) DO UPDATE SET email=$2,email_verified_at=NOW()", [user.id, user.email]);
-  res.cookie('mm_token', token, { httpOnly: true, sameSite: 'lax', secure: req.secure, maxAge: 55 * 60 * 1000, path: '/' });
+  res.cookie('mm_token', token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 55 * 60 * 1000, path: '/' });
   res.set('Cache-Control', 'no-store');
   res.json({ user: session(user) });
 });
 app.post('/auth/logout', (req, res) => {
-  res.clearCookie('mm_token', { path: '/', sameSite: 'lax', secure: req.secure });
+  res.clearCookie('mm_token', { path: '/', sameSite: 'lax', secure: true });
   res.json({ ok: true });
 });
 app.get('/login', (req, res) => {
@@ -87,13 +99,21 @@ app.get('/login', (req, res) => {
   if (owner(req.user)) return res.redirect('/admin.html');
   res.redirect(req.user ? dest : '/auth/login.html?next=' + encodeURIComponent(dest));
 });
+// Retire the old dead /login.html Firebase-incompatible form.
+app.get('/login.html', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.redirect(302, '/login?next=' + encodeURIComponent(safeNext(req.query.next)));
+});
 app.get('/api/session', (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.json({ user: session(req.user) });
 });
 app.get('/media/*', async (req, res, next) => {
   try {
-    const file = await storage.get(req.params[0]);
+    const key = String(req.params[0] || '');
+    if (!/^murdilimax\\/(?:photos|admin-profiles|admin-edited|legacy)\\/[a-z0-9._-]{1,120}$/i.test(key))
+      return res.status(404).end();
+    const file = await storage.get(key);
     if (!file) return res.status(404).end();
     res.type(file.contentType).send(file.buffer);
   } catch (e) { next(e); }
@@ -110,7 +130,7 @@ app.get('/api/room', userOnly, async (req, res, next) => {
     const rows = await db.query('SELECT id,user_id,name,body,EXTRACT(EPOCH FROM created_at)::bigint AS sent FROM mm_room ORDER BY created_at DESC LIMIT 70');
     res.set('Cache-Control', 'no-store');
     res.json({ messages: rows.rows.reverse().map(m => ({
-      id: m.id, name: m.name, body: m.body, sent: Number(m.sent),
+      id: m.id, name: 'Участник ' + createHash('sha256').update(String(m.user_id)).digest('hex').slice(0, 6).toUpperCase(), body: m.body, sent: Number(m.sent),
       mine: !!req.user && m.user_id === req.user.id
     })) });
   } catch (e) { next(e); }
@@ -121,7 +141,9 @@ app.post('/api/room', userOnly, async (req, res, next) => {
       const id = String(req.body.message_id || '');
       const reason = String(req.body.reason || '').trim().slice(0,500);
       if (!/^[0-9a-f-]{36}$/i.test(id) || reason.length < 5) return res.status(400).json({ error: 'Укажите причину' });
-      await db.query('INSERT INTO mm_room_reports(message_id,user_id,reason) SELECT id,$2,$3 FROM mm_room WHERE id=$1', [id, req.user.id, reason]);
+      const reports = await db.query("SELECT COUNT(*)::integer AS n FROM mm_room_reports WHERE user_id=$1 AND created_at > NOW()-INTERVAL '24 hours'", [req.user.id]);
+      if ((reports.rows[0]?.n || 0) >= 8) return res.status(429).json({ error: 'Лимит жалоб на сегодня' });
+      await db.query('INSERT INTO mm_room_reports(message_id,user_id,reason) SELECT id,$2,$3 FROM mm_room WHERE id=$1 AND user_id<>$2', [id, req.user.id, reason]);
       return res.json({ ok: true });
     }
     const body = String(req.body?.body || '').trim();
@@ -129,21 +151,29 @@ app.post('/api/room', userOnly, async (req, res, next) => {
     const counter = await db.query("SELECT COUNT(*)::integer AS n,MAX(created_at) AS latest FROM mm_room WHERE user_id=$1 AND created_at>NOW()-INTERVAL '1 hour'", [req.user.id]);
     if (counter.rows[0].n >= 60 || (counter.rows[0].latest && Date.now() - new Date(counter.rows[0].latest).getTime() < 5000))
       return res.status(429).json({ error: 'Слишком частые сообщения' });
-    await db.query('INSERT INTO mm_room(user_id,body,name) VALUES($1,$2,$3)', [req.user.id, body, req.user.email.split('@')[0].slice(0,65)]);
+    await db.query('INSERT INTO mm_room(user_id,body,name) VALUES($1,$2,$3)', [req.user.id, body, 'Участник ' + createHash('sha256').update(req.user.id).digest('hex').slice(0, 6).toUpperCase()]);
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 6, fields: 40 } });
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 6, fields: 40, parts: 46 } });
+const adminUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1, fields: 40, parts: 41 } });
 const routes = ['listings', 'listing', 'create', 'mine', 'favorites', 'report', 'chat/list', 'chat/start',
   'chat/messages', 'chat/block', 'chat/report', 'legacy/claim', 'admin/me', 'admin/listings', 'admin/manual', 'admin/manage', 'admin/reports'];
 for (const slug of routes) {
   const mod = await import('../api/' + slug + '.js');
-  app.all('/api/' + slug, ...(['create','admin/manual','admin/manage'].includes(slug) ? [upload.any()] : []), async (req, res, next) => {
+  const acceptsUpload = ['create','admin/manual','admin/manage'].includes(slug);
+  const parsesUpload = !acceptsUpload ? [] : [(slug === 'create' ? upload : adminUpload).any()];
+  // Reject unauthenticated/non-owner requests BEFORE multipart parsing (up to 24 MB).
+  app.all('/api/' + slug, (req, res, next) => {
     if (mod.methods && !mod.methods.includes(req.method))
       return res.status(405).json({ error: 'Метод недоступен' });
     if (mod.access === 'user' && !req.user)
       return res.status(401).json({ error: 'Требуется вход' });
-    if (['create','admin/manual','admin/manage'].includes(slug)) req.files = (req.files || []).map(f => ({
+    if (slug.startsWith('admin/') && !owner(req.user))
+      return res.status(403).json({ error: 'Доступ только владельцу сайта' });
+    next();
+  }, ...parsesUpload, async (req, res, next) => {
+    if (acceptsUpload) req.files = (req.files || []).map(f => ({
       field: f.fieldname, filename: f.originalname, contentType: f.mimetype, buffer: f.buffer
     }));
     try { return await mod.default(req, res); } catch (e) { next(e); }
@@ -155,8 +185,10 @@ app.use((req, res) => res.status(404).json({ error: 'Страница не на�
 app.use((err, req, res, next) => {
   console.error(err);
   if (res.headersSent) return next(err);
-  res.status(err.code === 'LIMIT_FILE_SIZE' ? 413 : 500).json({
-    error: err.code === 'LIMIT_FILE_SIZE' ? 'Размер фото превышает 4 МБ' : 'Ошибка сервера'
+  const uploadError = err.code?.startsWith('LIMIT_');
+  const invalidBody = err.type === 'entity.parse.failed' || err.status === 400;
+  res.status(uploadError ? 413 : invalidBody ? 400 : 500).json({
+    error: uploadError ? 'Превышены лимиты загрузки фото или формы' : invalidBody ? 'Некорректные данные запроса' : 'Ошибка сервера'
   });
 });
 await init();

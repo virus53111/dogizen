@@ -24,7 +24,7 @@ export async function init() {
   const client = await pool.connect();
   try {
     await client.query('SELECT pg_advisory_lock(723001)');
-    await client.query('CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,email TEXT NOT NULL,email_verified_at TIMESTAMPTZ,visible BOOLEAN DEFAULT TRUE,last_seen TIMESTAMPTZ)');
+    await client.query('CREATE TABLE IF NOT EXISTS users(id TEXT PRIMARY KEY,email TEXT NOT NULL,email_verified_at TIMESTAMPTZ,visible BOOLEAN DEFAULT FALSE,last_seen TIMESTAMPTZ)');
     await client.query('CREATE TABLE IF NOT EXISTS mm_migrations(name TEXT PRIMARY KEY,applied_at TIMESTAMPTZ DEFAULT NOW())');
     const names = (await fs.readdir(folder)).filter(x => x.endsWith('.sql')).sort();
     for (const name of names) {

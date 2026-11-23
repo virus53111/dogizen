@@ -15,8 +15,8 @@ modeButton.onclick=()=>{
   document.querySelector("#prompt").textContent=registering?"Уже есть аккаунт?":"Нет аккаунта?";
   modeButton.textContent=registering?"Войти":"Зарегистрироваться";
   password.autocomplete=registering?"new-password":"current-password";
-  password.minLength=registering?6:0;
-  password.placeholder=registering?"Минимум 6 символов":"";
+  password.minLength=registering?12:0;
+  password.placeholder=registering?"Минимум 12 символов":"";
   document.querySelector("#reset").hidden=registering;
   status.textContent="";
 };
@@ -47,7 +47,7 @@ async function run(action){
   const buttons=document.querySelectorAll("button");
   buttons.forEach(button=>button.disabled=true);
   try{await action()}catch(error){
-    const messages={"auth/invalid-credential":"Проверьте почту и пароль.","auth/weak-password":"Выберите более длинный пароль.","auth/email-already-in-use":"Этот адрес уже зарегистрирован. Войдите или восстановите пароль.","auth/popup-blocked":"Разрешите открытие окна Google в браузере.","auth/popup-closed-by-user":"Вход через Google отменён.","auth/unauthorized-domain":"Вход через Google пока не разрешён на тестовом адресе. Основной сайт murdilimax.com работает отдельно.","auth/operation-not-allowed":"Этот способ входа пока не включён.","auth/network-request-failed":"Проверьте подключение к интернету.","auth/too-many-requests":"Слишком много попыток. Попробуйте позже."};
+    const messages={"auth/invalid-credential":"Проверьте почту и пароль.","auth/weak-password":"Выберите более длинный пароль.","auth/email-already-in-use":"Этот адрес уже зарегистрирован. Войдите или восстановите пароль.","auth/popup-blocked":"Разрешите открытие окна Google в браузере.","auth/popup-closed-by-user":"Вход через Google отменён.","auth/unauthorized-domain":"Адрес murdilimax.com нужно разрешить в Firebase Authentication. Сообщите администратору.","auth/operation-not-allowed":"Этот способ входа пока не включён.","auth/network-request-failed":"Проверьте подключение к интернету.","auth/too-many-requests":"Слишком много попыток. Попробуйте позже."};
     console.warn("Ошибка входа Firebase:",error?.code||"unknown");
     status.textContent=messages[error.code]||"Не удалось завершить вход. Попробуйте ещё раз.";
   }finally{buttons.forEach(button=>button.disabled=false)}
