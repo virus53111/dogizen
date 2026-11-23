@@ -24,8 +24,8 @@ export default async function(req,res){
  const order=orders[sort]||orders.newest;
  const page=Math.max(1,Math.min(100,Math.floor(Number(q.page)||1)));
  const where=filters.join(" AND ");
- const count=await db.query("SELECT COUNT(*)::integer AS total FROM mm_listings WHERE "+where,values);
+ const count=await db.query("SELECT COUNT(*)::integer AS total FROM mm_public_listings WHERE "+where,values);
  const offset=(page-1)*48;
- const result=await db.query("SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,featured,is_commercial,created_at FROM mm_listings WHERE "+where+" ORDER BY "+order+" LIMIT 48 OFFSET "+offset,values);
+ const result=await db.query("SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,featured,is_commercial,created_at,messaging_enabled FROM mm_public_listings WHERE "+where+" ORDER BY "+order+" LIMIT 48 OFFSET "+offset,values);
  res.json({listings:result.rows,total:count.rows[0]?.total||0,page,page_size:48});
 }
