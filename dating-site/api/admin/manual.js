@@ -75,8 +75,7 @@ export default async function(req,res) {
  let url=null;
  if(files.length){
   const file=files[0];
-  const ext={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"}[file.contentType];
-  const r=await storage.put("murdilimax/admin-profiles/"+crypto.randomUUID()+"."+ext,file.buffer,file.contentType);
+  const r=await storage.put("murdilimax/admin-profiles/"+crypto.randomUUID()+".webp",file.buffer,file.contentType);
   url=typeof r==="string"?r:(r?.url||null);
   if(!url||!url.startsWith("/media/murdilimax/admin-profiles/"))throw new Error("Не удалось сохранить фотографию");
  }

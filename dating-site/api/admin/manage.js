@@ -64,8 +64,8 @@ export default async function(req,res){
  if(!exists.rows.length)return res.status(404).json({error:"Анкета не найдена"});
  let avatar=null;
  if(files.length){
-  const f=files[0],ext={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"}[f.contentType];
-  const uploaded=await storage.put("murdilimax/admin-edited/"+crypto.randomUUID()+"."+ext,f.buffer,f.contentType);
+  const f=files[0];
+  const uploaded=await storage.put("murdilimax/admin-edited/"+crypto.randomUUID()+".webp",f.buffer,f.contentType);
   avatar=typeof uploaded==="string"?uploaded:uploaded?.url;
   if(!avatar?.startsWith("/media/murdilimax/"))throw Error("Не удалось сохранить фото");
  }

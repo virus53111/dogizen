@@ -30,8 +30,7 @@ export default async function(req,res){
  for(const f of files){if(!["image/jpeg","image/png","image/webp"].includes(f.contentType)||f.buffer.length>4*1024*1024||!hasImageSignature(f.buffer,f.contentType))return res.status(400).json({error:"Фотографии должны быть JPG, PNG или WebP размером до 4 МБ каждая"})}
  const images=[];
  for(const f of files){
-   const ext={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"}[f.contentType];
-   const result=await storage.put("murdilimax/photos/"+crypto.randomUUID()+"."+ext,f.buffer,f.contentType);
+   const result=await storage.put("murdilimax/photos/"+crypto.randomUUID()+".webp",f.buffer,f.contentType);
    const url=typeof result==="string"?result:(result?.url||null);
    if(url)images.push(url);
  }

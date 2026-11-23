@@ -16,6 +16,7 @@
     "multer": "^2.0.2",
     "pg": "^8.16.3",
     "jose": "^5.10.0",
-    "hatchable": "file:./render/shim"
+    "hatchable": "file:./render/shim",
+    "sharp": "0.35.5"
   }
 }

@@ -1,4 +1,5 @@
 import pg from 'pg';
+import { sanitizeImage } from './image.js';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,7 +11,9 @@ export const storage = {
   async put(key, buffer, contentType) {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(contentType) || !buffer || buffer.length > 4 * 1024 * 1024)
       throw new Error('Некорректный файл');
-    await db.query('INSERT INTO mm_media(id,mime,body) VALUES($1,$2,$3) ON CONFLICT DO NOTHING', [key, contentType, Buffer.from(buffer)]);
+    // Do not store original EXIF/GPS metadata or trust the browser's MIME label.
+    const safeImage = await sanitizeImage(Buffer.from(buffer), contentType);
+    await db.query('INSERT INTO mm_media(id,mime,body) VALUES($1,$2,$3) ON CONFLICT DO NOTHING', [key, 'image/webp', safeImage]);
     return '/media/' + key;
   },
   async get(key) {
