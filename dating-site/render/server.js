@@ -135,15 +135,15 @@ app.post('/api/room', userOnly, async (req, res, next) => {
 });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 6, fields: 40 } });
 const routes = ['listings', 'listing', 'create', 'mine', 'favorites', 'report', 'chat/list', 'chat/start',
-  'chat/messages', 'chat/block', 'chat/report', 'legacy/claim', 'admin/me', 'admin/listings', 'admin/reports'];
+  'chat/messages', 'chat/block', 'chat/report', 'legacy/claim', 'admin/me', 'admin/listings', 'admin/manual', 'admin/reports'];
 for (const slug of routes) {
   const mod = await import('../api/' + slug + '.js');
-  app.all('/api/' + slug, ...(slug === 'create' ? [upload.any()] : []), async (req, res, next) => {
+  app.all('/api/' + slug, ...(['create','admin/manual'].includes(slug) ? [upload.any()] : []), async (req, res, next) => {
     if (mod.methods && !mod.methods.includes(req.method))
       return res.status(405).json({ error: 'Метод недоступен' });
     if (mod.access === 'user' && !req.user)
       return res.status(401).json({ error: 'Требуется вход' });
-    if (slug === 'create') req.files = (req.files || []).map(f => ({
+    if (['create','admin/manual'].includes(slug)) req.files = (req.files || []).map(f => ({
       field: f.fieldname, filename: f.originalname, contentType: f.mimetype, buffer: f.buffer
     }));
     try { return await mod.default(req, res); } catch (e) { next(e); }
