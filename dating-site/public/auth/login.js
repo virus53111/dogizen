@@ -48,7 +48,8 @@ async function run(action){
   buttons.forEach(button=>button.disabled=true);
   try{await action()}catch(error){
     const messages={"auth/invalid-credential":"Проверьте почту и пароль.","auth/weak-password":"Выберите более длинный пароль.","auth/email-already-in-use":"Этот адрес уже зарегистрирован. Войдите или восстановите пароль.","auth/popup-blocked":"Разрешите открытие окна Google в браузере.","auth/too-many-requests":"Слишком много попыток. Попробуйте позже."};
-    status.textContent=messages[error.code]||"Не удалось завершить вход. Попробуйте ещё раз.";
+    console.warn("Ошибка входа Firebase:",error?.code||"unknown");
+    status.textContent=messages[error.code]||"Не удалось завершить вход ("+(error?.code||"неизвестная ошибка")+"). Попробуйте ещё раз.";
   }finally{buttons.forEach(button=>button.disabled=false)}
 }
 const googleProvider=new GoogleAuthProvider();
