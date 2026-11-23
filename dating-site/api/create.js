@@ -17,9 +17,17 @@ export default async function(req,res){
  if(commercial)return res.status(400).json({error:"Допускаются только некоммерческие знакомства и общение"});
  const recent=await db.query("SELECT COUNT(*)::integer AS n FROM mm_listings WHERE owner_id=$1 AND created_at > NOW() - INTERVAL '24 hours'",[req.user.id]);
  if((recent.rows[0]?.n||0)>=5)return res.status(429).json({error:"Вы достигли лимита: не более 5 анкет за 24 часа"});
+ function hasImageSignature(bytes,type){
+ if(!bytes||bytes.length<12)return false;
+ const b=Buffer.from(bytes);
+ if(type==="image/jpeg")return b[0]===0xff&&b[1]===0xd8&&b[2]===0xff;
+ if(type==="image/png")return b.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10]));
+ if(type==="image/webp")return b.toString("ascii",0,4)==="RIFF"&&b.toString("ascii",8,12)==="WEBP";
+ return false;
+}
  const files=(req.files||[]).filter(f=>f.field==="photo"&&f.filename&&f.buffer?.length>0);
  if(files.length>6)return res.status(400).json({error:"Не более 6 фотографий"});
- for(const f of files){if(!["image/jpeg","image/png","image/webp"].includes(f.contentType)||f.buffer.length>4*1024*1024)return res.status(400).json({error:"Фотографии должны быть JPG, PNG или WebP размером до 4 МБ каждая"})}
+ for(const f of files){if(!["image/jpeg","image/png","image/webp"].includes(f.contentType)||f.buffer.length>4*1024*1024||!hasImageSignature(f.buffer,f.contentType))return res.status(400).json({error:"Фотографии должны быть JPG, PNG или WebP размером до 4 МБ каждая"})}
  const images=[];
  for(const f of files){
    const ext={"image/jpeg":"jpg","image/png":"png","image/webp":"webp"}[f.contentType];
