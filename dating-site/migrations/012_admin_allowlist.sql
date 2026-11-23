@@ -1,0 +1,1 @@
+CREATE TABLE IF NOT EXISTS mm_admin_allowlist (email TEXT PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
