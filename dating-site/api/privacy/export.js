@@ -13,10 +13,13 @@ export default async function(req,res){
  // written by OTHER members or moderation notes about someone else.
  const sources=[
   ['account','SELECT id,email,email_verified_at,visible,last_seen FROM users WHERE id=$1 LIMIT 1'],
-  ['profiles','SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,status,created_at,updated_at FROM mm_listings WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 5001'],
+  ['profiles','SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,status,created_at,updated_at,
+ COALESCE((SELECT d.looking_for FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS looking_for,
+ COALESCE((SELECT d.interests FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS interests
+ FROM mm_listings WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['my_messages','SELECT id,conversation_id,body,created_at,seen_at FROM mm_messages WHERE sender_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['my_room_messages','SELECT id,body,created_at FROM mm_room WHERE user_id=$1 ORDER BY created_at DESC LIMIT 5001'],
-  ['favorites','SELECT listing_id,created_at FROM mm_favorites WHERE user_id=$1 ORDER BY created_at DESC LIMIT 5001'],
+  ['favorites','SELECT listing_id,created_at FROM mm_catalog_favorites WHERE user_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['my_chat_reports','SELECT id,conversation_id,reason,details,status,created_at FROM mm_chat_reports WHERE reporter_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['my_room_reports','SELECT id,message_id,reason,created_at FROM mm_room_reports WHERE user_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['claim_audits','SELECT listing_id,claimed_at FROM mm_profile_claim_audit WHERE claimed_by=$1 ORDER BY claimed_at DESC LIMIT 5001'],
