@@ -19,6 +19,18 @@ export default async function(req,res){
  if(q.commercial==="1")filters.push("is_commercial = TRUE");
  if(q.commercial==="0")filters.push("is_commercial = FALSE");
  if(q.featured==="1")filters.push("featured = TRUE");
+ const language=sval("language",40);
+ if(language){
+   values.push(language.toLowerCase());
+   // Users enter free-text language names (e.g. "Русский, English, Deutsch").
+   // STRPOS performs a literal substring search without SQL wildcard surprises.
+   filters.push("STRPOS(LOWER(COALESCE(languages,'')), $"+values.length+") > 0");
+ }
+ if(q.online==="1"){
+   // "Online" means active within five minutes AND explicit public-presence opt-in.
+   // Admin/legacy listings have no authenticated owner and cannot claim to be online.
+   filters.push("EXISTS (SELECT 1 FROM mm_listings ml JOIN users u ON u.id=ml.owner_id WHERE ml.id=mm_public_listings.id AND u.visible IS TRUE AND u.last_seen>NOW()-INTERVAL '5 minutes')");
+ }
  const sort=sval("sort",20);
  const orders={"newest":"featured DESC, created_at DESC","oldest":"created_at ASC","age_asc":"age ASC, created_at DESC","age_desc":"age DESC, created_at DESC"};
  const order=orders[sort]||orders.newest;
@@ -26,6 +38,6 @@ export default async function(req,res){
  const where=filters.join(" AND ");
  const count=await db.query("SELECT COUNT(*)::integer AS total FROM mm_public_listings WHERE "+where,values);
  const offset=(page-1)*48;
- const result=await db.query("SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,featured,is_commercial,created_at,messaging_enabled FROM mm_public_listings WHERE "+where+" ORDER BY "+order+" LIMIT 48 OFFSET "+offset,values);
+ const result=await db.query("SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,featured,is_commercial,created_at,messaging_enabled, (SELECT EXTRACT(EPOCH FROM u.last_seen)::bigint FROM mm_listings ml JOIN users u ON u.id=ml.owner_id WHERE ml.id=mm_public_listings.id AND u.visible IS TRUE LIMIT 1) AS last_seen FROM mm_public_listings WHERE "+where+" ORDER BY "+order+" LIMIT 48 OFFSET "+offset,values);
  res.json({listings:result.rows,total:count.rows[0]?.total||0,page,page_size:48});
 }

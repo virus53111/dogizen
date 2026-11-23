@@ -1,7 +1,7 @@
 /* MurdiliMax — enhanced taxonomy, search controls and profile photo galleries. */
 (function(){
 const X=window.MM_I18N.X;
-window.mmExtra={min_age:"",max_age:"",sort:"newest",photo:"",commercial:"",featured:"",page:1};
+window.mmExtra={min_age:"",max_age:"",sort:"newest",language:"",photo:"",commercial:"",featured:"",page:1};
 const ex=k=>(X[state.lang]||X.ru)[k]||X.ru[k]||k;
 let collapsed=window.matchMedia("(max-width: 780px)").matches;
 function titleFor(id){return window.MM_categoryLabel(id,state.lang)}
@@ -41,7 +41,7 @@ content.querySelectorAll("[data-photo]").forEach(btn=>btn.onclick=()=>{const img
 const messageButton=document.getElementById("messageThis");if(canMessage){messageButton.onclick=()=>{if(window.mmStartChat)window.mmStartChat(item.id)}}else{messageButton.remove();}
 document.getElementById("reportThis").onclick=()=>{modal.close();document.getElementById("reportForm").elements.listing_id.value=item.id;document.getElementById("reportModal").showModal()};
 }catch(err){content.innerHTML='<p>'+escapeHTML(err.message)+'</p>'}})();return true};
-window.resetAdvancedFilters=function(){window.mmExtra={min_age:"",max_age:"",sort:"newest",photo:"",commercial:"",featured:"",page:1};document.getElementById("minAge").value="18";document.getElementById("maxAge").value="85";document.getElementById("sortFilter").value="newest";document.getElementById("photoOnly").checked=false;document.getElementById("onlineOnly").checked=false;};
+window.resetAdvancedFilters=function(){window.mmExtra={min_age:"",max_age:"",sort:"newest",language:"",photo:"",commercial:"",featured:"",page:1};document.getElementById("minAge").value="18";document.getElementById("maxAge").value="85";document.getElementById("sortFilter").value="newest";document.getElementById("photoOnly").checked=false;document.getElementById("onlineOnly").checked=false;document.getElementById("spokenLanguageFilter").value="";};
 function reload(){window.mmExtra.page=1;loadListings()}
 function bind(){
 document.getElementById("galleryViewBtn").onclick=()=>{state.mode="gallery";window.mmExtra.page=1;loadListings()};
@@ -51,6 +51,7 @@ document.getElementById("pagination").addEventListener("click",e=>{const b=e.tar
 document.getElementById("minAge").addEventListener("change",e=>{const v=Number(e.target.value);window.mmExtra.min_age=v>=18&&v<=85?String(v):"";reload()});
 document.getElementById("maxAge").addEventListener("change",e=>{const v=Number(e.target.value);window.mmExtra.max_age=v>=18&&v<=85?String(v):"";reload()});
 document.getElementById("sortFilter").addEventListener("change",e=>{window.mmExtra.sort=e.target.value;reload()});
+document.getElementById("spokenLanguageFilter").addEventListener("change",e=>{window.mmExtra.language=e.target.value.trim().slice(0,40);reload()});
 document.getElementById("onlineOnly").addEventListener("change",e=>{window.mmExtra.online=e.target.checked?"1":"";reload()});
 document.getElementById("photoOnly").addEventListener("change",e=>{window.mmExtra.photo=e.target.checked?"1":"";reload()});
 
