@@ -115,6 +115,7 @@ test('claim UI never sends the bearer token in an ordinary URL request',async()=
   assert.match(frontend,/history\.replaceState/);
   assert.match(frontend,/fetch\("\/api\/claim"/);
   assert.match(admin,/api\/admin\/claim-invite/);
-  assert.match(server,/'claim', 'admin\/me'/);
+  assert.match(server,/'claim', 'privacy', 'privacy\/export'/);
+  assert.match(server,/'admin\/me'/);
   assert.match(server,/'admin\/claim-invite'/);
 });
