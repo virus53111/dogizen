@@ -49,3 +49,11 @@
 #chatReportForm select,#chatReportForm textarea{border:1px solid #e4dae6;border-radius:10px;padding:10px;font-size:12px;max-width:100%}
 @media(max-width:1130px){.nav-shortcut span[data-t]{display:none}.nav-shortcut{font-size:19px;padding:7px 4px}}
 @media(max-width:640px){.messages-dialog{max-height:93vh;padding:19px 12px;width:calc(100vw - 12px)}.chat-layout{grid-template-columns:106px minmax(0,1fr);max-height:75vh}.chat-person{padding:9px 5px;gap:5px;flex-direction:column;align-items:center}.chat-person .person-icon{width:33px;height:33px;flex-basis:33px}.chat-person .person-copy{max-width:100%;text-align:center}.chat-person strong{font-size:10px}.chat-person small{font-size:9px}.chat-person .bubble-count{font-size:9px}.chat-top{padding:9px 6px;flex-wrap:wrap}.chat-top strong{font-size:11px}.chat-mini-btn{font-size:9px;padding:5px}.chat-messages{height:310px;padding:10px 7px}.chat-send{padding:8px;flex-wrap:wrap}.chat-send textarea{font-size:12px}.chat-send button{padding:8px 9px}.chat-msg{max-width:92%;font-size:11px}.favorite-item{flex-wrap:wrap}.nav-shortcut{font-size:18px}}
+@media (max-width: 640px) {
+  .nav-wrap { height: auto; }
+  .footer-links { flex-wrap: wrap; }
+  .nav.container { flex-wrap: wrap; gap: 6px; padding-block: 6px; }
+  .nav-actions { flex: 1 1 auto; flex-wrap: wrap; justify-content: flex-end; gap: 4px; }
+  .nav-actions .nav-login { display: inline-flex; max-width: 10rem; overflow: hidden; }
+  .nav-actions .btn { padding: 8px 10px; }
+}

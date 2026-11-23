@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex"><title>Вход · MurdiliMax</title>
+<link rel="stylesheet" href="/auth/account.css"></head>
+<body><main>
+<a href="/" class="brand">MurdiliMax</a>
+<h1 id="title">Вход</h1>
+<form id="account">
+<label for="email">Электронная почта</label><input id="email" type="email" autocomplete="email" required>
+<label for="password">Пароль</label><input id="password" type="password" autocomplete="current-password" required>
+<button id="submit" class="primary">Войти</button></form>
+<p id="status" role="status" aria-live="polite"></p>
+<button id="reset" type="button" class="link">Забыли пароль?</button>
+<div class="or">или</div>
+<button id="google" type="button">Продолжить с Google</button>
+<p class="switch"><span id="prompt">Нет аккаунта?</span> <button class="link" id="switchMode" type="button">Зарегистрироваться</button></p>
+</main><script type="module" src="/auth/login.js"></script>

@@ -1,0 +1,3 @@
+# MurdiliMax unified deployment
+
+Source branch: `release/murdilimax-unified-20261123`. The `public/` assets are a non-destructive snapshot of the existing `murdilimax.com` public website on 23 November 2026. This branch is independent of GitHub `main` and is intended for one Render deployment. Do not repoint DNS until database and private conversations have been migrated and validated. Original ChatGPT Sites publication remains the system of record until cutover. Firebase project `murdilimax` handles user accounts and must be retained. Never commit private OAuth secrets or user messages. This branch contains no private account or message export.
