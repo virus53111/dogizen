@@ -13,10 +13,10 @@ export default async function(req,res){
  // written by OTHER members or moderation notes about someone else.
  const sources=[
   ['account','SELECT id,email,email_verified_at,visible,last_seen FROM users WHERE id=$1 LIMIT 1'],
-  ['profiles','SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,status,created_at,updated_at,
+  ['profiles',`SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,status,created_at,updated_at,
  COALESCE((SELECT d.looking_for FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS looking_for,
  COALESCE((SELECT d.interests FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS interests
- FROM mm_listings WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 5001'],
+ FROM mm_listings WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 5001`],
   ['my_messages','SELECT id,conversation_id,body,created_at,seen_at FROM mm_messages WHERE sender_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['my_room_messages','SELECT id,body,created_at FROM mm_room WHERE user_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['favorites','SELECT listing_id,created_at FROM mm_catalog_favorites WHERE user_id=$1 ORDER BY created_at DESC LIMIT 5001'],

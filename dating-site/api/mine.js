@@ -39,9 +39,9 @@ export default async function(req,res){
   }
   return res.status(400).json({error:"Неизвестная операция"});
  }
- const r=await db.query("SELECT id,display_name,headline,description,city,country,category,status,created_at,
+ const r=await db.query(`SELECT id,display_name,headline,description,city,country,category,status,created_at,
   COALESCE((SELECT d.looking_for FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS looking_for,
   COALESCE((SELECT d.interests FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS interests
-  FROM mm_listings WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 100",[owner]);
+  FROM mm_listings WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 100`,[owner]);
  res.json({listings:r.rows});
 }
