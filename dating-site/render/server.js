@@ -62,6 +62,12 @@ app.get('/healthz', async (req, res) => {
   try { await db.query('SELECT 1'); res.json({ ok: true }); }
   catch { res.status(503).json({ ok: false }); }
 });
+app.get('/robots.txt', (req, res, next) => {
+  if (!['murdilimax.com','www.murdilimax.com'].includes(req.hostname)) {
+    return res.type('text/plain').send('User-agent: *\\nDisallow: /\\n');
+  }
+  next();
+});
 app.get('/auth/config', (req, res) => res.json(config));
 app.post('/auth/session', async (req, res) => {
   const token = String(req.body?.idToken || '');
@@ -98,7 +104,7 @@ app.post('/api/presence', userOnly, async (req, res, next) => {
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
-app.get('/api/room', async (req, res, next) => {
+app.get('/api/room', userOnly, async (req, res, next) => {
   try {
     const rows = await db.query('SELECT id,user_id,name,body,EXTRACT(EPOCH FROM created_at)::bigint AS sent FROM mm_room ORDER BY created_at DESC LIMIT 70');
     res.set('Cache-Control', 'no-store');
