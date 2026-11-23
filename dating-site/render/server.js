@@ -62,8 +62,8 @@ app.use(async (req, res, next) => {
   } catch (error) { next(error); }
 });
 const owner = u => !!u && u.verified && u.email.toLowerCase() === 'dshtriters@gmail.com';
-const session = u => u ? {
-  id: u.id, email: u.email, ownerPanel: owner(u), canMessage: true, visible: true
+const session = (u, visible = false) => u ? {
+  id: u.id, email: u.email, ownerPanel: owner(u), canMessage: true, visible
 } : null;
 const userOnly = (req, res, next) => req.user ? next() : res.status(401).json({ error: 'Требуется вход' });
 const safeNext = value => {
@@ -85,10 +85,10 @@ app.post('/auth/session', async (req, res) => {
   const token = String(req.body?.idToken || '');
   const user = await verify(token);
   if (!user) return res.status(401).json({ error: 'Подтвердите email и войдите повторно' });
-  await db.query("INSERT INTO users(id,email,email_verified_at) VALUES ($1,$2,NOW()) ON CONFLICT(id) DO UPDATE SET email=$2,email_verified_at=NOW()", [user.id, user.email]);
+  const memberRecord = await db.query("INSERT INTO users(id,email,email_verified_at) VALUES ($1,$2,NOW()) ON CONFLICT(id) DO UPDATE SET email=$2,email_verified_at=NOW() RETURNING visible", [user.id, user.email]);
   res.cookie('mm_token', token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 55 * 60 * 1000, path: '/' });
   res.set('Cache-Control', 'no-store');
-  res.json({ user: session(user) });
+  res.json({ user: session(user, memberRecord.rows[0]?.visible === true) });
 });
 app.post('/auth/logout', (req, res) => {
   res.clearCookie('mm_token', { path: '/', sameSite: 'lax', secure: true });
@@ -104,9 +104,13 @@ app.get('/login.html', (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.redirect(302, '/login?next=' + encodeURIComponent(safeNext(req.query.next)));
 });
-app.get('/api/session', (req, res) => {
+app.get('/api/session', async (req, res, next) => {
   res.set('Cache-Control', 'no-store');
-  res.json({ user: session(req.user) });
+  if (!req.user) return res.json({ user: null });
+  try {
+    const state = await db.query('SELECT visible FROM users WHERE id=$1', [req.user.id]);
+    return res.json({ user: session(req.user, state.rows[0]?.visible === true) });
+  } catch (error) { next(error); }
 });
 app.get('/media/*', async (req, res, next) => {
   try {
@@ -158,7 +162,7 @@ app.post('/api/room', userOnly, async (req, res, next) => {
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 6, fields: 40, parts: 46 } });
 const adminUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1, fields: 40, parts: 41 } });
 const routes = ['listings', 'listing', 'create', 'mine', 'favorites', 'report', 'chat/list', 'chat/start',
-  'chat/messages', 'chat/block', 'chat/report', 'legacy/claim', 'admin/me', 'admin/listings', 'admin/manual', 'admin/manage', 'admin/reports'];
+  'chat/messages', 'chat/block', 'chat/report', 'legacy/claim', 'claim', 'admin/me', 'admin/listings', 'admin/manual', 'admin/manage', 'admin/reports', 'admin/claim-invite'];
 for (const slug of routes) {
   const mod = await import('../api/' + slug + '.js');
   const acceptsUpload = ['create','admin/manual','admin/manage'].includes(slug);

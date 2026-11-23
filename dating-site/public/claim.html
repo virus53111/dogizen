@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+<title>Подтверждение своей анкеты — MurdiliMax</title>
+<link rel="stylesheet" href="/auth/account.css"><link rel="stylesheet" href="/auth/luxury-auth.css">
+<style>
+body{background:#160e21;color:#fff}
+main{max-width:560px;margin:36px auto;padding:26px}
+p{line-height:1.65}
+.check{display:flex;gap:11px;align-items:flex-start;margin:18px 0}
+.check input{flex:0 0 20px;margin-top:4px}
+#message{min-height:30px;color:#f6d5a8}
+button{min-height:44px}
+#claimSubmit{width:100%}
+</style>
+<script>window.MM_authReady=new Promise(resolve=>window.MM_finishAuth=resolve)</script>
+<script type="module" src="/auth/refresh.js"></script>
+<script defer src="/claim.js"></script>
+</head><body>
+<main>
+<a href="/" class="brand">MurdiliMax</a>
+<h1>Подтвердить свою анкету</h1>
+<p>Если администратор уже разместил твою анкету с твоего разрешения, ты можешь получить управление ею. После подтверждения тебе станут доступны сообщения от посетителей.</p>
+<p>Для безопасности входи <strong>именно с подтверждённым email</strong>, которому администратор направил приглашение. Ссылка действует 7 дней и может быть использована только один раз.</p>
+<div id="loginRequired" hidden>
+<p>Сначала войди в свой аккаунт MurdiliMax. Приглашение останется в этой вкладке.</p>
+<a class="primary" href="/login?next=%2Fclaim.html">Войти или зарегистрироваться</a>
+</div>
+<form id="claimForm" hidden>
+<label class="check"><input type="checkbox" id="adult" required>Подтверждаю, что мне исполнилось 18 лет.</label>
+<label class="check"><input type="checkbox" id="consent" required>Подтверждаю, что это моя настоящая анкета, что я разрешил(а) её публикацию и хочу управлять ею лично.</label>
+<button id="claimSubmit" type="submit" class="primary">Подтвердить и получить анкету</button>
+</form>
+<p id="message" role="status" aria-live="polite"></p>
+<p><a href="/">Вернуться на MurdiliMax</a></p>
+</main></body></html>

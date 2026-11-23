@@ -82,6 +82,42 @@ function actionButton(label,fn,cls=""){
  return b;
 }
 function text(el,content){const node=document.createElement(el);node.textContent=String(content||"");return node}
+function openInvite(item){
+  const panel=$("#claimInvite");
+  $("#inviteProfileName").textContent=item.display_name+" · "+item.city;
+  $("#inviteProfileId").value=item.id;
+  $("#inviteRecipient").value="";
+  $("#inviteLink").value="";
+  $("#inviteOwnerChecked").checked=false;
+  notice("",false,$("#inviteStatus"));
+  panel.hidden=false;
+  panel.scrollIntoView({behavior:"smooth",block:"start"});
+}
+$("#claimInviteForm").addEventListener("submit",async event=>{
+  event.preventDefault();
+  const form=event.currentTarget,btn=$("#createInvite");
+  if(!form.reportValidity())return;
+  btn.disabled=true;notice("Создаём одноразовую ссылку...",false,$("#inviteStatus"));
+  try{
+    const reply=await api("/api/admin/claim-invite",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        profile_id:$("#inviteProfileId").value,
+        email:$("#inviteRecipient").value.trim(),
+        verifiedOwner:$("#inviteOwnerChecked").checked
+      })
+    });
+    $("#inviteLink").value=reply.link;
+    notice("Готово. Передай ссылку ТОЛЬКО этому человеку. Она действует 7 дней, один раз. Новая ссылка отменяет предыдущую.",false,$("#inviteStatus"));
+  }catch(error){notice(error.message,true,$("#inviteStatus"))}
+  finally{btn.disabled=false}
+});
+$("#copyInvite").onclick=async()=>{
+  const field=$("#inviteLink");if(!field.value)return;
+  try{await navigator.clipboard.writeText(field.value);notice("Ссылка скопирована.",false,$("#inviteStatus"))}
+  catch{field.focus();field.select();notice("Скопируй выделенный текст ссылки вручную.",false,$("#inviteStatus"))}
+};
+$("#closeInvite").onclick=()=>{$("#claimInvite").hidden=true;$("#inviteLink").value="";};
 function render(){
  const parent=$("#manualList");parent.replaceChildren();
  if(!current.length){parent.append(text("p","Анкет пока нет. Добавь первую через форму выше."));return}
@@ -98,6 +134,7 @@ function render(){
   const description=text("p",item.description);description.className="mm-card-desc";info.append(description);head.append(info);article.append(head);
   const actions=document.createElement("div");actions.className="mm-card-action";
   actions.append(actionButton("Редактировать",()=>startEdit(item)));
+  actions.append(actionButton("Передать владельцу",()=>openInvite(item)));
   if(item.status==="approved")
    actions.append(actionButton("Скрыть",async()=>{await api("/api/admin/manual",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"hide",id:item.id})});await load()}));
   else

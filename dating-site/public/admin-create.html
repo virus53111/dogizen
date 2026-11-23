@@ -83,6 +83,19 @@ body{background:#120b1c!important;color:#f7eff8!important;font:15px/1.55 Manrope
 </div>
 </form><p class="mm-status" id="formStatus" role="status" aria-live="polite"></p>
 </section>
+<section class="mm-panel" id="claimInvite" hidden aria-label="Приглашение владельца анкеты">
+<h2>Передать анкету настоящему владельцу</h2>
+<p class="mm-muted">Анкета: <strong id="inviteProfileName"></strong>. Приглашение создаётся только после проверки личности и согласия человека. Никому другому не отправляй эту ссылку. После подтверждения входа человек сможет вести переписку от своего имени.</p>
+<form id="claimInviteForm">
+<input type="hidden" id="inviteProfileId">
+<div class="mm-grid">
+<label class="mm-field full">Email владельца анкеты <input type="email" id="inviteRecipient" autocomplete="off" placeholder="Настоящий email, на который человек войдёт" required maxlength="254"></label>
+<label class="mm-check"><input type="checkbox" id="inviteOwnerChecked" required>Я лично проверил, что этот совершеннолетний человек владеет анкетой и разрешил её передачу.</label>
+<div class="mm-actions"><button id="createInvite" type="submit" class="mm-btn primary">Создать одноразовую ссылку</button><button type="button" class="mm-btn" id="closeInvite">Закрыть</button></div>
+<label class="mm-field full">Личная ссылка (появится после создания) <input type="text" id="inviteLink" readonly autocomplete="off" placeholder="Ссылка не создана"></label>
+<div class="mm-actions"><button type="button" class="mm-btn" id="copyInvite">Скопировать ссылку</button></div>
+</div></form><p class="mm-status" id="inviteStatus" role="status" aria-live="polite"></p>
+</section>
 <section class="mm-panel" aria-label="Управление анкетами"><h2>Добавленные мной анкеты</h2><p class="mm-muted">Можно изменить данные, скрыть, снова опубликовать или удалить анкету. Здесь не показываются анкеты, которые участники создали сами.</p><div id="listStatus" class="mm-status" aria-live="polite"></div><div id="manualList" class="mm-list"></div></section>
 </main>
 </div></body></html>

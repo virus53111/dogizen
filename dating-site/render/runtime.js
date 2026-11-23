@@ -6,7 +6,23 @@ import { fileURLToPath } from 'node:url';
 
 const folder = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../migrations');
 const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL, max: 8, connectionTimeoutMillis: 10000 });
-export const db = { query: (sql, args = []) => pool.query(sql, args) };
+export const db = {
+  query: (sql, args = []) => pool.query(sql, args),
+  async transaction(work) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await work((sql, params = []) => client.query(sql, params));
+      await client.query('COMMIT');
+      return result;
+    } catch (error) {
+      try { await client.query('ROLLBACK'); } catch {}
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+};
 export const storage = {
   async put(key, buffer, contentType) {
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(contentType) || !buffer || buffer.length > 4 * 1024 * 1024)
