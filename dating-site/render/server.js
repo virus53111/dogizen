@@ -64,7 +64,7 @@ app.get('/healthz', async (req, res) => {
 });
 app.get('/robots.txt', (req, res, next) => {
   if (!['murdilimax.com','www.murdilimax.com'].includes(req.hostname)) {
-    return res.type('text/plain').send('User-agent: *\\nDisallow: /\\n');
+    return res.type('text/plain').send('User-agent: *\nDisallow: /\n');
   }
   next();
 });

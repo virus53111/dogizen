@@ -24,7 +24,7 @@ async function invoke(handler, req, sql) {
   try { await handler(req,res); return { status:res.statusCode, body:res.result, calls }; }
   finally { db.query=old; }
 }
-const user = id => ({id});
+const user = (id, email='visitor@example.test', verified=true) => ({id,email,verified});
 const approved = {id:PUB,owner_id:'publisher',category:'social',country:'LV',status:'approved'};
 
 test('member may start a free conversation with a published profile', async () => {
@@ -89,21 +89,31 @@ test('normal message is stored without a payment requirement', async () => {
   assert.equal(r.body.message.mine,true);
 });
 
-test('admin API denies any signed-in member not in verified owner allowlist', async () => {
-  const r=await invoke(adminMe,{method:'GET',user:user('visitor')},(q, params)=>{
+test('admin API denies a different email even if present in the database', async () => {
+  const r=await invoke(adminMe,{method:'GET',user:user('visitor','somebody@example.test')},()=>({rows:[{ok:1}]}));
+  assert.equal(r.status,403);
+  assert.equal(r.calls.length,0);
+});
+
+test('admin API denies an unverified owner email', async () => {
+  const r=await invoke(adminMe,{method:'GET',user:user('visitor','dshtriters@gmail.com',false)},()=>({rows:[{ok:1}]}));
+  assert.equal(r.status,403);
+  assert.equal(r.calls.length,0);
+});
+
+test('admin API denies the verified owner absent from the allowlist', async () => {
+  const r=await invoke(adminMe,{method:'GET',user:user('real-owner-id','dshtriters@gmail.com')},q=>{
     assert.ok(q.includes('mm_admin_allowlist'));
     assert.ok(q.includes('email_verified_at IS NOT NULL'));
-    assert.deepEqual(params,['visitor']);
     return {rows:[]};
   });
   assert.equal(r.status,403);
-  assert.deepEqual(r.body,{admin:false});
 });
 
-test('admin API authorizes only a verified allowlist match', async () => {
-  const r=await invoke(adminMe,{method:'GET',user:user('real-owner-firebase-id')},q=>{
+test('admin API permits only verified owner with database allowlist match', async () => {
+  const r=await invoke(adminMe,{method:'GET',user:user('real-owner-id','dshtriters@gmail.com')},q=>{
     assert.ok(q.includes('mm_admin_allowlist'));
-    return {rows:[{'?column?':1}]};
+    return {rows:[{ok:1}]};
   });
   assert.equal(r.status,200);
   assert.deepEqual(r.body,{admin:true});

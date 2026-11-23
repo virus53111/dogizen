@@ -3,6 +3,7 @@ export const access="user";
 export const methods=["GET","POST"];
 export default async function(req,res){
  res.setHeader("Cache-Control","no-store");
+ if (!req.user?.verified || req.user.email?.toLowerCase() !== 'dshtriters@gmail.com') return res.status(403).json({error:'Доступ разрешён только подтверждённому администратору'});
  // Server-side verified email ownership: never trust an email passed by the browser.
  const owner=await db.query("SELECT 1 FROM users AS u JOIN mm_admin_allowlist AS allowed ON LOWER(u.email)=allowed.email WHERE u.id=$1 AND u.email_verified_at IS NOT NULL LIMIT 1",[req.user.id]);
  if(!owner.rows.length)return res.status(403).json({error:"Админка доступна только владельцу с подтверждённым email."});
