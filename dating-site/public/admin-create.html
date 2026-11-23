@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive"><meta name="theme-color" content="#120b1c">
+<title>Добавить анкету — MurdiliMax</title>
+<link rel="stylesheet" href="/luxury.css">
+<style>
+body{background:#120b1c!important;color:#f7eff8!important;font:15px/1.55 Manrope,system-ui,Arial,sans-serif;min-height:100vh;margin:0}
+.mm-admin{max-width:1000px;margin:auto;padding:20px 16px 72px}
+.mm-admin-top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:14px 0 22px;border-bottom:1px solid #503657}
+.mm-admin-top a{color:#f3c47c;text-decoration:none;font-weight:700}
+.mm-admin-top strong{color:#fff;font-size:21px}
+.mm-admin h1{font-size:clamp(26px,5vw,41px);color:#fff3f2;margin:24px 0 8px}
+.mm-admin h2{color:#fff3f2;font-size:22px;margin:0 0 8px}
+.mm-muted{color:#e0c9df;font-size:14px;line-height:1.65}
+.mm-panel{background:linear-gradient(145deg,rgba(89,41,99,.37),rgba(30,17,41,.88));border:1px solid #67466a;border-radius:17px;padding:22px;margin:22px 0;box-shadow:0 16px 46px #06040a3d}
+.mm-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px 17px}
+.mm-field{display:grid;gap:5px;color:#ffe6f3;font-weight:600;font-size:13px}
+.mm-field.full,.mm-check,.mm-actions{grid-column:1/-1}
+.mm-field input,.mm-field select,.mm-field textarea{width:100%;background:#24172d;color:#fff;border:1px solid #8c678c;border-radius:10px;padding:12px 13px;font:inherit;min-height:46px;box-sizing:border-box}
+.mm-field textarea{resize:vertical;min-height:106px}
+.mm-field input:focus,.mm-field textarea:focus,.mm-field select:focus{outline:2px solid #e8b978;outline-offset:1px}
+.mm-field input[type=file]{padding:10px;min-height:49px}
+.mm-field small{font-weight:400;color:#d3bfd4}
+.mm-check{display:flex;gap:11px;align-items:flex-start;background:#39243f;padding:13px;border:1px solid #775376;border-radius:12px;font-size:14px;color:#f4e5f1;cursor:pointer}
+.mm-check input{width:19px;height:19px;flex:none;accent-color:#dcb171;margin-top:2px}
+.mm-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:5px}
+.mm-btn{border:1px solid #bb8dbe;border-radius:10px;background:#33233b;color:#fff;padding:11px 17px;font:700 14px/1.25 inherit;cursor:pointer;min-height:44px}
+.mm-btn.primary{background:linear-gradient(125deg,#f1d08d,#d3a369);border-color:#f0c989;color:#241323}
+.mm-btn.warning{border-color:#d191af}
+.mm-btn:disabled{opacity:.55;cursor:wait}
+.mm-status{font-size:14px;min-height:24px;color:#f9d393}
+.mm-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin:18px 0}
+.mm-card{background:#291a34;border:1px solid #674365;border-radius:14px;overflow:hidden}
+.mm-card-head{display:flex;gap:13px;align-items:start;padding:13px}
+.mm-card-photo{width:86px;height:110px;border-radius:9px;object-fit:cover;background:#4b3653;flex:none}
+.mm-card-name{font-size:18px;font-weight:800;color:#ffe4ec;margin:0}
+.mm-card-meta{color:#dfc2de;font-size:13px;margin:5px 0}
+.mm-card-desc{margin:8px 0;font-size:13px;color:#e7d3e6;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.mm-card-action{border-top:1px solid #5c3d5e;padding:10px;display:flex;flex-wrap:wrap;gap:8px}
+.mm-card-action .mm-btn{padding:8px 10px;min-height:38px;font-size:12px}
+.mm-card-tag{display:inline-block;background:#534052;color:#ffe3be;border-radius:7px;padding:2px 8px;font-size:12px}
+.mm-locked{background:#35213d;border:1px solid #8b5372;border-radius:14px;padding:26px;margin-top:30px}
+#photoPreview{max-height:145px;max-width:130px;object-fit:cover;border-radius:11px;display:none}
+#photoPreview[src]{display:block}
+@media(max-width:650px){.mm-grid{grid-template-columns:1fr}.mm-panel{padding:15px}.mm-admin{padding:12px 13px 60px}}
+</style>
+<script>window.MM_authReady=new Promise(resolve=>window.MM_finishAuth=resolve)</script>
+<script type="module" src="/auth/refresh.js"></script>
+<script defer src="/admin-manual.js"></script>
+</head>
+<body>
+<div class="mm-admin">
+<header class="mm-admin-top"><strong>MurdiliMax <span style="color:#e1b77a">/ Админка</span></strong><div><a href="/admin.html">← Панель модерации</a> · <a href="/">Открыть сайт</a></div></header>
+<div id="accessGate" class="mm-locked" role="status"><h2>Проверяем доступ</h2><p class="mm-muted">Только подтверждённый администратор может управлять анкетами.</p></div>
+<main id="workspace" hidden>
+<h1>Добавить анкету человека</h1>
+<p class="mm-muted">Можешь добавлять реальные анкеты вручную, даже если человек ещё не зарегистрировался. В общий каталог попадут имя, возраст, город, описание и фото. Переписка будет недоступна, пока владелец не подтвердит свой аккаунт. Согласие человека на публикацию обязательно.</p>
+<section class="mm-panel" id="formPanel" aria-label="Форма анкеты">
+<h2 id="formTitle">Новая анкета</h2>
+<form id="manualForm" autocomplete="off">
+<input type="hidden" name="action" value="create"><input type="hidden" name="id" value="">
+<div class="mm-grid">
+<label class="mm-field">Имя или псевдоним <input name="display_name" maxlength="65" placeholder="Например, Анна" required></label>
+<label class="mm-field">Возраст, 18–85 <input name="age" type="number" min="18" max="85" inputmode="numeric" required></label>
+<label class="mm-field">Страна <select name="country" required>
+<option value="LV">Латвия</option><option value="DE">Германия</option><option value="NO">Норвегия</option><option value="LT">Литва</option><option value="EE">Эстония</option><option value="SE">Швеция</option><option value="FI">Финляндия</option><option value="PL">Польша</option><option value="NL">Нидерланды</option><option value="FR">Франция</option><option value="ES">Испания</option><option value="IT">Италия</option><option value="AT">Австрия</option><option value="CZ">Чехия</option><option value="GB">Великобритания</option><option value="CH">Швейцария</option><option value="DK">Дания</option><option value="BE">Бельгия</option><option value="PT">Португалия</option><option value="IE">Ирландия</option>
+</select></label>
+<label class="mm-field">Город <input name="city" maxlength="100" placeholder="Рига" required></label>
+<label class="mm-field">Район (необязательно) <input name="district" maxlength="100" placeholder="Центр"></label>
+<label class="mm-field">Тип знакомства <select name="category">
+<option value="social">Общение и дружба</option><option value="dating">Знакомства</option><option value="women-men">Женщина ищет мужчину</option><option value="men-women">Мужчина ищет женщину</option><option value="women-women">Женщина ищет женщину</option><option value="men-men">Мужчина ищет мужчину</option><option value="women-serious">Женщина — серьёзные отношения</option><option value="men-serious">Мужчина — серьёзные отношения</option><option value="couples">Пары</option><option value="trans-dating">Транс-знакомства</option><option value="events">Совместные события</option>
+</select></label>
+<label class="mm-field full">Короткий заголовок <input name="headline" maxlength="120" placeholder="Давай знакомиться"></label>
+<label class="mm-field full">Описание человека <textarea name="description" maxlength="1600" minlength="20" placeholder="Чем увлекается, кого хочет встретить, что любит..." required></textarea></label>
+<label class="mm-field">Языки <input name="languages" maxlength="200" placeholder="Русский, латышский"></label>
+<label class="mm-field">Фото человека <input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp" required><small>JPG, PNG или WebP · до 4 МБ. При редактировании фото менять необязательно.</small><img id="photoPreview" alt="Предпросмотр фото"></label>
+<label class="mm-field full">Как получено согласие на публикацию? (видно только админу)
+<textarea name="consent_note" minlength="10" maxlength="1000" placeholder="Например: получил согласие владельца анкеты в переписке 23.11.2026" required></textarea></label>
+<label class="mm-check"><input type="checkbox" name="adultConfirmed" required>Подтверждаю, что человеку исполнилось 18 лет.</label>
+<label class="mm-check"><input type="checkbox" name="consentConfirmed" required>Подтверждаю, что этот человек разрешил разместить сведения и именно эту фотографию на MurdiliMax.</label>
+<div class="mm-actions"><button class="mm-btn primary" id="submitBtn" type="submit">Опубликовать анкету</button><button class="mm-btn" id="cancelEdit" type="button" hidden>Отменить редактирование</button><a href="/#catalog" style="color:#edc995">Посмотреть каталог</a></div>
+</div>
+</form><p class="mm-status" id="formStatus" role="status" aria-live="polite"></p>
+</section>
+<section class="mm-panel" aria-label="Управление анкетами"><h2>Добавленные мной анкеты</h2><p class="mm-muted">Можно изменить данные, скрыть, снова опубликовать или удалить анкету. Здесь не показываются анкеты, которые участники создали сами.</p><div id="listStatus" class="mm-status" aria-live="polite"></div><div id="manualList" class="mm-list"></div></section>
+</main>
+</div></body></html>
