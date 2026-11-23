@@ -502,3 +502,43 @@ body > main:has(> .kicker) h2{color:#fbe1f1;font:600 29px/1.2 var(--display)}
 body > main:has(> .kicker) p,
 body > main:has(> .kicker) li{color:#d5c0dc;font-size:14px;line-height:1.8}
 body > main:has(> .kicker) a{color:#ffce9c}
+
+/* Cross-device audit: prevent horizontal overflow while keeping dialogs operable. */
+html,body{max-width:100%;overflow-x:clip}
+img,video,canvas{max-width:100%}
+.container,.discover,.directory-search,.result-bar,.footer-content{min-width:0}
+.profile-card,.card-body,.profile-actions,.profile-modal-geo,.detail-info{min-width:0}
+.profile-card,.card-desc,.ad-detail-head,.profile-modal-geo,.profile-actions,.detail-info,.compliance-note{overflow-wrap:anywhere}
+.modal{box-sizing:border-box;max-width:calc(100vw - 22px)!important;max-height:calc(100dvh - 22px)!important;overflow-y:auto;overscroll-behavior:contain}
+.modal img,.gallery-main img{max-width:100%;height:auto}
+.profile-actions{display:flex;flex-wrap:wrap;gap:10px}
+.profile-actions .btn{max-width:100%;min-width:0;white-space:normal}
+.modal input,.modal select,.modal textarea{box-sizing:border-box;max-width:100%;min-width:0}
+.modal input[type=file]{width:100%;max-width:100%;font-size:13px;white-space:normal}
+#profileContent,.profile-modal-geo,.ad-detail-head,.detail-info{max-width:100%;min-width:0}
+#galleryMain{overflow:hidden;max-width:100%;border-radius:16px}
+#galleryMain img{width:100%;height:auto;max-height:min(52vh,450px);object-fit:contain}
+.gallery-thumbs{max-width:100%;overflow-x:auto}
+@media(max-width:780px){
+ .nav.container{min-width:0}
+ .nav-actions{min-width:0;flex-wrap:wrap;row-gap:4px}
+ .directory-search .search-box{max-width:100%;min-width:0}
+ .directory-search .search-fields{min-width:0}
+ .profiles-grid,#cards{min-width:0}
+ .footer-links{flex-wrap:wrap}
+}
+@media(max-width:540px){
+ .nav-wrap{min-height:64px}
+ .nav.container{display:flex;flex-wrap:wrap;justify-content:space-between}
+ .nav-actions{flex:1;justify-content:flex-end}
+ .modal{padding:19px 15px!important;border-radius:16px!important}
+ .modal h2{font-size:clamp(23px,7vw,30px)}
+ .profile-actions .btn{flex:1 1 125px}
+ .gallery-main img{max-height:42vh}
+ .category-groups,.profile-grid{min-width:0}
+}
+@media(max-width:360px){
+ .nav-actions .nav-shortcut{padding-inline:2px}
+ .lang-select{max-width:55px}
+ .card-body{padding:8px!important}
+}
