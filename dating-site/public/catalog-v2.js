@@ -35,7 +35,7 @@ window.mmOpenProfile=function(id){const p=state.visible.find(x=>x.id===id);/* No
 url.searchParams.set("listing",id);
 history.replaceState(history.state,"",url);
 content.textContent=t("loading");if(!modal.open)modal.showModal();
-(async()=>{try{const r=await fetch("/api/listing?id="+encodeURIComponent(id));if(r.status===404)throw Error(({ru:"Объявление недоступно",en:"Listing unavailable",de:"Anzeige nicht verfügbar",lv:"Sludinājums nav pieejams"})[state.lang] || "Listing unavailable");
+(async()=>{try{const r=await fetch("/api/listing?id="+encodeURIComponent(id));if(r.status===404)throw Error(({ru:"Объявление недоступно",en:"Listing unavailable",de:"Anzeige nicht verfügbar",lv:"Sludinājums nav pieejams",lt:"Skelbimas nepasiekiamas",et:"Kuulutus pole saadaval"})[state.lang] || "Listing unavailable");
 if(!r.ok)throw Error(t("error"));const data=await r.json(),item=data.listing;const canMessage=item.messaging_enabled!==false;const gallery=(data.photos||[]).map(x=>x.photo_url);if(item.avatar_url&&!gallery.includes(item.avatar_url))gallery.unshift(item.avatar_url);const first=gallery[0]||"";const cover=first?'<img src="'+escapeHTML(first)+'" alt="'+escapeHTML(item.display_name)+'">':'<span style="font-size:80px">✿</span>';const goals={friendship:"goalFriendship",dating:"goalDating",relationship:"goalRelationship",activities:"goalActivities",open:"goalOpen"};
 const goalName=goals[item.looking_for] ? t(goals[item.looking_for]) : "";
 const extraDetails=(goalName ? '<span>🎯 '+escapeHTML(t("lookingFor"))+': '+escapeHTML(goalName)+'</span>' : '')+
@@ -77,7 +77,9 @@ renderExtraLanguage();
 }
 window.mmEnhanceMine=function(listings){
  const rows=[...document.querySelectorAll("#myContent .my-item")];
- const labels=state.lang==="ru"?["Изменить","Удалить анкету","Сохранить","Удалить анкету навсегда? Она исчезнет из каталога и связанные с ней переписки будут удалены. Это нельзя отменить.","Редактирование объявления"]:
+ const labels=state.lang==="lt"?["Redaguoti","Ištrinti anketą","Išsaugoti","Ištrinti anketą visam laikui? Ji dings iš katalogo, o susiję pokalbiai bus ištrinti. To atšaukti negalima.","Redaguoti skelbimą"]:
+ state.lang==="et"?["Muuda","Kustuta profiil","Salvesta","Kustutada profiil jäädavalt? See kaob kataloogist ja seotud vestlused kustutatakse. Seda ei saa tagasi võtta.","Muuda kuulutust"]:
+ state.lang==="ru"?["Изменить","Удалить анкету","Сохранить","Удалить анкету навсегда? Она исчезнет из каталога и связанные с ней переписки будут удалены. Это нельзя отменить.","Редактирование объявления"]:
  state.lang==="de"?["Bearbeiten","Profil löschen","Speichern","Profil endgültig löschen? Es verschwindet aus dem Katalog und die zugehörigen Nachrichten werden gelöscht. Dies kann nicht rückgängig gemacht werden.","Anzeige bearbeiten"]:
  state.lang==="lv"?["Rediģēt","Dzēst profilu","Saglabāt","Neatgriezeniski dzēst šo profilu? Tas pazudīs no kataloga, un saistītās sarakstes tiks dzēstas. To nevar atsaukt.","Rediģēt sludinājumu"]:["Edit","Delete profile","Save","Permanently delete this profile? It will disappear from the catalogue and its conversations will be deleted. This cannot be undone.","Edit listing"];
  rows.forEach((row,i)=>{
