@@ -722,3 +722,5 @@ html[data-mm-theme="light"] .member-presence.is-online{color:#216b40!important}
  #messagesDialog .mm-photo-permission{padding:4px 8px}
  #messagesDialog .modal-x{min-width:40px;min-height:40px;top:8px;right:8px}
 }
+
+.mm-nearby-controls{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:10px 0}.mm-nearby-controls small{flex-basis:100%;color:var(--muted)}.mm-nearby-controls select{min-height:44px;color:var(--ink);background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:8px}.mm-nearby-controls .btn{min-height:44px;white-space:normal}.mm-nearby-controls [hidden]{display:none!important}

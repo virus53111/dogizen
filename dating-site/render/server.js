@@ -1,4 +1,5 @@
 import express from 'express';
+import { notifyMessage } from './push.js';
 import { onlineCount, recentPhotos } from './catalog-extras.js';
 import { createHash } from 'node:crypto';
 import { getCookie, rateLimit } from './security.js';
@@ -22,7 +23,7 @@ const writeRate = rateLimit({ limit: 100, windowMs: 60 * 1000 });
 app.use((req, res, next) => {
   res.set('X-Frame-Options', 'DENY');
   res.set('Content-Security-Policy', "frame-ancestors 'none'; base-uri 'self'; object-src 'none'");
-  res.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  res.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(self)');
   if (req.secure && ['murdilimax.com', 'www.murdilimax.com'].includes(req.hostname))
     res.set('Strict-Transport-Security', 'max-age=15552000');
   res.set('X-Content-Type-Options', 'nosniff');
@@ -92,7 +93,8 @@ app.post('/auth/session', async (req, res) => {
   res.set('Cache-Control', 'no-store');
   res.json({ user: session(user, memberRecord.rows[0]?.visible === true) });
 });
-app.post('/auth/logout', (req, res) => {
+app.post('/auth/logout', async (req, res, next) => {
+  try { if(req.user&&typeof req.body?.push_endpoint==='string')await db.query('DELETE FROM mm_push_subscriptions WHERE user_id=$1 AND endpoint=$2',[req.user.id,req.body.push_endpoint]); } catch(e){return next(e)}
   res.clearCookie('mm_token', { path: '/', sameSite: 'lax', secure: true });
   res.json({ ok: true });
 });
@@ -167,7 +169,7 @@ app.post('/api/room', userOnly, async (req, res, next) => {
 });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 6, fields: 40, parts: 46 } });
 const adminUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1, fields: 40, parts: 41 } });
-const routes = ['locations', 'listings', 'listing', 'profile-community', 'member-activity', 'profile-stats', 'recommendations', 'create', 'mine', 'favorites', 'likes', 'report', 'chat/list', 'chat/start',
+const routes = ['locations', 'listings', 'listing', 'profile-community', 'member-activity', 'profile-stats', 'recommendations', 'push', 'create', 'mine', 'favorites', 'likes', 'report', 'chat/list', 'chat/start',
   'chat/messages', 'chat/photos', 'chat/block', 'chat/report', 'legacy/claim', 'claim', 'privacy', 'privacy/export', 'admin/me', 'admin/overview', 'admin/listings', 'admin/manual', 'admin/manage', 'admin/reports', 'admin/claim-invite', 'admin/privacy-requests'];
 for (const slug of routes) {
   const mod = await import('../api/' + slug + '.js');
@@ -186,7 +188,12 @@ for (const slug of routes) {
     if (acceptsUpload) req.files = (req.files || []).map(f => ({
       field: f.fieldname, filename: f.originalname, contentType: f.mimetype, buffer: f.buffer
     }));
-    try { return await mod.default(req, res); } catch (e) { next(e); }
+    try {
+      await mod.default(req, res);
+      if(req.method==='POST'&&res.statusCode===200&&req.user&&((slug==='chat/messages'&&(!req.body?.action||req.body.action==='send'))||(slug==='chat/photos'&&req.body?.action==='send'))) {
+        await notifyMessage(db,req.body.conversation_id,req.user.id).catch(()=>console.warn('Web Push delivery unavailable'));
+      }
+    } catch (e) { next(e); }
   });
 }
 app.get('/api/online-count', async (req,res,next)=> {

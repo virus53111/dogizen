@@ -177,10 +177,11 @@ async function loadListings(background=false){
  state.loading=true;state.loadError="";
  if(background!==true){state.real=[];state.totalReal=0;render()}
  const query=new URLSearchParams();
- if(state.country)query.set("country",state.country);
- if(state.city)query.set("city",state.city);
- if(state.city && $("#radiusFilter").value)query.set("radius",$("#radiusFilter").value);
- if(state.district)query.set("district",state.district);
+ if(window.mmNearby){query.set("near_country",window.mmNearby.country);query.set("near_city",window.mmNearby.city);query.set("near_radius",String(window.mmNearby.radius));}
+ if(state.country&&!window.mmNearby)query.set("country",state.country);
+ if(state.city&&!window.mmNearby)query.set("city",state.city);
+ if(!window.mmNearby&&state.city && $("#radiusFilter").value)query.set("radius",$("#radiusFilter").value);
+ if(state.district&&!window.mmNearby)query.set("district",state.district);
  if(state.category)query.set("category",state.category);
  if(state.q)query.set("q",state.q);
  const extra=window.mmExtra||{};
@@ -273,10 +274,10 @@ function bind(){
  $("#enterAge").onclick=()=>{localStorage.setItem("mm-over18","yes");$("#ageGate").classList.add("dismissed")};
  $("#leaveAge").onclick=()=>location.href="https://www.google.com";
  $("#language").addEventListener("change",e=>{const dest=new URL(location.href);dest.pathname=e.target.value==="ru"?"/":"/"+e.target.value+"/";location.assign(dest)});
- $("#radiusFilter").onchange=()=>{state.district="";fillDistricts();syncRadius();if(window.mmExtra)window.mmExtra.page=1;loadListings()};
- $("#countryFilter").onchange=e=>{$("#radiusFilter").value="";state.country=e.target.value;state.city="";state.district="";if(window.mmExtra)window.mmExtra.page=1;fillCities(false);loadListings()};
- $("#cityFilter").onchange=e=>{$("#radiusFilter").value="";state.city=e.target.value;state.country=e.target.selectedOptions[0]?.dataset.country||state.country;$("#countryFilter").value=state.country;state.district="";if(window.mmExtra)window.mmExtra.page=1;fillCities(false);loadListings()};
- $("#districtFilter").onchange=e=>{state.district=e.target.value;if(window.mmExtra)window.mmExtra.page=1;loadListings()};
+ $("#radiusFilter").onchange=()=>{window.mmClearNearby?.();state.district="";fillDistricts();syncRadius();if(window.mmExtra)window.mmExtra.page=1;loadListings()};
+ $("#countryFilter").onchange=e=>{window.mmClearNearby?.();$("#radiusFilter").value="";state.country=e.target.value;state.city="";state.district="";if(window.mmExtra)window.mmExtra.page=1;fillCities(false);loadListings()};
+ $("#cityFilter").onchange=e=>{window.mmClearNearby?.();$("#radiusFilter").value="";state.city=e.target.value;state.country=e.target.selectedOptions[0]?.dataset.country||state.country;$("#countryFilter").value=state.country;state.district="";if(window.mmExtra)window.mmExtra.page=1;fillCities(false);loadListings()};
+ $("#districtFilter").onchange=e=>{window.mmClearNearby?.();state.district=e.target.value;if(window.mmExtra)window.mmExtra.page=1;loadListings()};
  $("#categoryFilter").onchange=e=>{state.category=e.target.value;if(window.mmExtra)window.mmExtra.page=1;loadListings()};
  $("#postCountry").onchange=()=>fillCities(true);
  /* Category chips use one delegated click handler in catalog-v2.js. */
@@ -288,7 +289,7 @@ function bind(){
    else render();
  }
  $("#gridViewBtn").onclick=()=>switchView("grid");$("#mapViewBtn").onclick=()=>switchView("map");
- $("#resetFilters").onclick=()=>{state.country="";state.city="";state.district="";state.category="";state.q="";state.mode="grid";window.resetAdvancedFilters();$("#keyword").value="";translate();loadListings()};
+ $("#resetFilters").onclick=()=>{window.mmClearNearby?.();state.country="";state.city="";state.district="";state.category="";state.q="";state.mode="grid";window.resetAdvancedFilters();$("#keyword").value="";translate();loadListings()};
  $("#cards").onclick=e=>{const m=e.target.closest("[data-message]");if(m){e.stopPropagation();window.mmStartChat?.(m.dataset.message);return}const f=e.target.closest("[data-fav]");if(f){e.stopPropagation();toggleFav(f.dataset.fav);return}const c=e.target.closest("[data-id]");if(c)showProfile(c.dataset.id)};
  $("#cards").onkeydown=e=>{if(e.key==="Enter"&&e.target.classList.contains("profile-card"))showProfile(e.target.dataset.id)};
  ["postBtn","ctaPost","emptyCreateProfile"].forEach(x=>$("#"+x).onclick=openPost);$("#myAdsBtn").onclick=showMy;
