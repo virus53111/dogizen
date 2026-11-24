@@ -47,6 +47,6 @@ window.mmMountPush=async root=>{
   }catch{note.textContent=W(10)}finally{toggle.disabled=false;toggle.textContent=enabled?W(7):W(6)}
  });
  box.append(toggle,hint,note);root.prepend(box);toggle.disabled=true;
- try{if('serviceWorker' in navigator&&'PushManager' in window){reg=await navigator.serviceWorker.register('/sw.js');const s=await reg.pushManager.getSubscription();if(s){const d=await call({action:'status',endpoint:s.endpoint});enabled=d.enabled&&Notification.permission==='granted';if(enabled){toggle.textContent=W(7);note.textContent=W(8)}}}else note.textContent=W(9)}catch{}finally{toggle.disabled=false}
+ try{if('serviceWorker' in navigator&&'PushManager' in window){reg=await navigator.serviceWorker.register('/sw.js');const s=await reg.pushManager.getSubscription();if(s){const d=await call({action:'status',endpoint:s.endpoint});enabled=d.enabled===true;if(enabled){toggle.textContent=W(7);note.textContent=W(8)}}}else note.textContent=W(9)}catch{}finally{toggle.disabled=false}
 };
 })();
