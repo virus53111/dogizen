@@ -50,6 +50,12 @@ test('normal adult dating text in four European languages is automatically appro
    assert.deepEqual(decision,{status:'approved',signals:[]},message);
  }
 });
+test('neutral support relationship ads publish automatically, without approving the entire category manually',()=>{
+ const p=choosePublication({category:'support',headline:'Ищу девушку',description:'Ищу девушку для приятного общения и долгих отношений.'});
+ assert.equal(p.status,'approved');
+ const suspicious=choosePublication({category:'support',description:'Платные встречи и интимные услуги'});
+ assert.equal(suspicious.status,'pending');
+});
 test('suspicious phone/contact, paid sexual solicitation, minors, duplicate and special categories require review',()=>{
  const flags=[
   {category:'dating',description:'Telegram: @contactname_82 для встреч',signal:'external_contact'},
@@ -58,7 +64,7 @@ test('suspicious phone/contact, paid sexual solicitation, minors, duplicate and 
   {category:'dating',description:'Услуги эскорт за деньги.',signal:'possible_paid_service'},
   {category:'dating',description:'Ищу девушку 17 лет.',signal:'possible_minor'},
   {category:'dating',description:'Прогулки и общение',isDuplicate:true,signal:'duplicate_post'},
-  {category:'support',description:'Ищу женщину, знакомство',signal:'sensitive_category'},
+
   {category:'events',description:'Приглашаю взрослых на событие',signal:'sensitive_category'}
  ];
  for(const {signal,...args} of flags){

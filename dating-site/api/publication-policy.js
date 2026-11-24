@@ -1,7 +1,7 @@
 // Conservative, deterministic triage for newly submitted 18+ dating profiles.
 // This is NOT photo/identity/age verification and cannot guarantee safe content.
 // Uncertain cases go to the existing human moderation queue.
-const REVIEW_CATEGORIES=new Set(['support','events']);
+const REVIEW_CATEGORIES=new Set(['events']);
 const bannedServices=/(?:эскорт|проститу|бордел|платн\w*\s+(?:интим|секс|встреч)|интимн\w*\s+услуг|секс\s+за\s+деньги|услуг\w*\s+за\s+деньги|(?:escort|prostitut\w*|paid\s+sex|sex\s+for\s+money|sexual\s+services?|incall|outcall|pay\s*per\s*meet|pay\s*for\s*meet|pay\s*for\s*sex)\b|(?:sexuelle\s+dienstleistung|bezahlter\s+sex|prostitution)\b|(?:seksuāl\w*\s+pakalpojum|prostitūc))/iu;
 const minors=/(?:несовершеннолет|малолетн|школьниц|школьник|underage|schoolgirl|schoolboy|nepilngadīg|minderjährig|(?:^|\D)(?:1[0-7])\s*(?:лет|год(?:а)?|years?\s*old|y\/?o|yo|jahre|gadi)(?=$|[\s.,!?;:]))/iu;
 const external=/(?:https?:\/\/|www\.|(?:t\.me|wa\.me|telegram\.me|onlyfans\.com|bit\.ly)\/|[\w.+-]+@[\w.-]+\.[a-z]{2,}|@\w{5,})/iu;
