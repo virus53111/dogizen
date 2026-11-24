@@ -542,3 +542,8 @@ img,video,canvas{max-width:100%}
  .lang-select{max-width:55px}
  .card-body{padding:8px!important}
 }
+
+.my-city{display:flex;align-items:center;flex-wrap:wrap;gap:.5rem;margin:.75rem 0}
+.my-city button[hidden]{display:none}
+.my-city button:disabled{opacity:.55}
+.my-city-new{display:block;font-weight:600;margin-bottom:.35rem}
