@@ -1,4 +1,5 @@
 import { db } from "hatchable";
+import { cityNamesInRange } from "../render/latvia-cities.js";
 export const access="public";
 export const methods=["GET"];
 export default async function(req,res){
@@ -8,7 +9,8 @@ export default async function(req,res){
  const filters=["status = 'approved'"], values=[];
  function add(fragment,val){values.push(val);filters.push(fragment.replace("?", "$"+values.length))}
  if(country)add("country = ?",country);
- if(city)add("city = ?",city);
+ if(city && country==="LV")add("city = ANY(?::text[])",cityNamesInRange(city,q.radius));
+ else if(city)add("city = ?",city);
  if(district)add("district = ?",district);
  if(category)add("category = ?",category);
  if(search){values.push("%"+search+"%");filters.push("(display_name ILIKE $"+values.length+" OR headline ILIKE $"+values.length+" OR description ILIKE $"+values.length+" OR EXISTS (SELECT 1 FROM mm_member_profile_details d WHERE d.listing_id=mm_public_listings.id AND d.interests ILIKE $"+values.length+"))")}

@@ -46,7 +46,7 @@ const messageButton=document.getElementById("messageThis");if(canMessage){messag
 if(canMessage&&window.mmMountLike)window.mmMountLike(item.id,content);
 document.getElementById("reportThis").onclick=()=>{modal.close();document.getElementById("reportForm").elements.listing_id.value=item.id;document.getElementById("reportModal").showModal()};
 }catch(err){content.innerHTML='<p>'+escapeHTML(err.message)+'</p>'}})();return true};
-window.resetAdvancedFilters=function(){window.mmExtra={min_age:"",max_age:"",sort:"newest",language:"",photo:"",commercial:"",featured:"",page:1};document.getElementById("minAge").value="18";document.getElementById("maxAge").value="85";document.getElementById("sortFilter").value="newest";document.getElementById("photoOnly").checked=false;document.getElementById("onlineOnly").checked=false;document.getElementById("spokenLanguageFilter").value="";};
+window.resetAdvancedFilters=function(){document.getElementById("radiusFilter").value="";syncRadius();window.mmExtra={min_age:"",max_age:"",sort:"newest",language:"",photo:"",commercial:"",featured:"",page:1};document.getElementById("minAge").value="18";document.getElementById("maxAge").value="85";document.getElementById("sortFilter").value="newest";document.getElementById("photoOnly").checked=false;document.getElementById("onlineOnly").checked=false;document.getElementById("spokenLanguageFilter").value="";};
 function reload(){window.mmExtra.page=1;loadListings()}
 function bind(){
 document.getElementById("galleryViewBtn").onclick=()=>{state.mode="gallery";window.mmExtra.page=1;loadListings()};

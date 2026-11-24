@@ -189,7 +189,9 @@ for (const slug of routes) {
   });
 }
 app.get('/', (req, res) => res.sendFile(path.join(root, 'public/index.html')));
-app.use(express.static(path.join(root, 'public'), { maxAge: '1h' }));
+app.use(express.static(path.join(root, 'public'), { maxAge: '1h', setHeaders(res, file) {
+  if (file.endsWith('.html') || file.endsWith('.js')) res.set('Cache-Control', 'no-cache');
+} }));
 app.use((req, res) => res.status(404).json({ error: 'Страница не найдена' }));
 app.use((err, req, res, next) => {
   console.error(err);

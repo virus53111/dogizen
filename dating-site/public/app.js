@@ -31,6 +31,8 @@ const escapeHTML=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 const state={lang:document.documentElement.lang||"ru",country:"",city:"",district:"",category:"",q:"",mode:"grid",real:[],visible:[],map:null,markers:null,user:null};
 const t=k=>(translations[state.lang]||translations.ru)[k]||translations.ru[k]||k;
 const publicCities = new Map();
+const radiusCities = new Set();
+let countsReady = false;
 const balticCityNames = {
  "Рига":"Rīga", "Даугавпилс":"Daugavpils", "Лиепая":"Liepāja", "Юрмала":"Jūrmala",
  "Елгава":"Jelgava", "Резекне":"Rēzekne", "Вентспилс":"Ventspils", "Валмиера":"Valmiera",
@@ -68,27 +70,47 @@ function fillCities(forPost){
  el.replaceChildren();
  if(!forPost)el.append(option("",t("allCities")));
  for(const code of country?[country]:countryCodes()){
-  const cities=new Set([...Object.keys(GEOS[code]?.cities||{}),...(publicCities.get(code)||[])]);
+  const cities=new Set([...Object.keys(GEOS[code]?.cities||{}),...(publicCities.get(code)?.keys()||[])]);
   const group=country?el:document.createElement("optgroup");
   if(!country){group.label=countryLabel(code);el.append(group)}
-  for(const city of [...cities].sort((a,b)=>cityLabel(a).localeCompare(cityLabel(b),state.lang))){
-   const item=option(city,cityLabel(city));
+  const counts=publicCities.get(code);
+  const ordered=[...cities].sort((a,b)=>{
+   if(!forPost && countsReady){
+    const activeFirst=Number(!!counts?.get(b))-Number(!!counts?.get(a));
+    if(activeFirst)return activeFirst;
+   }
+   return cityLabel(a).localeCompare(cityLabel(b),state.lang);
+  });
+  for(const city of ordered){
+   const count=publicCities.get(code)?.get(city)||0;
+   const label=cityLabel(city);
+   const item=option(city,!forPost && countsReady ? label+" ("+count+")" : label);
    item.dataset.country=code;
    group.append(item);
   }
  }
  if(selected && [...el.options].some(item=>item.value===selected))el.value=selected;
  else if(forPost)el.value=Object.keys(GEOS[country]?.cities||{})[0]||el.options[0]?.value||"";
- if(!forPost){state.city=el.value;fillDistricts()}
+ if(!forPost){state.city=el.value;syncRadius();fillDistricts()}
+}
+function syncRadius(){
+ const select=$("#radiusFilter");
+ const available=state.country==="LV" && radiusCities.has(state.city);
+ select.parentElement.hidden=!available;
+ select.disabled=!available;
+ if(!available)select.value="";
+ $("#districtFilter").disabled=!!select.value;
 }
 async function loadPublicCities(){
  try{
-  const res=await fetch("/api/locations");
+  const res=await fetch("/api/locations",{cache:"no-store"});
   if(!res.ok)return;
-  for(const {country,city} of (await res.json()).locations){
-   if(!publicCities.has(country))publicCities.set(country,new Set());
-   publicCities.get(country).add(city);
+  for(const {country,city,local,count} of (await res.json()).locations){
+   if(!publicCities.has(country))publicCities.set(country,new Map());
+   publicCities.get(country).set(city,count);
+   if(country==="LV" && local){balticCityNames[city]=local;radiusCities.add(city)}
   }
+  countsReady=true;
   fillCountry();
  }catch{ /* The built-in city list remains available offline. */ }
 }
@@ -150,6 +172,7 @@ async function loadListings(){
  const query=new URLSearchParams();
  if(state.country)query.set("country",state.country);
  if(state.city)query.set("city",state.city);
+ if(state.city && $("#radiusFilter").value)query.set("radius",$("#radiusFilter").value);
  if(state.district)query.set("district",state.district);
  if(state.category)query.set("category",state.category);
  if(state.q)query.set("q",state.q);
@@ -243,8 +266,9 @@ function bind(){
  $("#enterAge").onclick=()=>{localStorage.setItem("mm-over18","yes");$("#ageGate").classList.add("dismissed")};
  $("#leaveAge").onclick=()=>location.href="https://www.google.com";
  $("#language").addEventListener("change",e=>{const dest=new URL(location.href);dest.pathname=e.target.value==="ru"?"/":"/"+e.target.value+"/";location.assign(dest)});
- $("#countryFilter").onchange=e=>{state.country=e.target.value;state.city="";state.district="";if(window.mmExtra)window.mmExtra.page=1;fillCities(false);loadListings()};
- $("#cityFilter").onchange=e=>{state.city=e.target.value;state.country=e.target.selectedOptions[0]?.dataset.country||state.country;$("#countryFilter").value=state.country;state.district="";if(window.mmExtra)window.mmExtra.page=1;fillCities(false);loadListings()};
+ $("#radiusFilter").onchange=()=>{state.district="";fillDistricts();syncRadius();if(window.mmExtra)window.mmExtra.page=1;loadListings()};
+ $("#countryFilter").onchange=e=>{$("#radiusFilter").value="";state.country=e.target.value;state.city="";state.district="";if(window.mmExtra)window.mmExtra.page=1;fillCities(false);loadListings()};
+ $("#cityFilter").onchange=e=>{$("#radiusFilter").value="";state.city=e.target.value;state.country=e.target.selectedOptions[0]?.dataset.country||state.country;$("#countryFilter").value=state.country;state.district="";if(window.mmExtra)window.mmExtra.page=1;fillCities(false);loadListings()};
  $("#districtFilter").onchange=e=>{state.district=e.target.value;if(window.mmExtra)window.mmExtra.page=1;loadListings()};
  $("#categoryFilter").onchange=e=>{state.category=e.target.value;if(window.mmExtra)window.mmExtra.page=1;loadListings()};
  $("#postCountry").onchange=()=>fillCities(true);
