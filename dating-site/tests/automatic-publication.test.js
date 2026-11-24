@@ -181,7 +181,7 @@ test('all four language pages explain instant publication, exceptions and self-d
  for(const lang of ['ru','en','de','lv']){
   const t=translations.translations[lang];
   for(const k of ['createHelp','submitPublished','submitPending'])assert.ok(t[k]?.length>20,lang+'/'+k);
-  assert.ok(/moderat|проверк|Moderation|pārbaud/i.test(t.createHelp));
+  assert.ok(/moderat|проверк|prüfung|geprüft|pārbaud/i.test(t.createHelp),lang);
   const html=await fs.readFile('public/'+(lang==='ru'?'':lang+'/')+'index.html','utf8');
   assert.ok(html.includes('data-t="createHelp"'),lang);
   assert.ok(html.includes('name="adultConfirmed"'),lang);
