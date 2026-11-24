@@ -34,6 +34,8 @@ export default async function(req,res){
   return result===200?res.json({ok:true}):fail(res,result,'not_available');
  }
  if(b.action!=='send'||req.files?.length!==1)return fail(res,400,'invalid_photo');
+ const caption=b.caption===undefined?'':b.caption;
+ if(typeof caption!=='string'||caption.length>500||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(caption))return fail(res,400,'invalid_caption');
  const initial=(await db.query(authorized,[id,caller])).rows[0];
  if(!initial||initial.blocked||initial.status!=='approved'||initial.consents!==2)return fail(res,403,'consent_required');
  const photo=req.files[0];let buffer;
@@ -46,7 +48,7 @@ export default async function(req,res){
   const limits=(await query(`SELECT (SELECT COUNT(*) FROM mm_messages WHERE sender_id=$1 AND created_at>NOW()-INTERVAL '1 hour')::int AS hourly,(SELECT COUNT(*) FROM mm_messages WHERE sender_id=$1 AND body='[photo]' AND created_at>NOW()-INTERVAL '1 day')::int AS daily,(SELECT COALESCE(SUM(octet_length(p.body)),0) FROM mm_chat_photos p JOIN mm_messages m ON m.id=p.message_id WHERE m.sender_id=$1)::bigint AS member_bytes,(SELECT COALESCE(SUM(octet_length(body)),0) FROM mm_chat_photos)::bigint AS total_bytes`,[caller])).rows[0];
   if(limits.hourly>=40||limits.daily>=10||Number(limits.member_bytes)+buffer.length>20*1048576||Number(limits.total_bytes)+buffer.length>100*1048576)return 429;
   const msg=await query("INSERT INTO mm_messages(conversation_id,sender_id,body) SELECT $1,$2,'[photo]' FROM mm_conversations c WHERE c.id=$1 AND NOT mm_pair_blocked(c.requester_id,c.publisher_id) RETURNING id",[id,caller]);if(!msg.rows.length)return 403;
-  await query('INSERT INTO mm_chat_photos(message_id,body) VALUES($1,$2)',[msg.rows[0].id,buffer]);
+  await query('INSERT INTO mm_chat_photos(message_id,body,caption) VALUES($1,$2,$3)',[msg.rows[0].id,buffer,caption.trim()]);
   await query('UPDATE mm_conversations SET updated_at=NOW() WHERE id=$1',[id]);
   return 200;
  });
