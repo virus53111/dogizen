@@ -560,7 +560,7 @@ img,video,canvas{max-width:100%}
 .mm-feed-card img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover}
 .mm-feed-card span,.mm-feed-card small{padding:5px 12px;overflow-wrap:anywhere}
 .mm-feed-card small{color:var(--muted)}
-@media(max-width:1350px){.nav-center{display:none}}
+@media(min-width:781px){.nav-wrap{height:auto;min-height:76px}.nav.container{min-height:76px;flex-wrap:wrap;padding-block:8px}.nav-actions{flex-wrap:wrap}.mm-catalog-tools{gap:6px}}
 @media(max-width:780px){.mm-catalog-tools{flex-basis:100%;gap:12px;justify-content:flex-end}.nav-wrap{height:auto!important}.mm-feed{padding-block:25px}}
 /* Light palette preserves the current responsive layout, all form controls and photos. */
 html[data-mm-theme="light"]{color-scheme:light;--ink:#382137;--dark:#321d2e;--paper:#fffaf7;--muted:#725b70;--border:#ddc9d6;--line:#ddc9d6;--gold:#804460;--gold-bright:#804460;--pink:#9b3e73;--rose:#f7e7f0;--lilac:#71518b;--wine:#481327;--berry:#9c244c;--shadow:0 14px 38px #41243b16}
