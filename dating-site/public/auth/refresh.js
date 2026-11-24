@@ -17,8 +17,10 @@ try {
     if (button) button.disabled = true;
     try {
       await pendingRefresh;
-      await signOut(auth);
-      const response = await fetch('/auth/logout', { method: 'POST' });
+      let sub=null;
+      try{const reg=await navigator.serviceWorker?.getRegistration();sub=await reg?.pushManager?.getSubscription()}catch{}
+      const response = await fetch('/auth/logout', { method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({push_endpoint:sub?.endpoint||null}) });
+      if(response.ok){try{await sub?.unsubscribe()}catch{}await signOut(auth)}
       if (!response.ok) throw new Error('Logout failed');
       location.replace('/auth/login.html');
     } catch {

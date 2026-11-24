@@ -1,4 +1,5 @@
 import express from 'express';
+import { notifyMessage } from './push.js';
 import { onlineCount, recentPhotos } from './catalog-extras.js';
 import { createHash } from 'node:crypto';
 import { getCookie, rateLimit } from './security.js';
@@ -187,7 +188,12 @@ for (const slug of routes) {
     if (acceptsUpload) req.files = (req.files || []).map(f => ({
       field: f.fieldname, filename: f.originalname, contentType: f.mimetype, buffer: f.buffer
     }));
-    try { return await mod.default(req, res); } catch (e) { next(e); }
+    try {
+      await mod.default(req, res);
+      if(req.method==='POST'&&res.statusCode===200&&req.user&&((slug==='chat/messages'&&(!req.body?.action||req.body.action==='send'))||(slug==='chat/photos'&&req.body?.action==='send'))) {
+        await notifyMessage(db,req.body.conversation_id,req.user.id).catch(()=>console.warn('Web Push delivery unavailable'));
+      }
+    } catch (e) { next(e); }
   });
 }
 app.get('/api/online-count', async (req,res,next)=> {
