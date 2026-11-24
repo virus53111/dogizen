@@ -14,7 +14,7 @@ export default async function(req,res){
  const sources=[
   ['account','SELECT id,email,email_verified_at,visible,last_seen FROM users WHERE id=$1 LIMIT 1'],
   ['profiles',`SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,status,created_at,updated_at,
- COALESCE((SELECT d.looking_for FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS looking_for,
+ COALESCE((SELECT d.looking_for FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),\'\') AS looking_for,
  COALESCE((SELECT d.interests FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS interests
  FROM mm_listings WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 5001`],
   ['my_visit_settings','SELECT share_visits,matches_seen_at FROM mm_member_activity_settings WHERE user_id=$1'],
@@ -23,7 +23,7 @@ export default async function(req,res){
   ['my_guestbook_entries','SELECT id,listing_id,body,approved,created_at FROM mm_guestbook_entries WHERE writer_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['my_community_settings','SELECT s.listing_id,s.guestbook_enabled,s.author_group_enabled FROM mm_profile_community s JOIN mm_listings l ON l.id=s.listing_id WHERE l.owner_id=$1 LIMIT 5001'],
   ['my_likes','SELECT listing_id,created_at FROM mm_member_likes WHERE liker_id=$1 ORDER BY created_at DESC LIMIT 5001'],
-  ['my_messages','SELECT id,conversation_id,body,created_at,seen_at,reply_to,deleted_at FROM mm_messages WHERE sender_id=$1 ORDER BY created_at DESC LIMIT 5001'],
+  ['my_messages','SELECT id,conversation_id,body,created_at,seen_at,reply_to,deleted_at,COALESCE((SELECT p.caption FROM mm_chat_photos p WHERE p.message_id=mm_messages.id),\'\') AS photo_caption FROM mm_messages WHERE sender_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['my_room_messages','SELECT id,body,created_at FROM mm_room WHERE user_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['favorites','SELECT listing_id,created_at FROM mm_catalog_favorites WHERE user_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['my_chat_reports','SELECT id,conversation_id,reason,details,status,created_at FROM mm_chat_reports WHERE reporter_id=$1 ORDER BY created_at DESC LIMIT 5001'],

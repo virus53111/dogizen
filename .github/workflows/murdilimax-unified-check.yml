@@ -28,3 +28,5 @@ jobs:
       - run: npm run check
       - run: find api public render -type f -name '*.js' -print0 | xargs -0 -n1 node --check
       - run: npm test
+
+      - run: node tests/mobile-chat-browser.mjs

@@ -653,3 +653,72 @@ html[data-mm-theme="light"] .member-presence.is-online{color:#216b40!important}
 /* Reduce offscreen layout work while retaining keyboard and screen reader access. */
 @supports(content-visibility:auto){.profile-card{content-visibility:auto;contain-intrinsic-size:auto 410px}}
 @media(prefers-reduced-motion:reduce){.profile-card,.btn,.gallery-main{transition:none!important;animation:none!important}}
+
+/* Conversation layout: only the message list scrolls, never the composer. */
+#messagesDialog[open]{display:flex;flex-direction:column;overflow:hidden;height:min(780px,85vh);height:min(780px,85dvh);max-height:85dvh}
+#messagesDialog .chat-title,#messagesDialog .chat-note{flex:0 0 auto}
+#messagesDialog .chat-layout{flex:1 1 0;min-height:0;max-height:none;height:auto;grid-template-rows:minmax(0,1fr)}
+#messagesDialog .chat-sidebar,#messagesDialog .chat-main,#messagesDialog #chatActive{min-height:0;min-width:0;height:100%;overflow:hidden}
+#messagesDialog .chat-sidebar{overflow-y:auto}
+#messagesDialog .chat-messages{flex:1 1 0;min-height:0;height:auto;overflow-y:auto;overscroll-behavior:contain}
+#messagesDialog .chat-msg{flex-shrink:0}
+#messagesDialog .chat-send{flex:0 0 auto;display:flex;flex-wrap:nowrap;align-items:center;gap:8px}
+#messagesDialog .chat-send textarea{flex:1 1 0;width:0;min-width:0;max-width:100%;font-size:16px;resize:none;min-height:44px;max-height:92px}
+#messagesDialog .chat-send .btn{flex:0 0 auto;min-height:44px;max-width:45%;white-space:nowrap;width:auto;padding:8px 12px}
+#messagesDialog #mmAttachPhoto{width:44px;min-width:44px;height:44px;padding:0;font-size:22px;display:grid;place-items:center}
+#messagesDialog #mmPhotoFile[hidden]{display:none!important}
+#messagesDialog .mm-photo-permission{flex:0 0 auto;display:flex;align-items:center;flex-wrap:wrap;gap:3px 10px;padding:6px 12px;border-bottom:1px solid var(--border);font-size:12px;line-height:1.35}
+#messagesDialog .mm-photo-permission label{display:flex;align-items:center;gap:6px;cursor:pointer;min-height:28px}
+#messagesDialog .mm-photo-permission input{width:18px;height:18px;flex:0 0 18px;accent-color:var(--pink)}
+#messagesDialog #mmPhotoStatus{color:var(--muted);overflow-wrap:anywhere}
+#messagesDialog #mmPhotoStatus:empty,#messagesDialog #chatInfo:empty,#messagesDialog #mmTyping:empty{display:none}
+#messagesDialog #chatInfo,#messagesDialog #mmTyping,#messagesDialog #mmReplyPanel{flex:0 0 auto;margin:0;padding:4px 12px}
+#messagesDialog #mmReplyPanel span{overflow-wrap:anywhere;max-height:3em;overflow:auto}
+#messagesDialog .mm-open-photo{display:block;border:1px solid currentColor;background:transparent;color:inherit;border-radius:9px;padding:8px 12px;min-height:44px;text-decoration:underline}
+#messagesDialog .mm-photo-caption{white-space:pre-wrap;overflow-wrap:anywhere;margin-top:6px}
+#mmChatBack{display:none}
+.mm-photo-preview-dialog[open],.mm-photo-viewer[open]{display:flex;flex-direction:column;gap:12px;box-sizing:border-box;border:1px solid var(--border);color:var(--ink);background:var(--paper);border-radius:16px;padding:16px;width:min(460px,calc(100vw - 24px));max-width:100%;max-height:90vh;max-height:90dvh;overflow:auto;margin:auto}
+.mm-photo-preview-dialog::backdrop,.mm-photo-viewer::backdrop{background:rgba(0,0,0,.86)}
+.mm-photo-preview-dialog header{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mm-photo-preview-dialog header h2{font-size:19px;margin:0}
+.mm-photo-preview-dialog label{display:grid;gap:6px}
+.mm-photo-preview-dialog textarea{width:100%;font-size:16px;min-height:52px;max-height:110px;resize:vertical;color:var(--ink);background:var(--paper);border:1px solid var(--border);border-radius:8px;padding:8px}
+#mmPreviewImage{display:block;width:100%;height:min(30vh,240px);height:min(30dvh,240px);object-fit:contain;background:#100916;border-radius:9px}
+.mm-photo-preview-dialog small{font-size:12px;color:var(--muted);line-height:1.4}
+#mmPhotoPreviewError{font-size:13px;color:var(--pink);overflow-wrap:anywhere}
+#mmPhotoPreviewError:empty,#mmViewerError:empty{display:none}
+.mm-preview-actions{display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-end}
+.mm-preview-actions .btn,#mmPreviewClose,#mmViewerClose{min-height:44px}
+#mmPhotoViewer[open]{position:fixed;inset:0;width:100%;height:100vh;height:100dvh;max-width:none;max-height:none;margin:0;padding:12px 12px max(12px,env(safe-area-inset-bottom));border:0;border-radius:0;background:#09070c;color:#fff;align-items:center;justify-content:center;overflow:hidden}
+#mmViewerClose{align-self:flex-end;flex:0 0 auto;color:#fff;background:#2c2332;min-width:44px}
+#mmViewerImage{min-height:0;min-width:0;max-width:100%;max-height:calc(100% - 65px);object-fit:contain}
+#mmViewerImage[hidden]{display:none}
+@media(max-width:640px){
+ #messagesDialog[open]{position:fixed;inset:auto;top:var(--mm-chat-top,0px);left:0;margin:0;width:100%;max-width:none;height:var(--mm-chat-height,100dvh);max-height:var(--mm-chat-height,100dvh);border:0;border-radius:0;padding:10px 10px max(8px,env(safe-area-inset-bottom));gap:4px}
+ #messagesDialog .chat-title{min-height:40px;margin-right:44px;gap:8px}
+ #messagesDialog .chat-title h2{font-size:20px}
+ #messagesDialog .chat-title .btn{font-size:11px;padding:6px 8px}
+ #messagesDialog .chat-note{font-size:11px;margin:2px 0 4px;line-height:1.35}
+ #messagesDialog .chat-layout{grid-template-columns:minmax(0,1fr);border-radius:10px}
+ #messagesDialog .chat-sidebar{border-right:0;display:block}
+ #messagesDialog .chat-main{display:none}
+ #messagesDialog.mm-chat-open .chat-sidebar{display:none}
+ #messagesDialog.mm-chat-open .chat-main{display:flex}
+ #messagesDialog.mm-chat-open .chat-note{display:none}
+ #messagesDialog .chat-person{flex-direction:row;align-items:center;text-align:left;padding:12px;gap:10px}
+ #messagesDialog .chat-person .person-copy{text-align:left}
+ #messagesDialog .chat-person strong{font-size:15px}
+ #messagesDialog .chat-person small{font-size:12px}
+ #messagesDialog .chat-top{display:flex;flex-wrap:wrap;gap:6px;padding:7px}
+ #messagesDialog .chat-top strong{flex:1 1 120px;font-size:14px;min-width:0}
+ #messagesDialog .chat-actions{gap:5px}
+ #messagesDialog .chat-mini-btn{min-height:36px;font-size:11px;padding:6px 8px}
+ #messagesDialog #mmChatBack{display:inline-flex;align-items:center;min-height:36px;padding:6px 8px;font-size:12px}
+ #messagesDialog .chat-messages{padding:10px;gap:8px}
+ #messagesDialog .chat-msg{max-width:88%;font-size:14px}
+ #messagesDialog .chat-send{padding:7px;gap:6px}
+ #messagesDialog .chat-send textarea{min-height:44px}
+ #messagesDialog .chat-send .btn{font-size:12px;padding:7px 8px}
+ #messagesDialog .mm-photo-permission{padding:4px 8px}
+ #messagesDialog .modal-x{min-width:40px;min-height:40px;top:8px;right:8px}
+}
