@@ -44,6 +44,7 @@ const thumbs=gallery.length>1?'<div class="gallery-thumbs">'+gallery.map((src,i)
 content.querySelectorAll("[data-photo]").forEach(btn=>btn.onclick=()=>{const img=gallery[Number(btn.dataset.photo)];document.getElementById("galleryMain").innerHTML='<img src="'+escapeHTML(img)+'" alt="'+escapeHTML(item.display_name)+'">';content.querySelectorAll("[data-photo]").forEach(x=>x.classList.toggle("active",x===btn))});
 const messageButton=document.getElementById("messageThis");if(canMessage){messageButton.onclick=()=>{if(window.mmStartChat)window.mmStartChat(item.id)}}else{messageButton.remove();}
 if(canMessage&&window.mmMountLike)window.mmMountLike(item.id,content);
+if(canMessage&&window.mmMountCommunity)window.mmMountCommunity(item.id,content);
 document.getElementById("reportThis").onclick=()=>{modal.close();document.getElementById("reportForm").elements.listing_id.value=item.id;document.getElementById("reportModal").showModal()};
 }catch(err){content.innerHTML='<p>'+escapeHTML(err.message)+'</p>'}})();return true};
 window.resetAdvancedFilters=function(){document.getElementById("radiusFilter").value="";syncRadius();window.mmExtra={min_age:"",max_age:"",sort:"newest",language:"",photo:"",commercial:"",featured:"",page:1};document.getElementById("minAge").value="18";document.getElementById("maxAge").value="85";document.getElementById("sortFilter").value="newest";document.getElementById("photoOnly").checked=false;document.getElementById("onlineOnly").checked=false;document.getElementById("newMemberOnly").checked=false;document.getElementById("spokenLanguageFilter").value="";};
@@ -84,7 +85,7 @@ window.mmEnhanceMine=function(listings){
   const actions=document.createElement("div");actions.className="owner-actions";
   const edit=document.createElement("button");edit.className="btn btn-outline";edit.textContent=labels[0];
   const del=document.createElement("button");del.type="button";del.className="btn btn-text";del.textContent=labels[1];
-  actions.append(edit,del);row.append(actions);
+  actions.append(edit,del);row.append(actions);if(window.mmMountCommunitySettings)window.mmMountCommunitySettings(listing,row);
   del.onclick=async()=>{
    if(!confirm(labels[3]))return;del.disabled=true;
    try{const r=await fetch("/api/mine",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"delete",id:listing.id})});const j=await r.json();if(!r.ok||!j.ok)throw Error(t("error"));toast(labels[1]);showMy();loadListings()}catch(e){toast(e.message)}finally{del.disabled=false}
