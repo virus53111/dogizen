@@ -6,6 +6,12 @@ on:
     paths:
       - 'dating-site/**'
       - '.github/workflows/murdilimax-unified-check.yml'
+  pull_request:
+    branches:
+      - release/murdilimax-unified-20261123
+    paths:
+      - 'dating-site/**'
+      - '.github/workflows/murdilimax-unified-check.yml'
   workflow_dispatch:
 jobs:
   check:
