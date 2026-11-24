@@ -15,7 +15,7 @@ export default async function(req,res){
   const action=req.body?.action||"send";
   if(action==="delete"){
    const message=String(req.body?.message_id||"");if(!UUID.test(message))return error(res,400,"Неверное сообщение");
-   const removed=await db.query("UPDATE mm_messages SET body='[deleted]',deleted_at=NOW(),seen_at=COALESCE(seen_at,NOW()) WHERE id=$1 AND conversation_id=$2 AND sender_id=$3 AND deleted_at IS NULL RETURNING id",[message,id,caller]);
+   const removed=await db.query("WITH removed AS (UPDATE mm_messages SET body='[deleted]',deleted_at=NOW(),seen_at=COALESCE(seen_at,NOW()) WHERE id=$1 AND conversation_id=$2 AND sender_id=$3 AND deleted_at IS NULL RETURNING id), photos AS (DELETE FROM mm_chat_photos p USING removed r WHERE p.message_id=r.id) SELECT id FROM removed",[message,id,caller]);
    return removed.rows.length?res.json({ok:true}):error(res,404,"Сообщение недоступно");
   }
   if(!["send","typing"].includes(action))return error(res,400,"Неизвестное действие");
@@ -30,7 +30,7 @@ export default async function(req,res){
   const reply=req.body?.reply_to||null;
   if(reply!==null&&(typeof reply!=="string"||!UUID.test(reply)))return error(res,400,"Неверный ответ");
   const body=String(req.body?.body||"").trim();
-  if(!body||body.length>1200)return error(res,400,"Сообщение должно содержать от 1 до 1200 символов");
+  if(!body||body.length>1200||body==='[photo]'||body==='[deleted]')return error(res,400,"Сообщение должно содержать от 1 до 1200 символов");
   const since=await db.query("SELECT COUNT(*)::integer AS n,COUNT(*) FILTER (WHERE created_at>NOW()-INTERVAL '8 seconds')::integer AS recent FROM mm_messages WHERE sender_id=$1 AND created_at>NOW()-INTERVAL '1 hour'",[caller]);
   if((since.rows[0]?.n||0)>=40)return error(res,429,"Лимит: не более 40 сообщений в час");
   if((since.rows[0]?.recent||0)>=4)return error(res,429,"Слишком частые сообщения");
@@ -40,6 +40,6 @@ export default async function(req,res){
   return res.json({ok:true,message:{...msg.rows[0],sender_id:undefined,mine:true}});
  }
  await db.query("UPDATE mm_messages SET seen_at=NOW() WHERE conversation_id=$1 AND sender_id<>$2 AND seen_at IS NULL",[id,caller]);
- const messages=await db.query("SELECT m.id,m.sender_id,m.body,m.created_at,m.seen_at,m.reply_to,m.deleted_at,CASE WHEN r.deleted_at IS NULL THEN LEFT(r.body,120) ELSE NULL END AS reply_preview FROM (SELECT id,sender_id,body,created_at,seen_at,reply_to,deleted_at FROM mm_messages WHERE conversation_id=$1 ORDER BY created_at DESC,id DESC LIMIT 100) m LEFT JOIN mm_messages r ON r.id=m.reply_to AND r.conversation_id=$1 ORDER BY m.created_at ASC,m.id ASC",[id]);
+ const messages=await db.query("SELECT m.id,m.sender_id,m.body,m.created_at,m.seen_at,m.reply_to,m.deleted_at,EXISTS(SELECT 1 FROM mm_chat_photos p WHERE p.message_id=m.id) AS has_photo,CASE WHEN r.deleted_at IS NULL THEN LEFT(r.body,120) ELSE NULL END AS reply_preview FROM (SELECT id,sender_id,body,created_at,seen_at,reply_to,deleted_at FROM mm_messages WHERE conversation_id=$1 ORDER BY created_at DESC,id DESC LIMIT 100) m LEFT JOIN mm_messages r ON r.id=m.reply_to AND r.conversation_id=$1 ORDER BY m.created_at ASC,m.id ASC",[id]);
  res.json({conversation_id:id,display_name:conversation.display_name,blocked:!!conversation.blocked_by||conversation.pair_blocked===true,blocked_by_me:conversation.blocked_by===caller,typing:!conversation.blocked_by&&!conversation.pair_blocked&&conversation.typing===true,messages:messages.rows.map(m=>({...m,body:m.deleted_at?null:m.body,mine:m.sender_id===caller,sender_id:undefined}))});
 }
