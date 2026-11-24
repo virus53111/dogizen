@@ -7,6 +7,11 @@ export default async function(req,res){
  // Server-side verified email ownership: never trust an email passed by the browser.
  const owner=await db.query("SELECT 1 FROM users AS u JOIN mm_admin_allowlist AS allowed ON LOWER(u.email)=allowed.email WHERE u.id=$1 AND u.email_verified_at IS NOT NULL LIMIT 1",[req.user.id]);
  if(!owner.rows.length)return res.status(403).json({error:"Админка доступна только владельцу с подтверждённым email."});
+ if(req.method==="GET"&&req.query?.photo_report){
+  const id=String(req.query.photo_report);if(!/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i.test(id))return res.status(400).end();
+  const file=await db.query("SELECT p.body FROM mm_chat_reports r JOIN mm_messages m ON m.id=r.reported_message_id AND m.conversation_id=r.conversation_id JOIN mm_chat_photos p ON p.message_id=m.id WHERE r.id=$1 AND r.status='open' AND m.deleted_at IS NULL",[id]);
+  if(!file.rows.length)return res.status(404).end();res.setHeader("Cross-Origin-Resource-Policy","same-origin");return res.type("image/webp").send(file.rows[0].body);
+ }
  const type=String(req.method==="POST"?req.body?.type:req.query?.type||"listing");
  if(!["listing","chat"].includes(type))return res.status(400).json({error:"Неизвестный тип жалобы"});
  if(req.method==="POST"){
@@ -25,7 +30,7 @@ export default async function(req,res){
  const status=String(req.query?.status||"open");
  if(!["open","resolved","dismissed"].includes(status))return res.status(400).json({error:"Недопустимый статус"});
  if(type==="chat"){
-   const r=await db.query("SELECT r.id,r.reason,r.details,r.status,r.created_at,c.listing_id,l.display_name,(SELECT STRING_AGG(m.body, ' | ' ORDER BY m.created_at DESC) FROM (SELECT body,created_at FROM mm_messages WHERE conversation_id=c.id ORDER BY created_at DESC LIMIT 3) m) AS excerpt FROM mm_chat_reports r JOIN mm_conversations c ON c.id=r.conversation_id JOIN mm_listings l ON l.id=c.listing_id WHERE r.status=$1 ORDER BY r.created_at DESC LIMIT 100",[status]);
+   const r=await db.query("SELECT r.id,r.reason,r.details,r.status,r.created_at,r.reported_message_id,c.listing_id,l.display_name,(SELECT STRING_AGG(m.body, ' | ' ORDER BY m.created_at DESC) FROM (SELECT body,created_at FROM mm_messages WHERE conversation_id=c.id ORDER BY created_at DESC LIMIT 3) m) AS excerpt FROM mm_chat_reports r JOIN mm_conversations c ON c.id=r.conversation_id JOIN mm_listings l ON l.id=c.listing_id WHERE r.status=$1 ORDER BY r.created_at DESC LIMIT 100",[status]);
    return res.json({reports:r.rows,type,status});
  }
  const r=await db.query(`

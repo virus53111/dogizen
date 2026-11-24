@@ -20,3 +20,5 @@ CREATE TABLE IF NOT EXISTS mm_chat_photos (
  message_id UUID PRIMARY KEY REFERENCES mm_messages(id) ON DELETE CASCADE,
  body BYTEA NOT NULL CHECK(octet_length(body)<=1048576)
 );
+
+ALTER TABLE mm_chat_reports ADD COLUMN IF NOT EXISTS reported_message_id UUID REFERENCES mm_messages(id) ON DELETE SET NULL;
