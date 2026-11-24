@@ -51,7 +51,7 @@ test('privacy deletion request needs explicit confirmation and never deletes dat
 test('data export selects only own authored content and never another members messages',async()=>{
  const {res,calls}=await call(privacyExport,{method:'GET',user:member},(sql,args)=>{
   assert.deepEqual(args,[member.id]);
-  assert.match(sql,/WHERE (?:id|l\.owner_id|owner_id|sender_id|writer_id|visitor_id|blocker_id|user_id|liker_id|reporter_id|claimed_by)=\$1/);
+  assert.match(sql,/WHERE (?:id|l\.owner_id|owner_id|sender_id|writer_id|visitor_id|viewer_id|blocker_id|user_id|liker_id|reporter_id|claimed_by)=\$1/);
   return {rows:[]};
  });
  assert.equal(res.statusCode,200);
