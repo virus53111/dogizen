@@ -39,7 +39,7 @@ document.addEventListener("DOMContentLoaded",()=>{
    async function count(){
     if(pending||document.hidden)return;pending=true;
     try{
-     const r=await fetch("/api/online-count",{cache:"no-store",signal:AbortSignal.timeout(10000)});
+     const r=await fetch("/api/online-count",{cache:"no-store",...(typeof AbortSignal.timeout==="function"?{signal:AbortSignal.timeout(10000)}:{})});
      if(!r.ok)throw Error();const j=await r.json();
      if(!Number.isSafeInteger(j.online)||j.online<0)throw Error();
      online.textContent=l.online+": "+new Intl.NumberFormat(lang).format(j.online);
@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   async function load(){
    gate.hidden=true;content.hidden=false;
    try{
-    const r=await fetch("/api/recent-photos",{cache:"no-store",signal:AbortSignal.timeout(10000)});
+    const r=await fetch("/api/recent-photos",{cache:"no-store",...(typeof AbortSignal.timeout==="function"?{signal:AbortSignal.timeout(10000)}:{})});
     if(!r.ok)throw Error();const data=await r.json();
     if(!Array.isArray(data.photos))throw Error();
     let n=0;
