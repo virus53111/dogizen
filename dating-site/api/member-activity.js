@@ -62,8 +62,8 @@ export default async function(req,res){
   return res.json({ok:true});
  }
  if(b.action==='block_status'){
-  const r=await db.query('SELECT EXISTS(SELECT 1 FROM mm_member_blocks b JOIN mm_listings l ON l.owner_id=b.blocked_id WHERE b.blocker_id=$1 AND l.id=$2) AS blocked',[caller,b.listing_id]);
-  return res.json({blocked:r.rows[0]?.blocked===true});
+  const r=await db.query('SELECT EXISTS(SELECT 1 FROM mm_member_blocks b JOIN mm_listings l ON l.owner_id=b.blocked_id WHERE b.blocker_id=$1 AND l.id=$2) AS blocked, EXISTS(SELECT 1 FROM mm_listings l WHERE l.id=$2 AND l.status='approved' AND l.owner_id<>$1) AS can_block',[caller,b.listing_id]);
+  return res.json({blocked:r.rows[0]?.blocked===true,can_block:r.rows[0]?.can_block===true});
  }
  return err(res,400,'invalid_action');
 }

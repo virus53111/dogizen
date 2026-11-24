@@ -38,7 +38,7 @@ window.mmProfileActivity=async function(id,content){
  if(!await getSession()||!content.isConnected)return;
  const target=content.querySelector(".profile-actions");if(!target)return;
  const button=btn(L("block"),()=>{});button.hidden=true;target.append(button);
- const d=await api({action:"block_status",listing_id:id});if(!button.isConnected)return;
+ const d=await api({action:"block_status",listing_id:id});if(!button.isConnected||!d.can_block){button.remove();return}
  let blocked=d.blocked;button.textContent=L(blocked?"unblock":"block");button.hidden=false;
  button.onclick=async()=>{if(!blocked&&!confirm(L("confirm")))return;button.disabled=true;try{await api({action:blocked?"unblock":"block",listing_id:id});blocked=!blocked;button.textContent=L(blocked?"unblock":"block");refresh()}catch{toast(L("error"))}finally{button.disabled=false}};
  if(button.isConnected&&document.getElementById("profileModal")?.open)await api({action:"visit",listing_id:id});

@@ -15,7 +15,8 @@ export default async function(req,res){
   if(!body||body.length>1200)return res.status(400).json({error:"Сообщение должно содержать от 1 до 1200 символов"});
   const since=await db.query("SELECT COUNT(*)::integer AS n FROM mm_messages WHERE sender_id=$1 AND created_at>NOW()-INTERVAL '1 hour'",[caller]);
   if((since.rows[0]?.n||0)>=40)return res.status(429).json({error:"Лимит: не более 40 сообщений в час"});
-  const msg=await db.query("INSERT INTO mm_messages (conversation_id,sender_id,body) VALUES ($1,$2,$3) RETURNING id,sender_id,body,created_at,seen_at",[id,caller,body]);
+  const msg=await db.query("INSERT INTO mm_messages (conversation_id,sender_id,body) SELECT $1,$2,$3 FROM mm_conversations c WHERE c.id=$1 AND NOT mm_pair_blocked(c.requester_id,c.publisher_id) RETURNING id,sender_id,body,created_at,seen_at",[id,caller,body]);
+  if(!msg.rows.length)return res.status(403).json({error:"Общение недоступно"});
   await db.query("UPDATE mm_conversations SET updated_at=NOW() WHERE id=$1",[id]);
   return res.json({ok:true,message:{...msg.rows[0],mine:true}});
  }
