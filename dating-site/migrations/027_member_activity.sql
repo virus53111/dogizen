@@ -1,7 +1,8 @@
 -- Explicit opt-in to share profile visits. Existing users remain private.
 CREATE TABLE IF NOT EXISTS mm_member_activity_settings (
  user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
- share_visits BOOLEAN NOT NULL DEFAULT FALSE
+ share_visits BOOLEAN NOT NULL DEFAULT FALSE,
+ matches_seen_at TIMESTAMPTZ NOT NULL DEFAULT 'epoch'
 );
 CREATE TABLE IF NOT EXISTS mm_profile_visits (
  listing_id UUID NOT NULL REFERENCES mm_listings(id) ON DELETE CASCADE,
@@ -11,6 +12,7 @@ CREATE TABLE IF NOT EXISTS mm_profile_visits (
 );
 CREATE INDEX IF NOT EXISTS mm_profile_visits_expiry ON mm_profile_visits(visited_at);
 CREATE TABLE IF NOT EXISTS mm_member_blocks (
+ id UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE,
  blocker_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
  blocked_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

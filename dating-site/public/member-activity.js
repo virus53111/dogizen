@@ -13,10 +13,10 @@ const L=k=>(words[document.documentElement.lang]||words.en)[keys.indexOf(k)]||k;
 window.mmMemberText=L;
 const make=(tag,txt,cls)=>{const e=document.createElement(tag);if(txt)e.textContent=txt;if(cls)e.className=cls;return e};
 const btn=(txt,fn)=>{const b=make("button",txt,"btn btn-outline");b.type="button";b.onclick=fn;return b};
-async function api(body){const r=await fetch("/api/member-activity",body?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),cache:"no-store"}:{cache:"no-store"});if(!r.ok)throw Error(L("error"));return r.json()}
+async function api(body,summary=false){const r=await fetch("/api/member-activity"+(summary?"?summary=1":""),body?{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),cache:"no-store"}:{cache:"no-store"});if(!r.ok)throw Error(L("error"));return r.json()}
 let current=null,pending=false,activityBtn;
 function badge(id,value){const b=document.getElementById(id);if(!b)return;const n=Number(value)||0;b.textContent=n>99?"99+":String(n);b.classList.toggle("hidden",n===0)}
-async function refresh(){if(pending||document.hidden||!state.user)return;pending=true;try{current=await api();badge("inboxUnreadBadge",current.unread);badge("mmActivityBadge",current.matches+current.guestbook);if(activityBtn)activityBtn.title=L("matches")+": "+current.matches+" · "+L("guestbook")+": "+current.guestbook;}catch{}finally{pending=false}}
+async function refresh(){if(pending||document.hidden||!state.user)return;pending=true;try{current=await api(null,true);badge("inboxUnreadBadge",current.unread);badge("mmActivityBadge",current.new_matches+current.guestbook);if(activityBtn)activityBtn.title=L("matches")+": "+current.matches+" · "+L("guestbook")+": "+current.guestbook;}catch{}finally{pending=false}}
 window.mmRefreshActivity=refresh;
 function dashboard(root,data){
  root.replaceChildren();root.append(make("h3",L("activity")));
@@ -24,11 +24,12 @@ function dashboard(root,data){
  for(const key of ["unread","matches","guestbook"]){const box=make("div");box.append(make("strong",String(data[key]||0)),make("small",L(key)));counts.append(box)}root.append(counts);
  const links=make("div",null,"mm-activity-links");
  const open=id=>{const m=document.getElementById("myModal");if(m?.open)m.close();document.getElementById(id)?.click()};
- links.append(btn(L("inbox"),()=>open("inboxBtn")),btn(L("likes"),()=>open("matchesBtn")),btn(L("create"),()=>open("postBtn")));
+ links.append(btn(L("inbox"),()=>open("inboxBtn")),btn(L("likes"),async()=>{try{await api({action:"matches_seen"});refresh()}catch{}open("matchesBtn")}),btn(L("create"),()=>open("postBtn")));
  const privacy=make("a",L("data"),"btn btn-outline");privacy.href="/account-data.html";links.append(privacy);root.append(links,make("p",L("guesthint")),make("p",L("claim")));
  const label=make("label",null,"mm-community-check"),check=make("input");check.type="checkbox";check.checked=!!data.share_visits;label.append(check,document.createTextNode(" "+L("consent")));root.append(label);
  const status=make("p");status.setAttribute("role","status");
  root.append(btn(L("save"),async()=>{try{await api({action:"visits_setting",enabled:check.checked});current=await api();dashboard(root,current);refresh()}catch{status.textContent=L("error")}}),status);
+ if(data.blocks?.length){root.append(make("h3",L("block")));for(const item of data.blocks)root.append(btn((item.display_name||"—")+" · "+L("unblock"),async()=>{try{await api({action:"unblock_id",block_id:item.id});dashboard(root,await api());refresh()}catch{status.textContent=L("error")}}))}
  if(data.share_visits){root.append(make("h3",L("visitors")));if(!data.visitors.length)root.append(make("p",L("empty")));for(const v of data.visitors){const b=btn(v.display_name+" · "+v.city+" · "+new Date(v.visited_at).toLocaleDateString(document.documentElement.lang),()=>{document.getElementById("myModal")?.close();window.mmOpenProfile(v.profile_id)});root.append(b)}}
 }
 window.mmMountDashboard=async function(){const parent=document.getElementById("myContent");if(!parent)return;const root=make("section",L("activity"),"mm-community mm-dashboard");parent.prepend(root);try{current=await api();if(root.isConnected)dashboard(root,current);refresh()}catch{root.textContent=L("error")}};
@@ -40,7 +41,7 @@ window.mmProfileActivity=async function(id,content){
  const d=await api({action:"block_status",listing_id:id});if(!button.isConnected)return;
  let blocked=d.blocked;button.textContent=L(blocked?"unblock":"block");button.hidden=false;
  button.onclick=async()=>{if(!blocked&&!confirm(L("confirm")))return;button.disabled=true;try{await api({action:blocked?"unblock":"block",listing_id:id});blocked=!blocked;button.textContent=L(blocked?"unblock":"block");refresh()}catch{toast(L("error"))}finally{button.disabled=false}};
- await api({action:"visit",listing_id:id});
+ if(button.isConnected&&document.getElementById("profileModal")?.open)await api({action:"visit",listing_id:id});
  }catch{}
 };
 document.addEventListener("DOMContentLoaded",async()=>{
