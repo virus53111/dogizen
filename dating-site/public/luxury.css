@@ -547,3 +547,72 @@ img,video,canvas{max-width:100%}
 .my-city button[hidden]{display:none}
 .my-city button:disabled{opacity:.55}
 .my-city-new{display:block;font-weight:600;margin-bottom:.35rem}
+
+/* Catalog controls: compact and readable on both themes. */
+.mm-catalog-tools{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;font-size:12px;line-height:1.3;white-space:nowrap}
+.mm-catalog-tools a{color:var(--ink);text-decoration:underline;text-underline-offset:3px}
+.mm-online{color:var(--ink);font-weight:750}
+.mm-theme-toggle{border:1px solid var(--border);border-radius:10px;background:var(--paper);color:var(--ink);font-size:19px;line-height:1;padding:8px;min-width:36px;min-height:36px;cursor:pointer}
+.mm-feed{padding-block:40px;min-height:70vh}
+.mm-feed h1{font:600 clamp(32px,5vw,52px)/1.1 var(--display)}
+.mm-feed-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(180px,100%),1fr));gap:15px;margin-top:22px}
+.mm-feed-card{display:flex;flex-direction:column;text-decoration:none;color:var(--ink);padding-bottom:12px}
+.mm-feed-card img{display:block;width:100%;aspect-ratio:4/5;object-fit:cover}
+.mm-feed-card span,.mm-feed-card small{padding:5px 12px;overflow-wrap:anywhere}
+.mm-feed-card small{color:var(--muted)}
+@media(max-width:1350px){.nav-center{display:none}}
+@media(max-width:780px){.mm-catalog-tools{flex-basis:100%;gap:12px;justify-content:flex-end}.nav-wrap{height:auto!important}.mm-feed{padding-block:25px}}
+/* Light palette preserves the current responsive layout, all form controls and photos. */
+html[data-mm-theme="light"]{color-scheme:light;--ink:#382137;--dark:#321d2e;--paper:#fffaf7;--muted:#725b70;--border:#ddc9d6;--line:#ddc9d6;--gold:#804460;--gold-bright:#804460;--pink:#9b3e73;--rose:#f7e7f0;--lilac:#71518b;--wine:#481327;--berry:#9c244c;--shadow:0 14px 38px #41243b16}
+html[data-mm-theme="light"] body{background:#fffaf7;color:var(--ink)}
+html[data-mm-theme="light"] :focus-visible{outline-color:#7d255a!important}
+html[data-mm-theme="light"] .nav-wrap,html[data-mm-theme="light"] .footer{background:#fff6f8!important;border-color:var(--line);color:var(--ink)}
+html[data-mm-theme="light"] :is(.brand,.footer-brand,.nav-item,.nav-shortcut,.footer-links a,.footer-link,.footer-end,.language-links,.lang-select){color:var(--ink)}
+html[data-mm-theme="light"] :is(.nav-item:hover,.nav-item.active,.nav-shortcut:hover){color:#8b2d65}
+html[data-mm-theme="light"] .brand-icon{color:#ffe3ba}
+html[data-mm-theme="light"] .lang-select{background:#fff;border-color:var(--border)}
+html[data-mm-theme="light"] :is(.btn-outline,.nav-login){background:#fff6f9;color:#60254d;border-color:#c6a6bc}
+html[data-mm-theme="light"] :is(.btn-outline:hover,.nav-login:hover){background:#f3deeb;color:#60254d}
+html[data-mm-theme="light"] .btn-text{color:#7d255a}
+html[data-mm-theme="light"] .directory-search{--gold:#ffe0a4;--ink:#fff5fc;--muted:#e5cce0}
+html[data-mm-theme="light"] .directory-search .btn-outline{background:#3a1c40;color:#fff;border-color:#be93b4}
+html[data-mm-theme="light"] .directory-search .search-box{background:#fff9fb!important;border-color:#caa9bf!important;color:#382137}
+html[data-mm-theme="light"] .directory-search .search-field{background:#fff!important;border-color:#ddc9d6!important;color:#382137}
+html[data-mm-theme="light"] .directory-search .search-field :is(span,select,option){color:#382137!important;background-color:transparent}
+html[data-mm-theme="light"] .directory-search .search-field option{background:#fff!important}
+html[data-mm-theme="light"] #categoryExplorer{background:#fff!important;border-color:var(--line)!important;box-shadow:var(--shadow)}
+html[data-mm-theme="light"] #categoryExplorer .category-explorer-head{background:#f7edf3}
+html[data-mm-theme="light"] #categoryExplorer :is(.category-explorer-head h3,.category-group-title,.cat-item){color:#54344e!important}
+html[data-mm-theme="light"] #categoryExplorer .category-group{border-top-color:var(--line)!important}
+html[data-mm-theme="light"] #categoryExplorer .cat-item:is(:hover,.active){color:#7a2858!important;background:#f5dce9}
+html[data-mm-theme="light"] :is(.cat-collapse,.advanced-filters,.room-open,.chip,.filter-reset,.mini-search,.view-switch){background:#fff!important;color:#58374f!important;border-color:var(--border)!important}
+html[data-mm-theme="light"] .chip.selected,html[data-mm-theme="light"] .view-switch button.current{background:#8c3b6b!important;color:#fff!important;border-color:#8c3b6b!important}
+html[data-mm-theme="light"] :is(.advanced-label,.advanced-grid label,.results-count,.results-count small,.view-switch button,.lux-catalog-head small,.lux-catalog-head .lux-mini-title){color:var(--muted)!important}
+html[data-mm-theme="light"] :is(.advanced-grid select,.advanced-grid input,.advanced-grid select option,.mini-search input){color:var(--ink)!important;background:#fff!important;border-color:var(--border)!important}
+html[data-mm-theme="light"] :is(.lux-catalog-head h2,.lux-features-title h2,.lux-feature h3){color:var(--ink)}
+html[data-mm-theme="light"] :is(.lux-features-title span,.lux-feature p){color:var(--muted)}
+html[data-mm-theme="light"] .profile-card{background:#fff!important;border-color:var(--line)!important;box-shadow:var(--shadow)}
+html[data-mm-theme="light"] :is(.card-body,.name-line h3,.card-place,.card-desc,.card-headline){color:var(--ink)!important}
+html[data-mm-theme="light"] .card-bottom{border-color:var(--line)!important}
+html[data-mm-theme="light"] .type-pill{color:#73315d!important;background:#f9eaf3!important;border-color:#dec3d3!important}
+html[data-mm-theme="light"] .favorite{background:#fff!important;color:#8a3467!important;border-color:#c99ab6!important}
+html[data-mm-theme="light"] .favorite.active{color:#fff!important;background:#a13c78!important}
+html[data-mm-theme="light"] :is(#emptyState,.catalog-loading,.map-panel,.lux-feature){background:#fff!important;color:var(--ink);border-color:var(--line)!important;box-shadow:var(--shadow)}
+html[data-mm-theme="light"] :is(#emptyState h3,#emptyState p,.map-top strong,.map-top p){color:var(--ink)!important}
+html[data-mm-theme="light"] .pagination :is(.pager,.pager-number){background:#fff;color:var(--ink);border-color:var(--border)}
+html[data-mm-theme="light"] #catalogError{background:#fff0f1!important;color:#862e50!important}
+html[data-mm-theme="light"] .modal{background:#fffafc!important;color:var(--ink);border-color:var(--line)!important}
+html[data-mm-theme="light"] :is(.modal h2,.modal p,.modal label,.modal-x,.ad-detail-head){color:var(--ink)!important}
+html[data-mm-theme="light"] .modal :is(input:not([type=checkbox]):not([type=radio]):not([type=file]),select,textarea,option){background:#fff!important;color:var(--ink)!important;border-color:var(--border)!important}
+html[data-mm-theme="light"] .modal :is(input,textarea)::placeholder{color:#806c7a!important}
+html[data-mm-theme="light"] :is(.compliance-note,.detail-safety){background:#fff2dd!important;color:#654321!important;border-color:#e5cda6!important}
+html[data-mm-theme="light"] :is(.detail-info span,.chat-mini-btn,.chat-msg,.chat-person .person-icon,.modal-x){background:#f3e4ec!important;color:var(--ink)!important;border-color:var(--border)!important}
+html[data-mm-theme="light"] :is(.chat-sidebar,.chat-messages,.chat-send textarea){background:#fff!important;color:var(--ink)!important;border-color:var(--border)!important}
+html[data-mm-theme="light"] :is(.chat-layout,.chat-person,.chat-top,.chat-send,.favorite-item,#roomLog li){border-color:var(--line)}
+html[data-mm-theme="light"] .chat-person:is(:hover,.active){background:#f3e4ec}
+html[data-mm-theme="light"] :is(.chat-person strong,.chat-person small,.chat-top strong,.chat-note,.chat-empty,.chat-panel-empty,.chat-info,.favorite-details strong,.favorite-details small,#roomLog time){color:var(--ink)}
+html[data-mm-theme="light"] .chat-msg.mine{background:#8c3b6b!important;color:#fff!important}
+html[data-mm-theme="light"] #roomLog button{color:#7a2858}
+html[data-mm-theme="light"] .age-box{background:#fff9fb!important;border-color:var(--border)!important}
+html[data-mm-theme="light"] :is(.age-copy h2,.age-copy p,.age-copy small,.age-copy .btn-text,.age-symbol){color:var(--ink)!important}
+html[data-mm-theme="light"] .member-presence.is-online{color:#216b40!important}
