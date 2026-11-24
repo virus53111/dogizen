@@ -8,6 +8,8 @@ document.addEventListener("DOMContentLoaded",()=>{
 /* Shared navigation and public photo feed. Local preferences only, no tracking. */
 (()=>{
  const labels={
+ lt:{online:"Prisijungę",photos:"Naujos nuotraukos",light:"Šviesi tema",dark:"Tamsi tema",empty:"Naujų narių nuotraukų dar nėra.",error:"Nepavyko įkelti duomenų.",home:"Katalogas",age:"Man yra bent 18 metų",ageText:"Nuotraukų srautas skirtas tik suaugusiesiems.",leave:"Palikti svetainę"},
+ et:{online:"Veebis",photos:"Uued fotod",light:"Hele teema",dark:"Tume teema",empty:"Uusi liikmete fotosid veel pole.",error:"Andmeid ei õnnestunud laadida.",home:"Kataloog",age:"Olen vähemalt 18-aastane",ageText:"Fotovoog on ainult täiskasvanutele.",leave:"Lahku veebisaidilt"},
  ru:{online:"Онлайн",photos:"Новые фото",light:"Светлая тема",dark:"Тёмная тема",empty:"Новых фотографий участников пока нет.",error:"Не удалось загрузить данные.",home:"Каталог",age:"Мне исполнилось 18 лет",ageText:"Лента доступна только совершеннолетним.",leave:"Покинуть сайт"},
  en:{online:"Online",photos:"Recent photos",light:"Light theme",dark:"Dark theme",empty:"No new member photos yet.",error:"Could not load data.",home:"Catalogue",age:"I am 18 or older",ageText:"The feed is for adults only.",leave:"Leave site"},
  de:{online:"Online",photos:"Neue Fotos",light:"Helles Design",dark:"Dunkles Design",empty:"Noch keine neuen Mitgliederfotos.",error:"Daten konnten nicht geladen werden.",home:"Katalog",age:"Ich bin mindestens 18 Jahre alt",ageText:"Die Fotoliste ist nur für Erwachsene.",leave:"Seite verlassen"},
