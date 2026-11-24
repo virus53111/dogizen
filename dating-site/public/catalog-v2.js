@@ -35,7 +35,7 @@ window.mmOpenProfile=function(id){const p=state.visible.find(x=>x.id===id);/* No
 url.searchParams.set("listing",id);
 history.replaceState(history.state,"",url);
 content.textContent=t("loading");if(!modal.open)modal.showModal();
-(async()=>{try{const r=await fetch("/api/listing?id="+encodeURIComponent(id));if(r.status===404)throw Error(({ru:"Объявление недоступно",en:"Listing unavailable",de:"Anzeige nicht verfügbar",lv:"Sludinājums nav pieejams"})[state.lang] || "Listing unavailable");
+(async()=>{try{const r=await fetch("/api/listing?id="+encodeURIComponent(id));if(r.status===404)throw Error(({ru:"Объявление недоступно",en:"Listing unavailable",de:"Anzeige nicht verfügbar",lv:"Sludinājums nav pieejams",lt:"Skelbimas nepasiekiamas",et:"Kuulutus pole saadaval"})[state.lang] || "Listing unavailable");
 if(!r.ok)throw Error(t("error"));const data=await r.json(),item=data.listing;const canMessage=item.messaging_enabled!==false;const gallery=(data.photos||[]).map(x=>x.photo_url);if(item.avatar_url&&!gallery.includes(item.avatar_url))gallery.unshift(item.avatar_url);const first=gallery[0]||"";const cover=first?'<img src="'+escapeHTML(first)+'" alt="'+escapeHTML(item.display_name)+'">':'<span style="font-size:80px">✿</span>';const goals={friendship:"goalFriendship",dating:"goalDating",relationship:"goalRelationship",activities:"goalActivities",open:"goalOpen"};
 const goalName=goals[item.looking_for] ? t(goals[item.looking_for]) : "";
 const extraDetails=(goalName ? '<span>🎯 '+escapeHTML(t("lookingFor"))+': '+escapeHTML(goalName)+'</span>' : '')+
@@ -44,6 +44,7 @@ const thumbs=gallery.length>1?'<div class="gallery-thumbs">'+gallery.map((src,i)
 content.querySelectorAll("[data-photo]").forEach(btn=>btn.onclick=()=>{const img=gallery[Number(btn.dataset.photo)];document.getElementById("galleryMain").innerHTML='<img src="'+escapeHTML(img)+'" alt="'+escapeHTML(item.display_name)+'">';content.querySelectorAll("[data-photo]").forEach(x=>x.classList.toggle("active",x===btn))});
 const messageButton=document.getElementById("messageThis");if(canMessage){messageButton.onclick=()=>{if(window.mmStartChat)window.mmStartChat(item.id)}}else{messageButton.remove();}
 if(canMessage&&window.mmMountLike)window.mmMountLike(item.id,content);
+if(canMessage&&window.mmMountCommunity)window.mmMountCommunity(item.id,content);
 document.getElementById("reportThis").onclick=()=>{modal.close();document.getElementById("reportForm").elements.listing_id.value=item.id;document.getElementById("reportModal").showModal()};
 }catch(err){content.innerHTML='<p>'+escapeHTML(err.message)+'</p>'}})();return true};
 window.resetAdvancedFilters=function(){document.getElementById("radiusFilter").value="";syncRadius();window.mmExtra={min_age:"",max_age:"",sort:"newest",language:"",photo:"",commercial:"",featured:"",page:1};document.getElementById("minAge").value="18";document.getElementById("maxAge").value="85";document.getElementById("sortFilter").value="newest";document.getElementById("photoOnly").checked=false;document.getElementById("onlineOnly").checked=false;document.getElementById("newMemberOnly").checked=false;document.getElementById("spokenLanguageFilter").value="";};
@@ -76,7 +77,9 @@ renderExtraLanguage();
 }
 window.mmEnhanceMine=function(listings){
  const rows=[...document.querySelectorAll("#myContent .my-item")];
- const labels=state.lang==="ru"?["Изменить","Удалить анкету","Сохранить","Удалить анкету навсегда? Она исчезнет из каталога и связанные с ней переписки будут удалены. Это нельзя отменить.","Редактирование объявления"]:
+ const labels=state.lang==="lt"?["Redaguoti","Ištrinti anketą","Išsaugoti","Ištrinti anketą visam laikui? Ji dings iš katalogo, o susiję pokalbiai bus ištrinti. To atšaukti negalima.","Redaguoti skelbimą"]:
+ state.lang==="et"?["Muuda","Kustuta profiil","Salvesta","Kustutada profiil jäädavalt? See kaob kataloogist ja seotud vestlused kustutatakse. Seda ei saa tagasi võtta.","Muuda kuulutust"]:
+ state.lang==="ru"?["Изменить","Удалить анкету","Сохранить","Удалить анкету навсегда? Она исчезнет из каталога и связанные с ней переписки будут удалены. Это нельзя отменить.","Редактирование объявления"]:
  state.lang==="de"?["Bearbeiten","Profil löschen","Speichern","Profil endgültig löschen? Es verschwindet aus dem Katalog und die zugehörigen Nachrichten werden gelöscht. Dies kann nicht rückgängig gemacht werden.","Anzeige bearbeiten"]:
  state.lang==="lv"?["Rediģēt","Dzēst profilu","Saglabāt","Neatgriezeniski dzēst šo profilu? Tas pazudīs no kataloga, un saistītās sarakstes tiks dzēstas. To nevar atsaukt.","Rediģēt sludinājumu"]:["Edit","Delete profile","Save","Permanently delete this profile? It will disappear from the catalogue and its conversations will be deleted. This cannot be undone.","Edit listing"];
  rows.forEach((row,i)=>{
@@ -84,7 +87,7 @@ window.mmEnhanceMine=function(listings){
   const actions=document.createElement("div");actions.className="owner-actions";
   const edit=document.createElement("button");edit.className="btn btn-outline";edit.textContent=labels[0];
   const del=document.createElement("button");del.type="button";del.className="btn btn-text";del.textContent=labels[1];
-  actions.append(edit,del);row.append(actions);
+  actions.append(edit,del);row.append(actions);if(window.mmMountCommunitySettings)window.mmMountCommunitySettings(listing,row);
   del.onclick=async()=>{
    if(!confirm(labels[3]))return;del.disabled=true;
    try{const r=await fetch("/api/mine",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"delete",id:listing.id})});const j=await r.json();if(!r.ok||!j.ok)throw Error(t("error"));toast(labels[1]);showMy();loadListings()}catch(e){toast(e.message)}finally{del.disabled=false}

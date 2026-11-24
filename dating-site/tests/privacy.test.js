@@ -51,13 +51,15 @@ test('privacy deletion request needs explicit confirmation and never deletes dat
 test('data export selects only own authored content and never another members messages',async()=>{
  const {res,calls}=await call(privacyExport,{method:'GET',user:member},(sql,args)=>{
   assert.deepEqual(args,[member.id]);
-  assert.match(sql,/WHERE (?:id|owner_id|sender_id|user_id|liker_id|reporter_id|claimed_by)=\$1/);
+  assert.match(sql,/WHERE (?:id|l\.owner_id|owner_id|sender_id|writer_id|user_id|liker_id|reporter_id|claimed_by)=\$1/);
   return {rows:[]};
  });
  assert.equal(res.statusCode,200);
  assert.equal(res.headers['Cache-Control'],'private, no-store, max-age=0');
  assert.match(res.headers['Content-Disposition'],/attachment/);
- assert.equal(calls.length,10);
+ assert.equal(calls.length,12);
+ assert.ok('my_guestbook_entries' in res.body.sections);
+ assert.ok('my_community_settings' in res.body.sections);
  assert.ok('my_messages' in res.body.sections);
  assert.ok('my_likes' in res.body.sections);
  assert.ok('privacy_requests' in res.body.sections);

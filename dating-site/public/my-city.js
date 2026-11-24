@@ -2,6 +2,8 @@
 const myCity = (() => {
   const key = "mm.saved-city.v1";
   const labels = {
+    lt: ["Mano miestas","Išsaugoti paiešką šiame įrenginyje","Atverti išsaugotą paiešką","Pamiršti paiešką","Nauja nuo išsaugojimo","Nepavyko išsaugoti pakeitimų įrenginyje.","Pasirinkite miestą paieškai išsaugoti."],
+    et: ["Minu linn","Salvesta otsing selles seadmes","Ava salvestatud otsing","Unusta otsing","Uus pärast salvestamist","Muudatusi ei õnnestunud seadmes salvestada.","Vali otsingu salvestamiseks linn."],
     ru: ["Мой город", "Сохранить поиск на этом устройстве", "Открыть сохранённый поиск", "Забыть поиск", "Новое после сохранения", "Не удалось сохранить изменения на устройстве.", "Выберите город для сохранения."],
     lv: ["Mana pilsēta", "Saglabāt meklējumu šajā ierīcē", "Atvērt saglabāto meklējumu", "Dzēst meklējumu", "Jauns kopš saglabāšanas", "Neizdevās saglabāt izmaiņas ierīcē.", "Izvēlieties pilsētu, lai saglabātu meklējumu."],
     en: ["My city", "Save search on this device", "Open saved search", "Forget search", "New since saving", "Unable to save changes on this device.", "Choose a city to save your search."],

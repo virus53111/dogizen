@@ -17,6 +17,8 @@ export default async function(req,res){
  COALESCE((SELECT d.looking_for FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS looking_for,
  COALESCE((SELECT d.interests FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS interests
  FROM mm_listings WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 5001`],
+  ['my_guestbook_entries','SELECT id,listing_id,body,approved,created_at FROM mm_guestbook_entries WHERE writer_id=$1 ORDER BY created_at DESC LIMIT 5001'],
+  ['my_community_settings','SELECT s.listing_id,s.guestbook_enabled,s.author_group_enabled FROM mm_profile_community s JOIN mm_listings l ON l.id=s.listing_id WHERE l.owner_id=$1 LIMIT 5001'],
   ['my_likes','SELECT listing_id,created_at FROM mm_member_likes WHERE liker_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['my_messages','SELECT id,conversation_id,body,created_at,seen_at FROM mm_messages WHERE sender_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['my_room_messages','SELECT id,body,created_at FROM mm_room WHERE user_id=$1 ORDER BY created_at DESC LIMIT 5001'],

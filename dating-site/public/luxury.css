@@ -616,3 +616,18 @@ html[data-mm-theme="light"] #roomLog button{color:#7a2858}
 html[data-mm-theme="light"] .age-box{background:#fff9fb!important;border-color:var(--border)!important}
 html[data-mm-theme="light"] :is(.age-copy h2,.age-copy p,.age-copy small,.age-copy .btn-text,.age-symbol){color:var(--ink)!important}
 html[data-mm-theme="light"] .member-presence.is-online{color:#216b40!important}
+
+.mm-community{display:grid;gap:10px;margin-top:20px;padding:14px;border:1px solid var(--border);border-radius:12px;width:100%;min-width:0;overflow-wrap:anywhere}
+.mm-community[hidden],.mm-community:empty{display:none}
+.mm-community h3{font-size:18px;color:var(--ink);margin:0}
+.mm-community-check{display:flex;align-items:flex-start;gap:7px}
+.mm-community-check input{flex-shrink:0;margin-top:5px}
+.mm-community .btn{width:fit-content;max-width:100%;white-space:normal}
+.mm-guest-entry{border-top:1px solid var(--border);padding-top:12px;display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.mm-guest-entry p{width:100%;white-space:pre-wrap;margin:0}
+.mm-guest-entry small{color:var(--muted);width:100%}
+.mm-community form{display:grid;gap:8px}
+.mm-community textarea{width:100%;resize:vertical}
+.mm-author-card{display:flex;gap:10px;align-items:center;color:var(--ink);text-decoration:underline}
+.mm-author-card img{width:56px;height:66px;object-fit:cover;border-radius:6px}
+.my-item .mm-community{flex-basis:100%}
