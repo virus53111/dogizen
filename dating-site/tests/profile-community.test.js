@@ -31,6 +31,6 @@ test('non-owner cannot approve entries',async()=>{
  await profileCommunity(db)({method:'POST',user:{id:'guest',verified:true},body:{listing_id:id,action:'approve',entry_id:other}},r);db.done();assert.equal(r.code,403);
 });
 test('write requires opt-in, respects block and inserts pending only',async()=>{
- const db=fake([{match:/advisory_xact_lock/},{match:/LEFT JOIN/,rows:[target]},{match:/advisory_xact_lock/},{match:/SELECT NOT EXISTS/,rows:[{allowed:true}]},{match:/INTERVAL '1 day'/,rows:[{n:0}]},{match:/approved IS FALSE/,rows:[{n:0}]},{match:/WHERE listing_id=\$1$/,rows:[{n:0}]},{match:/INSERT INTO mm_guestbook_entries\(listing_id,writer_id,body\)/,args:[id,'guest','Hello']}]),r=res();
+ const db=fake([{match:/advisory_xact_lock/},{match:/LEFT JOIN/,rows:[target]},{match:/advisory_xact_lock/},{match:/SELECT NOT \(mm_pair_blocked/,rows:[{allowed:true}]},{match:/INTERVAL '1 day'/,rows:[{n:0}]},{match:/approved IS FALSE/,rows:[{n:0}]},{match:/WHERE listing_id=\$1$/,rows:[{n:0}]},{match:/INSERT INTO mm_guestbook_entries\(listing_id,writer_id,body\)/,args:[id,'guest','Hello']}]),r=res();
  await profileCommunity(db)({method:'POST',user:{id:'guest',verified:true},body:{listing_id:id,action:'write',body:'Hello'}},r);db.done();assert.equal(r.data.ok,true);
 });

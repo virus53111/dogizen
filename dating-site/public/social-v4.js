@@ -53,7 +53,7 @@ async function selectChat(id){
  $("#chatBlockBtn").textContent=d.blocked_by_me?V("unblock"):V("block");
  setError(blocked?V("blocked"):"");
  const c=chats.find(x=>x.id===id);if(c)c.unread=0;
- renderChats();
+ renderChats();window.mmRefreshActivity?.();
 }
 async function sendCurrent(e){
  e.preventDefault();if(loading||!activeChat)return;
@@ -74,7 +74,7 @@ window.mmStartChat=async function(id){
  try{
   const r=await fetch("/api/chat/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({listing_id:id})});
   const d=await r.json();if(!r.ok)throw Error(d.error||V("error"));
-  $("#profileModal")?.close();
+  if($("#profileModal")?.open)$("#profileModal").close();
   await showInbox();
   await selectChat(d.conversation_id);
  }catch(e){toast(e.message||V("error"))}
@@ -150,6 +150,7 @@ function bind(){
    fetchChats().catch(()=>{});
   }
  });
+ setInterval(()=>{if(!document.hidden&&state.user&&$("#messagesDialog").open&&!loading)fetchChats().catch(()=>{})},30000);
 }
 document.addEventListener("DOMContentLoaded",bind);
 })();

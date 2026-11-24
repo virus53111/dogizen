@@ -24,7 +24,7 @@ export default async function(req,res){
      FROM mm_member_likes f
      JOIN mm_listings l ON l.id=f.listing_id
        AND l.owner_id=f.liked_owner_id
-    WHERE f.liker_id=$1 AND l.status='approved'
+    WHERE f.liker_id=$1 AND l.status='approved' AND NOT mm_pair_blocked($1,l.owner_id)
       AND NOT EXISTS (
         SELECT 1 FROM mm_conversations c
         WHERE c.blocked_by IS NOT NULL
@@ -52,7 +52,7 @@ export default async function(req,res){
  const inserted=await db.query(`
    INSERT INTO mm_member_likes(liker_id,liked_owner_id,listing_id)
    SELECT $1,l.owner_id,l.id FROM mm_listings l
-    WHERE l.id=$2 AND l.status='approved' AND l.owner_id<>$1
+    WHERE l.id=$2 AND l.status='approved' AND l.owner_id<>$1 AND NOT mm_pair_blocked($1,l.owner_id)
       AND NOT EXISTS(
         SELECT 1 FROM mm_conversations c
         WHERE c.blocked_by IS NOT NULL
