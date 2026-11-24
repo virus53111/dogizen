@@ -26,6 +26,7 @@ window.fetch=async(url,opts={})=>{
  return Response.json({ok:true});
 };
 window.addEventListener('DOMContentLoaded',async()=>{
+ await new Promise(r=>setTimeout(r,0));
  const output=document.getElementById('result');
  const check=(cond,msg)=>{if(!cond)throw Error(msg)};
  const wait=async(fn)=>{for(let i=0;i<100;i++){if(fn())return;await new Promise(r=>setTimeout(r,20))}throw Error('timeout')};
@@ -39,8 +40,8 @@ window.addEventListener('DOMContentLoaded',async()=>{
   check(visible(q('#mmAttachPhoto')),'attachment clipped');check(visible(q('#chatText')),'composer clipped');check(visible(q('#chatSendBtn')),'send clipped');
   check(q('#chatMessages').clientHeight>40,'message list height');
   check(q('.mm-photo-caption').textContent==='<b>caption</b>'&&!q('.mm-photo-caption b'),'caption escaping');
-  const dt=new DataTransfer();dt.items.add(new File([new Uint8Array([1,2,3])],'test.png',{type:'image/png'}));q('#mmPhotoFile').files=dt.files;q('#mmPhotoFile').dispatchEvent(new Event('change'));
-  check(q('#mmPhotoPreview').open,'preview opens');check(q('#mmPreviewImage').src.startsWith('blob:'),'local preview');
+  const canvas=document.createElement('canvas');canvas.width=8;canvas.height=8;const blob=await new Promise(r=>canvas.toBlob(r,'image/png'));const dt=new DataTransfer();dt.items.add(new File([blob],'test.png',{type:'image/png'}));q('#mmPhotoFile').files=dt.files;q('#mmPhotoFile').dispatchEvent(new Event('change'));
+  check(q('#mmPhotoPreview').open,'preview opens');check(q('#mmPreviewImage').src.startsWith('blob:'),'local preview');await wait(()=>q('#mmPreviewImage').naturalWidth>0);
   q('#mmPhotoCaption').value='test caption';q('#mmPhotoSend').click();await wait(()=>sent&&!q('#mmPhotoPreview').open);
   check(sent.get('caption')==='test caption','caption submitted');check(sent.get('photo').name==='test.png','file submitted');
   await wait(()=>!q('#mmAttachPhoto').disabled);
@@ -56,7 +57,25 @@ const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,'htt
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const port=server.address().port;
 try{for(const width of [320,390,1024]){
  const dir=await mkdtemp(path.join(os.tmpdir(),'mm-chat-'));try{
- const result=await new Promise((resolve,reject)=>{const proc=spawn(process.env.CHROME_BIN||'google-chrome',['--headless','--no-sandbox','--disable-dev-shm-usage','--disable-gpu','--hide-scrollbars','--user-data-dir='+dir,'--window-size='+width+',844','--force-device-scale-factor=1','--virtual-time-budget=10000','--dump-dom','http://127.0.0.1:'+port+'/']);let out='',err='';const timeout=setTimeout(()=>{proc.kill('SIGKILL');reject(Error('browser timeout'))},30000);proc.stdout.on('data',d=>out+=d);proc.stderr.on('data',d=>err+=d);proc.on('error',e=>{clearTimeout(timeout);reject(e)});proc.on('close',code=>{clearTimeout(timeout);code===0?resolve(out):reject(Error(err.slice(-1500)))})});
- const marker=result.match(/<pre id="result">([^<]*)<\/pre>/)?.[1];console.log('Chat viewport '+width+': '+marker);assert.ok(marker?.startsWith('PASS:'),marker||'no browser result');
+ const chrome=spawn(process.env.CHROME_BIN||'google-chrome',['--headless','--no-sandbox','--disable-dev-shm-usage','--disable-gpu','--remote-debugging-port=0','--user-data-dir='+dir,'about:blank'],{stdio:'ignore'});
+ let ws;
+ try{
+  const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+  let debugPort;
+  for(let i=0;i<100&&!debugPort;i++){try{debugPort=Number((await fs.readFile(path.join(dir,'DevToolsActivePort'),'utf8')).split('\n')[0])}catch{await sleep(100)}}
+  assert.ok(debugPort,'Chrome debugger not available');
+  const pages=await fetch('http://127.0.0.1:'+debugPort+'/json/list').then(r=>r.json());
+  ws=new WebSocket(pages.find(p=>p.type==='page').webSocketDebuggerUrl);
+  await new Promise((resolve,reject)=>{ws.addEventListener('open',resolve,{once:true});ws.addEventListener('error',reject,{once:true})});
+  let next=0;const pending=new Map();
+  ws.addEventListener('message',e=>{const m=JSON.parse(e.data);if(m.id&&pending.has(m.id)){const p=pending.get(m.id);pending.delete(m.id);m.error?p.reject(Error(m.error.message)):p.resolve(m.result)}});
+  const cdp=(method,params={})=>new Promise((resolve,reject)=>{const id=++next;pending.set(id,{resolve,reject});ws.send(JSON.stringify({id,method,params}));setTimeout(()=>{if(pending.delete(id))reject(Error(method+' timeout'))},5000).unref()});
+  await cdp('Emulation.setDeviceMetricsOverride',{width,height:844,deviceScaleFactor:1,mobile:width<=640});
+  await cdp('Page.navigate',{url:'http://127.0.0.1:'+port+'/'});
+  let marker='PENDING';
+  for(let i=0;i<150;i++){const result=await cdp('Runtime.evaluate',{expression:"document.getElementById('result')?.textContent||'PENDING'",returnByValue:true});marker=result.result.value;if(marker!=='PENDING')break;await sleep(100)}
+  console.log('Chat viewport '+width+': '+marker);assert.equal(marker,'PASS:'+width);
+ }finally{ws?.close();chrome.kill('SIGTERM');await new Promise(r=>{if(chrome.exitCode!==null||chrome.signalCode!==null)r();else{chrome.once('close',r);setTimeout(r,2000)}})}
+
  }finally{await rm(dir,{recursive:true,force:true})}
 }}finally{server.close()}
