@@ -38,11 +38,11 @@ export default async function(req,res){
  if(q.online==="1"){
    // "Online" means active within five minutes AND explicit public-presence opt-in.
    // Admin/legacy listings have no authenticated owner and cannot claim to be online.
-   filters.push("EXISTS (SELECT 1 FROM mm_listings ml JOIN users u ON u.id=ml.owner_id WHERE ml.id=mm_public_listings.id AND u.visible IS TRUE AND u.last_seen>NOW()-INTERVAL '5 minutes')");
+   filters.push("EXISTS (SELECT 1 FROM mm_listings ml JOIN users u ON u.id=ml.owner_id WHERE ml.id=mm_public_listings.id AND u.visible IS TRUE AND NOT u.incognito AND u.last_seen>NOW()-INTERVAL '5 minutes')");
  }
  if(q.new_member==="1")filters.push(newMember);
  const sort=sval("sort",20);
- const orders={"newest":"featured DESC, created_at DESC","oldest":"created_at ASC","age_asc":"age ASC, created_at DESC","age_desc":"age DESC, created_at DESC"};
+ const orders={"newest":"featured DESC, GREATEST(created_at,COALESCE((SELECT b.bumped_at FROM mm_listing_bumps b WHERE b.listing_id=mm_public_listings.id),created_at)) DESC, id DESC","oldest":"created_at ASC","age_asc":"age ASC, created_at DESC","age_desc":"age DESC, created_at DESC"};
  const order=orders[sort]||orders.newest;
  const page=Math.max(1,Math.min(100,Math.floor(Number(q.page)||1)));
  const where=filters.join(" AND ");

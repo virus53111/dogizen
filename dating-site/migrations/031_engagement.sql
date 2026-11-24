@@ -1,0 +1,7 @@
+ALTER TABLE users ADD COLUMN IF NOT EXISTS incognito BOOLEAN NOT NULL DEFAULT FALSE;
+CREATE TABLE IF NOT EXISTS mm_listing_bumps (listing_id UUID PRIMARY KEY REFERENCES mm_listings(id) ON DELETE CASCADE, bumped_at TIMESTAMPTZ NOT NULL);
+CREATE TABLE IF NOT EXISTS mm_private_album_photos (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), listing_id UUID NOT NULL REFERENCES mm_listings(id) ON DELETE CASCADE, body BYTEA NOT NULL CHECK(octet_length(body)<=1048576), created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
+CREATE TABLE IF NOT EXISTS mm_private_album_access (id UUID NOT NULL DEFAULT gen_random_uuid() UNIQUE, listing_id UUID NOT NULL REFERENCES mm_listings(id) ON DELETE CASCADE, viewer_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, approved BOOLEAN NOT NULL DEFAULT FALSE, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), PRIMARY KEY(listing_id,viewer_id));
+CREATE TABLE IF NOT EXISTS mm_message_reactions (message_id UUID NOT NULL REFERENCES mm_messages(id) ON DELETE CASCADE, user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE, emoji TEXT NOT NULL CHECK(emoji IN ('❤️','👍','😂','😊','🔥','😮')), PRIMARY KEY(message_id,user_id));
+CREATE TABLE IF NOT EXISTS mm_support_tickets (id UUID PRIMARY KEY DEFAULT gen_random_uuid(),user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,subject VARCHAR(100) NOT NULL,body VARCHAR(2000) NOT NULL,reply VARCHAR(2000),created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),answered_at TIMESTAMPTZ);
+CREATE INDEX IF NOT EXISTS mm_support_user ON mm_support_tickets(user_id,created_at DESC);

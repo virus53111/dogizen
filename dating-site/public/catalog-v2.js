@@ -46,6 +46,7 @@ const messageButton=document.getElementById("messageThis");if(canMessage){messag
 if(canMessage&&window.mmMountLike)window.mmMountLike(item.id,content);
 if(canMessage&&window.mmMountCommunity)window.mmMountCommunity(item.id,content);
 if(canMessage&&window.mmProfileActivity)window.mmProfileActivity(item.id,content);
+if(canMessage)window.mmMountAlbum?.(item.id,content);
 if(window.mmGalleryControls)window.mmGalleryControls(content,gallery);
 document.getElementById("reportThis").onclick=()=>{modal.close();document.getElementById("reportForm").elements.listing_id.value=item.id;document.getElementById("reportModal").showModal()};
 }catch(err){content.innerHTML='<p>'+escapeHTML(err.message)+'</p>'}})();return true};
@@ -89,7 +90,7 @@ window.mmEnhanceMine=function(listings){
   const actions=document.createElement("div");actions.className="owner-actions";
   const edit=document.createElement("button");edit.className="btn btn-outline";edit.textContent=labels[0];
   const del=document.createElement("button");del.type="button";del.className="btn btn-text";del.textContent=labels[1];
-  actions.append(edit,del);row.append(actions);if(window.mmMountCommunitySettings)window.mmMountCommunitySettings(listing,row);
+  actions.append(edit,del);row.append(actions);actions.dataset.mmListing=listing.id;window.mmMountAlbum?.(listing.id,row,true);if(window.mmMountCommunitySettings)window.mmMountCommunitySettings(listing,row);
   del.onclick=async()=>{
    if(!confirm(labels[3]))return;del.disabled=true;
    try{const r=await fetch("/api/mine",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"delete",id:listing.id})});const j=await r.json();if(!r.ok||!j.ok)throw Error(t("error"));toast(labels[1]);showMy();loadListings()}catch(e){toast(e.message)}finally{del.disabled=false}
