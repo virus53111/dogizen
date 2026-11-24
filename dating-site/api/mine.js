@@ -1,4 +1,5 @@
 import { db } from "hatchable";
+import { choosePublication } from "./publication-policy.js";
 export const access="user";
 export const methods=["GET","POST"];
 const GOALS=new Set(["","friendship","dating","relationship","activities","open"]);
@@ -30,7 +31,16 @@ export default async function(req,res){
     if(hasExtra&&(!GOALS.has(lookingFor)||interests.length>240))
       return res.status(400).json({error:"Проверьте цель знакомства и интересы (до 240 символов)"});
     const r=await db.transaction(async query=>{
-      const update=await query("UPDATE mm_listings SET headline=$1,description=$2,status='pending',updated_at=NOW() WHERE id=$3 AND owner_id=$4 RETURNING id,status",[headline,description,id,owner]);
+      // Safe edits to already approved profiles remain public; profiles previously
+      // held/rejected by moderation NEVER bypass human review through editing.
+      const previous=await query("SELECT category,display_name,languages,status FROM mm_listings WHERE id=$1 AND owner_id=$2 FOR UPDATE",[id,owner]);
+      if(!previous.rows.length)return {rows:[]};
+      const profile=previous.rows[0];
+      const decision=choosePublication({
+        category:profile.category,display_name:profile.display_name,headline,description,interests,languages:profile.languages
+      });
+      const nextStatus=profile.status==="approved"&&req.user?.verified===true&&decision.status==="approved"?"approved":"pending";
+      const update=await query("UPDATE mm_listings SET headline=$1,description=$2,status=$5,updated_at=NOW() WHERE id=$3 AND owner_id=$4 RETURNING id,status",[headline,description,id,owner,nextStatus]);
       if(update.rows.length&&hasExtra)
         await query("INSERT INTO mm_member_profile_details(listing_id,looking_for,interests) VALUES($1,$2,$3) ON CONFLICT(listing_id) DO UPDATE SET looking_for=EXCLUDED.looking_for,interests=EXCLUDED.interests,updated_at=NOW()",[id,lookingFor,interests]);
       return update;

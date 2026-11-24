@@ -32,8 +32,8 @@ async function invoke(handler,req,query,tx){
  finally{db.query=oldQuery;db.transaction=oldTx;storage.put=oldPut}
 }
 test('profile create saves optional interests and goals atomically, pending approval',async()=>{
- const {res,calls}=await invoke(create,{method:'POST',user:{id:USER},body:validBody,files:[]},
- sql=>{if(sql.includes('COUNT(*)'))return {rows:[{n:0}]};throw Error('Unexpected direct query '+sql)},
+ const {res,calls}=await invoke(create,{method:'POST',user:{id:USER,verified:true},body:validBody,files:[]},
+ sql=>{if(sql.includes('COUNT(*)'))return {rows:[{n:0}]};if(sql.includes('SELECT EXISTS'))return {rows:[{repeated:false}]};throw Error('Unexpected direct query '+sql)},
  (sql,args)=>{
   if(sql.includes('INSERT INTO mm_listings')){
    assert.equal(args[0],USER);
@@ -52,8 +52,8 @@ test('profile create saves optional interests and goals atomically, pending appr
 });
 test('optional details can be omitted and existing behavior remains unchanged',async()=>{
  const body={...validBody};delete body.looking_for;delete body.interests;
- const {res,calls}=await invoke(create,{method:'POST',user:{id:USER},body,files:[]},
- sql=>sql.includes('COUNT(*)')?{rows:[{n:0}]}:(()=>{throw Error('Unexpected direct query')})(),
+ const {res,calls}=await invoke(create,{method:'POST',user:{id:USER,verified:true},body,files:[]},
+ sql=>sql.includes('COUNT(*)')?{rows:[{n:0}]}:sql.includes('SELECT EXISTS')?{rows:[{repeated:false}]}:(()=>{throw Error('Unexpected direct query')})(),
  sql=>sql.includes('INSERT INTO mm_listings')?{rows:[{id:ID,status:'pending'}]}:(()=>{throw Error('Unexpected extra query')})()
  );
  assert.equal(res.statusCode,200);
@@ -61,7 +61,7 @@ test('optional details can be omitted and existing behavior remains unchanged',a
 });
 test('invalid goals and oversized interests reject before uploading or DB writes',async()=>{
  for(const b of [{...validBody,looking_for:'secret_illegal_category'},{...validBody,interests:'x'.repeat(241)}]){
-  const {res,calls}=await invoke(create,{method:'POST',user:{id:USER},body:b,files:[]},()=>{
+  const {res,calls}=await invoke(create,{method:'POST',user:{id:USER,verified:true},body:b,files:[]},()=>{
     throw Error('Invalid data must be rejected before DB');
   });
   assert.equal(res.statusCode,400);
@@ -72,9 +72,11 @@ test('member edit updates both fields only on their own profile and returns to m
  const {res,calls}=await invoke(mine,{method:'POST',user:{id:USER},body:{id:ID,action:'edit',headline:'Обновлено',description:validBody.description,looking_for:'relationship',interests:'Спорт, кино'}},
  ()=>{throw Error('Only transaction may write')},
  (sql,args)=>{
+  if(sql.includes('SELECT category,display_name,languages,status'))return {rows:[{status:'pending',category:'dating',display_name:'Алекс',languages:'Русский'}]};
   if(sql.includes('UPDATE mm_listings')){
    assert.match(sql,/WHERE id=\$3 AND owner_id=\$4/);
-   assert.match(sql,/status='pending'/);
+   assert.match(sql,/status=\$5/);
+   assert.equal(args[4],'pending');
    assert.equal(args[3],USER);
    return {rows:[{id:ID,status:'pending'}]};
   }
@@ -87,21 +89,21 @@ test('member edit updates both fields only on their own profile and returns to m
  });
  assert.equal(res.statusCode,200);
  assert.equal(res.body.listing.status,'pending');
- assert.equal(calls.filter(x=>x.source==='transaction').length,2);
+ assert.equal(calls.filter(x=>x.source==='transaction').length,3);
 });
 test('unrelated user cannot alter another profile preferences',async()=>{
  const {res,calls}=await invoke(mine,{method:'POST',user:{id:'attacker'},body:{id:ID,action:'edit',headline:'Change',description:validBody.description,looking_for:'dating',interests:'Changed'}},
  ()=>{throw Error('Only transaction may write')},
- sql=>sql.includes('UPDATE mm_listings')?{rows:[]}:(()=>{throw Error('Must not upsert data without owner update')})());
+ sql=>sql.includes('SELECT category,display_name,languages,status')?{rows:[]}:(()=>{throw Error('Must not update without owner lookup')})());
  assert.equal(res.body.ok,false);
  assert.equal(calls.filter(x=>x.source==='transaction').length,1);
 });
 test('older edit client without new fields does not erase existing interests',async()=>{
  const {res,calls}=await invoke(mine,{method:'POST',user:{id:USER},body:{id:ID,action:'edit',headline:'Again',description:validBody.description}},
  ()=>{throw Error('No direct DB query')},
- sql=>sql.includes('UPDATE mm_listings')?{rows:[{id:ID,status:'pending'}]}:(()=>{throw Error('No interests update')})());
+ sql=>sql.includes('SELECT category,display_name,languages,status')?{rows:[{status:'pending',category:'dating',display_name:'Алекс',languages:'Русский'}]}:sql.includes('UPDATE mm_listings')?{rows:[{id:ID,status:'pending'}]}:(()=>{throw Error('No interests update')})());
  assert.equal(res.statusCode,200);
- assert.equal(calls.filter(x=>x.source==='transaction').length,1);
+ assert.equal(calls.filter(x=>x.source==='transaction').length,2);
 });
 test('only published listings expose optional fields without exposing account ID',async()=>{
  const {res,calls}=await invoke(listing,{method:'GET',query:{id:ID}},

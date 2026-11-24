@@ -1,9 +1,11 @@
 import { db, storage } from "hatchable";
+import { choosePublication } from "./publication-policy.js";
 export const access="user";
 export const methods=["POST"];
 const GOALS=new Set(["","friendship","dating","relationship","activities","open"]);
 const CATEGORIES=new Set(["dating", "women-men", "women-serious", "women-women", "men-women", "men-serious", "men-men", "couples", "trans-dating", "social", "events", "noncommercial", "support"]);
 export default async function(req,res){
+ if(!req.user?.verified)return res.status(403).json({error:"Для публикации подтвердите адрес электронной почты"});
  const b=req.body||{};
  const str=(v,n)=>String(v||"").trim().slice(0,n);
  const name=str(b.display_name,65),headline=str(b.headline,120),city=str(b.city,100),country=str(b.country,3).toUpperCase();
@@ -22,6 +24,15 @@ export default async function(req,res){
  if(commercial)return res.status(400).json({error:"Реклама платных сексуальных услуг и продажа интимных встреч запрещены. Выберите допустимый формат знакомства."});
  const recent=await db.query("SELECT COUNT(*)::integer AS n FROM mm_listings WHERE owner_id=$1 AND created_at > NOW() - INTERVAL '24 hours'",[req.user.id]);
  if((recent.rows[0]?.n||0)>=5)return res.status(429).json({error:"Вы достигли лимита: не более 5 анкет за 24 часа"});
+ const duplicate=await db.query(
+  "SELECT EXISTS(SELECT 1 FROM mm_listings WHERE owner_id=$1 AND LOWER(description)=LOWER($2) AND created_at>NOW()-INTERVAL '7 days') AS repeated",
+  [req.user.id,description]
+ );
+ const safety=choosePublication({
+  category,display_name:name,headline,description,interests,languages,
+  isDuplicate:duplicate.rows[0]?.repeated===true
+ });
+ const status=safety.status;
  function hasImageSignature(bytes,type){
  if(!bytes||bytes.length<12)return false;
  const b=Buffer.from(bytes);
@@ -42,8 +53,8 @@ export default async function(req,res){
  // Save the profile, optional preferences and photo references together.
  // Previously, a failed photo-reference insert could leave an incomplete profile.
  const listing=await db.transaction(async query=>{
-  const inserted=await query("INSERT INTO mm_listings (owner_id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,is_commercial,status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'pending') RETURNING id,status",[
-   req.user.id,name,headline,age,country,city,district,category,languages,description,images[0]||null,commercial]);
+  const inserted=await query("INSERT INTO mm_listings (owner_id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,is_commercial,status) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id,status",[
+   req.user.id,name,headline,age,country,city,district,category,languages,description,images[0]||null,commercial,status]);
   const id=inserted.rows[0].id;
   if(lookingFor||interests){
    await query("INSERT INTO mm_member_profile_details(listing_id,looking_for,interests) VALUES($1,$2,$3)",[id,lookingFor,interests]);
@@ -52,5 +63,5 @@ export default async function(req,res){
    await query("INSERT INTO mm_listing_photos (listing_id,photo_url,sort_order) VALUES ($1,$2,$3)",[id,images[i],i]);
   return inserted.rows[0];
  });
- res.json({ok:true,listing,message:"Объявление отправлено на предварительную модерацию"});
+ res.json({ok:true,listing,message:status==="approved"?"Анкета опубликована в каталоге":"Анкета отправлена на дополнительную проверку",published:status==="approved"});
 }

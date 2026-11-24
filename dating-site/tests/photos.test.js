@@ -23,24 +23,25 @@ async function callWithPhoto(file) {
  const beforeQuery=db.query,beforePut=storage.put,beforeTransaction=db.transaction; let inserted=0,stored=0;
  db.query=async sql=>{
    if(sql.includes('COUNT(*)'))return {rows:[{n:0}]};
-   if(sql.includes('INSERT INTO mm_listings')){inserted++;return {rows:[{id:'44444444-4444-4444-8444-444444444444',status:'pending'}]}};
+   if(sql.includes('SELECT EXISTS'))return {rows:[{repeated:false}]};
+   if(sql.includes('INSERT INTO mm_listings')){inserted++;return {rows:[{id:'44444444-4444-4444-8444-444444444444',status:'approved'}]}};
    if(sql.includes('INSERT INTO mm_listing_photos'))return {rows:[]};
    throw new Error('Unexpected SQL '+sql);
  };
  db.transaction=async work=>work((sql,args=[])=>db.query(sql,args));
  storage.put=async ()=>{stored++;return '/media/test/photo.png';};
  const res=response();
- try {await create({body,user:{id:'test-user'},files:[file]},res);return {status:res.statusCode,data:res.result,inserted,stored};}
+ try {await create({body,user:{id:'test-user',verified:true},files:[file]},res);return {status:res.statusCode,data:res.result,inserted,stored};}
  finally {db.query=beforeQuery;storage.put=beforePut;db.transaction=beforeTransaction}
 }
 
 for(const [name,mime,bytes] of [['PNG','image/png',png],['JPEG','image/jpeg',jpeg],['WebP','image/webp',webp]]) {
- test('valid '+name+' image can be saved in a pending profile',async()=>{
+ test('valid '+name+' image can be auto-published after checks',async()=>{
   const r=await callWithPhoto({field:'photo',filename:'image',buffer:bytes,contentType:mime});
   assert.equal(r.status,200);
   assert.equal(r.inserted,1);
   assert.equal(r.stored,1);
-  assert.equal(r.data.listing.status,'pending');
+  assert.equal(r.data.listing.status,'approved');
  });
 }
 test('spoofed JPG photo with HTML bytes is rejected',async()=>{

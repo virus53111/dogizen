@@ -75,14 +75,14 @@ renderExtraLanguage();
 }
 window.mmEnhanceMine=function(listings){
  const rows=[...document.querySelectorAll("#myContent .my-item")];
- const labels=state.lang==="ru"?["Изменить","Удалить","Сохранить","Удалить объявление?","Редактирование объявления"]:
- state.lang==="de"?["Bearbeiten","Löschen","Speichern","Anzeige löschen?","Anzeige bearbeiten"]:
- state.lang==="lv"?["Rediģēt","Dzēst","Saglabāt","Vai dzēst sludinājumu?","Rediģēt sludinājumu"]:["Edit","Delete","Save","Delete this listing?","Edit listing"];
+ const labels=state.lang==="ru"?["Изменить","Удалить анкету","Сохранить","Удалить анкету навсегда? Она исчезнет из каталога и связанные с ней переписки будут удалены. Это нельзя отменить.","Редактирование объявления"]:
+ state.lang==="de"?["Bearbeiten","Profil löschen","Speichern","Profil endgültig löschen? Es verschwindet aus dem Katalog und die zugehörigen Nachrichten werden gelöscht. Dies kann nicht rückgängig gemacht werden.","Anzeige bearbeiten"]:
+ state.lang==="lv"?["Rediģēt","Dzēst profilu","Saglabāt","Neatgriezeniski dzēst šo profilu? Tas pazudīs no kataloga, un saistītās sarakstes tiks dzēstas. To nevar atsaukt.","Rediģēt sludinājumu"]:["Edit","Delete profile","Save","Permanently delete this profile? It will disappear from the catalogue and its conversations will be deleted. This cannot be undone.","Edit listing"];
  rows.forEach((row,i)=>{
   const listing=listings[i];if(!listing)return;
   const actions=document.createElement("div");actions.className="owner-actions";
   const edit=document.createElement("button");edit.className="btn btn-outline";edit.textContent=labels[0];
-  const del=document.createElement("button");del.className="btn btn-text";del.textContent=labels[1];
+  const del=document.createElement("button");del.type="button";del.className="btn btn-text";del.textContent=labels[1];
   actions.append(edit,del);row.append(actions);
   del.onclick=async()=>{
    if(!confirm(labels[3]))return;del.disabled=true;
