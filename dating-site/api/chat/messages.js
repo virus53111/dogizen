@@ -15,7 +15,7 @@ export default async function(req,res){
   const action=req.body?.action||"send";
   if(action==="delete"){
    const message=String(req.body?.message_id||"");if(!UUID.test(message))return error(res,400,"Неверное сообщение");
-   const removed=await db.query("WITH removed AS (UPDATE mm_messages SET body='[deleted]',deleted_at=NOW(),seen_at=COALESCE(seen_at,NOW()) WHERE id=$1 AND conversation_id=$2 AND sender_id=$3 AND deleted_at IS NULL RETURNING id), photos AS (DELETE FROM mm_chat_photos p USING removed r WHERE p.message_id=r.id) SELECT id FROM removed",[message,id,caller]);
+   const removed=await db.query("WITH removed AS (UPDATE mm_messages SET body='[deleted]',deleted_at=NOW(),seen_at=COALESCE(seen_at,NOW()) WHERE id=$1 AND conversation_id=$2 AND sender_id=$3 AND deleted_at IS NULL RETURNING id), photos AS (DELETE FROM mm_chat_photos p USING removed r WHERE p.message_id=r.id), reactions AS (DELETE FROM mm_message_reactions z USING removed r WHERE z.message_id=r.id) SELECT id FROM removed",[message,id,caller]);
    return removed.rows.length?res.json({ok:true}):error(res,404,"Сообщение недоступно");
   }
   if(!["send","typing","reaction"].includes(action))return error(res,400,"Неизвестное действие");

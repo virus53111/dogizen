@@ -20,17 +20,17 @@ export default async function(req,res){
   }
   const count=await db.query('SELECT COUNT(*)::int AS count FROM mm_private_album_photos WHERE listing_id=$1',[id]);
   const photos=a.owner||a.approved===true?await db.query('SELECT id,created_at FROM mm_private_album_photos WHERE listing_id=$1 ORDER BY created_at DESC LIMIT 6',[id]):{rows:[]};
-  const requests=a.owner?await db.query(`SELECT a.viewer_id AS request_id,a.approved,a.created_at,p.id AS profile_id,p.display_name FROM mm_private_album_access a JOIN LATERAL (SELECT l.id,l.display_name FROM mm_listings l JOIN mm_public_listings pub ON pub.id=l.id WHERE l.owner_id=a.viewer_id AND l.status='approved' AND pub.messaging_enabled IS TRUE ORDER BY l.created_at DESC LIMIT 1) p ON TRUE WHERE a.listing_id=$1 AND NOT mm_pair_blocked(a.viewer_id,$2) ORDER BY a.created_at DESC LIMIT 100`,[id,user]):{rows:[]};
+  const requests=a.owner?await db.query(`SELECT a.id AS request_id,a.approved,a.created_at,p.id AS profile_id,p.display_name FROM mm_private_album_access a JOIN LATERAL (SELECT l.id,l.display_name FROM mm_listings l JOIN mm_public_listings pub ON pub.id=l.id WHERE l.owner_id=a.viewer_id AND l.status='approved' AND pub.messaging_enabled IS TRUE ORDER BY l.created_at DESC LIMIT 1) p ON TRUE WHERE a.listing_id=$1 AND NOT mm_pair_blocked(a.viewer_id,$2) ORDER BY a.created_at DESC LIMIT 100`,[id,user]):{rows:[]};
   return res.json({owner:a.owner,count:count.rows[0].count,approved:a.owner||a.approved===true,pending:a.approved===false,photos:photos.rows,requests:requests.rows});
  }
  if(b.action==='request'&&!a.owner){
   const r=await db.query(`INSERT INTO mm_private_album_access(listing_id,viewer_id) SELECT l.id,$2 FROM mm_listings l JOIN mm_public_listings p ON p.id=l.id WHERE l.id=$1 AND l.status='approved' AND p.messaging_enabled IS TRUE AND NOT mm_pair_blocked(l.owner_id,$2) AND EXISTS(SELECT 1 FROM mm_private_album_photos ph WHERE ph.listing_id=l.id) AND EXISTS(SELECT 1 FROM mm_listings my JOIN mm_public_listings mp ON mp.id=my.id WHERE my.owner_id=$2 AND my.status='approved' AND mp.messaging_enabled IS TRUE) AND (SELECT COUNT(*) FROM mm_private_album_access WHERE viewer_id=$2 AND created_at>NOW()-INTERVAL '1 day')<10 ON CONFLICT DO NOTHING RETURNING listing_id`,[id,user]);
-  return r.rows.length||a.approved!==null?res.json({ok:true}):fail(res,403,'request_unavailable');
+  return r.rows.length||typeof a.approved==='boolean'?res.json({ok:true}):fail(res,403,'request_unavailable');
  }
  if(!a.owner)return fail(res,403,'owner_only');
  if(b.action==='grant'||b.action==='revoke'){
-  if(typeof b.request_id!=='string'||b.request_id.length>128)return fail(res,400,'invalid_request');
-  const r=await db.query("UPDATE mm_private_album_access a SET approved=$3 FROM mm_listings l WHERE a.listing_id=$1 AND a.viewer_id=$2 AND l.id=a.listing_id AND l.owner_id=$4 AND ($3=FALSE OR (l.status='approved' AND NOT mm_pair_blocked(l.owner_id,a.viewer_id))) RETURNING a.listing_id",[id,b.request_id,b.action==='grant',user]);
+  if(!UUID.test(String(b.request_id||'')))return fail(res,400,'invalid_request');
+  const r=await db.query("UPDATE mm_private_album_access a SET approved=$3 FROM mm_listings l WHERE a.listing_id=$1 AND a.id=$2 AND l.id=a.listing_id AND l.owner_id=$4 AND ($3=FALSE OR (l.status='approved' AND NOT mm_pair_blocked(l.owner_id,a.viewer_id))) RETURNING a.listing_id",[id,b.request_id,b.action==='grant',user]);
   return r.rows.length?res.json({ok:true}):fail(res,404,'not_found');
  }
  if(b.action==='delete'){

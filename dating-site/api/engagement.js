@@ -8,7 +8,7 @@ export default async function(req,res){
  const user=req.user?.verified===true?req.user.id:null;if(!user)return err(res,401,'sign_in');
  if(req.method==='GET'){
   const r=await db.query('SELECT incognito FROM users WHERE id=$1',[user]);
-  const bumps=await db.query("SELECT l.id,b.bumped_at,COALESCE(b.bumped_at<NOW()-INTERVAL '24 hours',TRUE) AS can_bump FROM mm_listings l LEFT JOIN mm_listing_bumps b ON b.listing_id=l.id WHERE l.owner_id=$1 AND l.status='approved'",[user]);
+  const bumps=await db.query("SELECT l.id,b.bumped_at,COALESCE(b.bumped_at<=NOW()-INTERVAL '24 hours',TRUE) AS can_bump FROM mm_listings l LEFT JOIN mm_listing_bumps b ON b.listing_id=l.id WHERE l.owner_id=$1 AND l.status='approved'",[user]);
   return res.json({incognito:r.rows[0]?.incognito===true,bumps:bumps.rows});
  }
  const b=req.body||{};
@@ -17,7 +17,7 @@ export default async function(req,res){
   await db.transaction(async query=>{
    await query('SELECT pg_advisory_xact_lock(hashtextextended($1,74028))',[user]);
    await query('UPDATE users SET incognito=$2,visible=CASE WHEN $2 THEN FALSE ELSE visible END WHERE id=$1',[user,b.enabled]);
-   if(b.enabled){await query('INSERT INTO mm_member_activity_settings(user_id,share_visits) VALUES($1,FALSE) ON CONFLICT(user_id) DO UPDATE SET share_visits=FALSE',[user]);await query('DELETE FROM mm_profile_visits WHERE visitor_id=$1',[user]);}
+   if(b.enabled){await query('INSERT INTO mm_member_activity_settings(user_id,share_visits) VALUES($1,FALSE) ON CONFLICT(user_id) DO UPDATE SET share_visits=FALSE',[user]);await query('DELETE FROM mm_profile_visits v WHERE v.visitor_id=$1 OR EXISTS(SELECT 1 FROM mm_listings l WHERE l.id=v.listing_id AND l.owner_id=$1)',[user]);}
   });
   return res.json({ok:true});
  }

@@ -57,7 +57,7 @@ test('data export selects only own authored content and never another members me
  assert.equal(res.statusCode,200);
  assert.equal(res.headers['Cache-Control'],'private, no-store, max-age=0');
  assert.match(res.headers['Content-Disposition'],/attachment/);
- assert.equal(calls.length,15);
+ assert.equal(calls.length,20);
  assert.ok('my_guestbook_entries' in res.body.sections);
  assert.ok('my_visit_settings' in res.body.sections);
  assert.ok('my_profile_visits' in res.body.sections);

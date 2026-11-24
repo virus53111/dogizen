@@ -132,7 +132,7 @@ test('private account export includes interests and favorites from the unified t
  assert.equal(res.body.sections.profiles[0].interests,'Походы');
  assert.equal(res.body.sections.favorites[0].listing_id,ID);
  assert.ok('my_likes' in res.body.sections);
- assert.equal(calls.length,15);
+ assert.equal(calls.length,20);
  assert.ok('my_guestbook_entries' in res.body.sections);
  assert.ok('my_visit_settings' in res.body.sections);
  assert.ok('my_profile_visits' in res.body.sections);

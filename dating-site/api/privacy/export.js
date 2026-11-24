@@ -12,11 +12,16 @@ export default async function(req,res){
  // Include only account data and text this person authored. Do not leak messages
  // written by OTHER members or moderation notes about someone else.
  const sources=[
-  ['account','SELECT id,email,email_verified_at,visible,last_seen FROM users WHERE id=$1 LIMIT 1'],
+  ['account','SELECT id,email,email_verified_at,visible,last_seen,incognito FROM users WHERE id=$1 LIMIT 1'],
   ['profiles',`SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,status,created_at,updated_at,
  COALESCE((SELECT d.looking_for FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),\'\') AS looking_for,
  COALESCE((SELECT d.interests FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS interests
  FROM mm_listings WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 5001`],
+  ['my_bumps','SELECT b.listing_id,b.bumped_at FROM mm_listing_bumps b JOIN mm_listings l ON l.id=b.listing_id WHERE l.owner_id=$1 LIMIT 5001'],
+  ['my_private_album_photos','SELECT p.id,p.listing_id,p.created_at FROM mm_private_album_photos p JOIN mm_listings l ON l.id=p.listing_id WHERE l.owner_id=$1 LIMIT 5001'],
+  ['my_album_requests','SELECT listing_id,approved,created_at FROM mm_private_album_access WHERE viewer_id=$1 LIMIT 5001'],
+  ['my_reactions','SELECT message_id,emoji FROM mm_message_reactions WHERE user_id=$1 LIMIT 5001'],
+  ['my_support_tickets','SELECT id,subject,body,reply,created_at,answered_at FROM mm_support_tickets WHERE user_id=$1 LIMIT 5001'],
   ['my_visit_settings','SELECT share_visits,matches_seen_at FROM mm_member_activity_settings WHERE user_id=$1'],
   ['my_profile_visits','SELECT listing_id,visited_at FROM mm_profile_visits WHERE visitor_id=$1 AND visited_at>NOW()-INTERVAL \'30 days\' ORDER BY visited_at DESC LIMIT 5001'],
   ['my_blocks','SELECT id,created_at FROM mm_member_blocks WHERE blocker_id=$1 ORDER BY created_at DESC LIMIT 5001'],
