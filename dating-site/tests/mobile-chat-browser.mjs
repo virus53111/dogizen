@@ -77,5 +77,5 @@ try{for(const width of [320,390,1024]){
   console.log('Chat viewport '+width+': '+marker);assert.equal(marker,'PASS:'+width);
  }finally{ws?.close();chrome.kill('SIGTERM');await new Promise(r=>{if(chrome.exitCode!==null||chrome.signalCode!==null)r();else{chrome.once('close',r);setTimeout(r,2000)}})}
 
- }finally{await rm(dir,{recursive:true,force:true})}
+ }finally{await rm(dir,{recursive:true,force:true,maxRetries:10,retryDelay:200})}
 }}finally{server.close()}
