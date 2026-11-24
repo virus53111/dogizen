@@ -18,9 +18,15 @@ export default async function(req,res){
    const removed=await db.query("WITH removed AS (UPDATE mm_messages SET body='[deleted]',deleted_at=NOW(),seen_at=COALESCE(seen_at,NOW()) WHERE id=$1 AND conversation_id=$2 AND sender_id=$3 AND deleted_at IS NULL RETURNING id), photos AS (DELETE FROM mm_chat_photos p USING removed r WHERE p.message_id=r.id) SELECT id FROM removed",[message,id,caller]);
    return removed.rows.length?res.json({ok:true}):error(res,404,"Сообщение недоступно");
   }
-  if(!["send","typing"].includes(action))return error(res,400,"Неизвестное действие");
+  if(!["send","typing","reaction"].includes(action))return error(res,400,"Неизвестное действие");
   if(conversation.blocked_by||conversation.pair_blocked)return error(res,403,"Переписка заблокирована");
   if(conversation.listing_status!=="approved")return error(res,403,"Объявление больше не опубликовано");
+  if(action==="reaction"){
+   const message=String(req.body?.message_id||''),emoji=req.body?.emoji;
+   if(!UUID.test(message)||!(emoji===null||['❤️','👍','😂','😊','🔥','😮'].includes(emoji)))return error(res,400,'invalid_reaction');
+   const sql=emoji===null?"DELETE FROM mm_message_reactions r USING mm_messages m WHERE r.message_id=m.id AND m.id=$1 AND m.conversation_id=$2 AND r.user_id=$3 RETURNING r.message_id":"INSERT INTO mm_message_reactions(message_id,user_id,emoji) SELECT m.id,$3,$4 FROM mm_messages m JOIN mm_conversations c ON c.id=m.conversation_id WHERE m.id=$1 AND m.conversation_id=$2 AND m.deleted_at IS NULL AND NOT mm_pair_blocked(c.requester_id,c.publisher_id) ON CONFLICT(message_id,user_id) DO UPDATE SET emoji=EXCLUDED.emoji RETURNING message_id";
+   await db.query(sql,emoji===null?[message,id,caller]:[message,id,caller,emoji]);return res.json({ok:true});
+  }
   if(action==="typing"){
    await db.query("DELETE FROM mm_chat_typing WHERE expires_at<=NOW()");
    if(req.body?.active===true)await db.query("INSERT INTO mm_chat_typing(conversation_id,user_id,expires_at) VALUES($1,$2,NOW()+INTERVAL '8 seconds') ON CONFLICT(conversation_id,user_id) DO UPDATE SET expires_at=EXCLUDED.expires_at",[id,caller]);
@@ -40,6 +46,6 @@ export default async function(req,res){
   return res.json({ok:true,message:{...msg.rows[0],sender_id:undefined,mine:true}});
  }
  await db.query("UPDATE mm_messages SET seen_at=NOW() WHERE conversation_id=$1 AND sender_id<>$2 AND seen_at IS NULL",[id,caller]);
- const messages=await db.query("SELECT m.id,m.sender_id,m.body,m.created_at,m.seen_at,m.reply_to,m.deleted_at,EXISTS(SELECT 1 FROM mm_chat_photos p WHERE p.message_id=m.id) AS has_photo,COALESCE((SELECT p.caption FROM mm_chat_photos p WHERE p.message_id=m.id),'') AS photo_caption,CASE WHEN r.deleted_at IS NULL THEN LEFT(r.body,120) ELSE NULL END AS reply_preview FROM (SELECT id,sender_id,body,created_at,seen_at,reply_to,deleted_at FROM mm_messages WHERE conversation_id=$1 ORDER BY created_at DESC,id DESC LIMIT 100) m LEFT JOIN mm_messages r ON r.id=m.reply_to AND r.conversation_id=$1 ORDER BY m.created_at ASC,m.id ASC",[id]);
+ const messages=await db.query("SELECT m.id,m.sender_id,m.body,m.created_at,m.seen_at,m.reply_to,m.deleted_at,EXISTS(SELECT 1 FROM mm_chat_photos p WHERE p.message_id=m.id) AS has_photo,COALESCE((SELECT p.caption FROM mm_chat_photos p WHERE p.message_id=m.id),'') AS photo_caption,COALESCE((SELECT json_agg(json_build_object('emoji',z.emoji,'mine',z.user_id=$2)) FROM mm_message_reactions z WHERE z.message_id=m.id AND m.deleted_at IS NULL),'[]'::json) AS reactions,CASE WHEN r.deleted_at IS NULL THEN LEFT(r.body,120) ELSE NULL END AS reply_preview FROM (SELECT id,sender_id,body,created_at,seen_at,reply_to,deleted_at FROM mm_messages WHERE conversation_id=$1 ORDER BY created_at DESC,id DESC LIMIT 100) m LEFT JOIN mm_messages r ON r.id=m.reply_to AND r.conversation_id=$1 ORDER BY m.created_at ASC,m.id ASC",[id,caller]);
  res.json({conversation_id:id,display_name:conversation.display_name,blocked:!!conversation.blocked_by||conversation.pair_blocked===true,blocked_by_me:conversation.blocked_by===caller,typing:!conversation.blocked_by&&!conversation.pair_blocked&&conversation.typing===true,messages:messages.rows.map(m=>({...m,body:m.deleted_at?null:m.body,mine:m.sender_id===caller,sender_id:undefined}))});
 }

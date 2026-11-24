@@ -133,7 +133,7 @@ app.get('/media/*', async (req, res, next) => {
 app.post('/api/presence', userOnly, async (req, res, next) => {
   try {
     const visible = typeof req.body?.visible === 'boolean' ? req.body.visible : null;
-    await db.query('UPDATE users SET visible=COALESCE($2,visible),last_seen=NOW() WHERE id=$1', [req.user.id, visible]);
+    await db.query('UPDATE users SET visible=CASE WHEN incognito THEN FALSE ELSE COALESCE($2,visible) END,last_seen=NOW() WHERE id=$1', [req.user.id, visible]);
     res.json({ ok: true });
   } catch (e) { next(e); }
 });
@@ -169,11 +169,11 @@ app.post('/api/room', userOnly, async (req, res, next) => {
 });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 6, fields: 40, parts: 46 } });
 const adminUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1, fields: 40, parts: 41 } });
-const routes = ['locations', 'listings', 'listing', 'profile-community', 'member-activity', 'profile-stats', 'recommendations', 'push', 'create', 'mine', 'favorites', 'likes', 'report', 'chat/list', 'chat/start',
-  'chat/messages', 'chat/photos', 'chat/block', 'chat/report', 'legacy/claim', 'claim', 'privacy', 'privacy/export', 'admin/me', 'admin/overview', 'admin/listings', 'admin/manual', 'admin/manage', 'admin/reports', 'admin/claim-invite', 'admin/privacy-requests'];
+const routes = ['locations', 'listings', 'listing', 'profile-community', 'member-activity', 'profile-stats', 'recommendations', 'push', 'engagement', 'private-album', 'support', 'create', 'mine', 'favorites', 'likes', 'report', 'chat/list', 'chat/start',
+  'chat/messages', 'chat/photos', 'chat/block', 'chat/report', 'legacy/claim', 'claim', 'privacy', 'privacy/export', 'admin/me', 'admin/overview', 'admin/support', 'admin/listings', 'admin/manual', 'admin/manage', 'admin/reports', 'admin/claim-invite', 'admin/privacy-requests'];
 for (const slug of routes) {
   const mod = await import('../api/' + slug + '.js');
-  const acceptsUpload = ['create','admin/manual','admin/manage','chat/photos'].includes(slug);
+  const acceptsUpload = ['create','admin/manual','admin/manage','chat/photos','private-album'].includes(slug);
   const parsesUpload = !acceptsUpload ? [] : [(slug === 'create' ? upload : adminUpload).any()];
   // Reject unauthenticated/non-owner requests BEFORE multipart parsing (up to 24 MB).
   app.all('/api/' + slug, (req, res, next) => {
