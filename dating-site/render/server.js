@@ -65,9 +65,10 @@ app.use(async (req, res, next) => {
   } catch (error) { next(error); }
 });
 const owner = u => !!u && u.verified && u.email.toLowerCase() === 'dshtriters@gmail.com';
-const session = (u, visible = false) => u ? {
-  id: u.id, email: u.email, ownerPanel: owner(u), canMessage: true, visible
+const session = (u, visible = false, adminAllowed = false) => u ? {
+  id: u.id, email: u.email, ownerPanel: adminAllowed === true, canMessage: true, visible
 } : null;
+async function ownerAllowed(user){if(!owner(user))return false;const r=await db.query('SELECT 1 FROM users u JOIN mm_admin_allowlist a ON LOWER(u.email)=a.email WHERE u.id=$1 AND u.email_verified_at IS NOT NULL LIMIT 1',[user.id]);return r.rows.length>0}
 const userOnly = (req, res, next) => req.user ? next() : res.status(401).json({ error: 'Требуется вход' });
 const safeNext = value => {
   const s = String(value || '/');
@@ -91,16 +92,16 @@ app.post('/auth/session', async (req, res) => {
   const memberRecord = await db.query("INSERT INTO users(id,email,email_verified_at) VALUES ($1,$2,NOW()) ON CONFLICT(id) DO UPDATE SET email=$2,email_verified_at=NOW() RETURNING visible", [user.id, user.email]);
   res.cookie('mm_token', token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 55 * 60 * 1000, path: '/' });
   res.set('Cache-Control', 'no-store');
-  res.json({ user: session(user, memberRecord.rows[0]?.visible === true) });
+  res.json({ user: session(user, memberRecord.rows[0]?.visible === true, await ownerAllowed(user)) });
 });
 app.post('/auth/logout', async (req, res, next) => {
   try { if(req.user&&typeof req.body?.push_endpoint==='string')await db.query('DELETE FROM mm_push_subscriptions WHERE user_id=$1 AND endpoint=$2',[req.user.id,req.body.push_endpoint]); } catch(e){return next(e)}
   res.clearCookie('mm_token', { path: '/', sameSite: 'lax', secure: true });
   res.json({ ok: true });
 });
-app.get('/login', (req, res) => {
+app.get('/login', async (req, res, next) => {
   const dest = safeNext(req.query.next);
-  if (owner(req.user)) return res.redirect('/admin.html');
+  try { if (await ownerAllowed(req.user)) return res.redirect('/admin.html'); } catch(e){return next(e)}
   res.redirect(req.user ? dest : '/auth/login.html?next=' + encodeURIComponent(dest));
 });
 // Retire the old dead /login.html Firebase-incompatible form.
@@ -113,7 +114,7 @@ app.get('/api/session', async (req, res, next) => {
   if (!req.user) return res.json({ user: null });
   try {
     const state = await db.query('SELECT visible FROM users WHERE id=$1', [req.user.id]);
-    return res.json({ user: session(req.user, state.rows[0]?.visible === true) });
+    return res.json({ user: session(req.user, state.rows[0]?.visible === true, await ownerAllowed(req.user)) });
   } catch (error) { next(error); }
 });
 app.get('/media/*', async (req, res, next) => {

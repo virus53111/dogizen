@@ -14,7 +14,7 @@ for (const [lang, filename] of pages) {
   test(lang + ' page restores the Firebase session before gated actions', async () => {
     const src = await fs.readFile(filename, 'utf8');
     assert.match(src, /window\.MM_authReady=new Promise/);
-    assert.match(src, /src="\/auth\/refresh\.js"/);
+    assert.match(src, /src="\/auth\/refresh\.js(?:\?v=[\w-]+)?"/);
     assert.match(src, /<script defer src="\/app\.js(?:\?v=[\w-]+)?"/);
     assert.ok(src.indexOf('MM_authReady') < src.indexOf('</head>'));
     assert.ok(src.includes('lang="' + lang + '"'));

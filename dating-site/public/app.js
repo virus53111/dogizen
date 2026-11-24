@@ -225,8 +225,13 @@ async function drawMap(){
  if(state.mode!=="map")return;
  $("#mapCanvas").classList.remove("hidden");$("#mapFallback").classList.add("hidden");if(!state.map){state.map=L.map("mapCanvas",{scrollWheelZoom:false}).setView([53.5,16],4);L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:18,attribution:'&copy; OpenStreetMap contributors'}).addTo(state.map);state.markers=L.layerGroup().addTo(state.map)}state.markers.clearLayers();const bounds=[];state.visible.forEach((p,i)=>{const base=COORDS[p.city];if(!base)return;const lat=base[0]+((i%4)-1.5)*.007,lon=base[1]+((i%5)-2)*.009;const icon=L.divIcon({className:"",html:'<div class="mm-map-marker">✦</div>',iconSize:[28,28],iconAnchor:[14,14]});const marker=L.marker([lat,lon],{icon}).addTo(state.markers);marker.bindPopup('<strong>'+escapeHTML(p.display_name)+'</strong><br>'+escapeHTML(p.city)+'<br><small>'+((window.MM_categoryLabel?window.MM_categoryLabel(p.category,state.lang):t(p.category)))+'</small>');bounds.push([lat,lon])});setTimeout(()=>{state.map.invalidateSize();if(bounds.length)state.map.fitBounds(bounds,{padding:[35,35],maxZoom:12});else state.map.setView([53.5,16],4)},90)}
 function applyFilter(){state.country=$("#countryFilter").value;state.city=$("#cityFilter").value;state.district=$("#districtFilter").value;state.category=$("#categoryFilter").value;state.q=$("#keyword").value.trim();if(window.mmExtra)window.mmExtra.page=1;loadListings();$("#catalog").scrollIntoView({behavior:"smooth",block:"start"})}
-async function getSession(){try{if(window.MM_authReady)await window.MM_authReady;return(await fetch("/api/session").then(r=>r.json()))?.user||null}catch{return null}}
-function showOwnerLink(){for(const id of ["ownerAdminLink","ownerCreateShortcut","ownerPostShortcut"]){const link=$("#"+id);if(link)link.classList.toggle("hidden",!state.user?.ownerPanel)}}
+async function getSession(){try{if(window.MM_authReady)await window.MM_authReady;return(await fetch("/api/session",{cache:"no-store"}).then(r=>r.json()))?.user||null}catch{return null}}
+function showOwnerLink(){const allowed=state.user?.ownerPanel===true;for(const id of ["ownerNavAdmin","ownerAdminLink","ownerCreateShortcut","ownerPostShortcut"]){const link=$("#"+id);if(link){link.classList.toggle("hidden",!allowed);link.hidden=!allowed}}}
+let mmSessionTicket=0;
+async function refreshOwnerSession(){const ticket=++mmSessionTicket;const user=await getSession();if(ticket!==mmSessionTicket)return state.user;state.user=user;updateLogin();showOwnerLink();return user}
+window.addEventListener("mm:auth-session",()=>refreshOwnerSession());
+window.addEventListener("pageshow",e=>{if(e.persisted)refreshOwnerSession()});
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)refreshOwnerSession()});
 function loginPath(params = {}) {
  const back = new URL(location.href);
  for (const [key,value] of Object.entries(params)) back.searchParams.set(key,value);
@@ -238,8 +243,8 @@ function consumeReturnKey(key) {
  history.replaceState(history.state, "", url);
 }
 function updateLogin(){const btn=$("#loginBtn");if(state.user){btn.textContent=state.user.email?.split("@")[0]||t("myAds");btn.onclick=e=>{e.preventDefault();showMy()}}else{btn.textContent=t("accountEntry");btn.href=loginPath();btn.onclick=null}}
-async function openPost(){state.user=await getSession();updateLogin();showOwnerLink();if(!state.user){toast(t("loginRequired"));location.assign(loginPath({publish:"1"}));return}$("#postModal").showModal()}
-async function showMy(){state.user=await getSession();if(!state.user){location.assign(loginPath({panel:"mine"}));return}if(!$("#myModal").open)$("#myModal").showModal();$("#myContent").textContent=t("loading");try{const r=await fetch("/api/mine");if(!r.ok)throw Error();const data=await r.json();$("#myContent").innerHTML=data.listings.length?'<div class="my-list">'+data.listings.map(x=>'<div class="my-item"><div><strong>'+escapeHTML(x.display_name)+'</strong><br><small>'+escapeHTML(x.city)+'</small></div><span class="status '+escapeHTML(x.status)+'">'+t(x.status)+'</span></div>').join("")+'</div>':'<p>'+t("noMy")+'</p>';if(window.mmEnhanceMine)window.mmEnhanceMine(data.listings);if(window.mmMountDashboard)window.mmMountDashboard(data.listings);
+async function openPost(){await refreshOwnerSession();if(!state.user){toast(t("loginRequired"));location.assign(loginPath({publish:"1"}));return}$("#postModal").showModal()}
+async function showMy(){await refreshOwnerSession();if(!state.user){location.assign(loginPath({panel:"mine"}));return}if(!$("#myModal").open)$("#myModal").showModal();$("#myContent").textContent=t("loading");try{const r=await fetch("/api/mine");if(!r.ok)throw Error();const data=await r.json();$("#myContent").innerHTML=data.listings.length?'<div class="my-list">'+data.listings.map(x=>'<div class="my-item"><div><strong>'+escapeHTML(x.display_name)+'</strong><br><small>'+escapeHTML(x.city)+'</small></div><span class="status '+escapeHTML(x.status)+'">'+t(x.status)+'</span></div>').join("")+'</div>':'<p>'+t("noMy")+'</p>';if(window.mmEnhanceMine)window.mmEnhanceMine(data.listings);if(window.mmMountDashboard)window.mmMountDashboard(data.listings);
 if(state.user.ownerPanel){
  const ar=await fetch("/api/legacy/claim");
  if(ar.ok){
@@ -311,7 +316,7 @@ document.addEventListener("DOMContentLoaded",async()=>{bind();const hasSavedCity
  }
  setInterval(refreshActivity,60000);
  document.addEventListener("visibilitychange",refreshActivity);
- state.user=await getSession();if(state.user?.visible&&!document.hidden)fetch("/api/presence",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).catch(()=>{});updateLogin();showOwnerLink();if (!state.user) return;
+ await refreshOwnerSession();if(state.user?.visible&&!document.hidden)fetch("/api/presence",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).catch(()=>{});updateLogin();showOwnerLink();if (!state.user) return;
  const query = new URLSearchParams(location.search);
  if (query.get("publish")==="1") { consumeReturnKey("publish"); openPost(); }
  else if (query.get("panel")==="mine") { consumeReturnKey("panel"); showMy(); }

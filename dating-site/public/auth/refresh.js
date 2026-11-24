@@ -41,7 +41,7 @@ try {
         await fetch('/auth/logout', { method: 'POST' });
       }
     } catch (e) { console.warn('Could not refresh session', e); }
-    if (!signingOut) window.MM_finishAuth?.();
+    if (!signingOut) {window.MM_finishAuth?.();window.dispatchEvent(new Event("mm:auth-session"));}
     });
   });
-} catch (e) { console.warn('Could not initialize Firebase', e); window.MM_finishAuth?.(); }
+} catch (e) { console.warn('Could not initialize Firebase', e); window.MM_finishAuth?.(); window.dispatchEvent(new Event('mm:auth-session')); }
