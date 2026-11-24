@@ -79,7 +79,7 @@ test('new-member search and its badge use the owner account join date on both co
 
 test('presence distinguishes hidden activity, online, hours and days ago', async()=>{
  const {createContext,runInContext}=await import('node:vm');
- const ctx=createContext({window:{},document:{documentElement:{lang:'ru'},addEventListener(){}}});
+ const ctx=createContext({window:{addEventListener(){}},document:{documentElement:{lang:'ru'},addEventListener(){}}});
  for(const file of ['locales','app'])runInContext(await fs.readFile('public/'+file+'.js','utf8'),ctx);
  assert.equal(runInContext('presenceLabel(null)',ctx),'');
  for(const [age,pattern] of [[60,/is-online/],[3600,/1 час назад/],[3*86400,/3 дня назад/]]){
