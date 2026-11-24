@@ -1,6 +1,21 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
 import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,browserLocalPersistence,setPersistence} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
+
+const requested=new URLSearchParams(location.search).get("next")||"/";
+let destination="/";
+try { const back=new URL(requested,location.origin); if(back.origin===location.origin) destination=back.pathname+back.search+back.hash; } catch {}
+const langMatch=destination.match(/^\/(lt|et)\//);
+const locale=langMatch?.[1]||"ru";
+const labels={"Регистрация":["Registracija","Registreerimine"],"Вход":["Prisijungimas","Sisselogimine"],"Создать аккаунт":["Sukurti paskyrą","Loo konto"],"Войти":["Prisijungti","Logi sisse"],"Уже есть аккаунт?":["Jau turite paskyrą?","Konto on juba olemas?"],"Нет аккаунта?":["Neturite paskyros?","Kontot pole?"],"Зарегистрироваться":["Registruotis","Registreeru"],"Минимум 12 символов":["Bent 12 ženklų","Vähemalt 12 tähemärki"],"Электронная почта":["El. paštas","E-post"],"Пароль":["Slaptažodis","Parool"],"Забыли пароль?":["Pamiršote slaptažodį?","Unustasid parooli?"],"или":["arba","või"],"Продолжить с Google":["Tęsti su Google","Jätka Google'iga"],"Письмо отправлено. Подтвердите адрес по ссылке и войдите снова.":["Laiškas išsiųstas. Patvirtinkite adresą paspaudę nuorodą ir vėl prisijunkite.","Kiri saadetud. Kinnita aadress lingi kaudu ja logi uuesti sisse."],"Проверьте почту и пароль.":["Patikrinkite el. paštą ir slaptažodį.","Kontrolli e-posti ja parooli."],"Выберите более длинный пароль.":["Pasirinkite ilgesnį slaptažodį.","Vali pikem parool."],"Этот адрес уже зарегистрирован. Войдите или восстановите пароль.":["Šis adresas jau registruotas. Prisijunkite arba atkurkite slaptažodį.","See aadress on juba registreeritud. Logi sisse või taasta parool."],"Разрешите открытие окна Google в браузере.":["Leiskite naršyklėje atverti Google langą.","Luba brauseris Google'i hüpikaken."],"Вход через Google отменён.":["Prisijungimas per Google atšauktas.","Google'iga sisselogimine tühistati."],"Адрес murdilimax.com нужно разрешить в Firebase Authentication. Сообщите администратору.":["Adresas murdilimax.com turi būti leidžiamas Firebase Authentication. Praneškite administratoriui.","Aadress murdilimax.com peab olema Firebase Authenticationis lubatud. Teavita administraatorit."],"Этот способ входа пока не включён.":["Šis prisijungimo būdas dar neįjungtas.","See sisselogimisviis pole veel lubatud."],"Проверьте подключение к интернету.":["Patikrinkite interneto ryšį.","Kontrolli internetiühendust."],"Слишком много попыток. Попробуйте позже.":["Per daug bandymų. Bandykite vėliau.","Liiga palju katseid. Proovi hiljem."],"Не удалось завершить вход. Попробуйте ещё раз.":["Nepavyko prisijungti. Bandykite dar kartą.","Sisselogimine ebaõnnestus. Proovi uuesti."],"Если адрес зарегистрирован, вы получите письмо для смены пароля.":["Jei adresas registruotas, gausite slaptažodžio keitimo laišką.","Kui aadress on registreeritud, saad parooli muutmise kirja."]};
+const tr=s=>locale==="ru"?s:(labels[s]?.[locale==="lt"?0:1]||s);
+document.documentElement.lang=locale;
+document.title=tr("Вход")+" · MurdiliMax";
+for(const [selector,label] of [["#title","Вход"],["label[for=email]","Электронная почта"],["label[for=password]","Пароль"],["#submit","Войти"],["#reset","Забыли пароль?"],[".or","или"],["#google","Продолжить с Google"],["#prompt","Нет аккаунта?"],["#switchMode","Зарегистрироваться"]]){
+ const node=document.querySelector(selector);if(node)node.textContent=tr(label);
+}
+const brand=document.querySelector(".brand");if(brand&&locale!=="ru")brand.href="/"+locale+"/";
+
 const form=document.querySelector("#account");
 const email=document.querySelector("#email");
 const password=document.querySelector("#password");
@@ -9,30 +24,28 @@ let registering=false;
 const modeButton=document.querySelector("#switchMode");
 modeButton.onclick=()=>{
   registering=!registering;
-  document.title=(registering?"Регистрация":"Вход")+" · MurdiliMax";
-  document.querySelector("#title").textContent=registering?"Регистрация":"Вход";
-  document.querySelector("#submit").textContent=registering?"Создать аккаунт":"Войти";
-  document.querySelector("#prompt").textContent=registering?"Уже есть аккаунт?":"Нет аккаунта?";
-  modeButton.textContent=registering?"Войти":"Зарегистрироваться";
+  document.title=(registering?tr("Регистрация"):tr("Вход"))+" · MurdiliMax";
+  document.querySelector("#title").textContent=registering?tr("Регистрация"):tr("Вход");
+  document.querySelector("#submit").textContent=registering?tr("Создать аккаунт"):tr("Войти");
+  document.querySelector("#prompt").textContent=registering?tr("Уже есть аккаунт?"):tr("Нет аккаунта?");
+  modeButton.textContent=registering?tr("Войти"):tr("Зарегистрироваться");
   password.autocomplete=registering?"new-password":"current-password";
   password.minLength=registering?12:0;
-  password.placeholder=registering?"Минимум 12 символов":"";
+  password.placeholder=registering?tr("Минимум 12 символов"):"";
   document.querySelector("#reset").hidden=registering;
   status.textContent="";
 };
 const config=await fetch("/auth/config").then(response=>response.json());
 const auth=getAuth(initializeApp(config));
-auth.languageCode="ru";
+auth.languageCode=locale;
 await setPersistence(auth,browserLocalPersistence);
 
-const requested=new URLSearchParams(location.search).get("next")||"/";
-let destination="/";
-try { const back=new URL(requested,location.origin); if(back.origin===location.origin) destination=back.pathname+back.search+back.hash; } catch {}
+
 const emailAction={url:location.origin+"/login?next="+encodeURIComponent(destination)};
 async function finish(user){
   if(!user.emailVerified){
     await sendEmailVerification(user,emailAction);
-    status.textContent="Письмо отправлено. Подтвердите адрес по ссылке и войдите снова.";
+    status.textContent=tr("Письмо отправлено. Подтвердите адрес по ссылке и войдите снова.");
     return;
   }
   const response=await fetch("/auth/session",{
@@ -47,9 +60,9 @@ async function run(action){
   const buttons=document.querySelectorAll("button");
   buttons.forEach(button=>button.disabled=true);
   try{await action()}catch(error){
-    const messages={"auth/invalid-credential":"Проверьте почту и пароль.","auth/weak-password":"Выберите более длинный пароль.","auth/email-already-in-use":"Этот адрес уже зарегистрирован. Войдите или восстановите пароль.","auth/popup-blocked":"Разрешите открытие окна Google в браузере.","auth/popup-closed-by-user":"Вход через Google отменён.","auth/unauthorized-domain":"Адрес murdilimax.com нужно разрешить в Firebase Authentication. Сообщите администратору.","auth/operation-not-allowed":"Этот способ входа пока не включён.","auth/network-request-failed":"Проверьте подключение к интернету.","auth/too-many-requests":"Слишком много попыток. Попробуйте позже."};
+    const messages={"auth/invalid-credential":tr("Проверьте почту и пароль."),"auth/weak-password":tr("Выберите более длинный пароль."),"auth/email-already-in-use":tr("Этот адрес уже зарегистрирован. Войдите или восстановите пароль."),"auth/popup-blocked":tr("Разрешите открытие окна Google в браузере."),"auth/popup-closed-by-user":tr("Вход через Google отменён."),"auth/unauthorized-domain":tr("Адрес murdilimax.com нужно разрешить в Firebase Authentication. Сообщите администратору."),"auth/operation-not-allowed":tr("Этот способ входа пока не включён."),"auth/network-request-failed":tr("Проверьте подключение к интернету."),"auth/too-many-requests":tr("Слишком много попыток. Попробуйте позже.")};
     console.warn("Ошибка входа Firebase:",error?.code||"unknown");
-    status.textContent=messages[error.code]||"Не удалось завершить вход. Попробуйте ещё раз.";
+    status.textContent=messages[error.code]||tr("Не удалось завершить вход. Попробуйте ещё раз.");
   }finally{buttons.forEach(button=>button.disabled=false)}
 }
 const googleProvider=new GoogleAuthProvider();
@@ -62,5 +75,5 @@ form.onsubmit=event=>{
 };
 document.querySelector("#reset").onclick=()=>{
   if(!email.reportValidity())return;
-  run(async()=>{await sendPasswordResetEmail(auth,email.value.trim(),emailAction);status.textContent="Если адрес зарегистрирован, вы получите письмо для смены пароля."});
+  run(async()=>{await sendPasswordResetEmail(auth,email.value.trim(),emailAction);status.textContent=tr("Если адрес зарегистрирован, вы получите письмо для смены пароля.")});
 };
