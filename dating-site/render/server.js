@@ -1,4 +1,5 @@
 import express from 'express';
+import { onlineCount, recentPhotos } from './catalog-extras.js';
 import { createHash } from 'node:crypto';
 import { getCookie, rateLimit } from './security.js';
 import { canReadPhoto } from './media-access.js';
@@ -188,6 +189,14 @@ for (const slug of routes) {
     try { return await mod.default(req, res); } catch (e) { next(e); }
   });
 }
+app.get('/api/online-count', async (req,res,next)=> {
+  res.set('Cache-Control','no-store');
+  try { res.json(await onlineCount(db)); } catch(e) { next(e); }
+});
+app.get('/api/recent-photos', async (req,res,next)=> {
+  res.set('Cache-Control','no-store');
+  try { res.json(await recentPhotos(db)); } catch(e) { next(e); }
+});
 app.get('/', (req, res) => res.sendFile(path.join(root, 'public/index.html')));
 app.use(express.static(path.join(root, 'public'), { maxAge: '1h', setHeaders(res, file) {
   if (file.endsWith('.html') || file.endsWith('.js')) res.set('Cache-Control', 'no-cache');
