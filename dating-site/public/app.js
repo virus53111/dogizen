@@ -1,7 +1,7 @@
 /* MurdiliMax — published, member-submitted profiles only. */
 "use strict";
 const GEOS = {
- LV:{name:"Латвия",en:"Latvia",cities:{"Рига":["Центр","Старый город","Пурвциемс","Иманта","Кенгарагс"],"Даугавпилс":["Центр","Новый Форштадт"],"Лиепая":["Центр","Кароста"],"Юрмала":["Майори","Дзинтари"]}},
+ LV:{name:"Латвия",en:"Latvia",cities:{"Рига":["Центр","Старый город","Пурвциемс","Иманта","Кенгарагс"],"Даугавпилс":["Центр","Новый Форштадт"],"Лиепая":["Центр","Кароста"],"Юрмала":["Майори","Дзинтари"],"Елгава":[],"Резекне":[],"Вентспилс":[],"Валмиера":[],"Огре":[],"Екабпилс":[],"Цесис":[],"Сигулда":[],"Саласпилс":[],"Тукумс":[],"Кулдига":[],"Бауска":[]}},
  EE:{name:"Эстония",en:"Estonia",cities:{"Таллин":["Кесклинн","Ласнамяэ","Мустамяэ"],"Тарту":["Центр"],"Нарва":["Центр"]}},
  LT:{name:"Литва",en:"Lithuania",cities:{"Вильнюс":["Сенаместис","Жирмунай"],"Каунас":["Центр"],"Клайпеда":["Центр"]}},
  DE:{name:"Германия",en:"Germany",cities:{"Берлин":["Митте","Кройцберг","Шарлоттенбург"],"Гамбург":["Альтона","Митте"],"Мюнхен":["Альтштадт"],"Франкфурт":["Инненштадт"],"Кёльн":["Центр"]}},
@@ -30,12 +30,69 @@ const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(
 const escapeHTML=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const state={lang:document.documentElement.lang||"ru",country:"",city:"",district:"",category:"",q:"",mode:"grid",real:[],visible:[],map:null,markers:null,user:null};
 const t=k=>(translations[state.lang]||translations.ru)[k]||translations.ru[k]||k;
-const countryLabel=c=>!c?"":(state.lang==="ru"?(GEOS[c]?.name||c):(GEOS[c]?.en||c));
+const publicCities = new Map();
+const balticCityNames = {
+ "Рига":"Rīga", "Даугавпилс":"Daugavpils", "Лиепая":"Liepāja", "Юрмала":"Jūrmala",
+ "Елгава":"Jelgava", "Резекне":"Rēzekne", "Вентспилс":"Ventspils", "Валмиера":"Valmiera",
+ "Огре":"Ogre", "Екабпилс":"Jēkabpils", "Цесис":"Cēsis", "Сигулда":"Sigulda",
+ "Саласпилс":"Salaspils", "Тукумс":"Tukums", "Кулдига":"Kuldīga", "Бауска":"Bauska",
+ "Таллин":"Tallinn", "Тарту":"Tartu", "Нарва":"Narva", "Вильнюс":"Vilnius",
+ "Каунас":"Kaunas", "Клайпеда":"Klaipėda"
+};
+
+function countryLabel(code){
+ if(!code)return "";
+ if(!/^[A-Z]{2}$/.test(code))return code;
+ return new Intl.DisplayNames([state.lang],{type:"region"}).of(code);
+}
+function cityLabel(city){
+ const local=balticCityNames[city];
+ return typeof local==="string" ? (state.lang==="ru"?city+" · "+local:local+" · "+city) : city;
+}
 function option(value,label){const el=document.createElement("option");el.value=value;el.textContent=label;return el}
 function setOptions(el,data,selected){el.replaceChildren(...data.map(d=>option(d[0],d[1])));el.value=selected||""}
-function fillCountry(){const choices=[["",t("allCountries")],...Object.keys(GEOS).sort((a,b)=>countryLabel(a).localeCompare(countryLabel(b))).map(c=>[c,(FLAGS[c]||"")+" "+countryLabel(c)])];setOptions($("#countryFilter"),choices,state.country);setOptions($("#postCountry"),choices.filter(x=>x[0]),$("#postCountry").value||"LV");fillCities(false);fillCities(true)}
-function fillCities(forPost){const cc=forPost?$("#postCountry").value:state.country, el=forPost?$("#postCity"):$("#cityFilter");const cur=forPost?el.value:state.city;const cities=cc?Object.keys(GEOS[cc]?.cities||{}):[];const opts=[...(forPost?[]:[["",t("allCities")]]),...cities.map(c=>[c,c])];const value=cities.includes(cur)?cur:(forPost?cities[0]:"");setOptions(el,opts,value);if(!forPost){state.city=value;fillDistricts()}}
-function fillDistricts(){const list=state.country&&state.city?(GEOS[state.country]?.cities[state.city]||[]):[];const value=list.includes(state.district)?state.district:"";setOptions($("#districtFilter"),[["",t("allDistricts")],...list.map(x=>[x,x])],value);state.district=value}
+function countryCodes(){
+ return [...new Set([...Object.keys(GEOS),...publicCities.keys()])].sort((a,b)=>countryLabel(a).localeCompare(countryLabel(b),state.lang));
+}
+function fillCountry(){
+ const choices=countryCodes().map(c=>[c,(FLAGS[c]||"")+" "+countryLabel(c)]);
+ setOptions($("#countryFilter"),[["",t("allCountries")],...choices],state.country);
+ setOptions($("#postCountry"),choices,$("#postCountry").value||"LV");
+ fillCities(false);
+ fillCities(true);
+}
+function fillCities(forPost){
+ const country=forPost?$("#postCountry").value:state.country;
+ const el=forPost?$("#postCity"):$("#cityFilter");
+ const selected=forPost?el.value:state.city;
+ el.replaceChildren();
+ if(!forPost)el.append(option("",t("allCities")));
+ for(const code of country?[country]:countryCodes()){
+  const cities=new Set([...Object.keys(GEOS[code]?.cities||{}),...(publicCities.get(code)||[])]);
+  const group=country?el:document.createElement("optgroup");
+  if(!country){group.label=countryLabel(code);el.append(group)}
+  for(const city of [...cities].sort((a,b)=>cityLabel(a).localeCompare(cityLabel(b),state.lang))){
+   const item=option(city,cityLabel(city));
+   item.dataset.country=code;
+   group.append(item);
+  }
+ }
+ if(selected && [...el.options].some(item=>item.value===selected))el.value=selected;
+ else if(forPost)el.value=Object.keys(GEOS[country]?.cities||{})[0]||el.options[0]?.value||"";
+ if(!forPost){state.city=el.value;fillDistricts()}
+}
+async function loadPublicCities(){
+ try{
+  const res=await fetch("/api/locations");
+  if(!res.ok)return;
+  for(const {country,city} of (await res.json()).locations){
+   if(!publicCities.has(country))publicCities.set(country,new Set());
+   publicCities.get(country).add(city);
+  }
+  fillCountry();
+ }catch{ /* The built-in city list remains available offline. */ }
+}
+function fillDistricts(){const districts=GEOS[state.country]?.cities[state.city];const list=Array.isArray(districts)?districts:[];const value=list.includes(state.district)?state.district:"";setOptions($("#districtFilter"),[["",t("allDistricts")],...list.map(x=>[x,x])],value);state.district=value}
 function fillCategories(){setOptions($("#categoryFilter"),[["",t("all")],...(window.MM_CATEGORIES||[]).map(c=>[c.id,window.MM_categoryLabel(c.id,state.lang)])],state.category)}
 function translate(){document.documentElement.lang=state.lang;$$("[data-t]").forEach(el=>el.textContent=t(el.dataset.t));$$("[data-t-html]").forEach(el=>el.innerHTML=t(el.dataset.tHtml));$$("[data-t-placeholder]").forEach(el=>el.placeholder=t(el.dataset.tPlaceholder));$$("[data-t-title]").forEach(el=>el.title=t(el.dataset.tTitle));fillCountry();fillCategories();$("#language").value=state.lang;updateLogin();render()}
 function toast(message){const el=$("#toast");el.textContent=message;el.classList.add("show");clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.classList.remove("show"),3400)}
@@ -187,7 +244,7 @@ function bind(){
  $("#leaveAge").onclick=()=>location.href="https://www.google.com";
  $("#language").addEventListener("change",e=>{const dest=new URL(location.href);dest.pathname=e.target.value==="ru"?"/":"/"+e.target.value+"/";location.assign(dest)});
  $("#countryFilter").onchange=e=>{state.country=e.target.value;state.city="";state.district="";if(window.mmExtra)window.mmExtra.page=1;fillCities(false);loadListings()};
- $("#cityFilter").onchange=e=>{state.city=e.target.value;state.district="";if(window.mmExtra)window.mmExtra.page=1;fillDistricts();loadListings()};
+ $("#cityFilter").onchange=e=>{state.city=e.target.value;state.country=e.target.selectedOptions[0]?.dataset.country||state.country;$("#countryFilter").value=state.country;state.district="";if(window.mmExtra)window.mmExtra.page=1;fillCities(false);loadListings()};
  $("#districtFilter").onchange=e=>{state.district=e.target.value;if(window.mmExtra)window.mmExtra.page=1;loadListings()};
  $("#categoryFilter").onchange=e=>{state.category=e.target.value;if(window.mmExtra)window.mmExtra.page=1;loadListings()};
  $("#postCountry").onchange=()=>fillCities(true);
@@ -209,7 +266,7 @@ function bind(){
  $("#postForm").onsubmit=async e=>{e.preventDefault();const form=e.target,btn=form.querySelector("[type=submit]");const files=[...(form.querySelector('input[name="photo"]')?.files||[])];const validTypes=["image/jpeg","image/png","image/webp"];const badFiles=files.length>6||files.some(f=>!validTypes.includes(f.type)||f.size===0||f.size>4*1024*1024);if(badFiles){$("#formMessage").textContent=({ru:"Можно загрузить до 6 фотографий JPG, PNG или WebP размером до 4 МБ каждая.",en:"Upload up to 6 JPG, PNG or WebP images, at most 4 MB each.",de:"Bis zu 6 Bilder (JPG, PNG oder WebP) mit höchstens 4 MB pro Bild.",lv:"Augšupielādējiet līdz 6 JPG, PNG vai WebP attēliem, katru līdz 4 MB."})[state.lang]||"Invalid photos";return}btn.disabled=true;$("#formMessage").textContent="";const data=new FormData(form);try{const r=await fetch("/api/create",{method:"POST",body:data});const j=await r.json();if(!r.ok)throw Error(j.error||t("error"));$("#postModal").close();form.reset();toast(j.published?t("submitPublished"):t("submitPending"));loadListings()}catch(err){$("#formMessage").textContent=err.message}finally{btn.disabled=false}};
  $("#reportForm").onsubmit=async e=>{e.preventDefault();const form=e.target;const data=Object.fromEntries(new FormData(form).entries());try{const r=await fetch("/api/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});if(!r.ok)throw Error();$("#reportModal").close();toast(t("reportSuccess"))}catch{toast(t("error"))}};
 }
-document.addEventListener("DOMContentLoaded",async()=>{bind();translate();loadListings();state.user=await getSession();if(state.user?.visible&&!document.hidden)fetch("/api/presence",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).catch(()=>{});updateLogin();showOwnerLink();if (!state.user) return;
+document.addEventListener("DOMContentLoaded",async()=>{bind();translate();loadPublicCities();loadListings();state.user=await getSession();if(state.user?.visible&&!document.hidden)fetch("/api/presence",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).catch(()=>{});updateLogin();showOwnerLink();if (!state.user) return;
  const query = new URLSearchParams(location.search);
  if (query.get("publish")==="1") { consumeReturnKey("publish"); openPost(); }
  else if (query.get("panel")==="mine") { consumeReturnKey("panel"); showMy(); }
