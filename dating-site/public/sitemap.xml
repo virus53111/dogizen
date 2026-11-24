@@ -160,4 +160,7 @@
     <xhtml:link rel="alternate" hreflang="lv" href="https://murdilimax.com/lv/safety/" />
     <xhtml:link rel="alternate" hreflang="x-default" href="https://murdilimax.com/safety/" />
   </url>
+  <url><loc>https://murdilimax.com/lv/jelgava/</loc></url>
+  <url><loc>https://murdilimax.com/lt/vilnius/</loc></url>
+  <url><loc>https://murdilimax.com/et/tallinn/</loc></url>
 </urlset>

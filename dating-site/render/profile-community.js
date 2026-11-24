@@ -12,8 +12,8 @@ const targetSQL=`SELECT l.id,l.owner_id,l.status, COALESCE(s.guestbook_enabled,F
  EXISTS(SELECT 1 FROM mm_public_listings p WHERE p.id=l.id AND p.status='approved' AND p.messaging_enabled IS TRUE) AS public
  FROM mm_listings l JOIN users u ON u.id=l.owner_id AND u.email_verified_at IS NOT NULL
  LEFT JOIN mm_profile_community s ON s.listing_id=l.id WHERE l.id=$1`;
-const blockedSQL=`EXISTS(SELECT 1 FROM mm_conversations c WHERE c.blocked_by IS NOT NULL
- AND ((c.requester_id=$1 AND c.publisher_id=$2) OR (c.requester_id=$2 AND c.publisher_id=$1)))`;
+const blockedSQL=`(mm_pair_blocked($1,$2) OR EXISTS(SELECT 1 FROM mm_conversations c WHERE c.blocked_by IS NOT NULL
+ AND ((c.requester_id=$1 AND c.publisher_id=$2) OR (c.requester_id=$2 AND c.publisher_id=$1))))`;
 const error=(res,status,code)=>res.status(status).json({error:code});
 export function profileCommunity(db) {
  return async function(req,res) {
@@ -32,6 +32,7 @@ export function profileCommunity(db) {
     const entries=await db.query(`SELECT e.id,e.body,e.approved,e.created_at,(e.writer_id=$2) IS TRUE AS mine
      FROM mm_guestbook_entries e JOIN users u ON u.id=e.writer_id AND u.email_verified_at IS NOT NULL
      WHERE e.listing_id=$1 AND ($3::boolean OR e.approved OR e.writer_id=$2)
+     AND ($3::boolean OR e.writer_id=$2 OR NOT mm_pair_blocked(e.writer_id,$4))
      AND ($3::boolean OR e.writer_id=$2 OR NOT EXISTS(SELECT 1 FROM mm_conversations c WHERE c.blocked_by IS NOT NULL AND
      ((c.requester_id=e.writer_id AND c.publisher_id=$4) OR (c.requester_id=$4 AND c.publisher_id=e.writer_id))))
      ORDER BY e.created_at DESC,e.id DESC LIMIT 100`,[id,caller,isOwner,target.owner_id]);
@@ -86,6 +87,7 @@ export function profileCommunity(db) {
    if(action==='approve'){
     if(!isOwner||!target.guestbook_enabled||!target.public)return [403,'forbidden'];
     const updated=await query(`UPDATE mm_guestbook_entries SET approved=TRUE WHERE id=$1 AND listing_id=$2
+     AND NOT mm_pair_blocked(writer_id,$3)
      AND NOT EXISTS(SELECT 1 FROM mm_conversations c WHERE c.blocked_by IS NOT NULL AND
       ((c.requester_id=writer_id AND c.publisher_id=$3) OR (c.requester_id=$3 AND c.publisher_id=writer_id))) RETURNING id`,[input.entry_id,id,caller]);
     return updated.rows.length?[200]:[404,'not_found'];

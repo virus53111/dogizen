@@ -23,7 +23,7 @@ function renderChats(){
  if(!chats.length){container.innerHTML='<div class="chat-panel-empty">'+safe(V("emptyChats"))+'</div>';return}
  container.innerHTML=chats.map(x=>'<button type="button" class="chat-person '+(activeChat?.id===x.id?"active":"")+'" data-chat="'+safe(x.id)+'"><span class="person-icon">✉</span><span class="person-copy"><strong>'+safe(x.display_name||"")+'</strong><small>'+safe(x.last_message||x.city||"")+'</small></span>'+(x.unread?'<b class="bubble-count">'+Number(x.unread)+'</b>':"")+'</button>').join("");
 }
-async function fetchChats(){const r=await fetch("/api/chat/list");if(!r.ok)throw Error(V("error"));const d=await r.json();chats=d.chats||[];renderChats();const total=chats.reduce((a,c)=>a+Number(c.unread||0),0);const badge=$("#inboxUnreadBadge");badge.textContent=total>99?"99+":String(total);badge.classList.toggle("hidden",total<1)}
+async function fetchChats(){const r=await fetch("/api/chat/list");if(!r.ok)throw Error(V("error"));const d=await r.json();chats=d.chats||[];renderChats();const total=chats.reduce((a,c)=>a+Number(c.unread||0),0);const badge=$("#inboxUnreadBadge");if(window.mmRefreshActivity)window.mmRefreshActivity();else{badge.textContent=total>99?"99+":String(total);badge.classList.toggle("hidden",total<1)}}
 async function showInbox(wanted){
  if(!await ensureLogin({panel:"inbox"}))return;
  const dlg=$("#messagesDialog");if(!dlg.open)dlg.showModal();
@@ -53,7 +53,7 @@ async function selectChat(id){
  $("#chatBlockBtn").textContent=d.blocked_by_me?V("unblock"):V("block");
  setError(blocked?V("blocked"):"");
  const c=chats.find(x=>x.id===id);if(c)c.unread=0;
- renderChats();
+ renderChats();window.mmRefreshActivity?.();
 }
 async function sendCurrent(e){
  e.preventDefault();if(loading||!activeChat)return;
@@ -74,7 +74,7 @@ window.mmStartChat=async function(id){
  try{
   const r=await fetch("/api/chat/start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({listing_id:id})});
   const d=await r.json();if(!r.ok)throw Error(d.error||V("error"));
-  $("#profileModal")?.close();
+  if($("#profileModal")?.open)$("#profileModal").close();
   await showInbox();
   await selectChat(d.conversation_id);
  }catch(e){toast(e.message||V("error"))}
@@ -150,6 +150,7 @@ function bind(){
    fetchChats().catch(()=>{});
   }
  });
+ setInterval(()=>{if(!document.hidden&&state.user&&$("#messagesDialog").open&&!loading)fetchChats().then(()=>{if(activeChat&&chats.some(c=>c.id===activeChat.id&&c.unread>0)&&!$("#chatText").value.trim())return selectChat(activeChat.id)}).catch(()=>{})},30000);
 }
 document.addEventListener("DOMContentLoaded",bind);
 })();

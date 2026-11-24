@@ -9,7 +9,7 @@ for(const lang of ['ru','en','de','lv']){
   for(const id of ['countryFilter','cityFilter','categoryFilter','searchBtn','postBtn','cards','messagesDialog','ageGate','enterAge','inboxBtn']){
    assert.ok(html.includes('id="'+id+'"'),lang+': missing '+id);
   }
-  assert.match(html,/href="\/luxury\.css"/);
+  assert.match(html,/href="\/luxury\.css(?:\?v=[\w-]+)?"/);
   assert.match(html,/src="\/luxury\.js"/);
   assert.match(html,/class="lux-hero-actions"/);
   assert.match(html,/data-lux-create/);
