@@ -46,9 +46,10 @@ const messageButton=document.getElementById("messageThis");if(canMessage){messag
 if(canMessage&&window.mmMountLike)window.mmMountLike(item.id,content);
 if(canMessage&&window.mmMountCommunity)window.mmMountCommunity(item.id,content);
 if(canMessage&&window.mmProfileActivity)window.mmProfileActivity(item.id,content);
+if(window.mmGalleryControls)window.mmGalleryControls(content,gallery);
 document.getElementById("reportThis").onclick=()=>{modal.close();document.getElementById("reportForm").elements.listing_id.value=item.id;document.getElementById("reportModal").showModal()};
 }catch(err){content.innerHTML='<p>'+escapeHTML(err.message)+'</p>'}})();return true};
-window.resetAdvancedFilters=function(){document.getElementById("radiusFilter").value="";syncRadius();window.mmExtra={min_age:"",max_age:"",sort:"newest",language:"",photo:"",commercial:"",featured:"",page:1};document.getElementById("minAge").value="18";document.getElementById("maxAge").value="85";document.getElementById("sortFilter").value="newest";document.getElementById("photoOnly").checked=false;document.getElementById("onlineOnly").checked=false;document.getElementById("newMemberOnly").checked=false;document.getElementById("spokenLanguageFilter").value="";};
+window.resetAdvancedFilters=function(){document.getElementById("radiusFilter").value="";syncRadius();window.mmExtra={min_age:"",max_age:"",sort:"newest",language:"",photo:"",commercial:"",featured:"",page:1};document.getElementById("minAge").value="18";document.getElementById("maxAge").value="85";document.getElementById("sortFilter").value="newest";document.getElementById("photoOnly").checked=false;document.getElementById("onlineOnly").checked=false;document.getElementById("newMemberOnly").checked=false;document.getElementById("spokenLanguageFilter").value="";if(document.getElementById("mmInterestFilter"))document.getElementById("mmInterestFilter").value="";if(document.getElementById("mmGoalFilter"))document.getElementById("mmGoalFilter").value="";};
 function reload(){window.mmExtra.page=1;loadListings()}
 function bind(){
 document.getElementById("galleryViewBtn").onclick=()=>{state.mode="gallery";window.mmExtra.page=1;loadListings()};

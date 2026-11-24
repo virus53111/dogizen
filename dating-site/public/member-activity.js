@@ -32,7 +32,7 @@ function dashboard(root,data){
  if(data.blocks?.length){root.append(make("h3",L("block")));for(const item of data.blocks)root.append(btn((item.display_name||"—")+" · "+L("unblock"),async()=>{try{await api({action:"unblock_id",block_id:item.id});dashboard(root,await api());refresh()}catch{status.textContent=L("error")}}))}
  if(data.share_visits){root.append(make("h3",L("visitors")));if(!data.visitors.length)root.append(make("p",L("empty")));for(const v of data.visitors){const b=btn(v.display_name+" · "+v.city+" · "+new Date(v.visited_at).toLocaleDateString(document.documentElement.lang),()=>{document.getElementById("myModal")?.close();window.mmOpenProfile(v.profile_id)});root.append(b)}}
 }
-window.mmMountDashboard=async function(){const parent=document.getElementById("myContent");if(!parent)return;const root=make("section",L("activity"),"mm-community mm-dashboard");parent.prepend(root);try{current=await api();if(root.isConnected)dashboard(root,current);refresh()}catch{root.textContent=L("error")}};
+window.mmMountDashboard=async function(){const parent=document.getElementById("myContent");if(!parent)return;const root=make("section",L("activity"),"mm-community mm-dashboard");parent.prepend(root);try{current=await api();if(root.isConnected){dashboard(root,current);window.mmMountStats?.(root.parentElement)}refresh()}catch{root.textContent=L("error")}};
 window.mmProfileActivity=async function(id,content){
  try{
  if(!await getSession()||!content.isConnected)return;

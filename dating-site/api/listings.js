@@ -15,6 +15,9 @@ export default async function(req,res){
  if(district)add("district = ?",district);
  if(category)add("category = ?",category);
  if(search){values.push("%"+search+"%");filters.push("(display_name ILIKE $"+values.length+" OR headline ILIKE $"+values.length+" OR description ILIKE $"+values.length+" OR EXISTS (SELECT 1 FROM mm_member_profile_details d WHERE d.listing_id=mm_public_listings.id AND d.interests ILIKE $"+values.length+"))")}
+ const interest=sval('interest',100),goal=sval('goal',24);
+ if(interest)add("EXISTS (SELECT 1 FROM mm_member_profile_details d WHERE d.listing_id=mm_public_listings.id AND STRPOS(LOWER(COALESCE(d.interests,'')), ?) > 0)",interest.toLowerCase());
+ if(['friendship','dating','relationship','activities','open'].includes(goal))add('EXISTS (SELECT 1 FROM mm_member_profile_details d WHERE d.listing_id=mm_public_listings.id AND d.looking_for=?)',goal);
  const minAge=Number(q.min_age),maxAge=Number(q.max_age);
  if(Number.isInteger(minAge)&&minAge>=18&&minAge<=85)add("age >= ?",minAge);
  if(Number.isInteger(maxAge)&&maxAge>=18&&maxAge<=85)add("age <= ?",maxAge);
