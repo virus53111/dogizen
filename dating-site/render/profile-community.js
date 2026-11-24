@@ -4,6 +4,7 @@ export function guestbookText(value) {
  if(typeof value!=='string') return null;
  const body=value.normalize('NFKC').trim();
  if(!body||body.length>500||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(body))return null;
+ if(/(?:prostitucij|prostitutsioon|mokam\p{L}*\s+seksualin|seksas\s+už\s+pinig|tasulin\p{L}*\s+seksuaalteenus|seks\s+raha\s+eest|nepilnamet|alaealine)/iu.test(body))return null;
  return choosePublication({description:body}).status==='approved'?body:null;
 }
 const targetSQL=`SELECT l.id,l.owner_id,l.status, COALESCE(s.guestbook_enabled,FALSE) AS guestbook_enabled,
@@ -31,8 +32,8 @@ export function profileCommunity(db) {
     const entries=await db.query(`SELECT e.id,e.body,e.approved,e.created_at,(e.writer_id=$2) IS TRUE AS mine
      FROM mm_guestbook_entries e JOIN users u ON u.id=e.writer_id AND u.email_verified_at IS NOT NULL
      WHERE e.listing_id=$1 AND ($3::boolean OR e.approved OR e.writer_id=$2)
-     AND NOT EXISTS(SELECT 1 FROM mm_conversations c WHERE c.blocked_by IS NOT NULL AND
-     ((c.requester_id=e.writer_id AND c.publisher_id=$4) OR (c.requester_id=$4 AND c.publisher_id=e.writer_id)))
+     AND ($3::boolean OR e.writer_id=$2 OR NOT EXISTS(SELECT 1 FROM mm_conversations c WHERE c.blocked_by IS NOT NULL AND
+     ((c.requester_id=e.writer_id AND c.publisher_id=$4) OR (c.requester_id=$4 AND c.publisher_id=e.writer_id))))
      ORDER BY e.created_at DESC,e.id DESC LIMIT 100`,[id,caller,isOwner,target.owner_id]);
     result.entries=entries.rows;
    }
