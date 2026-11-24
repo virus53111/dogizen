@@ -10,7 +10,7 @@ test('robots.txt permits crawling public content and advertises sitemap',async()
 });
 test('multilingual sitemap lists only valid content pages with hreflang',async()=>{
  const map=await fs.readFile('public/sitemap.xml','utf8');
- assert.equal((map.match(/<loc>/g)||[]).length,20);
+ assert.equal((map.match(/<loc>/g)||[]).length,23);
  for(const lang of languages)for(const section of ['about','riga','formats','safety']){
   const file=langDir(lang)+section+'/index.html';
   const h=await fs.readFile(file,'utf8');
