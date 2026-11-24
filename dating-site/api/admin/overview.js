@@ -12,7 +12,7 @@ export default async function(req,res){
  (SELECT COUNT(*)::int FROM mm_public_listings WHERE status='approved') AS published,
  (SELECT COUNT(*)::int FROM mm_public_listings WHERE status='approved' AND messaging_enabled IS TRUE) AS messaging,
  (SELECT COUNT(*)::int FROM mm_guestbook_entries WHERE NOT approved) AS guestbook_pending,
- (SELECT COUNT(*)::int FROM mm_chat_reports WHERE status='pending') AS chat_reports,
+ (SELECT COUNT(*)::int FROM mm_chat_reports WHERE status='open') AS chat_reports,
  (SELECT COUNT(*)::int FROM mm_chat_photos) AS photos,
  (SELECT COALESCE(SUM(octet_length(body)),0)::bigint FROM mm_chat_photos) AS photo_bytes`);
  return res.json(r.rows[0]);
