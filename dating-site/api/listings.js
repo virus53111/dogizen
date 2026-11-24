@@ -1,3 +1,4 @@
+import { lastSeen, newMember } from "../render/member-activity.js";
 import { db } from "hatchable";
 import { cityNamesInRange } from "../render/latvia-cities.js";
 export const access="public";
@@ -33,6 +34,7 @@ export default async function(req,res){
    // Admin/legacy listings have no authenticated owner and cannot claim to be online.
    filters.push("EXISTS (SELECT 1 FROM mm_listings ml JOIN users u ON u.id=ml.owner_id WHERE ml.id=mm_public_listings.id AND u.visible IS TRUE AND u.last_seen>NOW()-INTERVAL '5 minutes')");
  }
+ if(q.new_member==="1")filters.push(newMember);
  const sort=sval("sort",20);
  const orders={"newest":"featured DESC, created_at DESC","oldest":"created_at ASC","age_asc":"age ASC, created_at DESC","age_desc":"age DESC, created_at DESC"};
  const order=orders[sort]||orders.newest;
@@ -40,6 +42,6 @@ export default async function(req,res){
  const where=filters.join(" AND ");
  const count=await db.query("SELECT COUNT(*)::integer AS total FROM mm_public_listings WHERE "+where,values);
  const offset=(page-1)*48;
- const result=await db.query("SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,featured,is_commercial,created_at,messaging_enabled, (SELECT EXTRACT(EPOCH FROM u.last_seen)::bigint FROM mm_listings ml JOIN users u ON u.id=ml.owner_id WHERE ml.id=mm_public_listings.id AND u.visible IS TRUE LIMIT 1) AS last_seen FROM mm_public_listings WHERE "+where+" ORDER BY "+order+" LIMIT 48 OFFSET "+offset,values);
+ const result=await db.query("SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,featured,is_commercial,created_at,messaging_enabled, "+lastSeen+" AS last_seen, "+newMember+" AS is_new_member FROM mm_public_listings WHERE "+where+" ORDER BY "+order+" LIMIT 48 OFFSET "+offset,values);
  res.json({listings:result.rows,total:count.rows[0]?.total||0,page,page_size:48});
 }

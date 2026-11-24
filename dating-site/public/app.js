@@ -155,20 +155,27 @@ async function toggleFav(id) {
  } catch (error) { toast(error.message); }
 }
 function presenceLabel(seconds){
- if(!seconds)return "";
- const online=Date.now()/1000-seconds<=300;
- const label=online?t("online"):t("lastSeen")+" · "+new Intl.DateTimeFormat(state.lang,{dateStyle:"short",timeStyle:"short"}).format(new Date(seconds*1000));
+ const timestamp=Number(seconds);
+ if(!Number.isFinite(timestamp)||timestamp<=0)return "";
+ const elapsed=Math.max(0,Math.floor(Date.now()/1000-timestamp));
+ const online=elapsed<300;
+ const unit=elapsed<3600?"minute":elapsed<86400?"hour":"day";
+ const divisor={minute:60,hour:3600,day:86400}[unit];
+ const label=online?t("online"):t("lastSeen")+" "+new Intl.RelativeTimeFormat(state.lang,{numeric:"always"}).format(-Math.floor(elapsed/divisor),unit);
  return '<small class="member-presence'+(online?' is-online':'')+'">'+escapeHTML(label)+'</small>';
+}
+function newMemberLabel(item){
+ return item.is_new_member===true?'<small class="member-presence">'+escapeHTML(t("newMemberBadge"))+'</small>':"";
 }
 function filterLocal(a){const q=state.q.toLowerCase();return (!state.country||a.country===state.country)&&(!state.city||a.city===state.city)&&(!state.district||a.district===state.district)&&(!state.category||a.category===state.category)&&(!q||(a.display_name+" "+a.description).toLowerCase().includes(q))}
 let listingRequestSequence=0;
 let pendingSearch;
-async function loadListings(){
+async function loadListings(background=false){
  const requestId=++listingRequestSequence;
  pendingSearch?.abort();
  pendingSearch=new AbortController();
- state.loading=true;state.loadError="";state.real=[];state.totalReal=0;
- render();
+ state.loading=true;state.loadError="";
+ if(background!==true){state.real=[];state.totalReal=0;render()}
  const query=new URLSearchParams();
  if(state.country)query.set("country",state.country);
  if(state.city)query.set("city",state.city);
@@ -177,7 +184,7 @@ async function loadListings(){
  if(state.category)query.set("category",state.category);
  if(state.q)query.set("q",state.q);
  const extra=window.mmExtra||{};
- for(const k of ["min_age","max_age","sort","language","photo","commercial","featured","online","page"]){
+ for(const k of ["min_age","max_age","sort","language","photo","commercial","featured","online","new_member","page"]){
   if(extra[k]!==undefined&&extra[k]!==""&&extra[k]!==null)query.set(k,String(extra[k]));
  }
  if(state.mode==="gallery")query.set("photo","1");
@@ -195,7 +202,7 @@ async function loadListings(){
   if(requestId===listingRequestSequence){state.loading=false;render();}
  }
 }
-function render(){const newSince=typeof myCity==="undefined"?Infinity:myCity.badgeDate();if(typeof myCity!=="undefined")myCity.update();const fav=favoriteIds;/* Profiles fetched from the database only; never fabricate members. */const real=state.real.filter(p=>(state.mode!=="gallery"||!!p.avatar_url));state.visible=real;$("#totalCount").textContent=state.visible.length;$("#resultsDetail").textContent=state.country?((FLAGS[state.country]||"")+" "+countryLabel(state.country)+(state.city?" · "+state.city:"")):t("allCountries");$("#catalogError").textContent=state.loadError||"";$("#catalogError").classList.toggle("hidden",!state.loadError);$("#cards").innerHTML=state.visible.map(p=>{const p1=escapeHTML(p.display_name),loc=escapeHTML(p.city)+(p.district?" · "+escapeHTML(p.district):"");const bg="linear-gradient(145deg,"+p.color1+","+p.color2+")";return '<article class="profile-card" data-id="'+escapeHTML(p.id)+'" tabindex="0" role="button" aria-label="'+p1+'"><div class="card-portrait" style="background:'+bg+'">'+(p.avatar_url?'<img loading="lazy" decoding="async" class="portrait-image" src="'+escapeHTML(p.avatar_url)+'" alt="'+p1+'"> ':'<div class="avatar-flower" aria-hidden="true">'+p.symbol+'</div>')+''+'<button type="button" class="favorite '+(fav.has(p.id)?"active":"")+'" data-fav="'+escapeHTML(p.id)+'" title="'+t("favorite")+'" aria-label="'+t("favorite")+'">'+(fav.has(p.id)?"♥":"♡")+'</button><div class="card-country">'+(FLAGS[p.country]||"🌍")+' '+escapeHTML(countryLabel(p.country))+'</div>'+(p.is_commercial?'<span class="card-commercial-tag">COM</span>':'')+'</div><div class="card-body">'+(Date.parse(p.created_at)>newSince?'<small class="my-city-new">'+myCity.badgeText()+'</small>':'')+'<div class="name-line"><h3>'+p1+', '+Number(p.age)+'</h3><span class="profile-decoration" aria-hidden="true">♡</span></div>'+presenceLabel(p.last_seen)+'<div class="card-place">⌖ '+loc+'</div>'+(p.headline?'<div class="card-headline">'+escapeHTML(p.headline)+'</div>':'')+'<div class="card-desc">'+escapeHTML(p.description)+'</div><div class="card-bottom"><span class="type-pill">'+(window.MM_categoryLabel?window.MM_categoryLabel(p.category,state.lang):t(p.category))+'</span><span class="profile-more">'+t("view")+' →</span></div></div></article>'}).join("");
+function render(){const newSince=typeof myCity==="undefined"?Infinity:myCity.badgeDate();if(typeof myCity!=="undefined")myCity.update();const fav=favoriteIds;/* Profiles fetched from the database only; never fabricate members. */const real=state.real.filter(p=>(state.mode!=="gallery"||!!p.avatar_url));state.visible=real;$("#totalCount").textContent=state.visible.length;$("#resultsDetail").textContent=state.country?((FLAGS[state.country]||"")+" "+countryLabel(state.country)+(state.city?" · "+state.city:"")):t("allCountries");$("#catalogError").textContent=state.loadError||"";$("#catalogError").classList.toggle("hidden",!state.loadError);$("#cards").innerHTML=state.visible.map(p=>{const p1=escapeHTML(p.display_name),loc=escapeHTML(p.city)+(p.district?" · "+escapeHTML(p.district):"");const bg="linear-gradient(145deg,"+p.color1+","+p.color2+")";return '<article class="profile-card" data-id="'+escapeHTML(p.id)+'" tabindex="0" role="button" aria-label="'+p1+'"><div class="card-portrait" style="background:'+bg+'">'+(p.avatar_url?'<img loading="lazy" decoding="async" class="portrait-image" src="'+escapeHTML(p.avatar_url)+'" alt="'+p1+'"> ':'<div class="avatar-flower" aria-hidden="true">'+p.symbol+'</div>')+''+'<button type="button" class="favorite '+(fav.has(p.id)?"active":"")+'" data-fav="'+escapeHTML(p.id)+'" title="'+t("favorite")+'" aria-label="'+t("favorite")+'">'+(fav.has(p.id)?"♥":"♡")+'</button><div class="card-country">'+(FLAGS[p.country]||"🌍")+' '+escapeHTML(countryLabel(p.country))+'</div>'+(p.is_commercial?'<span class="card-commercial-tag">COM</span>':'')+'</div><div class="card-body">'+(Date.parse(p.created_at)>newSince?'<small class="my-city-new">'+myCity.badgeText()+'</small>':'')+'<div class="name-line"><h3>'+p1+', '+Number(p.age)+'</h3><span class="profile-decoration" aria-hidden="true">♡</span></div>'+presenceLabel(p.last_seen)+newMemberLabel(p)+'<div class="card-place">⌖ '+loc+'</div>'+(p.headline?'<div class="card-headline">'+escapeHTML(p.headline)+'</div>':'')+'<div class="card-desc">'+escapeHTML(p.description)+'</div><div class="card-bottom"><span class="type-pill">'+(window.MM_categoryLabel?window.MM_categoryLabel(p.category,state.lang):t(p.category))+'</span><span class="profile-more">'+t("view")+' →</span></div></div></article>'}).join("");
 $("#catalogLoading").classList.toggle("hidden",!state.loading);$("#cards").setAttribute("aria-busy",state.loading?"true":"false");$("#emptyState").classList.toggle("hidden",state.visible.length>0||!!state.loadError||!!state.loading);$("#cards").classList.toggle("hidden",state.mode==="map"||!state.visible.length);$("#mapPanel").classList.toggle("hidden",state.mode!=="map");$("#gridViewBtn").classList.toggle("current",state.mode==="grid");$("#mapViewBtn").classList.toggle("current",state.mode==="map");$("#mapCount").textContent=state.visible.length;if(state.mode==="map")drawMap();if(window.mmRenderExtras)window.mmRenderExtras();
 }
 function showProfile(id){if(window.mmOpenProfile&&window.mmOpenProfile(id))return;const p=state.visible.find(x=>x.id===id);if(!p)return;const e=$("#profileContent");e.innerHTML='<div class="profile-cover" style="background:linear-gradient(125deg,'+p.color1+','+p.color2+')">'+(p.avatar_url?'<img loading="lazy" decoding="async" class="portrait-image" src="'+escapeHTML(p.avatar_url)+'" alt="'+escapeHTML(p.display_name)+'">':p.symbol)+'</div><div class="eyebrow">'+(t(p.category))+'</div><h2>'+escapeHTML(p.display_name)+', '+Number(p.age)+'</h2><div class="profile-modal-geo">⌖ '+(FLAGS[p.country]||"")+' '+escapeHTML(countryLabel(p.country))+' · '+escapeHTML(p.city)+(p.district?' · '+escapeHTML(p.district):"")+'</div><p class="profile-modal-desc">'+escapeHTML(p.description)+'</p><p class="profile-modal-geo">🌐 '+escapeHTML(p.languages||"—")+'</p>'+'<div class="profile-actions"><button type="button" class="btn btn-outline" id="reportThis">'+t("report")+'</button></div>';$("#profileModal").showModal();$("#reportThis").addEventListener("click",()=>{$("#profileModal").close();$("#reportForm").elements.listing_id.value=p.id;$("#reportModal").showModal()})}
@@ -294,6 +301,11 @@ document.addEventListener("DOMContentLoaded",async()=>{bind();const hasSavedCity
  if(hasSavedCity)myCity.restore();
  else loadListings();
  loadPublicCities();
+ function refreshActivity(){
+  if(!document.hidden && !state.loading && !document.querySelector("dialog[open]") && !$("#cards").contains(document.activeElement))loadListings(true);
+ }
+ setInterval(refreshActivity,60000);
+ document.addEventListener("visibilitychange",refreshActivity);
  state.user=await getSession();if(state.user?.visible&&!document.hidden)fetch("/api/presence",{method:"POST",headers:{"Content-Type":"application/json"},body:"{}"}).catch(()=>{});updateLogin();showOwnerLink();if (!state.user) return;
  const query = new URLSearchParams(location.search);
  if (query.get("publish")==="1") { consumeReturnKey("publish"); openPost(); }

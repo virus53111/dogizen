@@ -64,3 +64,27 @@ test('every locale has a visible language filter and localized labels and hints'
  assert.match(extra,/window.mmExtra.language/);
  assert.match(extra,/spokenLanguageFilter"\)\.value=""/);
 });
+
+test('new-member search and its badge use the owner account join date on both count and page', async () => {
+ const {calls}=await invoke({new_member:'1',online:'1'},(sql,args,i)=>{
+   const where=sql.slice(sql.lastIndexOf('FROM mm_public_listings WHERE'));
+   assert.match(where,/u\.joined_at > NOW\(\)-INTERVAL '7 days'/);
+   assert.match(where,/ml\.id=mm_public_listings\.id/);
+   assert.match(where,/u\.visible IS TRUE/);
+   if(i===2)assert.match(sql,/AS is_new_member/);
+   return {rows:i===1?[{total:0}]:[]};
+ });
+ assert.equal(calls.length,2);
+});
+
+test('presence distinguishes hidden activity, online, hours and days ago', async()=>{
+ const {createContext,runInContext}=await import('node:vm');
+ const ctx=createContext({window:{},document:{documentElement:{lang:'ru'},addEventListener(){}}});
+ for(const file of ['locales','app'])runInContext(await fs.readFile('public/'+file+'.js','utf8'),ctx);
+ assert.equal(runInContext('presenceLabel(null)',ctx),'');
+ for(const [age,pattern] of [[60,/is-online/],[3600,/1 час назад/],[3*86400,/3 дня назад/]]){
+   assert.match(runInContext('presenceLabel(Date.now()/1000-'+age+')',ctx),pattern);
+ }
+ assert.equal(runInContext('newMemberLabel({})',ctx),'');
+ assert.match(runInContext('newMemberLabel({is_new_member:true})',ctx),/Новый участник/);
+});

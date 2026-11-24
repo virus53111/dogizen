@@ -8,12 +8,13 @@ const myCity = (() => {
     de: ["Meine Stadt", "Suche auf diesem Gerät speichern", "Gespeicherte Suche öffnen", "Suche löschen", "Neu seit dem Speichern", "Änderungen konnten auf diesem Gerät nicht gespeichert werden.", "Wähle eine Stadt, um die Suche zu speichern."]
   };
   const copy = () => labels[state.lang] || labels.ru;
-  const fields = ["country","city","district","category","q","radius","min_age","max_age","sort","language","photo","online","mode"];
+  const fields = ["country","city","district","category","q","radius","min_age","max_age","sort","language","photo","online","new_member","mode"];
   let saved;
 
   function read(raw) {
     try {
       const value = JSON.parse(raw);
+      if (value?.filters && typeof value.filters === "object") value.filters.new_member ??= "";
       if (value && Number.isFinite(value.since) && value.since > 0 &&
           fields.every(k => typeof value.filters?.[k] === "string" && value.filters[k].length <= 200) &&
           value.filters.city && /^[A-Z]{2,3}$/.test(value.filters.country)) return value;
@@ -27,7 +28,7 @@ const myCity = (() => {
       country: state.country, city: state.city, district: state.district,
       category: state.category, q: state.q.slice(0,100), radius: $("#radiusFilter").value,
       min_age: extra.min_age || "", max_age: extra.max_age || "", sort: extra.sort || "newest",
-      language: extra.language || "", photo: extra.photo || "", online: extra.online || "", mode: state.mode
+      language: extra.language || "", photo: extra.photo || "", online: extra.online || "", new_member: extra.new_member || "", mode: state.mode
     };
   }
 
@@ -62,7 +63,7 @@ const myCity = (() => {
     $("#radiusFilter").value = $("#radiusFilter").disabled ? "" : f.radius;
     syncRadius();
     $("#keyword").value = f.q;
-    for (const k of ["min_age","max_age","sort","language","photo","online"]) window.mmExtra[k] = f[k];
+    for (const k of ["min_age","max_age","sort","language","photo","online","new_member"]) window.mmExtra[k] = f[k];
     window.mmExtra.page = 1;
     $("#minAge").value = f.min_age || "18";
     $("#maxAge").value = f.max_age || "85";
@@ -70,6 +71,7 @@ const myCity = (() => {
     $("#spokenLanguageFilter").value = f.language;
     $("#photoOnly").checked = f.photo === "1";
     $("#onlineOnly").checked = f.online === "1";
+    $("#newMemberOnly").checked = f.new_member === "1";
     loadListings();
   }
 
