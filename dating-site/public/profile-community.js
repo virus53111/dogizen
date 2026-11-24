@@ -21,7 +21,7 @@
   if(!report||!form)return;
   if(profile?.open)profile.close();
   form.elements.listing_id.value=id;
-  const details=form.elements.details;if(details)details.value="Guestbook entry ID: "+entry.id;
+  const details=form.elements.details;if(details)details.value="Guestbook entry ID: "+entry.id+"\n"+String(entry.body||"").slice(0,500);
   report.showModal();
  }
  async function render(root,id,settings=false){
@@ -29,6 +29,7 @@
   try{
    const data=await request(id);if(!root.isConnected)return;
    root.replaceChildren();
+   if(!settings&&!data.guestbook_enabled&&!data.author_group_enabled){root.remove();return}
    async function change(body,notice){
     const old=root.querySelector(".mm-community-status");if(old)old.textContent="";
     for(const b of root.querySelectorAll("button"))b.disabled=true;
