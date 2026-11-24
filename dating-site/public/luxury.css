@@ -646,3 +646,6 @@ html[data-mm-theme="light"] .member-presence.is-online{color:#216b40!important}
 .mm-chat-actions{display:flex;gap:10px;flex-wrap:wrap}.mm-chat-actions button,#mmReplyPanel button{background:transparent;color:inherit;border:0;text-decoration:underline;cursor:pointer;min-height:32px}
 #mmTyping{min-height:1em;font-size:12px;margin:3px 0}#mmReplyPanel{padding:8px;display:flex;align-items:center;gap:8px;overflow-wrap:anywhere}#mmReplyPanel[hidden]{display:none}
 .mm-gallery-nav{display:flex;align-items:center;justify-content:center;gap:16px;margin:10px 0}.mm-gallery-nav .btn{min-width:44px;min-height:44px}
+
+.mm-chat-photo-controls{display:flex;flex-wrap:wrap;gap:7px;align-items:center;padding:8px 0}.mm-chat-photo-controls label,.mm-chat-photo-controls small{flex-basis:100%;font-size:12px}.mm-chat-photo-controls input[type=file]{max-width:100%;min-width:0}.mm-chat-photo-controls .btn{min-height:40px}
+#mmRecommendations{grid-column:1/-1}.mm-card-message:focus-visible,.mm-chat-actions button:focus-visible{outline:2px solid currentColor}

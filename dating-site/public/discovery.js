@@ -23,7 +23,10 @@ document.addEventListener("DOMContentLoaded",()=>{
  const label=el("label");label.append(el("span",t("interests")));const interest=el("input");interest.type="search";interest.id="mmInterestFilter";interest.maxLength=100;interest.placeholder=t("interestsHint");label.append(interest);
  const goalLabel=el("label");goalLabel.append(el("span",t("lookingFor")));const goal=el("select");goal.id="mmGoalFilter";for(const [v,k] of [["","all"],["friendship","goalFriendship"],["dating","goalDating"],["relationship","goalRelationship"],["activities","goalActivities"],["open","goalOpen"]]){const o=el("option",t(k));o.value=v;goal.append(o)}goalLabel.append(goal);
  grid.prepend(label,goalLabel);const reload=()=>{window.mmExtra.interest=interest.value.trim();window.mmExtra.goal=goal.value;window.mmExtra.page=1;loadListings()};interest.addEventListener("change",reload);goal.addEventListener("change",reload);
- const recommend=button(W(0),()=>{reload();document.getElementById("catalog")?.scrollIntoView({behavior:"smooth"})});grid.append(recommend);
+ const recommend=button(W(0),async()=>{if(!await getSession()){location.assign(loginPath({panel:"mine"}));return}
+ const result=document.getElementById("mmRecommendations")||el("section");result.id="mmRecommendations";result.className="mm-community";grid.after(result);result.replaceChildren(el("h3",W(0)));
+ try{const response=await fetch("/api/recommendations",{cache:"no-store"});if(!response.ok)throw Error();const data=await response.json();if(!data.listings.length)result.append(el("p",t("emptyTitle")+" · "+t("postProfile")));for(const p of data.listings)result.append(button(p.display_name+" · "+p.city,()=>window.mmOpenProfile(p.id)))}catch{result.append(el("p",t("error")))}
+ });grid.append(recommend);
  }
  const footer=document.querySelector(".footer-links")||document.querySelector("footer");
  if(footer){footer.append(button(W(1),async()=>{const url=location.origin+(state.lang==="ru"?"/":"/"+state.lang+"/");try{if(navigator.share)await navigator.share({title:"MurdiliMax",url});else{await navigator.clipboard.writeText(url);toast(W(2))}}catch(e){if(e.name!=="AbortError")prompt(W(1),url)}}),button(W(9),async()=>{if(installEvent){await installEvent.prompt();installEvent=null}else alert(W(10))}))}

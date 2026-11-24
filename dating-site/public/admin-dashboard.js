@@ -1,7 +1,7 @@
 /* Moderation for real registered, admin-published, and preserved archived profiles. */
 "use strict";
 let status="approved";
-let adminItems=[];
+let adminItems=[],adminQuery='';
 const $=q=>document.querySelector(q);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const sourceName={member:"Участник",manual:"Добавлено через админку",legacy:"Сохранённая анкета"};
@@ -27,7 +27,9 @@ function button(label,action,id,source,featured){
 function render(){
  const target=$("#list");
  if(!adminItems.length){target.innerHTML='<div class="empty"><h3>В этом разделе анкет нет</h3><p>Переключите вкладку или добавьте анкету.</p></div>';return}
- target.innerHTML=adminItems.map(item=>{
+ const shown=adminItems.filter(item=>!adminQuery||[item.display_name,item.city,item.country,item.headline,item.source].join(' ').toLowerCase().includes(adminQuery));
+ if(!shown.length){target.textContent='Нет совпадений';return;}
+ target.innerHTML=shown.map(item=>{
   const photo=item.avatar_url?'<img loading="lazy" src="'+esc(item.avatar_url)+'" alt="Фото анкеты" class="admin-photo">':"";
   const meta=[item.country,item.city,item.district,item.category].filter(Boolean).map(esc).join(" · ");
   let actions=button("✎ Редактировать","edit",item.id,item.source);
@@ -46,6 +48,7 @@ async function refresh(){
   $("#stats").innerHTML=["pending","approved","rejected"].map(k=>'<div class="stat-box"><strong>'+Number((json.stats||[]).find(s=>s.status===k)?.total||0)+'</strong><span>'+statusLabel[k]+'</span></div>').join("");
   document.querySelectorAll("[data-status]").forEach(b=>b.classList.toggle("selected",b.dataset.status===status));
   render();
+  read('/api/admin/overview').then(data=>{const box=$('#adminOverview');if(box)box.textContent='Подтверждённые аккаунты: '+data.accounts+' · Опубликовано: '+data.published+' · С перепиской: '+data.messaging+' · Гостевая книга на проверке: '+data.guestbook_pending+' · Жалобы на чат: '+data.chat_reports+' · Приватные фото: '+data.photos;}).catch(()=>{});
   $("#reports").innerHTML=(json.reports||[]).length?(json.reports||[]).map(q=>'<div class="report"><strong>'+esc(q.reason)+'</strong><br><small>'+esc(q.display_name)+' · '+esc(q.created_at)+'</small></div>').join(""):"Жалоб пока нет";
  }catch(e){if(e.status===401||e.status===403)authGate(e.status);else notice(e.message,true)}
 }
@@ -92,4 +95,6 @@ editForm.addEventListener("submit",async e=>{
 $("#editCancel").onclick=()=>editDialog.close();
 editDialog.addEventListener("click",e=>{if(e.target===editDialog)editDialog.close()});
 document.querySelectorAll("[data-status]").forEach(b=>b.addEventListener("click",()=>{status=b.dataset.status;refresh()}));
+const search=document.createElement('input');search.type='search';search.placeholder='Поиск по имени, городу или источнику';search.setAttribute('aria-label',search.placeholder);search.style.cssText='width:100%;max-width:450px;padding:10px;margin:12px 0';search.oninput=()=>{adminQuery=search.value.trim().toLowerCase();render()};
+const overview=document.createElement('p');overview.id='adminOverview';overview.setAttribute('role','status');$('#list').before(overview,search);
 Promise.resolve(window.MM_authReady).then(()=>refresh(),()=>refresh());
