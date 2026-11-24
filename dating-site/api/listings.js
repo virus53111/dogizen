@@ -1,4 +1,5 @@
 import { lastSeen, newMember } from "../render/member-activity.js";
+import { nearbyCities } from "../public/nearby-cities.js";
 import { db } from "hatchable";
 import { cityNamesInRange } from "../render/latvia-cities.js";
 export const access="public";
@@ -9,10 +10,12 @@ export default async function(req,res){
  const country=sval("country",3),city=sval("city",100),district=sval("district",100),category=sval("category",40),search=sval("q",100);
  const filters=["status = 'approved'"], values=[];
  function add(fragment,val){values.push(val);filters.push(fragment.replace("?", "$"+values.length))}
- if(country)add("country = ?",country);
- if(city && country==="LV")add("city = ANY(?::text[])",cityNamesInRange(city,q.radius));
- else if(city)add("city = ?",city);
- if(district)add("district = ?",district);
+ const near=Boolean(q.near_city||q.near_country||q.near_radius);
+ if(near){const keys=nearbyCities(sval("near_country",3),sval("near_city",100),Number(q.near_radius));if(!keys.length)return res.status(400).json({error:"invalid_nearby"});add("(country || '|' || city) = ANY(?::text[])",keys)}
+ if(country&&!near)add("country = ?",country);
+ if(!near&&city && country==="LV")add("city = ANY(?::text[])",cityNamesInRange(city,q.radius));
+ else if(city&&!near)add("city = ?",city);
+ if(district&&!near)add("district = ?",district);
  if(category)add("category = ?",category);
  if(search){values.push("%"+search+"%");filters.push("(display_name ILIKE $"+values.length+" OR headline ILIKE $"+values.length+" OR description ILIKE $"+values.length+" OR EXISTS (SELECT 1 FROM mm_member_profile_details d WHERE d.listing_id=mm_public_listings.id AND d.interests ILIKE $"+values.length+"))")}
  const interest=sval('interest',100),goal=sval('goal',24);
