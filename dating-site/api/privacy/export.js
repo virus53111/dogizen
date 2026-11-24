@@ -17,6 +17,9 @@ export default async function(req,res){
  COALESCE((SELECT d.looking_for FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS looking_for,
  COALESCE((SELECT d.interests FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),'') AS interests
  FROM mm_listings WHERE owner_id=$1 ORDER BY created_at DESC LIMIT 5001`],
+  ['my_visit_settings','SELECT share_visits,matches_seen_at FROM mm_member_activity_settings WHERE user_id=$1'],
+  ['my_profile_visits','SELECT listing_id,visited_at FROM mm_profile_visits WHERE visitor_id=$1 AND visited_at>NOW()-INTERVAL \'30 days\' ORDER BY visited_at DESC LIMIT 5001'],
+  ['my_blocks','SELECT id,created_at FROM mm_member_blocks WHERE blocker_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['my_guestbook_entries','SELECT id,listing_id,body,approved,created_at FROM mm_guestbook_entries WHERE writer_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['my_community_settings','SELECT s.listing_id,s.guestbook_enabled,s.author_group_enabled FROM mm_profile_community s JOIN mm_listings l ON l.id=s.listing_id WHERE l.owner_id=$1 LIMIT 5001'],
   ['my_likes','SELECT listing_id,created_at FROM mm_member_likes WHERE liker_id=$1 ORDER BY created_at DESC LIMIT 5001'],
