@@ -18,6 +18,7 @@
     "jose": "^5.10.0",
     "hatchable": "file:./render/shim",
     "sharp": "0.35.5",
-    "web-push": "3.6.7"
+    "web-push": "3.6.7",
+    "geoip-country": "5.0.202611210415"
   }
 }
