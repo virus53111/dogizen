@@ -184,7 +184,7 @@ async function loadListings(background=false){
  if(state.category)query.set("category",state.category);
  if(state.q)query.set("q",state.q);
  const extra=window.mmExtra||{};
- for(const k of ["min_age","max_age","sort","language","photo","commercial","featured","online","new_member","page"]){
+ for(const k of ["min_age","max_age","sort","language","photo","interest","goal","commercial","featured","online","new_member","page"]){
   if(extra[k]!==undefined&&extra[k]!==""&&extra[k]!==null)query.set(k,String(extra[k]));
  }
  if(state.mode==="gallery")query.set("photo","1");
