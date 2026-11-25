@@ -1,5 +1,5 @@
 import { db } from "hatchable";
-import { choosePublication } from "./publication-policy.js";
+import { selfPublication } from "./publication-policy.js";
 export const access="user";
 export const methods=["GET","POST"];
 const GOALS=new Set(["","friendship","dating","relationship","activities","open"]);
@@ -36,15 +36,17 @@ export default async function(req,res){
       const previous=await query("SELECT category,display_name,languages,status FROM mm_listings WHERE id=$1 AND owner_id=$2 FOR UPDATE",[id,owner]);
       if(!previous.rows.length)return {rows:[]};
       const profile=previous.rows[0];
-      const decision=choosePublication({
+      const decision=selfPublication({
         category:profile.category,display_name:profile.display_name,headline,description,interests,languages:profile.languages
       });
-      const nextStatus=profile.status==="approved"&&decision.status==="approved"?"approved":"pending";
+      if(!decision.allowed)return {blocked:true,signals:decision.signals};
+      const nextStatus=profile.status;
       const update=await query("UPDATE mm_listings SET headline=$1,description=$2,status=$5,updated_at=NOW() WHERE id=$3 AND owner_id=$4 RETURNING id,status",[headline,description,id,owner,nextStatus]);
       if(update.rows.length&&hasExtra)
         await query("INSERT INTO mm_member_profile_details(listing_id,looking_for,interests) VALUES($1,$2,$3) ON CONFLICT(listing_id) DO UPDATE SET looking_for=EXCLUDED.looking_for,interests=EXCLUDED.interests,updated_at=NOW()",[id,lookingFor,interests]);
       return update;
     });
+    if(r.blocked)return res.status(400).json({error:"Исправьте описание: не допускаются ссылки, контактные данные, спам и запрещённый контент.",code:"profile_policy",signals:r.signals});
     return res.json({ok:!!r.rows.length,listing:r.rows[0]||null});
   }
   return res.status(400).json({error:"Неизвестная операция"});

@@ -31,13 +31,13 @@ async function invoke(handler,req,query,tx){
  try{const res=reply();await handler(req,res);return {res,calls}}
  finally{db.query=oldQuery;db.transaction=oldTx;storage.put=oldPut}
 }
-test('profile create saves optional interests and goals atomically, pending approval',async()=>{
+test('profile create saves optional interests and goals atomically and publishes',async()=>{
  const {res,calls}=await invoke(create,{method:'POST',user:{id:USER,verified:true},body:validBody,files:[]},
  sql=>{if(sql.includes('COUNT(*)'))return {rows:[{n:0}]};if(sql.includes('SELECT EXISTS'))return {rows:[{repeated:false}]};throw Error('Unexpected direct query '+sql)},
  (sql,args)=>{
   if(sql.includes('INSERT INTO mm_listings')){
-   assert.equal(args[0],USER);
-   return {rows:[{id:ID,status:'pending'}]};
+   assert.equal(args[0],USER);assert.equal(args[12],'approved');
+   return {rows:[{id:ID,status:'approved'}]};
   }
   if(sql.includes('INSERT INTO mm_member_profile_details')){
    assert.deepEqual(args,[ID,'friendship','Походы, музыка, книги']);
@@ -46,7 +46,7 @@ test('profile create saves optional interests and goals atomically, pending appr
   throw Error('Unexpected transaction query '+sql);
  });
  assert.equal(res.statusCode,200);
- assert.equal(res.body.listing.status,'pending');
+ assert.equal(res.body.listing.status,'approved');
  assert.equal(calls.filter(x=>x.source==='transaction').length,2);
  assert.ok(calls.some(x=>x.sql.includes('mm_member_profile_details')));
 });
@@ -54,7 +54,7 @@ test('optional details can be omitted and existing behavior remains unchanged',a
  const body={...validBody};delete body.looking_for;delete body.interests;
  const {res,calls}=await invoke(create,{method:'POST',user:{id:USER,verified:true},body,files:[]},
  sql=>sql.includes('COUNT(*)')?{rows:[{n:0}]}:sql.includes('SELECT EXISTS')?{rows:[{repeated:false}]}:(()=>{throw Error('Unexpected direct query')})(),
- sql=>sql.includes('INSERT INTO mm_listings')?{rows:[{id:ID,status:'pending'}]}:(()=>{throw Error('Unexpected extra query')})()
+ sql=>sql.includes('INSERT INTO mm_listings')?{rows:[{id:ID,status:'approved'}]}:(()=>{throw Error('Unexpected extra query')})()
  );
  assert.equal(res.statusCode,200);
  assert.equal(calls.filter(x=>x.source==='transaction').length,1);

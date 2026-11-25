@@ -4,7 +4,7 @@ import fs from 'node:fs/promises';
 import { db, storage } from 'hatchable';
 import create from '../api/create.js';
 import mine from '../api/mine.js';
-import { choosePublication } from '../api/publication-policy.js';
+import { choosePublication, selfPublication } from '../api/publication-policy.js';
 
 const ID='22222222-2222-4222-8222-222222222222';
 const user={id:'real-member-verified',email:'adult@example.test',verified:true};
@@ -73,12 +73,12 @@ test('suspicious phone/contact, paid sexual solicitation, minors, duplicate and 
   assert.ok(decision.signals.includes(signal),JSON.stringify(args));
  }
 });
-test('password account can submit a profile without email verification; it enters moderation',async()=>{
+test('password account publishes a normal profile immediately without email verification',async()=>{
  const {res,calls}=await call(create,{user:{id:'new-account',verified:false},body:form,files:[]},mockCreateQuery,(sql,params)=>{
-  if(sql.includes('INSERT INTO mm_listings')){assert.equal(params[0],'new-account');assert.equal(params[12],'pending');return {rows:[{id:ID,status:'pending'}]}}
+  if(sql.includes('INSERT INTO mm_listings')){assert.equal(params[0],'new-account');assert.equal(params[12],'approved');return {rows:[{id:ID,status:'approved'}]}}
   throw Error('Unexpected query '+sql);
  });
- assert.equal(res.code,200);assert.equal(res.body.published,false);assert.ok(calls.length>0);
+ assert.equal(res.code,200);assert.equal(res.body.published,true);assert.ok(calls.length>0);
 });
 test('verified account normal dating ad is published immediately without admin action',async()=>{
  const {res,calls}=await call(create,{user,body:form,files:[]},mockCreateQuery,(sql,params)=>{
@@ -96,27 +96,17 @@ test('verified account normal dating ad is published immediately without admin a
  assert.equal(res.body.listing.status,'approved');
  assert.equal(calls.filter(x=>x.where==='transaction').length,1);
 });
-test('new post with suspect content still enters moderation queue and cannot be immediately visible',async()=>{
+test('suspect content is automatically rejected before uploading photos or saving',async()=>{
  const suspect={...form,description:'Можете написать мне по адресу contact@example.org для знакомства.'};
- const {res}=await call(create,{user,body:suspect,files:[]},mockCreateQuery,(sql,args)=>{
-  if(sql.includes('INSERT INTO mm_listings')){
-   assert.equal(args[12],'pending');
-   return {rows:[{id:ID,status:'pending'}]};
-  }
-  throw Error('Unexpected transaction');
- });
- assert.equal(res.code,200);
- assert.equal(res.body.published,false);
- assert.equal(res.body.listing.status,'pending');
+ const {res,calls}=await call(create,{user,body:suspect,files:[]},mockCreateQuery,()=>{throw Error('Must not write flagged post')});
+ assert.equal(res.code,400);assert.equal(res.body.code,'profile_policy');assert.ok(res.body.signals.includes('external_contact'));
+ assert.equal(calls.filter(c=>c.where==='transaction').length,0);
 });
-test('a same-user duplicate in the last seven days is sent for review instead of auto-publishing',async()=>{
+test('a same-user duplicate is automatically rejected instead of queued for review',async()=>{
  const {res}=await call(create,{user,body:form,files:[]},
   sql=>sql.includes('COUNT(*)')?{rows:[{n:1}]}:{rows:[{repeated:true}]},
-  (sql,args)=>{
-   if(sql.includes('INSERT INTO mm_listings')){assert.equal(args[12],'pending');return {rows:[{id:ID,status:'pending'}]}};
-   throw Error('Unexpected SQL');
-  });
- assert.equal(res.body.published,false);
+  ()=>{throw Error('Must not write duplicate')});
+ assert.equal(res.code,400);assert.ok(res.body.signals.includes('duplicate_post'));
 });
 test('five new member ads per day still triggers existing spam limit',async()=>{
  const {res,calls}=await call(create,{user,body:form,files:[]},
@@ -139,18 +129,14 @@ test('safe edit to an existing published dating ad stays published without admin
  assert.equal(res.body.listing.status,'approved');
  assert.equal(calls.filter(x=>x.where==='transaction').length,2);
 });
-test('suspicious edit of approved ad moves it back into review',async()=>{
- const {res}=await call(mine,{user,method:'POST',body:{
+test('suspicious edit is rejected while the previous published profile remains unchanged',async()=>{
+ const {res,calls}=await call(mine,{user,method:'POST',body:{
   action:'edit',id:ID,headline:'Смотрите мой сайт https://example.com',description:form.description
- }},()=>{throw Error('Only transaction SQL')},(sql,args)=>{
+ }},()=>{throw Error('Only transaction SQL')},(sql)=>{
   if(sql.includes('FOR UPDATE'))return {rows:[{status:'approved',category:'dating',display_name:'Анна',languages:'Русский'}]};
-  if(sql.includes('UPDATE mm_listings')){
-   assert.equal(args[4],'pending');
-   return {rows:[{id:ID,status:'pending'}]};
-  }
-  throw Error('Unexpected SQL');
+  throw Error('Must not update flagged edit');
  });
- assert.equal(res.body.listing.status,'pending');
+ assert.equal(res.code,400);assert.equal(res.body.code,'profile_policy');assert.equal(calls.length,1);
 });
 test('user cannot bypass a moderator rejection by simply editing their ad',async()=>{
  for(const currentStatus of ['rejected','pending']){
@@ -158,10 +144,10 @@ test('user cannot bypass a moderator rejection by simply editing their ad',async
    action:'edit',id:ID,headline:'Ищу дружбу',description:form.description
   }},()=>{throw Error('Only transaction SQL')},(sql,args)=>{
    if(sql.includes('FOR UPDATE'))return {rows:[{status:currentStatus,category:'dating',display_name:'Анна',languages:'Русский'}]};
-   if(sql.includes('UPDATE mm_listings')){assert.equal(args[4],'pending');return {rows:[{id:ID,status:'pending'}]}};
+   if(sql.includes('UPDATE mm_listings')){assert.equal(args[4],currentStatus);return {rows:[{id:ID,status:currentStatus}]}};
    throw Error('Unexpected SQL');
   });
-  assert.equal(res.body.listing.status,'pending');
+  assert.equal(res.body.listing.status,currentStatus);
  }
 });
 test('someone who found a partner can permanently delete their own ad but never another account’s',async()=>{
@@ -188,7 +174,7 @@ test('all four language pages explain instant publication, exceptions and self-d
  for(const lang of ['ru','en','de','lv']){
   const t=translations.translations[lang];
   for(const k of ['createHelp','submitPublished','submitPending'])assert.ok(t[k]?.length>20,lang+'/'+k);
-  assert.ok(/moderat|проверк|prüfung|geprüft|pārbaud/i.test(t.createHelp),lang);
+  assert.ok(/automat|автомат|automāt/i.test(t.createHelp),lang);
   const html=await fs.readFile('public/'+(lang==='ru'?'':lang+'/')+'index.html','utf8');
   assert.ok(html.includes('data-t="createHelp"'),lang);
   assert.ok(html.includes('name="adultConfirmed"'),lang);
@@ -199,3 +185,5 @@ test('all four language pages explain instant publication, exceptions and self-d
  assert.match(mineUi,/Удалить анкету навсегда/);
  assert.match(mineUi,/owner-actions/);
 });
+
+test('neutral events do not need manual review but unsafe signals remain blocked',()=>{assert.equal(selfPublication({category:'events',description:'Приглашаю взрослых на прогулку в парке'}).allowed,true);for(const description of ['Ищу девушку 17 лет.','Услуги эскорт за деньги.','Напишите https://example.com'])assert.equal(selfPublication({description}).allowed,false);});

@@ -18,3 +18,10 @@ export function choosePublication({category='',display_name='',headline='',descr
  if(isDuplicate)signals.push('duplicate_post');
  return {status:signals.length?'pending':'approved',signals};
 }
+
+ // Self-service profiles are either published automatically or returned to the author for correction.
+ // A neutral event category alone does not require a human decision.
+export function selfPublication(input={}){
+ const signals=choosePublication(input).signals.filter(s=>s!=='sensitive_category');
+ return {allowed:signals.length===0,signals};
+}

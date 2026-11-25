@@ -1,5 +1,5 @@
 import { db, storage } from "hatchable";
-import { choosePublication } from "./publication-policy.js";
+import { selfPublication } from "./publication-policy.js";
 export const access="user";
 export const methods=["POST"];
 const GOALS=new Set(["","friendship","dating","relationship","activities","open"]);
@@ -28,11 +28,12 @@ export default async function(req,res){
   "SELECT EXISTS(SELECT 1 FROM mm_listings WHERE owner_id=$1 AND LOWER(description)=LOWER($2) AND created_at>NOW()-INTERVAL '7 days') AS repeated",
   [req.user.id,description]
  );
- const safety=choosePublication({
+ const safety=selfPublication({
   category,display_name:name,headline,description,interests,languages,
   isDuplicate:duplicate.rows[0]?.repeated===true
  });
- const status=req.user.verified===true?safety.status:'pending';
+ if(!safety.allowed)return res.status(400).json({error:"Исправьте описание: не допускаются ссылки, контактные данные, спам, дубли и запрещённый контент.",code:"profile_policy",signals:safety.signals});
+ const status='approved';
  function hasImageSignature(bytes,type){
  if(!bytes||bytes.length<12)return false;
  const b=Buffer.from(bytes);
