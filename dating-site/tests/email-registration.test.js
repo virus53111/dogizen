@@ -1,0 +1,8 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs/promises';
+import {sendVerificationWithFallback,verifiedToken} from '../public/auth/email-flow.js';
+test('verification email falls back to Firebase hosted action only for rejected continue URL',async()=>{const calls=[];const user={};await sendVerificationWithFallback(async(...args)=>{calls.push(args);if(args.length===2)throw {code:'auth/unauthorized-continue-uri'};},user,{url:'https://murdilimax.com/login'});assert.equal(calls.length,2);assert.deepEqual(calls[1],[user]);});
+test('delivery and quota errors never trigger another send or claim success',async()=>{let n=0;await assert.rejects(sendVerificationWithFallback(async()=>{n++;throw new Error('quota');},{},{}),/quota/);assert.equal(n,1);});
+test('unverified account cannot receive server session token',async()=>{let tokens=0;const u={emailVerified:false,reload:async()=>{},getIdToken:async()=>{tokens++;return 'token'}};assert.equal(await verifiedToken(u),null);assert.equal(tokens,0);u.reload=async()=>{u.emailVerified=true};u.getIdToken=async(force)=>{assert.equal(force,true);return 'fresh'};assert.equal(await verifiedToken(u),'fresh');});
+test('login page separates registration and provides resend and verification check',async()=>{const html=await fs.readFile('public/auth/login.html','utf8'),js=await fs.readFile('public/auth/login.js','utf8');for(const id of ['registerMode','loginMode','verifyPanel','resend','checkVerified'])assert.ok(html.includes('id="'+id+'"'));assert.match(js,/createUserWithEmailAndPassword/);assert.match(js,/verifiedToken\(user\)/);assert.match(js,/sendVerificationWithFallback\(sendEmailVerification,user,emailAction\)/);assert.match(js,/Date.now\(\)-lastSent<60000/);});
