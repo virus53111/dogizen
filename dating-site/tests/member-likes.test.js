@@ -39,12 +39,9 @@ test('GET reveals only likes created by the authenticated user and mutually conf
  assert.equal(calls.length,1);
  assert.equal(res.headers['Cache-Control'],'private, no-store, max-age=0');
 });
-test('unverified email cannot read or post likes',async()=>{
- const {res,calls}=await invoke({method:'GET',user:{...A,verified:false}},()=>{
-  throw Error('No query for unverified user');
- });
- assert.equal(res.statusCode,403);
- assert.equal(calls.length,0);
+test('password account can read its own likes without email verification',async()=>{
+ const {res,calls}=await invoke({method:'GET',user:{...A,verified:false}},(sql,args)=>{assert.deepEqual(args,[A.id]);return {rows:[]}});
+ assert.equal(res.statusCode,200);assert.equal(calls.length,1);assert.deepEqual(res.body.liked_ids,[]);
 });
 test('no self-like, hidden ad, manually entered ad, blocked person or mass spam can pass INSERT',async()=>{
  const {res,calls}=await invoke({method:'POST',user:A,body:{listing_id:ID,action:'add'}},(sql,args)=>{

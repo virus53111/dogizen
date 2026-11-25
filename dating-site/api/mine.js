@@ -39,7 +39,7 @@ export default async function(req,res){
       const decision=choosePublication({
         category:profile.category,display_name:profile.display_name,headline,description,interests,languages:profile.languages
       });
-      const nextStatus=profile.status==="approved"&&req.user?.verified===true&&decision.status==="approved"?"approved":"pending";
+      const nextStatus=profile.status==="approved"&&decision.status==="approved"?"approved":"pending";
       const update=await query("UPDATE mm_listings SET headline=$1,description=$2,status=$5,updated_at=NOW() WHERE id=$3 AND owner_id=$4 RETURNING id,status",[headline,description,id,owner,nextStatus]);
       if(update.rows.length&&hasExtra)
         await query("INSERT INTO mm_member_profile_details(listing_id,looking_for,interests) VALUES($1,$2,$3) ON CONFLICT(listing_id) DO UPDATE SET looking_for=EXCLUDED.looking_for,interests=EXCLUDED.interests,updated_at=NOW()",[id,lookingFor,interests]);

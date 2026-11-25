@@ -25,7 +25,7 @@ function applyTranslations(){
  const btn=$("#chatBlockBtn");if(btn&&activeChat)btn.textContent=activeChat.blocked_by_me?V("unblock"):V("block");
 }
 function setError(s){$("#chatInfo").textContent=s||""}
-async function ensureLogin(query){const user=await authUser();state.user=user;updateLogin();if(!user || user.emailVerified===false){loginRedirect(query);return false}return true}
+async function ensureLogin(query){const user=await authUser();state.user=user;updateLogin();if(!user){loginRedirect(query);return false}return true}
 function shortDate(val){try{return new Date(val).toLocaleString(state.lang,{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}catch{return ""}}
 function renderChats(){
  const container=$("#chatSidebar");

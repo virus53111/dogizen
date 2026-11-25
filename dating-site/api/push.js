@@ -4,7 +4,7 @@ export const access='user';
 export const methods=['GET','POST'];
 export default async function(req,res){
  res.setHeader('Cache-Control','private,no-store');
- if(!req.user?.verified)return res.status(401).json({error:'sign_in'});
+ if(!req.user?.id)return res.status(401).json({error:'sign_in'});
  const user=req.user.id;
  if(req.method==='GET'){const k=await pushKeys(db);return res.json({publicKey:k.public_key})}
  const b=req.body||{};

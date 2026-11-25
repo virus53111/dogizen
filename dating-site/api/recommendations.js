@@ -3,7 +3,7 @@ export const access='user';
 export const methods=['GET'];
 export default async function(req,res){
  res.setHeader('Cache-Control','private,no-store');
- if(!req.user?.verified)return res.status(401).json({error:'sign_in'});
+ if(!req.user?.id)return res.status(401).json({error:'sign_in'});
  // Match only explicitly published location and goal; never infer sexual orientation or use private visits.
  const r=await db.query(`WITH mine AS (SELECT l.country,l.city,d.looking_for FROM mm_listings l LEFT JOIN mm_member_profile_details d ON d.listing_id=l.id WHERE l.owner_id=$1 AND l.status='approved' ORDER BY l.created_at DESC LIMIT 1)
  SELECT p.id,p.display_name,p.city,p.country,p.headline,

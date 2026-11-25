@@ -70,7 +70,7 @@ app.use(async (req, res, next) => {
 });
 const owner = u => !!u && u.verified && u.email.toLowerCase() === 'dshtriters@gmail.com';
 const session = (u, visible = false, adminAllowed = false) => u ? {
-  id: u.id, email: u.email, ownerPanel: adminAllowed === true, emailVerified: u.verified, canMessage: u.verified, visible
+  id: u.id, email: u.email, ownerPanel: adminAllowed === true, emailVerified: u.verified, canMessage: true, visible
 } : null;
 async function ownerAllowed(user){if(!owner(user))return false;const r=await db.query('SELECT 1 FROM users u JOIN mm_admin_allowlist a ON LOWER(u.email)=a.email WHERE u.id=$1 AND u.email_verified_at IS NOT NULL LIMIT 1',[user.id]);return r.rows.length>0}
 const userOnly = (req, res, next) => req.user ? next() : res.status(401).json({ error: 'Требуется вход' });
@@ -92,7 +92,7 @@ app.get('/auth/config', (req, res) => res.json(config));
 app.post('/auth/session', async (req, res) => {
   const token = String(req.body?.idToken || '');
   const user = await verify(token);
-  if (!user) return res.status(401).json({ error: 'Подтвердите email и войдите повторно' });
+  if (!user) return res.status(401).json({ error: 'Войдите повторно' });
   const memberRecord = await db.query(`INSERT INTO users(id,email,email_verified_at)
     VALUES ($1,$2,CASE WHEN $3::boolean THEN NOW() END)
     ON CONFLICT(id) DO UPDATE SET email=EXCLUDED.email,

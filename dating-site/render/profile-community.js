@@ -10,7 +10,7 @@ export function guestbookText(value) {
 const targetSQL=`SELECT l.id,l.owner_id,l.status, COALESCE(s.guestbook_enabled,FALSE) AS guestbook_enabled,
  COALESCE(s.author_group_enabled,FALSE) AS author_group_enabled,
  EXISTS(SELECT 1 FROM mm_public_listings p WHERE p.id=l.id AND p.status='approved' AND p.messaging_enabled IS TRUE) AS public
- FROM mm_listings l JOIN users u ON u.id=l.owner_id AND u.email_verified_at IS NOT NULL
+ FROM mm_listings l JOIN users u ON u.id=l.owner_id
  LEFT JOIN mm_profile_community s ON s.listing_id=l.id WHERE l.id=$1`;
 const blockedSQL=`(mm_pair_blocked($1,$2) OR EXISTS(SELECT 1 FROM mm_conversations c WHERE c.blocked_by IS NOT NULL
  AND ((c.requester_id=$1 AND c.publisher_id=$2) OR (c.requester_id=$2 AND c.publisher_id=$1))))`;
@@ -19,7 +19,7 @@ export function profileCommunity(db) {
  return async function(req,res) {
   res.setHeader('Cache-Control','private, no-store');
   const input=req.method==='GET'?req.query||{}:req.body||{};
-  const id=input.listing_id, caller=req.user?.verified===true?req.user.id:null;
+  const id=input.listing_id, caller=req.user?.id||null;
   if(typeof id!=='string'||!UUID.test(id))return error(res,400,'invalid_listing');
   if(req.method==='GET'){
    const target=(await db.query(targetSQL,[id])).rows[0];
@@ -30,7 +30,7 @@ export function profileCommunity(db) {
    if(isOwner)result.settings={guestbook_enabled:target.guestbook_enabled,author_group_enabled:target.author_group_enabled};
    if(isOwner||(isPublic&&target.guestbook_enabled)){
     const entries=await db.query(`SELECT e.id,e.body,e.approved,e.created_at,(e.writer_id=$2) IS TRUE AS mine
-     FROM mm_guestbook_entries e JOIN users u ON u.id=e.writer_id AND u.email_verified_at IS NOT NULL
+     FROM mm_guestbook_entries e JOIN users u ON u.id=e.writer_id
      WHERE e.listing_id=$1 AND ($3::boolean OR e.approved OR e.writer_id=$2)
      AND ($3::boolean OR e.writer_id=$2 OR NOT mm_pair_blocked(e.writer_id,$4))
      AND ($3::boolean OR e.writer_id=$2 OR NOT EXISTS(SELECT 1 FROM mm_conversations c WHERE c.blocked_by IS NOT NULL AND
@@ -46,7 +46,7 @@ export function profileCommunity(db) {
     result.listings=listings.rows;
    }
    if(caller&&!isOwner&&isPublic&&target.guestbook_enabled){
-    const allowed=await db.query('SELECT NOT '+blockedSQL+' AND EXISTS(SELECT 1 FROM users WHERE id=$1 AND email_verified_at IS NOT NULL) AS allowed',[caller,target.owner_id]);
+    const allowed=await db.query('SELECT NOT '+blockedSQL+' AND EXISTS(SELECT 1 FROM users WHERE id=$1) AS allowed',[caller,target.owner_id]);
     result.can_write=allowed.rows[0]?.allowed===true;
    }
    return res.json(result);
@@ -73,7 +73,7 @@ export function profileCommunity(db) {
    if(action==='write'){
     if(isOwner||!target.public||!target.guestbook_enabled)return [403,'forbidden'];
     await query('SELECT pg_advisory_xact_lock(hashtextextended($1, 74027))',[caller]);
-    const allowed=(await query('SELECT NOT '+blockedSQL+' AND EXISTS(SELECT 1 FROM users WHERE id=$1 AND email_verified_at IS NOT NULL) AS allowed',[caller,target.owner_id])).rows[0]?.allowed;
+    const allowed=(await query('SELECT NOT '+blockedSQL+' AND EXISTS(SELECT 1 FROM users WHERE id=$1) AS allowed',[caller,target.owner_id])).rows[0]?.allowed;
     if(!allowed)return [403,'forbidden'];
     const count=(await query(`SELECT COUNT(*)::integer AS n FROM mm_guestbook_entries WHERE writer_id=$1 AND created_at>NOW()-INTERVAL '1 day'`,[caller])).rows[0]?.n;
     if(count>=10)return [429,'rate_limit'];

@@ -1,7 +1,7 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendEmailVerification,sendPasswordResetEmail,browserLocalPersistence,setPersistence,signOut} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendPasswordResetEmail,browserLocalPersistence,setPersistence} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
-import {sendVerificationWithFallback,verifiedToken,registerOrSignIn,sendResetWithFallback} from "./email-flow.js?v=20261125-recovery";
+import {registerOrSignIn,sendResetWithFallback} from "./email-flow.js?v=20261125-recovery";
 
 const requested=new URLSearchParams(location.search).get("next")||"/";
 let destination="/";
@@ -24,14 +24,14 @@ const password=document.querySelector("#password");
 const status=document.querySelector("#status");
 const flowLabels={"ru":["Войти","Регистрация по email","Новый пользователь? Выберите «Регистрация по email».","Подтвердите электронную почту","Письмо отправлено. Откройте ссылку в письме. Если его нет, проверьте спам и нажмите «Отправить повторно».","Отправить повторно","Я подтвердил почту","Адрес ещё не подтверждён. Откройте ссылку в письме.","Аккаунт создан, но отправить письмо не удалось. Попробуйте повторно.","Не удалось войти. Если у вас ещё нет аккаунта, выберите регистрацию по email.","Повторная отправка доступна через минуту.","Вход или регистрация по email временно недоступны. Сообщите администратору.","Не удалось завершить регистрацию. Проверьте адрес и пароль (не менее 12 символов).","Адрес электронной почты","Использовать другой аккаунт"],"en":["Sign in","Register with email","New here? Select Register with email.","Verify your email","Email sent. Open the link in the message. If it is missing, check spam and select Resend.","Resend email","I verified my email","Email not yet verified. Open the link in the message.","Account created, but the email could not be sent. Try resending.","Could not sign in. If you are new, select Register with email.","You can resend after one minute.","Email sign-in or registration is temporarily unavailable. Contact the administrator.","Could not register. Check the email and password (at least 12 characters).","Email address","Use another account"],"de":["Anmelden","Mit E-Mail registrieren","Neu hier? Wählen Sie die E-Mail-Registrierung.","E-Mail bestätigen","E-Mail gesendet. Öffnen Sie den Link. Prüfen Sie ggf. den Spam-Ordner und senden Sie erneut.","Erneut senden","E-Mail bestätigt","E-Mail noch nicht bestätigt. Öffnen Sie den Link in der Nachricht.","Konto erstellt, aber E-Mail konnte nicht gesendet werden. Erneut versuchen.","Anmeldung fehlgeschlagen. Neue Nutzer wählen E-Mail-Registrierung.","Erneutes Senden nach einer Minute möglich.","E-Mail-Anmeldung oder Registrierung derzeit nicht verfügbar. Kontaktieren Sie den Administrator.","Registrierung fehlgeschlagen. Prüfen Sie E-Mail und Passwort (mindestens 12 Zeichen).","E-Mail-Adresse","Anderes Konto verwenden"],"lv":["Pieteikties","Reģistrēties ar e-pastu","Jauns lietotājs? Izvēlieties reģistrāciju ar e-pastu.","Apstipriniet e-pastu","Vēstule nosūtīta. Atveriet saiti vēstulē. Pārbaudiet surogātpastu un, ja vajag, nosūtiet vēlreiz.","Nosūtīt vēlreiz","E-pasts apstiprināts","E-pasts vēl nav apstiprināts. Atveriet saiti vēstulē.","Konts izveidots, bet vēstuli neizdevās nosūtīt. Mēģiniet vēlreiz.","Neizdevās pieteikties. Ja jums nav konta, izvēlieties reģistrāciju ar e-pastu.","Atkārtota nosūtīšana pēc minūtes.","E-pasta reģistrācija vai pieteikšanās īslaicīgi nav pieejama. Sazinieties ar administratoru.","Reģistrācija neizdevās. Pārbaudiet e-pastu un paroli (vismaz 12 rakstzīmes).","E-pasta adrese","Izmantot citu kontu"],"lt":["Prisijungti","Registruotis el. paštu","Naujas naudotojas? Pasirinkite registraciją el. paštu.","Patvirtinkite el. paštą","Laiškas išsiųstas. Atidarykite nuorodą. Jei laiško nėra, patikrinkite šlamštą ir siųskite dar kartą.","Siųsti dar kartą","Patvirtinau el. paštą","El. paštas dar nepatvirtintas. Atidarykite nuorodą laiške.","Paskyra sukurta, bet laiško išsiųsti nepavyko. Bandykite dar kartą.","Nepavyko prisijungti. Jei neturite paskyros, registruokitės el. paštu.","Pakartotinai siųsti galima po minutės.","Registracija arba prisijungimas el. paštu laikinai nepasiekiami. Susisiekite su administratoriumi.","Registracija nepavyko. Patikrinkite el. paštą ir slaptažodį (bent 12 ženklų).","El. pašto adresas","Naudoti kitą paskyrą"],"et":["Logi sisse","Registreeru e-postiga","Uus kasutaja? Vali e-postiga registreerumine.","Kinnita e-post","Kiri saadetud. Ava kirjas olev link. Kui kirja pole, kontrolli rämpsposti ja saada uuesti.","Saada uuesti","Kinnitasin e-posti","E-post pole veel kinnitatud. Ava kirjas olev link.","Konto loodi, kuid kirja saatmine ebaõnnestus. Proovi uuesti.","Sisselogimine ebaõnnestus. Kui sul pole kontot, registreeru e-postiga.","Uuesti saab saata minuti pärast.","E-postiga sisselogimine või registreerimine pole hetkel saadaval. Võta ühendust administraatoriga.","Registreerimine ebaõnnestus. Kontrolli e-posti ja parooli (vähemalt 12 märki).","E-posti aadress","Kasuta teist kontot"]};
 const L=flowLabels[locale]||flowLabels.ru;
-const instantLabels={"ru":["Введите email и пароль — аккаунт создаётся сразу, без письма.","Подтверждение почты для общения и публикации","Отправить письмо подтверждения","Аккаунт создан. Для общения и публикации подтвердите почту или вернитесь в каталог."],"en":["Enter your email and password to create an account instantly, without waiting for email.","Verify email to chat and publish","Send verification email","Your account is ready. Verify your email to chat and publish, or return to the catalog."],"de":["E-Mail und Passwort eingeben — das Konto wird sofort erstellt, ohne auf eine E-Mail zu warten.","E-Mail zum Chatten und Veröffentlichen bestätigen","Bestätigungs-E-Mail senden","Ihr Konto ist bereit. Bestätigen Sie Ihre E-Mail zum Chatten und Veröffentlichen oder kehren Sie zum Katalog zurück."],"lv":["Ievadiet e-pastu un paroli — konts tiek izveidots uzreiz, negaidot vēstuli.","Apstipriniet e-pastu sarakstei un publicēšanai","Nosūtīt apstiprinājuma vēstuli","Konts ir izveidots. Apstipriniet e-pastu sarakstei un publicēšanai vai atgriezieties katalogā."],"lt":["Įveskite el. paštą ir slaptažodį — paskyra sukuriama iš karto, nelaukiant laiško.","Patvirtinkite el. paštą norėdami bendrauti ir skelbti","Siųsti patvirtinimo laišką","Paskyra sukurta. Patvirtinkite el. paštą norėdami bendrauti ir skelbti arba grįžkite į katalogą."],"et":["Sisesta e-post ja parool — konto luuakse kohe, kirja ootamata.","Kinnita e-post vestlemiseks ja avaldamiseks","Saada kinnituskiri","Konto on valmis. Kinnita e-post vestlemiseks ja avaldamiseks või naase kataloogi."]};
+const instantLabels={"ru":["Введите email и пароль."],"en":["Enter your email and password."],"de":["Geben Sie E-Mail und Passwort ein."],"lv":["Ievadiet e-pastu un paroli."],"lt":["Įveskite el. paštą ir slaptažodį."],"et":["Sisesta e-post ja parool."]};
 const I=instantLabels[locale]||instantLabels.ru;
 const recoveryLabels={"ru":["Этот email уже зарегистрирован. Введите прежний пароль или нажмите «Забыли пароль?».","Запрос на восстановление принят. Если аккаунт существует, проверьте входящие и спам.","Не удалось отправить письмо для смены пароля. Повторите позже.","Введите email в поле выше."],"en":["This email is already registered. Enter your original password or select Forgot password.","Reset request accepted. If the account exists, check your inbox and spam.","Could not request a password reset. Try again later.","Enter your email above."],"de":["Diese E-Mail ist bereits registriert. Geben Sie Ihr bisheriges Passwort ein oder wählen Sie Passwort vergessen.","Anfrage angenommen. Falls das Konto existiert, prüfen Sie Posteingang und Spam.","Passwort-Reset konnte nicht angefordert werden. Versuchen Sie es später.","Geben Sie oben Ihre E-Mail ein."],"lv":["Šis e-pasts jau reģistrēts. Ievadiet iepriekšējo paroli vai izvēlieties Aizmirsāt paroli.","Pieprasījums pieņemts. Ja konts pastāv, pārbaudiet iesūtni un surogātpastu.","Neizdevās pieprasīt paroles maiņu. Mēģiniet vēlāk.","Ievadiet e-pastu augstāk."],"lt":["Šis el. paštas jau registruotas. Įveskite ankstesnį slaptažodį arba pasirinkite Pamiršote slaptažodį.","Užklausa priimta. Jei paskyra egzistuoja, patikrinkite gautuosius ir šlamštą.","Nepavyko pateikti slaptažodžio atkūrimo užklausos. Bandykite vėliau.","Įveskite el. paštą viršuje."],"et":["See e-post on juba registreeritud. Sisesta varasem parool või vali Unustasid parooli.","Taotlus vastu võetud. Kui konto on olemas, kontrolli postkasti ja rämpsposti.","Parooli lähtestamise taotlus ebaõnnestus. Proovi hiljem.","Sisesta ülal oma e-post."]};
 const R=recoveryLabels[locale]||recoveryLabels.ru;
 let registering=false;
 const modeButton=document.querySelector("#switchMode");
-const loginMode=document.querySelector("#loginMode"),registerMode=document.querySelector("#registerMode"),panel=document.querySelector("#verifyPanel");
-loginMode.textContent=L[0];registerMode.textContent=L[1];document.querySelector("#modeHint").textContent=I[0];document.querySelector("#verifyTitle").textContent=I[1];document.querySelector("#resend").textContent=I[2];document.querySelector("#checkVerified").textContent=L[6];document.querySelector("#otherAccount").textContent=L[14];
+const loginMode=document.querySelector("#loginMode"),registerMode=document.querySelector("#registerMode");
+loginMode.textContent=L[0];registerMode.textContent=L[1];document.querySelector("#modeHint").textContent=I[0];
 function setMode(value){
   registering=value;
   document.title=(registering?tr("Регистрация"):tr("Вход"))+" · MurdiliMax";
@@ -55,26 +55,13 @@ await setPersistence(auth,browserLocalPersistence);
 
 
 const emailAction={url:location.origin+"/login?next="+encodeURIComponent(destination)};
-let lastSent=0;
-function showVerification(user){panel.hidden=false;form.hidden=true;email.value=user.email||email.value;document.querySelector("#reset").hidden=false;document.querySelector("#verifyAddress").textContent=L[13]+": "+(user.email||"");}
-async function deliver(user){
-  showVerification(user);
-  if(Date.now()-lastSent<60000){status.textContent=L[10];return;}
-  try{await sendVerificationWithFallback(sendEmailVerification,user,emailAction);lastSent=Date.now();status.textContent=L[4];}
-  catch(error){console.warn("Firebase verification email:",error?.code||"unknown");status.textContent=L[8]+(error?.code==="auth/too-many-requests"?" "+tr("Слишком много попыток. Попробуйте позже."):"");}
-}
-async function finish(user,{check=false}={}){
-  const token=check ? await verifiedToken(user) : await user.getIdToken(true);
-  if(!token){showVerification(user);status.textContent=L[7];return;}
+async function finish(user){
+  const token=await user.getIdToken(true);
   const response=await fetch("/auth/session",{
     method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({idToken:token})
   });
   if(!response.ok)throw new Error("session");
-  if(!user.emailVerified){
-    location.replace(locale==="ru"?"/":"/"+locale+"/");
-    return;
-  }
   location.replace("/login?next="+encodeURIComponent(destination));
 }
 async function run(action){
@@ -108,9 +95,9 @@ form.onsubmit=event=>{
   });
 };
 document.querySelector("#reset").onclick=()=>{
-  const address=(!panel.hidden?auth.currentUser?.email:email.value)?.trim();
+  const address=email.value.trim();
   if(!address){status.textContent=R[3];email.focus();return;}
-  if(panel.hidden&&!email.reportValidity())return;
+  if(!email.reportValidity())return;
   run(async()=>{
     try{await sendResetWithFallback(sendPasswordResetEmail,auth,address,emailAction);status.textContent=R[1];}
     catch(error){
@@ -121,9 +108,8 @@ document.querySelector("#reset").onclick=()=>{
   });
 };
 
-document.querySelector("#resend").onclick=()=>run(async()=>{const user=auth.currentUser;if(!user)throw new Error("session");const token=await verifiedToken(user);if(token)return finish(user,{check:true});await deliver(user);});
-document.querySelector("#checkVerified").onclick=()=>run(async()=>{const user=auth.currentUser;if(!user)throw new Error("session");await finish(user,{check:true});});
-document.querySelector("#otherAccount").onclick=()=>run(async()=>{const response=await fetch("/auth/logout",{method:"POST"});if(!response.ok)throw new Error("session");await signOut(auth);lastSent=0;panel.hidden=true;form.hidden=false;password.value="";setMode(false);});
+// Restore a previously created Firebase account without asking for email confirmation.
 await auth.authStateReady();
-if(auth.currentUser&&!auth.currentUser.emailVerified){showVerification(auth.currentUser);status.textContent=I[3];
-  const catalog=document.createElement("a");catalog.href=locale==="ru"?"/":"/"+locale+"/";catalog.textContent=({ru:"Перейти в каталог",en:"Browse profiles",de:"Profile ansehen",lv:"Skatīt profilus",lt:"Peržiūrėti profilius",et:"Vaata profiile"})[locale];panel.append(catalog);}
+if(auth.currentUser && new URLSearchParams(location.search).get("mode")!=="register"){
+  await run(()=>finish(auth.currentUser));
+}

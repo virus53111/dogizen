@@ -6,8 +6,8 @@ const UUID=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 export default async function(req,res){
  res.setHeader('Cache-Control','private, no-store, max-age=0');
  const current=req.user?.id;
- if(!current||req.user?.verified!==true)
-   return res.status(403).json({error:'Подтвердите email и войдите в аккаунт'});
+ if(!current)
+   return res.status(403).json({error:'Войдите в аккаунт'});
  if(req.method==='GET'){
   // Return only the caller's own likes and mutually agreed matches.
   // Never expose who has liked the caller before a reciprocal match.

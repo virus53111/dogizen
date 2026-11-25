@@ -5,7 +5,7 @@ export const methods=["POST"];
 const GOALS=new Set(["","friendship","dating","relationship","activities","open"]);
 const CATEGORIES=new Set(["dating", "women-men", "women-serious", "women-women", "men-women", "men-serious", "men-men", "couples", "trans-dating", "social", "events", "noncommercial", "support"]);
 export default async function(req,res){
- if(!req.user?.verified)return res.status(403).json({error:"Для публикации подтвердите адрес электронной почты"});
+ if(!req.user?.id)return res.status(401).json({error:"Требуется вход"});
  const b=req.body||{};
  const str=(v,n)=>String(v||"").trim().slice(0,n);
  const name=str(b.display_name,65),headline=str(b.headline,120),city=str(b.city,100),country=str(b.country,3).toUpperCase();
@@ -32,7 +32,7 @@ export default async function(req,res){
   category,display_name:name,headline,description,interests,languages,
   isDuplicate:duplicate.rows[0]?.repeated===true
  });
- const status=safety.status;
+ const status=req.user.verified===true?safety.status:'pending';
  function hasImageSignature(bytes,type){
  if(!bytes||bytes.length<12)return false;
  const b=Buffer.from(bytes);

@@ -19,8 +19,8 @@ test('hidden target is inaccessible to visitors',async()=>{
  const db=fake([{match:/LEFT JOIN/,rows:[{...target,public:false}]}]);const r=res();
  await profileCommunity(db)({method:'GET',query:{listing_id:id}},r);db.done();assert.equal(r.code,404);
 });
-test('unverified user cannot write',async()=>{
- const db=fake([]),r=res();await profileCommunity(db)({method:'POST',user:{id:'guest',verified:false},body:{listing_id:id,action:'write',body:'Hi'}},r);db.done();assert.equal(r.code,401);
+test('unauthenticated user cannot write',async()=>{
+ const db=fake([]),r=res();await profileCommunity(db)({method:'POST',user:null,body:{listing_id:id,action:'write',body:'Hi'}},r);db.done();assert.equal(r.code,401);
 });
 test('non-owner cannot enable author linkage',async()=>{
  const db=fake([{match:/advisory_xact_lock/},{match:/LEFT JOIN/,rows:[target]}]),r=res();
@@ -32,5 +32,5 @@ test('non-owner cannot approve entries',async()=>{
 });
 test('write requires opt-in, respects block and inserts pending only',async()=>{
  const db=fake([{match:/advisory_xact_lock/},{match:/LEFT JOIN/,rows:[target]},{match:/advisory_xact_lock/},{match:/SELECT NOT \(mm_pair_blocked/,rows:[{allowed:true}]},{match:/INTERVAL '1 day'/,rows:[{n:0}]},{match:/approved IS FALSE/,rows:[{n:0}]},{match:/WHERE listing_id=\$1$/,rows:[{n:0}]},{match:/INSERT INTO mm_guestbook_entries\(listing_id,writer_id,body\)/,args:[id,'guest','Hello']}]),r=res();
- await profileCommunity(db)({method:'POST',user:{id:'guest',verified:true},body:{listing_id:id,action:'write',body:'Hello'}},r);db.done();assert.equal(r.data.ok,true);
+ await profileCommunity(db)({method:'POST',user:{id:'guest',verified:false},body:{listing_id:id,action:'write',body:'Hello'}},r);db.done();assert.equal(r.data.ok,true);
 });

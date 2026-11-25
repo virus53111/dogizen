@@ -10,7 +10,7 @@ async function invoke(req,query){
  const old=db.query,oldTx=db.transaction, calls=[];db.query=async(sql,args=[])=>{calls.push({sql,args});return query(sql,args)};db.transaction=fn=>fn(db.query);
  try{const res=response();await activity(req,res);return {res,calls}}finally{db.query=old;db.transaction=oldTx}
 }
-test('activity requires verified authentication',async()=>{const {res,calls}=await invoke({method:'GET',user:{id:'member',verified:false}},()=>{throw Error()});assert.equal(res.code,401);assert.equal(calls.length,0)});
+test('activity requires authentication',async()=>{const {res,calls}=await invoke({method:'GET',user:null},()=>{throw Error()});assert.equal(res.code,401);assert.equal(calls.length,0)});
 test('summary counts unread, mutual matches, and pending entries only',async()=>{
  const {res,calls}=await invoke({method:'GET',user,query:{summary:'1'}},(sql,args)=>{assert.deepEqual(args,['member']);assert.match(sql,/seen_at IS NULL/);assert.match(sql,/b\.liker_id=a\.liked_owner_id/);assert.match(sql,/NOT e\.approved/);assert.match(sql,/mm_pair_blocked/);return {rows:[{unread:2,matches:1,new_matches:1,guestbook:3,share_visits:false}]}});
  assert.equal(res.data.unread,2);assert.equal(res.data.new_matches,1);assert.equal(calls.length,1);assert.ok(!('visitors' in res.data));

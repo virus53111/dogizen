@@ -28,7 +28,7 @@ const user = (id, email='visitor@example.test', verified=true) => ({id,email,ver
 const approved = {id:PUB,owner_id:'publisher',category:'social',country:'LV',status:'approved'};
 
 test('member may start a free conversation with a published profile', async () => {
-  const r=await invoke(startChat,{method:'POST',user:user('visitor'),body:{listing_id:PUB}},q=>{
+  const r=await invoke(startChat,{method:'POST',user:user('visitor','visitor@example.test',false),body:{listing_id:PUB}},q=>{
     if(q.startsWith('SELECT id,owner_id'))return {rows:[approved]};
     if(q.startsWith('INSERT INTO mm_conversations'))return {rows:[{id:CONV,blocked_by:null}]};
     throw new Error('Unexpected SQL '+q);

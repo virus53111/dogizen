@@ -73,11 +73,12 @@ test('suspicious phone/contact, paid sexual solicitation, minors, duplicate and 
   assert.ok(decision.signals.includes(signal),JSON.stringify(args));
  }
 });
-test('posting requires confirmed email, even with age and photo consent',async()=>{
- const {res,calls}=await call(create,{user:{id:'new-account',verified:false},body:form,files:[]},
-  ()=>{throw Error('Must reject before query')});
- assert.equal(res.code,403);
- assert.equal(calls.length,0);
+test('password account can submit a profile without email verification; it enters moderation',async()=>{
+ const {res,calls}=await call(create,{user:{id:'new-account',verified:false},body:form,files:[]},mockCreateQuery,(sql,params)=>{
+  if(sql.includes('INSERT INTO mm_listings')){assert.equal(params[0],'new-account');assert.equal(params[12],'pending');return {rows:[{id:ID,status:'pending'}]}}
+  throw Error('Unexpected query '+sql);
+ });
+ assert.equal(res.code,200);assert.equal(res.body.published,false);assert.ok(calls.length>0);
 });
 test('verified account normal dating ad is published immediately without admin action',async()=>{
  const {res,calls}=await call(create,{user,body:form,files:[]},mockCreateQuery,(sql,params)=>{

@@ -2,7 +2,7 @@ import {db} from 'hatchable';
 export const access='user';
 export const methods=['GET','POST'];
 export default async function(req,res){
- res.setHeader('Cache-Control','private,no-store');const user=req.user?.verified===true?req.user.id:null;if(!user)return res.status(401).json({error:'sign_in'});
+ res.setHeader('Cache-Control','private,no-store');const user=req.user?.id||null;if(!user)return res.status(401).json({error:'sign_in'});
  if(req.method==='GET'){const r=await db.query('SELECT id,subject,body,reply,created_at,answered_at FROM mm_support_tickets WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50',[user]);return res.json({tickets:r.rows})}
  const subject=typeof req.body?.subject==='string'?req.body.subject.trim():'',body=typeof req.body?.body==='string'?req.body.body.trim():'';
  if(subject.length<3||subject.length>100||body.length<10||body.length>2000)return res.status(400).json({error:'invalid_ticket'});

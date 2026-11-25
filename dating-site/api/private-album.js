@@ -7,7 +7,7 @@ const fail=(res,status,error)=>res.status(status).json({error});
 const authSQL="SELECT l.owner_id=$2 AS owner, l.owner_id, l.status, p.messaging_enabled, mm_pair_blocked(l.owner_id,$2) AS blocked, a.approved FROM mm_listings l LEFT JOIN mm_public_listings p ON p.id=l.id LEFT JOIN mm_private_album_access a ON a.listing_id=l.id AND a.viewer_id=$2 WHERE l.id=$1";
 export default async function(req,res){
  res.setHeader('Cache-Control','private,no-store');res.setHeader('Cross-Origin-Resource-Policy','same-origin');
- const user=req.user?.verified===true?req.user.id:null;if(!user)return fail(res,401,'sign_in');
+ const user=req.user?.id||null;if(!user)return fail(res,401,'sign_in');
  const b=req.method==='GET'?req.query:req.body||{},id=String(b?.listing_id||'');
  if(!UUID.test(id))return fail(res,400,'invalid_listing');
  const a=(await db.query(authSQL,[id,user])).rows[0];

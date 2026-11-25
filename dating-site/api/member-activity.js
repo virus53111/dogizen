@@ -5,7 +5,7 @@ const UUID=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const err=(res,status,error)=>res.status(status).json({error});
 export default async function(req,res){
  res.setHeader('Cache-Control','private, no-store');
- const caller=req.user?.verified===true?req.user.id:null;
+ const caller=req.user?.id||null;
  if(!caller)return err(res,401,'sign_in');
  if(req.method==='GET'){
   const r=await db.query(`SELECT

@@ -5,7 +5,7 @@ const UUID=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 const err=(res,n,error)=>res.status(n).json({error});
 export default async function(req,res){
  res.setHeader('Cache-Control','private,no-store');
- const user=req.user?.verified===true?req.user.id:null;if(!user)return err(res,401,'sign_in');
+ const user=req.user?.id||null;if(!user)return err(res,401,'sign_in');
  if(req.method==='GET'){
   const r=await db.query('SELECT incognito FROM users WHERE id=$1',[user]);
   const bumps=await db.query("SELECT l.id,b.bumped_at,COALESCE(b.bumped_at<=NOW()-INTERVAL '24 hours',TRUE) AS can_bump FROM mm_listings l LEFT JOIN mm_listing_bumps b ON b.listing_id=l.id WHERE l.owner_id=$1 AND l.status='approved'",[user]);

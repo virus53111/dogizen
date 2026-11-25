@@ -1,14 +1,7 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
 import { getAuth, setPersistence, browserLocalPersistence, onIdTokenChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 
-const verifyText = {
-  ru: 'Можно смотреть анкеты и сохранять избранное. Для общения и публикации подтвердите почту.',
-  en: 'Browse profiles and save favorites now. Verify your email to chat and publish.',
-  de: 'Profile ansehen und Favoriten speichern. Zum Chatten und Veröffentlichen E-Mail bestätigen.',
-  lv: 'Skatiet profilus un saglabājiet izlasi. Lai sarakstītos un publicētu, apstipriniet e-pastu.',
-  lt: 'Naršykite profilius ir išsaugokite mėgstamus. Norėdami bendrauti ir skelbti, patvirtinkite el. paštą.',
-  et: 'Vaata profiile ja salvesta lemmikuid. Vestlemiseks ja avaldamiseks kinnita e-post.'
-};
+
 try {
   const settings = await fetch('/auth/config').then(r => r.json());
   const firebase = getApps()[0] || initializeApp(settings);
@@ -44,18 +37,10 @@ try {
     if (signingOut) return;
     try {
       if (member) {
-        const response = await fetch('/auth/session', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        await fetch('/auth/session', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ idToken: await member.getIdToken() }) });
         document.getElementById('mm-pending-email')?.remove();
-        if (response.ok && !member.emailVerified) {
-          const locale = document.documentElement.lang || 'ru';
-          const link = document.createElement('a');
-          link.id = 'mm-pending-email';
-          link.href = '/auth/login.html?next=' + encodeURIComponent(location.pathname);
-          link.textContent = verifyText[locale] || verifyText.en;
-          (document.querySelector('main') || document.body).prepend(link);
 
-        }
       } else {
         document.getElementById('mm-pending-email')?.remove();
         await fetch('/auth/logout', { method: 'POST' });
