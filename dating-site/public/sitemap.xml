@@ -170,4 +170,10 @@
   <url><loc>https://murdilimax.com/lv/liepaja/</loc></url>
   <url><loc>https://murdilimax.com/lt/klaipeda/</loc></url>
   <url><loc>https://murdilimax.com/et/narva/</loc></url>
+  <url><loc>https://murdilimax.com/puh-alternativa/</loc><xhtml:link rel="alternate" hreflang="ru" href="https://murdilimax.com/puh-alternativa/" /><xhtml:link rel="alternate" hreflang="lv" href="https://murdilimax.com/lv/puh-alternativa/" /></url>
+  <url><loc>https://murdilimax.com/lv/puh-alternativa/</loc><xhtml:link rel="alternate" hreflang="lv" href="https://murdilimax.com/lv/puh-alternativa/" /><xhtml:link rel="alternate" hreflang="ru" href="https://murdilimax.com/puh-alternativa/" /></url>
+  <url><loc>https://murdilimax.com/gribu-alternativa/</loc><xhtml:link rel="alternate" hreflang="ru" href="https://murdilimax.com/gribu-alternativa/" /><xhtml:link rel="alternate" hreflang="lv" href="https://murdilimax.com/lv/gribu-alternativa/" /></url>
+  <url><loc>https://murdilimax.com/lv/gribu-alternativa/</loc><xhtml:link rel="alternate" hreflang="lv" href="https://murdilimax.com/lv/gribu-alternativa/" /><xhtml:link rel="alternate" hreflang="ru" href="https://murdilimax.com/gribu-alternativa/" /></url>
+  <url><loc>https://murdilimax.com/besplatnye-znakomstva/</loc><xhtml:link rel="alternate" hreflang="ru" href="https://murdilimax.com/besplatnye-znakomstva/" /><xhtml:link rel="alternate" hreflang="lv" href="https://murdilimax.com/lv/bezmaksas-iepazisanas/" /></url>
+  <url><loc>https://murdilimax.com/lv/bezmaksas-iepazisanas/</loc><xhtml:link rel="alternate" hreflang="lv" href="https://murdilimax.com/lv/bezmaksas-iepazisanas/" /><xhtml:link rel="alternate" hreflang="ru" href="https://murdilimax.com/besplatnye-znakomstva/" /></url>
 </urlset>
