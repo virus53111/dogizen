@@ -16,6 +16,8 @@ test('all six catalogue locales retain required existing actions',()=>{
  for(const prefix of ['', 'en/', 'de/', 'lv/', 'lt/', 'et/']){
   const html=readFileSync(new URL('../public/'+prefix+'index.html',import.meta.url),'utf8');
   for(const id of ['catalog','categoryExplorer','favoritesBtn','inboxBtn','postBtn','ageGate'])assert.ok(html.includes('id="'+id+'"'),prefix+id);
-  assert.ok(html.includes('/luxury.css'));assert.ok(html.includes('/luxury.js'));
+  assert.ok(html.includes('/luxury.css?v=20261125-mobile-fix2'));assert.ok(html.includes('/luxury.js?v=20261125-mobile-fix2'));
  }
 });
+
+test('mobile navigation fails closed if stylesheet is stale',()=>{assert.ok(js.includes('nav.style.display="none"'));assert.ok(css.includes('body.mm-catalog-mobile .mm-mobile-dock{display:grid!important'));assert.ok(css.includes('body.mm-catalog-mobile.mm-age-pending .mm-mobile-dock{display:none!important'));});

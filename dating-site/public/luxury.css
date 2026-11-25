@@ -825,3 +825,32 @@ html:not([data-mm-theme="light"]) body:has(#catalog) :is(.chip.selected,.view-sw
  body:has(#catalog) #categoryExplorer .category-group-links{grid-template-columns:minmax(0,1fr)}
  .mm-mobile-dock button{font-size:9px}
 }
+
+
+/* Mobile fix: explicit class, cache-versioned CSS/JS, compact non-sticky header. */
+.mm-mobile-dock{display:none}
+@media(max-width:780px){
+ body.mm-catalog-mobile .nav-wrap{position:relative;top:auto;min-height:0;height:auto!important}
+ body.mm-catalog-mobile .nav.container{display:grid;grid-template-columns:minmax(0,1fr);gap:7px!important;padding:10px 14px}
+ body.mm-catalog-mobile .nav.container .brand{font-size:24px;justify-self:start}
+ body.mm-catalog-mobile .nav.container .brand-icon{width:34px;height:34px;font-size:24px}
+ body.mm-catalog-mobile .nav-actions{display:flex;flex-wrap:wrap;justify-content:flex-start;align-items:center;gap:6px!important;width:100%;max-width:100%;min-width:0}
+ body.mm-catalog-mobile .nav-actions .nav-login{display:inline-flex;min-height:36px;max-width:45%;overflow:hidden;text-overflow:ellipsis}
+ body.mm-catalog-mobile .nav-actions .nav-shortcut{font-size:12px;min-height:36px;padding:7px}
+ body.mm-catalog-mobile .nav-actions #favoritesBtn,body.mm-catalog-mobile .nav-actions #inboxBtn,body.mm-catalog-mobile .nav-actions #postBtn{display:none}
+ body.mm-catalog-mobile .nav-actions .mm-catalog-tools{flex:1 1 100%;justify-content:space-between;gap:8px;min-width:0;font-size:12px}
+ body.mm-catalog-mobile .nav-actions .mm-theme-toggle{min-height:34px;min-width:34px}
+ body.mm-catalog-mobile .nav-actions .mm-owner-nav{min-height:36px;font-size:12px}
+ body.mm-catalog-mobile .nav-actions [hidden]{display:none!important}
+ body.mm-catalog-mobile{padding-bottom:calc(76px + env(safe-area-inset-bottom,0px))}
+ body.mm-catalog-mobile .mm-mobile-dock{display:grid!important;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;position:fixed;inset:auto 0 0;z-index:98;padding:6px 4px calc(6px + env(safe-area-inset-bottom,0px));background:#17212f;border-top:1px solid #3c485a;box-shadow:0 -8px 24px #0004}
+ body.mm-catalog-mobile.mm-age-pending .mm-mobile-dock{display:none!important}
+ body.mm-catalog-mobile #mmTrafficConsent{bottom:calc(80px + env(safe-area-inset-bottom,0px))}
+ html[data-mm-theme="light"] body.mm-catalog-mobile .mm-mobile-dock{background:#fff9fb;border-color:#dec8d6}
+ body.mm-catalog-mobile .footer>nav:not(.language-links){padding:0 14px 16px;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+ body.mm-catalog-mobile .footer .language-links{display:flex;flex-wrap:wrap;gap:8px 12px}
+ body.mm-catalog-mobile .footer .footer-content{padding-block:24px}
+ body.mm-catalog-mobile .footer .footer-links{gap:10px 14px}
+ body.mm-catalog-mobile .lux-catalog-head{margin-bottom:12px}
+ html{scroll-padding-top:12px}
+}

@@ -10,7 +10,7 @@ for(const lang of ['ru','en','de','lv']){
    assert.ok(html.includes('id="'+id+'"'),lang+': missing '+id);
   }
   assert.match(html,/href="\/luxury\.css(?:\?v=[\w-]+)?"/);
-  assert.match(html,/src="\/luxury\.js"/);
+  assert.match(html,/src="\/luxury\.js(?:\?v=[\w-]+)?"/);
   assert.match(html,/class="lux-hero-actions"/);
   assert.match(html,/data-lux-create/);
   assert.match(html,/class="lux-feature-grid"/);

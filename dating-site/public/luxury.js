@@ -96,7 +96,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  };
  const language=document.documentElement.lang;
  const l=Object.hasOwn(labels,language)?labels[language]:labels.ru;
- const nav=document.createElement("nav");nav.className="mm-mobile-dock";nav.setAttribute("aria-label",l[5]);
+ const nav=document.createElement("nav");nav.className="mm-mobile-dock";nav.style.display="none";nav.setAttribute("aria-label",l[5]);
  const actions=[
   ["catalog","▦",()=>catalog.scrollIntoView({block:"start"})],
   ["favorites","♡",()=>document.getElementById("favoritesBtn")?.click()],
@@ -113,6 +113,12 @@ document.addEventListener("DOMContentLoaded",()=>{
   b.addEventListener("click",action);nav.append(b);
  });
  document.body.append(nav);
+ document.body.classList.add("mm-catalog-mobile");
+ const ageGate=document.getElementById("ageGate");
+ if(ageGate){
+  const syncAge=()=>document.body.classList.toggle("mm-age-pending",!ageGate.classList.contains("dismissed"));
+  syncAge();new MutationObserver(syncAge).observe(ageGate,{attributes:true,attributeFilter:["class"]});
+ }
  const inbox=document.getElementById("inboxBtn");
  if(inbox&&unread){
   const sync=()=>{const badge=document.getElementById("inboxUnreadBadge");const value=badge?.textContent?.trim()||"";unread.hidden=!badge||badge.classList.contains("hidden")||badge.hidden||!value||value==="0";unread.textContent=unread.hidden?"":value};
