@@ -6,7 +6,7 @@ const root=lang=>'public/'+(lang==='ru'?'':lang+'/');
 const path=lang=>lang==='ru'?'/safety/':'/'+lang+'/safety/';
 test('safety guide has four translated indexable pages and correct canonical/hreflang',async()=>{
  const sitemap=await fs.readFile('public/sitemap.xml','utf8');
- assert.equal((sitemap.match(/<loc>/g)||[]).length,30);
+ assert.equal((sitemap.match(/<loc>/g)||[]).length,36);
  for(const lang of languages){
   const src=await fs.readFile(root(lang)+'safety/index.html','utf8');
   const home=await fs.readFile(root(lang)+'index.html','utf8');

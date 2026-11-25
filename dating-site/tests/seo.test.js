@@ -10,7 +10,7 @@ test('robots.txt permits crawling public content and advertises sitemap',async()
 });
 test('multilingual sitemap lists only valid content pages with hreflang',async()=>{
  const map=await fs.readFile('public/sitemap.xml','utf8');
- assert.equal((map.match(/<loc>/g)||[]).length,30);
+ assert.equal((map.match(/<loc>/g)||[]).length,36);
  for(const lang of languages)for(const section of ['about','riga','formats','safety']){
   const file=langDir(lang)+section+'/index.html';
   const h=await fs.readFile(file,'utf8');
@@ -31,5 +31,27 @@ test('homepages link real Riga and accurate multilingual about',async()=>{
   assert.ok(about.includes('murdilimax.com'+rel+'about/'));
   assert.ok(about.includes('luxury.css'));
   assert.ok(!about.includes('Для отправки личных сообщений требуется подписка'));
+ }
+});
+
+test('Latvian and Russian acquisition pages have reciprocal alternates and catalog links',async()=>{
+ const map=await fs.readFile('public/sitemap.xml','utf8');
+ const locs=[...map.matchAll(/<loc>([^<]+)<\/loc>/g)].map(m=>m[1]);
+ assert.equal(new Set(locs).size,locs.length);
+ for(const [ru,lv] of [['/puh-alternativa/','/lv/puh-alternativa/'],['/gribu-alternativa/','/lv/gribu-alternativa/'],['/besplatnye-znakomstva/','/lv/bezmaksas-iepazisanas/']]){
+  for(const [lang,path,home] of [['ru',ru,'/'],['lv',lv,'/lv/']]){
+   const origin='https://murdilimax.com';
+   const html=await fs.readFile('public'+path+'index.html','utf8');
+   const main=await fs.readFile('public'+home+'index.html','utf8');
+   assert.ok(locs.includes(origin+path));
+   assert.ok(html.includes('<html lang="'+lang+'">'));
+   assert.ok(html.includes('rel="canonical" href="'+origin+path+'"'));
+   assert.ok(html.includes('hreflang="ru" href="'+origin+ru+'"'));
+   assert.ok(html.includes('hreflang="lv" href="'+origin+lv+'"'));
+   assert.ok(html.includes('href="'+home+'#catalog"'));
+   assert.ok(main.includes('href="'+origin+path+'"'));
+   assert.match(html,/<h1>/);
+   assert.doesNotMatch(html,/name="robots" content="noindex"/);
+  }
  }
 });
