@@ -19,3 +19,15 @@ test('pending members can use their own favorites and session only',async()=>{
  for(const path of ['/api/create','/api/chat/messages','/api/claim','/api/admin/me','/media/private','/api/room','/api/favorites/other'])
    assert.equal(permitsPendingMember(path,'POST'),false);
 });
+
+
+test('email signup establishes a session immediately without sending or waiting for verification',async()=>{
+ const js=await fs.readFile('public/auth/login.js','utf8'),refresh=await fs.readFile('public/auth/refresh.js','utf8');
+ const finish=js.slice(js.indexOf('async function finish('),js.indexOf('async function run('));
+ assert.match(finish,/check \? await verifiedToken\(user\) : await user.getIdToken\(true\)/);
+ assert.match(finish,/fetch\("\/auth\/session"/);
+ assert.match(finish,/if\(!user.emailVerified\)\{\s*location.replace/);
+ assert.doesNotMatch(finish,/sendEmailVerification|deliver\(|sessionStorage/);
+ assert.doesNotMatch(refresh,/sendEmailVerification|sendVerificationWithFallback|mm-send-verification/);
+ assert.match(js,/await finish\(result.user\)/);
+});

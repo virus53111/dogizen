@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
 jobs:
   check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     defaults:
       run:
         working-directory: dating-site
@@ -32,7 +32,7 @@ jobs:
       - name: Test chat layouts with a pinned headless browser
         run: |
           export PLAYWRIGHT_BROWSERS_PATH="$RUNNER_TEMP/mm-chat-browser"
-          npx --yes playwright@1.56.1 install --only-shell chromium
+          npx --yes playwright@1.56.1 install --with-deps --only-shell chromium
           export CHROME_BIN="$(find "$PLAYWRIGHT_BROWSERS_PATH" -name headless_shell -type f -print -quit)"
           test -x "$CHROME_BIN"
           node tests/mobile-chat-browser.mjs

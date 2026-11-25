@@ -1,14 +1,13 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-import { getAuth, setPersistence, browserLocalPersistence, onIdTokenChanged, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
-import { sendVerificationWithFallback } from './email-flow.js?v=20261125-recovery';
+import { getAuth, setPersistence, browserLocalPersistence, onIdTokenChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
 
 const verifyText = {
-  ru: 'Можно смотреть анкеты и сохранять избранное. Для общения подтвердите почту.',
-  en: 'Browse profiles and save favorites now. Verify your email to chat.',
-  de: 'Profile ansehen und Favoriten speichern. Zum Chatten E-Mail bestätigen.',
-  lv: 'Skatiet profilus un saglabājiet izlasi. Lai sarakstītos, apstipriniet e-pastu.',
-  lt: 'Naršykite profilius ir išsaugokite mėgstamus. Norėdami bendrauti, patvirtinkite el. paštą.',
-  et: 'Vaata profiile ja salvesta lemmikuid. Vestlemiseks kinnita e-post.'
+  ru: 'Можно смотреть анкеты и сохранять избранное. Для общения и публикации подтвердите почту.',
+  en: 'Browse profiles and save favorites now. Verify your email to chat and publish.',
+  de: 'Profile ansehen und Favoriten speichern. Zum Chatten und Veröffentlichen E-Mail bestätigen.',
+  lv: 'Skatiet profilus un saglabājiet izlasi. Lai sarakstītos un publicētu, apstipriniet e-pastu.',
+  lt: 'Naršykite profilius ir išsaugokite mėgstamus. Norėdami bendrauti ir skelbti, patvirtinkite el. paštą.',
+  et: 'Vaata profiile ja salvesta lemmikuid. Vestlemiseks ja avaldamiseks kinnita e-post.'
 };
 try {
   const settings = await fetch('/auth/config').then(r => r.json());
@@ -55,12 +54,7 @@ try {
           link.href = '/auth/login.html?next=' + encodeURIComponent(location.pathname);
           link.textContent = verifyText[locale] || verifyText.en;
           (document.querySelector('main') || document.body).prepend(link);
-          if (sessionStorage.getItem('mm-send-verification') === member.uid) {
-            sessionStorage.removeItem('mm-send-verification');
-            auth.languageCode = locale;
-            sendVerificationWithFallback(sendEmailVerification, member, {url: location.origin + link.getAttribute('href')})
-              .catch(() => console.warn('Verification email can be requested again on the account page'));
-          }
+
         }
       } else {
         document.getElementById('mm-pending-email')?.remove();
