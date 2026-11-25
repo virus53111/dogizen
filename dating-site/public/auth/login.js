@@ -61,14 +61,19 @@ async function deliver(user){
   try{await sendVerificationWithFallback(sendEmailVerification,user,emailAction);lastSent=Date.now();status.textContent=L[4];}
   catch(error){console.warn("Firebase verification email:",error?.code||"unknown");status.textContent=L[8]+(error?.code==="auth/too-many-requests"?" "+tr("Слишком много попыток. Попробуйте позже."):"");}
 }
-async function finish(user,{send=true}={}){
-  const token=await verifiedToken(user);
-  if(!token){showVerification(user);if(send)await deliver(user);else status.textContent=L[7];return;}
+async function finish(user,{check=false,created=false}={}){
+  const token=check ? await verifiedToken(user) : await user.getIdToken(true);
+  if(!token){showVerification(user);status.textContent=L[7];return;}
   const response=await fetch("/auth/session",{
     method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({idToken:token})
   });
   if(!response.ok)throw new Error("session");
+  if(!user.emailVerified){
+    if(created) sessionStorage.setItem("mm-send-verification",user.uid);
+    location.replace(locale==="ru"?"/":"/"+locale+"/");
+    return;
+  }
   location.replace("/login?next="+encodeURIComponent(destination));
 }
 async function run(action){
@@ -92,7 +97,7 @@ form.onsubmit=event=>{
     let existing=false;
     try{
       const result=await registerOrSignIn(createUserWithEmailAndPassword,async(...args)=>{existing=true;return signInWithEmailAndPassword(...args);},auth,address,secret);
-      await finish(result.user);
+      await finish(result.user,{created:!existing});
     }catch(error){
       if(existing&&["auth/invalid-credential","auth/wrong-password","auth/user-not-found","auth/email-already-in-use"].includes(error?.code)){
         setMode(false);status.textContent=R[0];return;
@@ -115,8 +120,9 @@ document.querySelector("#reset").onclick=()=>{
   });
 };
 
-document.querySelector("#resend").onclick=()=>run(async()=>{const user=auth.currentUser;if(!user)throw new Error("session");const token=await verifiedToken(user);if(token)return finish(user,{send:false});await deliver(user);});
-document.querySelector("#checkVerified").onclick=()=>run(async()=>{const user=auth.currentUser;if(!user)throw new Error("session");await finish(user,{send:false});});
+document.querySelector("#resend").onclick=()=>run(async()=>{const user=auth.currentUser;if(!user)throw new Error("session");const token=await verifiedToken(user);if(token)return finish(user,{check:true});await deliver(user);});
+document.querySelector("#checkVerified").onclick=()=>run(async()=>{const user=auth.currentUser;if(!user)throw new Error("session");await finish(user,{check:true});});
 document.querySelector("#otherAccount").onclick=()=>run(async()=>{await signOut(auth);lastSent=0;panel.hidden=true;form.hidden=false;password.value="";setMode(false);});
 await auth.authStateReady();
-if(auth.currentUser&&!auth.currentUser.emailVerified){showVerification(auth.currentUser);status.textContent=L[7];}
+if(auth.currentUser&&!auth.currentUser.emailVerified){showVerification(auth.currentUser);status.textContent=L[7];
+  const catalog=document.createElement("a");catalog.href=locale==="ru"?"/":"/"+locale+"/";catalog.textContent=({ru:"Перейти в каталог",en:"Browse profiles",de:"Profile ansehen",lv:"Skatīt profilus",lt:"Peržiūrėti profilius",et:"Vaata profiile"})[locale];panel.append(catalog);}

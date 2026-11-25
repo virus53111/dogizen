@@ -1,3 +1,4 @@
+import { permitsPendingMember } from './pending-member.js';
 import express from 'express';
 import { notifyMessage } from './push.js';
 import { onlineCount, recentPhotos } from './catalog-extras.js';
@@ -52,21 +53,24 @@ async function verify(token) {
       issuer: 'https://securetoken.google.com/' + config.projectId,
       algorithms: ['RS256']
     });
-    if (!payload.sub || !payload.email || payload.email_verified !== true) return null;
-    return { id: String(payload.sub), email: String(payload.email), verified: true };
+    if (!payload.sub || !payload.email) return null;
+    const verified = payload.email_verified === true;
+    if (!verified && payload.firebase?.sign_in_provider !== 'password') return null;
+    return { id: String(payload.sub), email: String(payload.email), verified };
   } catch { return null; }
 }
 app.use(async (req, res, next) => {
   try {
     const bearer = req.get('authorization') || '';
     const token = bearer.startsWith('Bearer ') ? bearer.slice(7) : getCookie(req, 'mm_token');
-    req.user = await verify(token);
+    const identity = await verify(token);
+    req.user = identity?.verified || permitsPendingMember(req.path, req.method) ? identity : null;
     next();
   } catch (error) { next(error); }
 });
 const owner = u => !!u && u.verified && u.email.toLowerCase() === 'dshtriters@gmail.com';
 const session = (u, visible = false, adminAllowed = false) => u ? {
-  id: u.id, email: u.email, ownerPanel: adminAllowed === true, canMessage: true, visible
+  id: u.id, email: u.email, ownerPanel: adminAllowed === true, emailVerified: u.verified, canMessage: u.verified, visible
 } : null;
 async function ownerAllowed(user){if(!owner(user))return false;const r=await db.query('SELECT 1 FROM users u JOIN mm_admin_allowlist a ON LOWER(u.email)=a.email WHERE u.id=$1 AND u.email_verified_at IS NOT NULL LIMIT 1',[user.id]);return r.rows.length>0}
 const userOnly = (req, res, next) => req.user ? next() : res.status(401).json({ error: 'Требуется вход' });
@@ -89,7 +93,11 @@ app.post('/auth/session', async (req, res) => {
   const token = String(req.body?.idToken || '');
   const user = await verify(token);
   if (!user) return res.status(401).json({ error: 'Подтвердите email и войдите повторно' });
-  const memberRecord = await db.query("INSERT INTO users(id,email,email_verified_at) VALUES ($1,$2,NOW()) ON CONFLICT(id) DO UPDATE SET email=$2,email_verified_at=NOW() RETURNING visible", [user.id, user.email]);
+  const memberRecord = await db.query(`INSERT INTO users(id,email,email_verified_at)
+    VALUES ($1,$2,CASE WHEN $3::boolean THEN NOW() END)
+    ON CONFLICT(id) DO UPDATE SET email=EXCLUDED.email,
+      email_verified_at=CASE WHEN users.email=EXCLUDED.email THEN COALESCE(users.email_verified_at,EXCLUDED.email_verified_at) ELSE EXCLUDED.email_verified_at END
+    RETURNING visible`, [user.id, user.email, user.verified]);
   res.cookie('mm_token', token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 55 * 60 * 1000, path: '/' });
   res.set('Cache-Control', 'no-store');
   res.json({ user: session(user, memberRecord.rows[0]?.visible === true, await ownerAllowed(user)) });

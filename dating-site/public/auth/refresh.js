@@ -1,5 +1,15 @@
 import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js';
-import { getAuth, setPersistence, browserLocalPersistence, onIdTokenChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import { getAuth, setPersistence, browserLocalPersistence, onIdTokenChanged, signOut, sendEmailVerification } from 'https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js';
+import { sendVerificationWithFallback } from './email-flow.js?v=20261125-recovery';
+
+const verifyText = {
+  ru: 'Можно смотреть анкеты и сохранять избранное. Для общения подтвердите почту.',
+  en: 'Browse profiles and save favorites now. Verify your email to chat.',
+  de: 'Profile ansehen und Favoriten speichern. Zum Chatten E-Mail bestätigen.',
+  lv: 'Skatiet profilus un saglabājiet izlasi. Lai sarakstītos, apstipriniet e-pastu.',
+  lt: 'Naršykite profilius ir išsaugokite mėgstamus. Norėdami bendrauti, patvirtinkite el. paštą.',
+  et: 'Vaata profiile ja salvesta lemmikuid. Vestlemiseks kinnita e-post.'
+};
 try {
   const settings = await fetch('/auth/config').then(r => r.json());
   const firebase = getApps()[0] || initializeApp(settings);
@@ -34,10 +44,26 @@ try {
     pendingRefresh = pendingRefresh.then(async () => {
     if (signingOut) return;
     try {
-      if (member && member.emailVerified) {
-        await fetch('/auth/session', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      if (member) {
+        const response = await fetch('/auth/session', { method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ idToken: await member.getIdToken() }) });
+        document.getElementById('mm-pending-email')?.remove();
+        if (response.ok && !member.emailVerified) {
+          const locale = document.documentElement.lang || 'ru';
+          const link = document.createElement('a');
+          link.id = 'mm-pending-email';
+          link.href = '/auth/login.html?next=' + encodeURIComponent(location.pathname);
+          link.textContent = verifyText[locale] || verifyText.en;
+          (document.querySelector('main') || document.body).prepend(link);
+          if (sessionStorage.getItem('mm-send-verification') === member.uid) {
+            sessionStorage.removeItem('mm-send-verification');
+            auth.languageCode = locale;
+            sendVerificationWithFallback(sendEmailVerification, member, {url: location.origin + link.getAttribute('href')})
+              .catch(() => console.warn('Verification email can be requested again on the account page'));
+          }
+        }
       } else {
+        document.getElementById('mm-pending-email')?.remove();
         await fetch('/auth/logout', { method: 'POST' });
       }
     } catch (e) { console.warn('Could not refresh session', e); }
