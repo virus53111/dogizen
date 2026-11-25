@@ -80,3 +80,42 @@ document.addEventListener("DOMContentLoaded",()=>{
   const leave=document.getElementById("mmFeedLeave");leave.textContent=l.leave;leave.href="https://www.google.com/";
  });
 })();
+
+
+/* Mobile shortcuts use the existing catalogue, favorites, chat and posting handlers. */
+document.addEventListener("DOMContentLoaded",()=>{
+ const catalog=document.getElementById("catalog"), categories=document.getElementById("categoryExplorer");
+ if(!catalog||!categories||document.querySelector(".mm-mobile-dock"))return;
+ const labels={
+ ru:["Каталог","Избранное","Чат","Рубрики","Добавить","Навигация"],
+ en:["Explore","Favorites","Chat","Categories","Add","Navigation"],
+ de:["Katalog","Favoriten","Chat","Rubriken","Neu","Navigation"],
+ lv:["Katalogs","Izlase","Čats","Sadaļas","Pievienot","Navigācija"],
+ lt:["Katalogas","Mėgstami","Pokalbiai","Skiltys","Pridėti","Navigacija"],
+ et:["Kataloog","Lemmikud","Vestlus","Rubriigid","Lisa","Navigeerimine"]
+ };
+ const language=document.documentElement.lang;
+ const l=Object.hasOwn(labels,language)?labels[language]:labels.ru;
+ const nav=document.createElement("nav");nav.className="mm-mobile-dock";nav.setAttribute("aria-label",l[5]);
+ const actions=[
+  ["catalog","▦",()=>catalog.scrollIntoView({block:"start"})],
+  ["favorites","♡",()=>document.getElementById("favoritesBtn")?.click()],
+  ["chat","✉",()=>document.getElementById("inboxBtn")?.click()],
+  ["categories","☷",()=>{if(categories.classList.contains("collapsed"))document.getElementById("toggleCategories")?.click();categories.scrollIntoView({block:"start"})}],
+  ["post","＋",()=>document.getElementById("postBtn")?.click()]
+ ];
+ let unread;
+ actions.forEach(([id,symbol,action],i)=>{
+  const b=document.createElement("button");b.type="button";b.dataset.mmAction=id;
+  const icon=document.createElement("span");icon.className="mm-dock-icon";icon.setAttribute("aria-hidden","true");icon.textContent=symbol;
+  const label=document.createElement("span");label.textContent=l[i];b.append(icon,label);
+  if(id==="chat"){unread=document.createElement("span");unread.className="mm-dock-unread";unread.hidden=true;b.append(unread)}
+  b.addEventListener("click",action);nav.append(b);
+ });
+ document.body.append(nav);
+ const inbox=document.getElementById("inboxBtn");
+ if(inbox&&unread){
+  const sync=()=>{const badge=document.getElementById("inboxUnreadBadge");const value=badge?.textContent?.trim()||"";unread.hidden=!badge||badge.classList.contains("hidden")||badge.hidden||!value||value==="0";unread.textContent=unread.hidden?"":value};
+  new MutationObserver(sync).observe(inbox,{subtree:true,childList:true,characterData:true,attributes:true,attributeFilter:["class","hidden"]});sync();
+ }
+});
