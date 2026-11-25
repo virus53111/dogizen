@@ -37,7 +37,7 @@ test('public login uses the same existing Firebase project', async () => {
   assert.match(js, /signInWithEmailAndPassword/);
   assert.match(js, /createUserWithEmailAndPassword/);
   assert.match(js, /signInWithPopup/);
-  assert.match(js, /sendEmailVerification/);
+  assert.doesNotMatch(js, /sendEmailVerification/);
   assert.match(js, /sendPasswordResetEmail/);
 });
 
