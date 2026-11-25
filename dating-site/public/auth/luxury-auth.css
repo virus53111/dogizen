@@ -70,3 +70,5 @@ button:disabled{opacity:.55;cursor:wait}
  main{padding:27px 23px;border-radius:19px}
 }
 @media(prefers-reduced-motion:reduce){button{transition:none}}
+
+.auth-modes{display:grid;grid-template-columns:1fr 1fr;gap:8px}.auth-modes button{font-size:13px;padding:10px 6px}.auth-modes button[aria-pressed="true"]{background:#f0c47a;color:#27121f;border-color:#fbd99a}#modeHint{font-size:13px;color:#e2c6e0;margin:10px 0 17px}#verifyPanel{margin:14px 0;border:1px solid #805677;border-radius:12px;padding:12px}#verifyPanel h2{font-size:16px;margin:0 0 6px}#verifyPanel p{overflow-wrap:anywhere}#verifyPanel button{margin:4px 0}#verifyPanel[hidden],#account[hidden],#reset[hidden]{display:none!important}
