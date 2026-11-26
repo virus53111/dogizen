@@ -217,6 +217,7 @@ for (const slug of routes) {
     }));
     try {
       await mod.default(req, res);
+      if(req.method==='POST'&&res.statusCode===200&&['create','mine','admin/listings','admin/manage'].includes(slug))void runVip();
       if(req.method==='POST'&&res.statusCode===200&&req.user&&((slug==='chat/messages'&&(!req.body?.action||req.body.action==='send'))||(slug==='chat/photos'&&req.body?.action==='send'))) {
         await notifyMessage(db,req.body.conversation_id,req.user.id).catch(()=>console.warn('Web Push delivery unavailable'));
       }
@@ -247,7 +248,7 @@ app.use((err, req, res, next) => {
 });
 await init();
 const runVip=()=>processVip(db).catch(()=>console.warn('VIP reward evaluation unavailable'));
-setInterval(runVip,15*60*1000).unref();
+setInterval(runVip,60*1000).unref();
 void runVip();
 const port = Number(process.env.PORT || 10000);
 app.listen(port, '0.0.0.0', () => console.log('MurdiliMax listening on ' + port));

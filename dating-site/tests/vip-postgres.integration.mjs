@@ -12,12 +12,13 @@ test('PostgreSQL migration, repeat awards, account eligibility and concurrent gi
   await db.query("CREATE TABLE users(id TEXT PRIMARY KEY,email TEXT NOT NULL,email_verified_at TIMESTAMPTZ,visible BOOLEAN DEFAULT FALSE,last_seen TIMESTAMPTZ)");
   for(const file of (await fs.readdir('migrations')).filter(x=>x.endsWith('.sql')).sort())await db.query(await fs.readFile('migrations/'+file,'utf8'));
   await db.query('CREATE TABLE IF NOT EXISTS mm_media(id TEXT PRIMARY KEY,mime TEXT NOT NULL,body BYTEA NOT NULL,created_at TIMESTAMPTZ DEFAULT NOW())');
-  for(const id of ['a','b','c'])await db.query("INSERT INTO users(id,email,email_verified_at) VALUES($1,$2,NOW())",[id,id+'@example.test']);
+  for(const id of ['a','b','c','d'])await db.query("INSERT INTO users(id,email,email_verified_at) VALUES($1,$2,NULL)",[id,id+'@example.test']);
   const code=(await db.query("INSERT INTO mm_vip_accounts(user_id) VALUES('a') RETURNING code")).rows[0].code;
   const to=(await db.query("INSERT INTO mm_vip_accounts(user_id) VALUES('c') RETURNING code")).rows[0].code;
+  await db.transaction(q=>recordVipSession(q,'a',null,'203.0.113.1',false));
   await db.transaction(q=>recordVipSession(q,'b',code,'203.0.113.3',true));
-  await db.query("UPDATE mm_vip_referrals SET created_at=NOW()-INTERVAL '4 days' WHERE invitee='b'");
-  await db.query("INSERT INTO mm_vip_activity(user_id,day) VALUES('b',CURRENT_DATE-2)");
+  await db.transaction(q=>recordVipSession(q,'d',code,'203.0.113.1',true));
+
   await processVip(db);
   assert.equal((await db.query("SELECT state FROM mm_vip_referrals WHERE invitee='b'")).rows[0].state,'pending');
   const id=(await db.query("INSERT INTO mm_listings(owner_id,display_name,age,country,city,description,status,created_at) VALUES('b','Test',30,'LV','Riga','An authentic description for a test profile.','approved','2026-11-26') RETURNING id")).rows[0].id;
@@ -25,8 +26,9 @@ test('PostgreSQL migration, repeat awards, account eligibility and concurrent gi
   await db.query("INSERT INTO mm_listing_photos(listing_id,photo_url) VALUES($1,'/media/murdilimax/photos/test.webp')",[id]);
   await processVip(db);await processVip(db);
   assert.equal((await db.query("SELECT SUM(months)::integer n FROM mm_vip_events WHERE user_id='b'")).rows[0].n,6);
-  const award=()=>db.transaction(async q=>{await vipLock(q);return awardReferral(q,'b')});
-  assert.deepEqual((await Promise.all([award(),award()])).sort(),[false,true]);
+  assert.equal((await db.query("SELECT state FROM mm_vip_referrals WHERE invitee='b'")).rows[0].state,'confirmed');
+  assert.equal((await db.query("SELECT reason FROM mm_vip_referrals WHERE invitee='d'")).rows[0].reason,'duplicate_ip');
+  assert.equal(await db.transaction(async q=>{await vipLock(q);return awardReferral(q,'b')}),false);
   assert.equal((await db.query("SELECT SUM(days)::integer n FROM mm_vip_events WHERE user_id='a'")).rows[0].n,5);
   const g1='11111111-1111-4111-8111-111111111111',g2='22222222-2222-4222-8222-222222222222';
   const transfer=id=>db.transaction(q=>gift(q,'a',to,5,id));
