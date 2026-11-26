@@ -24,7 +24,9 @@ async function load(){
  const counts=Object.fromEntries(d.counts.map(x=>[x.state,x.count]));
  $('vipCounts').textContent=L[8]+': '+(counts.confirmed||0)+' / '+((counts.pending||0)+(counts.review||0))+' / '+(counts.rejected||0);
  $('vipCounts').textContent+=' · '+extra[lang][5]+': '+(d.duplicate_ip_count||0);
- $('vipLink').value=d.code?location.origin+'/?ref='+d.code:'';
+ let fromTelegram=false;
+ try{fromTelegram=sessionStorage.getItem('mm-from-telegram')==='1'}catch{}
+ $('vipLink').value=d.code?(fromTelegram?'https://t.me/MurdiliMaxLoginBot?startapp=ref_'+encodeURIComponent(d.code):location.origin+'/?ref='+encodeURIComponent(d.code)):'';
  $('vipCopy').disabled=!d.code;$('vipDays').max=String(Math.max(1,Math.min(36500,d.points)));$('vipSend').disabled=d.points<1;
  $('vipHistory').replaceChildren();
  const kinds={referral:20,campaign:21,gift_sent:22,gift_received:23,revocation:24};

@@ -3,6 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { Router } from 'express';
 import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT } from 'jose';
 import { getCookie, rateLimit } from './security.js';
+import { readTelegramLaunch } from './telegram-mini-app.js';
 
 const origin = 'https://murdilimax.com';
 const issuer = 'https://oauth.telegram.org';
@@ -30,6 +31,32 @@ export async function telegramLogin({ db, projectId }) {
 
   const attempts = rateLimit({ limit: 20, windowMs: 15 * 60 * 1000 });
   router.get('/availability', (_req, res) => res.json({ available: true }));
+  const mintToken = uid => new SignJWT({ uid })
+    .setProtectedHeader({ alg: 'RS256', kid: signer.keyId })
+    .setIssuer(signer.email).setSubject(signer.email).setAudience(firebaseAudience)
+    .setIssuedAt().setExpirationTime('5m').sign(signer.key);
+
+  router.post('/mini-app', attempts, async (req, res, next) => {
+    if (req.get('origin') !== origin) return res.status(403).end();
+    const launch = readTelegramLaunch(req.body?.initData, clientId);
+    if (!launch) return res.status(401).json({ error: 'invalid_launch' });
+    try {
+      const result = await db.transaction(async query => {
+        const linked = await query(`SELECT u.id FROM mm_telegram_accounts t JOIN users u ON u.id=t.user_id
+          WHERE t.telegram_user_id=$1 AND u.email_verified_at IS NOT NULL`, [launch.telegramId]);
+        if (!linked.rowCount) return { status: 404, error: 'link_required' };
+        await query('DELETE FROM mm_telegram_launches WHERE expires_at < NOW()');
+        const claimed = await query(`INSERT INTO mm_telegram_launches (signature_hash, expires_at)
+          VALUES ($1, NOW()+INTERVAL '6 minutes') ON CONFLICT DO NOTHING RETURNING signature_hash`, [launch.signatureHash]);
+        if (!claimed.rowCount) return { status: 409, error: 'launch_used' };
+        return { customToken: await mintToken(linked.rows[0].id) };
+      });
+      if (result.error) return res.status(result.status).json({ error: result.error });
+      return res.json(result);
+    } catch (error) {
+      return next(error);
+    }
+  });
   router.post('/challenge', attempts, (req, res) => {
     if (req.get('origin') !== origin) return res.status(403).end();
     const nonce = randomBytes(32).toString('base64url');
@@ -46,7 +73,7 @@ export async function telegramLogin({ db, projectId }) {
     res.clearCookie(nonceCookie, cookieOptions);
     if (!nonce || typeof idToken !== 'string' || idToken.length > 10000) return res.status(400).end();
 
-    let subject;
+    let subject, telegramUserId;
     try {
       const { payload } = await jwtVerify(idToken, keys, {
         issuer, algorithms: ['RS256'], maxTokenAge: '5m', clockTolerance: 10,
@@ -61,6 +88,7 @@ export async function telegramLogin({ db, projectId }) {
         return res.status(401).end();
       }
       subject = payload.sub;
+      telegramUserId = Number.isSafeInteger(payload.id) && payload.id > 0 ? String(payload.id) : null;
     } catch (error) {
       console.warn('Telegram sign-in: token rejected', error?.code, error?.claim);
       return res.status(401).end();
@@ -69,21 +97,28 @@ export async function telegramLogin({ db, projectId }) {
     try {
       if (mode === 'link') {
         const result = await db.query(`
-          INSERT INTO mm_telegram_accounts (subject, user_id) VALUES ($1, $2)
-          ON CONFLICT DO NOTHING RETURNING subject`, [subject, req.user.id]);
+          INSERT INTO mm_telegram_accounts (subject, user_id, telegram_user_id) VALUES ($1, $2, $3)
+          ON CONFLICT DO NOTHING RETURNING subject`, [subject, req.user.id, telegramUserId]);
         if (result.rowCount) return res.json({ linked: true });
         const existing = await db.query('SELECT 1 FROM mm_telegram_accounts WHERE subject=$1 AND user_id=$2', [subject, req.user.id]);
-        return existing.rowCount ? res.json({ linked: true }) : res.status(409).json({ error: 'already_linked' });
+        if (!existing.rowCount) return res.status(409).json({ error: 'already_linked' });
+        if (telegramUserId) {
+          try {
+            await db.query(`UPDATE mm_telegram_accounts SET telegram_user_id=$3
+              WHERE subject=$1 AND user_id=$2 AND telegram_user_id IS NULL`, [subject, req.user.id, telegramUserId]);
+          } catch (error) {
+            if (error?.code === '23505') return res.status(409).json({ error: 'already_linked' });
+            throw error;
+          }
+        }
+        return res.json({ linked: true });
       }
 
       const result = await db.query(`
         SELECT u.id FROM mm_telegram_accounts t JOIN users u ON u.id=t.user_id
         WHERE t.subject=$1 AND u.email_verified_at IS NOT NULL`, [subject]);
       if (!result.rowCount) return res.status(404).json({ error: 'link_required' });
-      const customToken = await new SignJWT({ uid: result.rows[0].id })
-        .setProtectedHeader({ alg: 'RS256', kid: signer.keyId })
-        .setIssuer(signer.email).setSubject(signer.email).setAudience(firebaseAudience)
-        .setIssuedAt().setExpirationTime('5m').sign(signer.key);
+      const customToken = await mintToken(result.rows[0].id);
       return res.json({ customToken });
     } catch (error) {
       return next(error);

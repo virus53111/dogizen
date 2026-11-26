@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="referrer" content="no-referrer">
+  <meta name="rating" content="adult">
+  <title>MurdiliMax в Telegram</title>
+  <script src="https://telegram.org/js/telegram-web-app.js?65"></script>
+  <link rel="stylesheet" href="/auth/account.css">
+  <link rel="stylesheet" href="/auth/luxury-auth.css">
+</head>
+<body>
+  <main>
+    <a href="/" class="brand">MurdiliMax</a>
+    <h1>MurdiliMax в Telegram</h1>
+    <p>Анкеты, переписка и поинты из вашего аккаунта. Только для совершеннолетних.</p>
+    <button id="openCatalog" type="button" class="primary" hidden>Мне исполнилось 18 лет · Войти</button>
+    <a id="openInTelegram" class="primary" href="https://t.me/MurdiliMaxLoginBot?startapp" hidden>Открыть в Telegram</a>
+    <p id="miniStatus" role="status" aria-live="polite"></p>
+    <section id="miniAccountHelp" hidden>
+      <p>Войдите на сайте или зарегистрируйтесь, подтвердите email и привяжите Telegram. Если вы привязали его раньше, подтвердите привязку один раз ещё раз для Mini App.</p>
+      <p><a id="miniLinkAccount" href="/auth/login.html?telegram=link&amp;next=%2Faccount-data.html">Привязать Telegram</a></p>
+      <p><a id="miniRegister" href="/">Открыть MurdiliMax в браузере</a></p>
+    </section>
+    <p><a href="/privacy.html">Приватность</a> · <a href="/rules.html">Правила</a></p>
+  </main>
+  <script type="module" src="/auth/telegram-mini-app.js"></script>
+</body>
+</html>
