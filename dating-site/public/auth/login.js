@@ -1,5 +1,5 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendPasswordResetEmail,browserLocalPersistence,setPersistence,signInWithCustomToken,reload} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithRedirect,getRedirectResult,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendPasswordResetEmail,browserLocalPersistence,setPersistence,signInWithCustomToken,reload} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
 import {registerOrSignIn,sendResetWithFallback} from "./email-flow.js?v=20261125-recovery";
 import {mountTelegram,requestTelegramConfirmation} from "./telegram.js";
@@ -51,6 +51,8 @@ function setMode(value){
 modeButton.onclick=()=>setMode(!registering);loginMode.onclick=()=>setMode(false);registerMode.onclick=()=>setMode(true);
 setMode(new URLSearchParams(location.search).get("mode")==="register");
 const config=await fetch("/auth/config").then(response=>response.json());
+const sameOriginGoogle=config.authDomain==="murdilimax.com"&&location.origin==="https://murdilimax.com";
+const googleRedirectKey="mm-google-redirect";
 const auth=getAuth(initializeApp(config));
 auth.languageCode=locale;
 await setPersistence(auth,browserLocalPersistence);
@@ -82,7 +84,20 @@ async function run(action){
 }
 const googleProvider=new GoogleAuthProvider();
 googleProvider.setCustomParameters({prompt:"select_account"});
-document.querySelector("#google").onclick=()=>run(async()=>finish((await signInWithPopup(auth,googleProvider)).user));
+const startGooglePopup=()=>run(async()=>finish((await signInWithPopup(auth,googleProvider)).user));
+const googleButton=document.querySelector("#google");
+googleButton.onclick=startGooglePopup;
+if(sameOriginGoogle){
+  const popup=document.querySelector("#googlePopup");
+  popup.textContent=({ru:"Открыть Google в отдельном окне",de:"Google in separatem Fenster öffnen",lv:"Atvērt Google atsevišķā logā",lt:"Atidaryti Google atskirame lange",et:"Ava Google eraldi aknas"})[locale]||"Open Google in a separate window";
+  popup.hidden=false;
+  popup.onclick=startGooglePopup;
+  googleButton.onclick=()=>run(async()=>{
+    sessionStorage.setItem(googleRedirectKey,"1");
+    try{await signInWithRedirect(auth,googleProvider);}
+    catch(error){sessionStorage.removeItem(googleRedirectKey);throw error;}
+  });
+}
 form.onsubmit=event=>{
   event.preventDefault();
   run(async()=>{
@@ -116,7 +131,15 @@ document.querySelector("#reset").onclick=()=>{
 
 // Restore a previously created Firebase account without asking for email confirmation.
 await auth.authStateReady();
-if(!telegramLink && auth.currentUser && new URLSearchParams(location.search).get("mode")!=="register"){
+const returningFromGoogle=sameOriginGoogle&&sessionStorage.getItem(googleRedirectKey)==="1";
+if(returningFromGoogle){
+  sessionStorage.removeItem(googleRedirectKey);
+  await run(async()=>{
+    const result=await getRedirectResult(auth);
+    if(!result?.user)throw new Error("google_redirect_incomplete");
+    await finish(result.user);
+  });
+}else if(!telegramLink && auth.currentUser && new URLSearchParams(location.search).get("mode")!=="register"){
   await run(()=>finish(auth.currentUser));
 }
 

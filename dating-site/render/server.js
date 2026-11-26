@@ -100,7 +100,11 @@ app.get('/robots.txt', (req, res, next) => {
   }
   next();
 });
-app.get('/auth/config', (req, res) => res.json(config));
+app.get('/auth/config', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const sameOrigin = process.env.GOOGLE_SAME_ORIGIN_AUTH === '1' && req.hostname === 'murdilimax.com';
+  res.json(sameOrigin ? { ...config, authDomain: 'murdilimax.com' } : config);
+});
 app.use('/auth/telegram', await telegramLogin({ db, projectId: config.projectId }));
 app.post('/auth/session', async (req, res, next) => {
  try {
