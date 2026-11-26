@@ -49,14 +49,20 @@ export async function telegramLogin({ db, projectId }) {
     let subject;
     try {
       const { payload } = await jwtVerify(idToken, keys, {
-        issuer, audience: clientId, algorithms: ['RS256'], maxTokenAge: '5m',
-        requiredClaims: ['sub', 'exp', 'iat', 'nonce'],
+        issuer, algorithms: ['RS256'], maxTokenAge: '5m', clockTolerance: 10,
+        requiredClaims: ['aud', 'sub', 'exp', 'iat', 'nonce'],
       });
-      if (payload.nonce !== nonce || typeof payload.sub !== 'string' || !/^[0-9]{1,64}$/.test(payload.sub)) {
+      const audiences = Array.isArray(payload.aud) ? payload.aud : [payload.aud];
+      const audienceMatches = audiences.some(audience => audience === clientId ||
+        (Number.isSafeInteger(audience) && String(audience) === clientId));
+      const validSubject = typeof payload.sub === 'string' && /^[\x21-\x7e]{1,255}$/.test(payload.sub);
+      if (!audienceMatches || payload.nonce !== nonce || !validSubject) {
+        console.warn('Telegram sign-in: claims rejected', { audienceMatches, nonceMatches: payload.nonce === nonce, validSubject });
         return res.status(401).end();
       }
       subject = payload.sub;
-    } catch {
+    } catch (error) {
+      console.warn('Telegram sign-in: token rejected', error?.code, error?.claim);
       return res.status(401).end();
     }
 
