@@ -14,7 +14,7 @@ test('PostgreSQL migration, repeat awards, account eligibility and concurrent gi
   await db.query('CREATE TABLE IF NOT EXISTS mm_media(id TEXT PRIMARY KEY,mime TEXT NOT NULL,body BYTEA NOT NULL,created_at TIMESTAMPTZ DEFAULT NOW())');
   for(const id of ['a','b','c','d'])await db.query("INSERT INTO users(id,email,email_verified_at) VALUES($1,$2,NULL)",[id,id+'@example.test']);
   const code=(await db.query("INSERT INTO mm_vip_accounts(user_id) VALUES('a') RETURNING code")).rows[0].code;
-  const to=(await db.query("INSERT INTO mm_vip_accounts(user_id) VALUES('c') RETURNING code")).rows[0].code;
+  const to=(await db.query("INSERT INTO mm_listings(owner_id,display_name,age,country,city,description,status,created_at) VALUES('c','Recipient',30,'LV','Riga','A recipient profile without any VIP code.','approved','2026-11-26') RETURNING id")).rows[0].id;
   await db.transaction(q=>recordVipSession(q,'a',null,'203.0.113.1',false));
   await db.transaction(q=>recordVipSession(q,'b',code,'203.0.113.3',true));
   await db.transaction(q=>recordVipSession(q,'d',code,'203.0.113.1',true));
@@ -24,7 +24,10 @@ test('PostgreSQL migration, repeat awards, account eligibility and concurrent gi
   const id=(await db.query("INSERT INTO mm_listings(owner_id,display_name,age,country,city,description,status,created_at) VALUES('b','Test',30,'LV','Riga','An authentic description for a test profile.','approved','2026-11-26') RETURNING id")).rows[0].id;
   await db.query("INSERT INTO mm_media(id,mime,body) VALUES('murdilimax/photos/test.webp','image/webp',decode('00','hex'))");
   await db.query("INSERT INTO mm_listing_photos(listing_id,photo_url) VALUES($1,'/media/murdilimax/photos/test.webp')",[id]);
-  await processVip(db);await processVip(db);
+  const dup=(await db.query("INSERT INTO mm_listings(owner_id,display_name,age,country,city,description,status,created_at) VALUES('d','Duplicate',30,'LV','Riga','Another complete profile using the same IP.','approved','2026-11-26') RETURNING id")).rows[0].id;
+  await db.query("INSERT INTO mm_listing_photos(listing_id,photo_url) VALUES($1,'/media/murdilimax/photos/test.webp')",[dup]);
+  await Promise.all([processVip(db),processVip(db)]);
+  assert.equal((await db.query("SELECT COUNT(*)::integer n FROM mm_vip_events WHERE user_id='d'")).rows[0].n,0);
   assert.equal((await db.query("SELECT SUM(months)::integer n FROM mm_vip_events WHERE user_id='b'")).rows[0].n,6);
   assert.equal((await db.query("SELECT state FROM mm_vip_referrals WHERE invitee='b'")).rows[0].state,'confirmed');
   assert.equal((await db.query("SELECT reason FROM mm_vip_referrals WHERE invitee='d'")).rows[0].reason,'duplicate_ip');

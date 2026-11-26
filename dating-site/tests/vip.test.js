@@ -8,3 +8,13 @@ test('Telegram validates server HMAC, expiry and duplicate fields',()=>{const to
 test('invalid or insufficient gifts do not write balances',async()=>{const code='11111111-1111-4111-8111-111111111111';assert.equal(await gift(()=>{throw Error('no queries')},'a',code,-5,code),'invalid');let calls=[];const q=async(sql)=>{calls.push(sql);if(sql.includes('SELECT u.id AS user_id'))return {rows:[{user_id:'b'}]};if(sql.includes('SUM(days)'))return {rows:[{days:'4'}]};return {rows:[]}};assert.equal(await gift(q,'a',code,5,code),'balance');assert.ok(!calls.some(x=>x.includes('INSERT')));});
 test('referral cannot be rewarded without eligibility and uses stable event key',async()=>{assert.equal(await awardReferral(async()=>({rows:[]}),'new'),false);const calls=[];const q=async(sql,args)=>{calls.push({sql,args});return {rows:sql.includes('SELECT r.inviter')?[{inviter:'original',invitee:'new'}]:[]}};assert.equal(await awardReferral(q,'new'),true);assert.deepEqual(calls[1].args,['original','referral:new',5]);assert.match(calls[1].sql,/ON CONFLICT/);});
 test('existing account cannot be attributed as a new referral',async()=>{const calls=[];await recordVipSession(async(sql)=>{calls.push(sql);return {rows:[{ip_key:'test'}]}},'old','11111111-1111-4111-8111-111111111111','203.0.113.4',false);assert.ok(!calls.some(s=>s.includes('INSERT INTO mm_vip_referrals')))});
+
+test('VIP page needs no email verification and offers recipient search',async()=>{
+ const fs=await import('node:fs/promises');
+ const html=await fs.readFile('public/vip.html','utf8'),js=await fs.readFile('public/vip.js','utf8'),api=await fs.readFile('api/vip.js','utf8');
+ assert.doesNotMatch(html,/vipVerify|vip-verify\.js/);
+ assert.doesNotMatch(js,/d\.verified|vipVerify/);
+ assert.match(html,/id="vipRecipientChoice"/);
+ assert.match(js,/\/api\/vip\?recipient=/);
+ assert.match(api,/await processVip\(db\)/);
+});
