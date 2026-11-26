@@ -5,6 +5,7 @@ import { notifyMessage } from './push.js';
 import { onlineCount, recentPhotos } from './catalog-extras.js';
 import { createHash } from 'node:crypto';
 import { getCookie, rateLimit } from './security.js';
+import { telegramLogin } from './telegram-login.js';
 import { canReadPhoto } from './media-access.js';
 import multer from 'multer';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
@@ -100,6 +101,7 @@ app.get('/robots.txt', (req, res, next) => {
   next();
 });
 app.get('/auth/config', (req, res) => res.json(config));
+app.use('/auth/telegram', await telegramLogin({ db, projectId: config.projectId }));
 app.post('/auth/session', async (req, res, next) => {
  try {
   const token = String(req.body?.idToken || '');

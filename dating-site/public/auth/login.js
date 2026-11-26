@@ -1,13 +1,15 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendPasswordResetEmail,browserLocalPersistence,setPersistence} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
+import {getAuth,GoogleAuthProvider,signInWithPopup,signInWithEmailAndPassword,createUserWithEmailAndPassword,sendPasswordResetEmail,browserLocalPersistence,setPersistence,signInWithCustomToken,reload} from "https://www.gstatic.com/firebasejs/11.10.0/firebase-auth.js";
 
 import {registerOrSignIn,sendResetWithFallback} from "./email-flow.js?v=20261125-recovery";
+import {mountTelegram,requestTelegramConfirmation} from "./telegram.js";
 
 const requested=new URLSearchParams(location.search).get("next")||"/";
 let destination="/";
 try { const back=new URL(requested,location.origin); if(back.origin===location.origin) destination=back.pathname+back.search+back.hash; } catch {}
 const langMatch=destination.match(/^\/(en|de|lv|lt|et)\//);
 const locale=langMatch?.[1]||"ru";
+const telegramLink=new URLSearchParams(location.search).get("telegram")==="link";
 const labels={"Регистрация":["Registracija","Registreerimine"],"Вход":["Prisijungimas","Sisselogimine"],"Создать аккаунт":["Sukurti paskyrą","Loo konto"],"Войти":["Prisijungti","Logi sisse"],"Уже есть аккаунт?":["Jau turite paskyrą?","Konto on juba olemas?"],"Нет аккаунта?":["Neturite paskyros?","Kontot pole?"],"Зарегистрироваться":["Registruotis","Registreeru"],"Минимум 12 символов":["Bent 12 ženklų","Vähemalt 12 tähemärki"],"Электронная почта":["El. paštas","E-post"],"Пароль":["Slaptažodis","Parool"],"Забыли пароль?":["Pamiršote slaptažodį?","Unustasid parooli?"],"или":["arba","või"],"Продолжить с Google":["Tęsti su Google","Jätka Google'iga"],"Проверьте почту и пароль.":["Patikrinkite el. paštą ir slaptažodį.","Kontrolli e-posti ja parooli."],"Выберите более длинный пароль.":["Pasirinkite ilgesnį slaptažodį.","Vali pikem parool."],"Этот адрес уже зарегистрирован. Войдите или восстановите пароль.":["Šis adresas jau registruotas. Prisijunkite arba atkurkite slaptažodį.","See aadress on juba registreeritud. Logi sisse või taasta parool."],"Разрешите открытие окна Google в браузере.":["Leiskite naršyklėje atverti Google langą.","Luba brauseris Google'i hüpikaken."],"Вход через Google отменён.":["Prisijungimas per Google atšauktas.","Google'iga sisselogimine tühistati."],"Адрес murdilimax.com нужно разрешить в Firebase Authentication. Сообщите администратору.":["Adresas murdilimax.com turi būti leidžiamas Firebase Authentication. Praneškite administratoriui.","Aadress murdilimax.com peab olema Firebase Authenticationis lubatud. Teavita administraatorit."],"Этот способ входа пока не включён.":["Šis prisijungimo būdas dar neįjungtas.","See sisselogimisviis pole veel lubatud."],"Проверьте подключение к интернету.":["Patikrinkite interneto ryšį.","Kontrolli internetiühendust."],"Слишком много попыток. Попробуйте позже.":["Per daug bandymų. Bandykite vėliau.","Liiga palju katseid. Proovi hiljem."],"Не удалось завершить вход. Попробуйте ещё раз.":["Nepavyko prisijungti. Bandykite dar kartą.","Sisselogimine ebaõnnestus. Proovi uuesti."],"Если адрес зарегистрирован, вы получите письмо для смены пароля.":["Jei adresas registruotas, gausite slaptažodžio keitimo laišką.","Kui aadress on registreeritud, saad parooli muutmise kirja."]};
 const western={"Регистрация":["Registration","Registrierung","Reģistrācija"],"Вход":["Sign in","Anmelden","Pieteikšanās"],"Создать аккаунт":["Create account","Konto erstellen","Izveidot kontu"],"Войти":["Sign in","Anmelden","Pieteikties"],"Уже есть аккаунт?":["Already have an account?","Bereits ein Konto?","Jau ir konts?"],"Нет аккаунта?":["No account yet?","Noch kein Konto?","Nav konta?"],"Зарегистрироваться":["Register","Registrieren","Reģistrēties"],"Минимум 12 символов":["At least 12 characters","Mindestens 12 Zeichen","Vismaz 12 rakstzīmes"],"Электронная почта":["Email","E-Mail","E-pasts"],"Пароль":["Password","Passwort","Parole"],"Забыли пароль?":["Forgot password?","Passwort vergessen?","Aizmirsi paroli?"],"или":["or","oder","vai"],"Продолжить с Google":["Continue with Google","Mit Google fortfahren","Turpināt ar Google"],"Проверьте почту и пароль.":["Check your email and password.","Prüfe E-Mail und Passwort.","Pārbaudi e-pastu un paroli."],"Выберите более длинный пароль.":["Choose a longer password.","Wähle ein längeres Passwort.","Izvēlies garāku paroli."],"Этот адрес уже зарегистрирован. Войдите или восстановите пароль.":["This address is registered. Sign in or reset your password.","Diese Adresse ist bereits registriert. Melde dich an oder setze das Passwort zurück.","Šī adrese jau ir reģistrēta. Piesakies vai atjauno paroli."],"Разрешите открытие окна Google в браузере.":["Allow the Google popup in your browser.","Erlaube das Google-Popup im Browser.","Atļauj Google uznirstošo logu pārlūkā."],"Вход через Google отменён.":["Google sign-in cancelled.","Google-Anmeldung abgebrochen.","Pieteikšanās ar Google atcelta."],"Адрес murdilimax.com нужно разрешить в Firebase Authentication. Сообщите администратору.":["The domain must be authorized in Firebase Authentication. Contact the administrator.","Die Domain muss in Firebase Authentication zugelassen sein. Kontaktiere den Administrator.","Domēnam jābūt atļautam Firebase Authentication. Sazinies ar administratoru."],"Этот способ входа пока не включён.":["This sign-in method is not enabled yet.","Diese Anmeldemethode ist noch nicht aktiviert.","Šī pieteikšanās metode vēl nav ieslēgta."],"Проверьте подключение к интернету.":["Check your internet connection.","Prüfe deine Internetverbindung.","Pārbaudi interneta savienojumu."],"Слишком много попыток. Попробуйте позже.":["Too many attempts. Try again later.","Zu viele Versuche. Versuche es später erneut.","Pārāk daudz mēģinājumu. Mēģini vēlāk."],"Не удалось завершить вход. Попробуйте ещё раз.":["Could not sign in. Try again.","Anmeldung fehlgeschlagen. Versuche es erneut.","Neizdevās pieteikties. Mēģini vēlreiz."],"Если адрес зарегистрирован, вы получите письмо для смены пароля.":["If the address is registered, you will receive a password reset email.","Wenn die Adresse registriert ist, erhältst du eine E-Mail zum Zurücksetzen des Passworts.","Ja adrese ir reģistrēta, saņemsi vēstuli paroles maiņai."]};
 const tr=s=>locale==="ru"?s:locale==="lt"||locale==="et"?(labels[s]?.[locale==="lt"?0:1]||s):(western[s]?.[["en","de","lv"].indexOf(locale)]||s);
@@ -55,13 +57,17 @@ await setPersistence(auth,browserLocalPersistence);
 
 
 const emailAction={url:location.origin+"/login?next="+encodeURIComponent(destination)};
-async function finish(user){
+async function establishSession(user){
   const token=await user.getIdToken(true);
   const response=await fetch("/auth/session",{
     method:"POST",headers:{"Content-Type":"application/json"},
     body:JSON.stringify({idToken:token})
   });
   if(!response.ok)throw new Error("session");
+}
+async function finish(user){
+  await establishSession(user);
+  if(telegramLink){location.reload();return;}
   location.replace("/login?next="+encodeURIComponent(destination));
 }
 async function run(action){
@@ -110,6 +116,40 @@ document.querySelector("#reset").onclick=()=>{
 
 // Restore a previously created Firebase account without asking for email confirmation.
 await auth.authStateReady();
-if(auth.currentUser && new URLSearchParams(location.search).get("mode")!=="register"){
+if(!telegramLink && auth.currentUser && new URLSearchParams(location.search).get("mode")!=="register"){
   await run(()=>finish(auth.currentUser));
 }
+
+const telegramButton=document.querySelector("#telegram");
+const telegramLabels=({
+  ru:["Войти через Telegram","Привязать Telegram","Сначала войдите через email или Google, затем привяжите Telegram в разделе «Мои данные».","Нажмите кнопку Telegram ещё раз.","Не удалось завершить вход через Telegram.","Сначала подтвердите email.","Мы отправили письмо. Перейдите по ссылке и вернитесь на эту страницу.","Этот Telegram или аккаунт уже связан с другой учётной записью."],
+  lv:["Ieiet ar Telegram","Piesaistīt Telegram","Vispirms piesakieties ar e-pastu vai Google un piesaistiet Telegram sadaļā Mani dati.","Nospiediet Telegram pogu vēlreiz.","Neizdevās pieteikties ar Telegram.","Vispirms apstipriniet e-pastu.","Atveriet e-pasta saiti un atgriezieties šajā lapā.","Šis Telegram profils vai konts jau ir piesaistīts citam kontam."],
+})[locale]||["Sign in with Telegram","Link Telegram","First sign in with email or Google, then link Telegram in My data.","Press the Telegram button again.","Telegram sign-in could not be completed.","Verify your email first.","Open the link in your email, then return here.","This Telegram profile or site account is already linked elsewhere."];
+
+async function configureTelegram(){
+  const available=await fetch('/auth/telegram/availability').catch(()=>null);
+  if(!available?.ok)return;
+  const onError=code=>{status.textContent=telegramLabels[({link_required:2,try_again:3,verification_required:5,already_linked:7})[code]??4];};
+  const member=auth.currentUser;
+  telegramButton.textContent=telegramLabels[telegramLink?1:0];
+  if(telegramLink&&member){
+    await reload(member);
+    if(!member.emailVerified){
+      onError('verification_required');
+      const button=document.querySelector('#telegramVerifyEmail');
+      button.hidden=false;
+      button.onclick=()=>run(async()=>{
+        await requestTelegramConfirmation(member);
+        status.textContent=telegramLabels[6];
+      });
+      return;
+    }
+    await establishSession(member);
+  }
+  if(telegramLink&&!member)return;
+  await mountTelegram({button:telegramButton,mode:telegramLink?'link':'login',onError,onSuccess:async result=>{
+    if(telegramLink){location.replace(destination);return;}
+    await finish((await signInWithCustomToken(auth,result.customToken)).user);
+  }});
+}
+void configureTelegram().catch(()=>{status.textContent=telegramLabels[4];});

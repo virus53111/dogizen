@@ -9,6 +9,9 @@
   if(!data.user){$("privacyLogin").hidden=false;status.textContent="Войдите, чтобы получить доступ к своим данным.";return}
   $("privacyControls").hidden=false;
   $("accountIdentity").textContent="Вы вошли как "+data.user.email;
+  void fetch('/auth/telegram/availability').then(result=>{
+   if(result.ok)$("telegramLinkControl").hidden=false;
+  }).catch(()=>{});
   async function refresh(){
    const r=await fetch("/api/privacy",{cache:"no-store"});
    if(!r.ok)throw Error("Не удалось загрузить список запросов");

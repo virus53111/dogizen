@@ -1,0 +1,5 @@
+CREATE TABLE IF NOT EXISTS mm_telegram_accounts (
+  subject TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  linked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
