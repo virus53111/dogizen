@@ -1,5 +1,5 @@
 import {db} from 'hatchable';
-import {gift,processVip,telegramIdentity,vipLock,recordVipIp} from '../render/vip.js';
+import {gift,processVip,telegramIdentity,vipLock,recordVipIp,POINTS_SUM} from '../render/vip.js';
 export const access='user';
 export const methods=['GET','POST'];
 export default async function(req,res){
@@ -29,10 +29,10 @@ export default async function(req,res){
   return res.json({recipients:rows});
  }
  const account=(await db.query('SELECT code FROM mm_vip_accounts WHERE user_id=$1',[user])).rows[0];
- const balance=(await db.query('SELECT COALESCE(SUM(days),0)::bigint AS days,COALESCE(SUM(months),0)::bigint AS months FROM mm_vip_events WHERE user_id=$1',[user])).rows[0];
+ const balance=(await db.query('SELECT '+POINTS_SUM+' AS points FROM mm_vip_events WHERE user_id=$1',[user])).rows[0];
  const counts=(await db.query('SELECT state,COUNT(*)::integer AS count FROM mm_vip_referrals WHERE inviter=$1 GROUP BY state',[user])).rows;
- const history=(await db.query('SELECT kind,days,months,created_at FROM mm_vip_events WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50',[user])).rows;
+ const history=(await db.query('SELECT kind,days,months,days::bigint+30*months::bigint AS points,created_at FROM mm_vip_events WHERE user_id=$1 ORDER BY created_at DESC LIMIT 50',[user])).rows;
  const incoming=(await db.query('SELECT state,reason FROM mm_vip_referrals WHERE invitee=$1',[user])).rows[0]||null;
  const duplicate=(await db.query("SELECT count(*)::integer n FROM mm_vip_referrals WHERE inviter=$1 AND reason='duplicate_ip'",[user])).rows[0]?.n||0;
- return res.json({incoming,duplicate_ip_count:duplicate,code:account?.code||null,days:Number(balance.days),months:Number(balance.months),counts,history,verified:req.user.verified===true,premium_live:false});
+ return res.json({incoming,duplicate_ip_count:duplicate,code:account?.code||null,points:Number(balance.points),days:Number(balance.points),months:0,cashout_live:false,counts,history,verified:req.user.verified===true,premium_live:false});
 }
