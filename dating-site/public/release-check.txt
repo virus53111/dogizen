@@ -1,0 +1,2 @@
+MurdiliMax deployment verification
+Release check: 2026-11-26-mm-qde-7c92
