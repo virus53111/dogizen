@@ -17,6 +17,7 @@ async function load(){
  let d;try{d=await api()}catch(e){$('vipLogin').hidden=false;if(e.message!=='401')$('vipStatus').textContent=L[17];return}
  if(d.verified){try{d=await api({action:'refresh'})}catch{$('vipStatus').textContent=L[17]}}
  else $('vipStatus').textContent=L[16];
+ $('vipVerify').hidden=d.verified;
  $('vipAccount').hidden=false;$('vipBalance').textContent=L[5]+': '+d.months+' '+L[7]+' + '+d.days+' '+L[6];
  const counts=Object.fromEntries(d.counts.map(x=>[x.state,x.count]));
  $('vipCounts').textContent=L[8]+': '+(counts.confirmed||0)+' / '+((counts.pending||0)+(counts.review||0))+' / '+(counts.rejected||0);

@@ -33,6 +33,7 @@ export default async function(req,res){
     await q("UPDATE mm_listings SET status='rejected',updated_at=NOW() WHERE owner_id=$1",[uid]);
     await q('UPDATE users SET visible=FALSE WHERE id=$1',[uid]);
     await q('DELETE FROM mm_push_subscriptions WHERE user_id=$1',[uid]);
+    await q("INSERT INTO mm_vip_events(user_id,event_key,kind,months) SELECT user_id,'campaign-revoke:'||user_id,'revocation',-6 FROM mm_vip_events WHERE user_id=$1 AND kind='campaign' ON CONFLICT(event_key) DO NOTHING",[uid]);
    }
   }
   if(r.state==='confirmed')await q("INSERT INTO mm_vip_events(user_id,event_key,kind,days) VALUES($1,$2,'revocation',-5) ON CONFLICT(event_key) DO NOTHING",[r.inviter,'revoke:'+id]);

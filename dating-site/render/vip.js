@@ -21,9 +21,9 @@ export function telegramIdentity(data,token,now=Date.now()){
 }
 export async function vipLock(q){await q('SELECT pg_advisory_xact_lock(738291)')}
 export async function recordVipSession(q,user,ref,ip,isNew){
- const key=(await q('SELECT ip_key FROM mm_vip_config WHERE singleton')).rows[0]?.ip_key;
- await q("INSERT INTO mm_vip_activity(user_id,day,ip_hash) VALUES($1,(NOW() AT TIME ZONE 'UTC')::date,$2) ON CONFLICT(user_id,day) DO NOTHING",[user,ipDigest(ip,key)]);
  if(isNew&&CODE.test(ref||''))await q("INSERT INTO mm_vip_referrals(invitee,inviter) SELECT $1,a.user_id FROM mm_vip_accounts a WHERE a.code=$2 AND a.user_id<>$1 AND NOT EXISTS(SELECT 1 FROM mm_vip_bans b WHERE b.user_id=a.user_id) ON CONFLICT(invitee) DO NOTHING",[user,ref]);
+ const active=(await q('SELECT 1 FROM mm_vip_accounts WHERE user_id=$1 UNION SELECT 1 FROM mm_vip_referrals WHERE invitee=$1 AND state IN (\'pending\',\'review\')',[user])).rows.length;
+ if(active){const key=(await q('SELECT ip_key FROM mm_vip_config WHERE singleton')).rows[0]?.ip_key;await q("INSERT INTO mm_vip_activity(user_id,day,ip_hash) VALUES($1,(NOW() AT TIME ZONE \'UTC\')::date,$2) ON CONFLICT(user_id,day) DO NOTHING",[user,ipDigest(ip,key)]);}
 }
 const profile="EXISTS(SELECT 1 FROM mm_listings l JOIN mm_listing_photos p ON p.listing_id=l.id JOIN mm_media m ON '/media/'||m.id=p.photo_url WHERE l.owner_id=u.id AND l.status='approved' AND l.age>=18 AND length(trim(l.description))>=20)";
 const ready="r.state='pending' AND r.created_at<=NOW()-INTERVAL '72 hours' AND u.email_verified_at IS NOT NULL AND "+profile+" AND (SELECT COUNT(*) FROM mm_vip_activity a WHERE a.user_id=u.id)>=2 AND NOT EXISTS(SELECT 1 FROM mm_vip_bans b WHERE b.user_id IN(r.inviter,r.invitee))";

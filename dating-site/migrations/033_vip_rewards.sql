@@ -12,3 +12,14 @@ INSERT INTO mm_vip_config(singleton) VALUES(TRUE);
 CREATE TABLE mm_vip_telegram(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,telegram_id TEXT NOT NULL UNIQUE,linked_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
 CREATE TABLE mm_vip_bans(user_id TEXT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,reason TEXT NOT NULL,created_at TIMESTAMPTZ NOT NULL DEFAULT NOW());
 CREATE TABLE mm_vip_gifts(id UUID PRIMARY KEY,sender TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,recipient TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,days INTEGER NOT NULL CHECK(days>0),created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),CHECK(sender<>recipient));
+
+-- A banned account cannot be republished by an old client or a stale admin action.
+CREATE FUNCTION mm_vip_guard_listing() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+ IF NEW.status='approved' AND EXISTS(SELECT 1 FROM mm_vip_bans WHERE user_id=NEW.owner_id) THEN
+  RAISE EXCEPTION 'Banned account cannot publish';
+ END IF;
+ RETURN NEW;
+END;
+$$;
+CREATE TRIGGER mm_vip_guard_listing BEFORE INSERT OR UPDATE OF status,owner_id ON mm_listings FOR EACH ROW EXECUTE FUNCTION mm_vip_guard_listing();

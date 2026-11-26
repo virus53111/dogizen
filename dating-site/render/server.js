@@ -100,7 +100,8 @@ app.get('/robots.txt', (req, res, next) => {
   next();
 });
 app.get('/auth/config', (req, res) => res.json(config));
-app.post('/auth/session', async (req, res) => {
+app.post('/auth/session', async (req, res, next) => {
+ try {
   const token = String(req.body?.idToken || '');
   const user = await verify(token);
   if (!user) return res.status(401).json({ error: 'Войдите повторно' });
@@ -117,6 +118,7 @@ app.post('/auth/session', async (req, res) => {
   res.cookie('mm_token', token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 55 * 60 * 1000, path: '/' });
   res.set('Cache-Control', 'no-store');
   res.json({ user: session(user, memberRecord.rows[0]?.visible === true, await ownerAllowed(user)) });
+ } catch(error){next(error)}
 });
 app.post('/auth/logout', async (req, res, next) => {
   try { if(req.user&&typeof req.body?.push_endpoint==='string')await db.query('DELETE FROM mm_push_subscriptions WHERE user_id=$1 AND endpoint=$2',[req.user.id,req.body.push_endpoint]); } catch(e){return next(e)}
