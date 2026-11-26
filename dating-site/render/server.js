@@ -197,7 +197,7 @@ app.post('/api/room', userOnly, async (req, res, next) => {
 });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 6, fields: 40, parts: 46 } });
 const adminUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1, fields: 40, parts: 41 } });
-const routes = ['locations', 'listings', 'listing', 'profile-community', 'member-activity', 'profile-stats', 'recommendations', 'traffic', 'push', 'engagement', 'vip', 'admin/vip', 'private-album', 'support', 'create', 'mine', 'favorites', 'likes', 'report', 'chat/list', 'chat/start',
+const routes = ['locations', 'listings', 'listing', 'profile-community', 'member-activity', 'profile-stats', 'recommendations', 'traffic', 'push', 'engagement', 'points-leaderboard', 'vip', 'admin/vip', 'private-album', 'support', 'create', 'mine', 'favorites', 'likes', 'report', 'chat/list', 'chat/start',
   'chat/messages', 'chat/photos', 'chat/block', 'chat/report', 'legacy/claim', 'claim', 'privacy', 'privacy/export', 'admin/me', 'admin/overview', 'admin/traffic', 'admin/support', 'admin/listings', 'admin/manual', 'admin/manage', 'admin/reports', 'admin/claim-invite', 'admin/privacy-requests'];
 for (const slug of routes) {
   const mod = await import('../api/' + slug + '.js');
