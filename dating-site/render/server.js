@@ -118,6 +118,7 @@ app.post('/auth/session', async (req, res, next) => {
   res.cookie('mm_token', token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 55 * 60 * 1000, path: '/' });
   res.set('Cache-Control', 'no-store');
   res.json({ user: session(user, memberRecord.rows[0]?.visible === true, await ownerAllowed(user)) });
+  void runVip();
  } catch(error){next(error)}
 });
 app.post('/auth/logout', async (req, res, next) => {

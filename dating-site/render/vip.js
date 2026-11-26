@@ -3,6 +3,10 @@ import {isIP} from 'node:net';
 export const CODE=/^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
 export const CUTOFF='2026-12-31T22:00:00Z';
 export const DAYS=5;
+export const POINTS_PER_MONTH=30;
+export const CAMPAIGN_POINTS=180;
+export const POINTS_ROLLOUT='2026-11-26T11:57:00Z';
+export const POINTS_SUM='COALESCE(SUM(days::bigint + 30 * months::bigint),0)::bigint';
 export function ipDigest(ip,key){
  const clean=String(ip||'').replace(/^::ffff:/i,'');
  return key&&isIP(clean)?createHmac('sha256',key).update(clean).digest('hex'):null;
@@ -40,7 +44,7 @@ export async function processVip(db){
  return db.transaction(async q=>{
   await vipLock(q);
   await q("UPDATE mm_vip_referrals r SET state='rejected',reason='duplicate_ip',reviewed_at=NOW() WHERE r.state IN ('pending','review') AND "+blockedIp);
-  await q("INSERT INTO mm_vip_events(user_id,event_key,kind,months) SELECT u.id,'newyear:'||u.id,'campaign',6 FROM users u WHERE NOT EXISTS(SELECT 1 FROM mm_vip_bans b WHERE b.user_id=u.id) AND NOT EXISTS(SELECT 1 FROM mm_vip_ip_identity i WHERE i.user_id=u.id AND NOT i.eligible) AND EXISTS(SELECT 1 FROM mm_listings l JOIN mm_listing_photos p ON p.listing_id=l.id JOIN mm_media m ON '/media/'||m.id=p.photo_url WHERE l.owner_id=u.id AND l.status='approved' AND l.age>=18 AND length(trim(l.description))>=20 AND l.created_at<$1::timestamptz) ON CONFLICT(event_key) DO NOTHING",[CUTOFF]);
+  await q("INSERT INTO mm_vip_events(user_id,event_key,kind,months) SELECT u.id,'newyear:'||u.id,'campaign',6 FROM users u WHERE NOT EXISTS(SELECT 1 FROM mm_vip_bans b WHERE b.user_id=u.id) AND NOT EXISTS(SELECT 1 FROM mm_vip_ip_identity i WHERE i.user_id=u.id AND NOT i.eligible) AND (u.joined_at IS NULL OR u.joined_at<$1::timestamptz) AND (u.joined_at IS NULL OR u.joined_at<$2::timestamptz OR EXISTS(SELECT 1 FROM mm_vip_ip_identity i WHERE i.user_id=u.id AND i.eligible)) ON CONFLICT(event_key) DO NOTHING",[CUTOFF,POINTS_ROLLOUT]);
   const candidates=(await q("SELECT r.invitee FROM mm_vip_referrals r JOIN users u ON u.id=r.invitee WHERE "+ready+" ORDER BY r.created_at,r.invitee LIMIT 500")).rows;
   for(const row of candidates)await awardReferral(q,row.invitee);
   await q("DELETE FROM mm_vip_activity WHERE day < CURRENT_DATE-90");
@@ -64,8 +68,8 @@ export async function gift(q,sender,code,days,id){
  if(!recipient||recipient===sender)return 'invalid';
  const old=(await q('SELECT sender,recipient,days FROM mm_vip_gifts WHERE id=$1',[id])).rows[0];
  if(old)return old.sender===sender&&old.recipient===recipient&&old.days===days?'ok':'invalid';
- const state=(await q("SELECT COALESCE(SUM(days),0)::bigint AS days FROM mm_vip_events WHERE user_id=$1",[sender])).rows[0];
- if(Number(state.days)<days)return 'balance';
+ const state=(await q("SELECT "+POINTS_SUM+" AS points FROM mm_vip_events WHERE user_id=$1",[sender])).rows[0];
+ if(Number(state.points)<days)return 'balance';
  await q('INSERT INTO mm_vip_gifts(id,sender,recipient,days) VALUES($1,$2,$3,$4)',[id,sender,recipient,days]);
  await q("INSERT INTO mm_vip_events(user_id,event_key,kind,days) VALUES($1,$2,'gift_sent',$3),($4,$5,'gift_received',$6)",[sender,'gift-out:'+id,-days,recipient,'gift-in:'+id,days]);
  return 'ok';
