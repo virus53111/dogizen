@@ -1,5 +1,6 @@
 import { permitsPendingMember } from './pending-member.js';
 import express from 'express';
+import {CODE,recordVipSession,processVip} from './vip.js';
 import { notifyMessage } from './push.js';
 import { onlineCount, recentPhotos } from './catalog-extras.js';
 import { createHash } from 'node:crypto';
@@ -44,6 +45,12 @@ app.use((req, res, next) => {
   }
   next();
 });
+app.use((req,res,next)=>{
+ if(req.method==='GET'&&typeof req.query.ref==='string'&&CODE.test(req.query.ref)&&!getCookie(req,'mm_ref')){
+  res.cookie('mm_ref',req.query.ref,{httpOnly:true,secure:true,sameSite:'lax',maxAge:30*86400000,path:'/'});
+ }
+ next();
+});
 app.use(express.json({ limit: '200kb' }), express.urlencoded({ extended: false }));
 async function verify(token) {
   if (!token || token.length > 10000) return null;
@@ -65,6 +72,10 @@ app.use(async (req, res, next) => {
     const token = bearer.startsWith('Bearer ') ? bearer.slice(7) : getCookie(req, 'mm_token');
     const identity = await verify(token);
     req.user = identity?.verified || permitsPendingMember(req.path, req.method) ? identity : null;
+    if(req.user && /^\/(api|media)(\/|$)/i.test(req.path) && !/^\/api\/privacy(?:\/|$)/i.test(req.path)){
+      const ban=await db.query('SELECT 1 FROM mm_vip_bans WHERE user_id=$1',[req.user.id]);
+      if(ban.rows.length)return res.status(403).json({error:'account_banned'});
+    }
     next();
   } catch (error) { next(error); }
 });
@@ -93,11 +104,16 @@ app.post('/auth/session', async (req, res) => {
   const token = String(req.body?.idToken || '');
   const user = await verify(token);
   if (!user) return res.status(401).json({ error: 'Войдите повторно' });
-  const memberRecord = await db.query(`INSERT INTO users(id,email,email_verified_at)
-    VALUES ($1,$2,CASE WHEN $3::boolean THEN NOW() END)
-    ON CONFLICT(id) DO UPDATE SET email=EXCLUDED.email,
-      email_verified_at=CASE WHEN users.email=EXCLUDED.email THEN COALESCE(users.email_verified_at,EXCLUDED.email_verified_at) ELSE EXCLUDED.email_verified_at END
-    RETURNING visible`, [user.id, user.email, user.verified]);
+  const memberRecord = await db.transaction(async q=>{
+    const ban=await q('SELECT 1 FROM mm_vip_bans WHERE user_id=$1',[user.id]);
+    if(ban.rows.length)return null;
+    const inserted=await q("INSERT INTO users(id,email,email_verified_at) VALUES ($1,$2,CASE WHEN $3::boolean THEN NOW() END) ON CONFLICT(id) DO NOTHING RETURNING visible",[user.id,user.email,user.verified]);
+    const result=inserted.rows.length?inserted:await q("UPDATE users SET email=$2,email_verified_at=CASE WHEN users.email=$2 THEN COALESCE(users.email_verified_at,CASE WHEN $3::boolean THEN NOW() END) ELSE CASE WHEN $3::boolean THEN NOW() END END WHERE id=$1 RETURNING visible",[user.id,user.email,user.verified]);
+    await recordVipSession(q,user.id,getCookie(req,'mm_ref'),req.ip,inserted.rows.length>0);
+    return result;
+  });
+  if(!memberRecord)return res.status(403).json({error:'account_banned'});
+  res.clearCookie('mm_ref',{path:'/',secure:true,sameSite:'lax'});
   res.cookie('mm_token', token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 55 * 60 * 1000, path: '/' });
   res.set('Cache-Control', 'no-store');
   res.json({ user: session(user, memberRecord.rows[0]?.visible === true, await ownerAllowed(user)) });
@@ -178,7 +194,7 @@ app.post('/api/room', userOnly, async (req, res, next) => {
 });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 6, fields: 40, parts: 46 } });
 const adminUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1, fields: 40, parts: 41 } });
-const routes = ['locations', 'listings', 'listing', 'profile-community', 'member-activity', 'profile-stats', 'recommendations', 'traffic', 'push', 'engagement', 'private-album', 'support', 'create', 'mine', 'favorites', 'likes', 'report', 'chat/list', 'chat/start',
+const routes = ['locations', 'listings', 'listing', 'profile-community', 'member-activity', 'profile-stats', 'recommendations', 'traffic', 'push', 'engagement', 'vip', 'admin/vip', 'private-album', 'support', 'create', 'mine', 'favorites', 'likes', 'report', 'chat/list', 'chat/start',
   'chat/messages', 'chat/photos', 'chat/block', 'chat/report', 'legacy/claim', 'claim', 'privacy', 'privacy/export', 'admin/me', 'admin/overview', 'admin/traffic', 'admin/support', 'admin/listings', 'admin/manual', 'admin/manage', 'admin/reports', 'admin/claim-invite', 'admin/privacy-requests'];
 for (const slug of routes) {
   const mod = await import('../api/' + slug + '.js');
@@ -228,5 +244,8 @@ app.use((err, req, res, next) => {
   });
 });
 await init();
+const runVip=()=>processVip(db).catch(()=>console.warn('VIP reward evaluation unavailable'));
+setInterval(runVip,15*60*1000).unref();
+void runVip();
 const port = Number(process.env.PORT || 10000);
 app.listen(port, '0.0.0.0', () => console.log('MurdiliMax listening on ' + port));
