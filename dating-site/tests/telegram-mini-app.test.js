@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { generateKeyPairSync, sign } from 'node:crypto';
 import test from 'node:test';
-import { readTelegramLaunch } from '../render/telegram-mini-app.js';
+import { nativeTelegramUid, readTelegramLaunch } from '../render/telegram-mini-app.js';
 
 const { publicKey, privateKey } = generateKeyPairSync('ed25519');
 const botId = '9196177350';
@@ -21,6 +21,7 @@ const verified = values => readTelegramLaunch(values.toString(), botId, { key: p
 test('Mini App accepts a fresh Ed25519-signed identity for the configured bot', () => {
   const result = verified(signedLaunch());
   assert.equal(result.telegramId, '4294967297');
+  assert.equal(result.startParam, 'ref_test');
   assert.match(result.signatureHash, /^[a-f0-9]{64}$/);
 });
 
@@ -28,9 +29,18 @@ test('Mini App rejects a modified identity, stale launch, duplicate field and wr
   const modified = signedLaunch();
   modified.set('user', JSON.stringify({ id: 42 }));
   const duplicate = signedLaunch();
+  const modifiedReferral = signedLaunch();
+  modifiedReferral.set('start_param', 'ref_other');
   duplicate.append('auth_date', String(now / 1000));
   assert.equal(verified(modified), null);
   assert.equal(verified(duplicate), null);
+  assert.equal(verified(modifiedReferral), null);
   assert.equal(verified(signedLaunch({ issued: now - 301000 })), null);
   assert.equal(verified(signedLaunch({ audience: '1234' })), null);
+});
+
+test('Telegram-only accounts reuse a distinct UID for the same Telegram ID', () => {
+  assert.match(nativeTelegramUid('4294967297'), /^mmtg_[a-f0-9]{64}$/);
+  assert.equal(nativeTelegramUid('4294967297'), nativeTelegramUid('4294967297'));
+  assert.notEqual(nativeTelegramUid('4294967297'), nativeTelegramUid('4294967298'));
 });

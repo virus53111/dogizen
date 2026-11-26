@@ -8,7 +8,7 @@
   const data=await response.json();
   if(!data.user){$("privacyLogin").hidden=false;status.textContent="Войдите, чтобы получить доступ к своим данным.";return}
   $("privacyControls").hidden=false;
-  $("accountIdentity").textContent="Вы вошли как "+data.user.email;
+  $("accountIdentity").textContent=data.user.email ? "Вы вошли как "+data.user.email : "Вы вошли через Telegram";
   void fetch('/auth/telegram/availability').then(result=>{
    if(result.ok)$("telegramLinkControl").hidden=false;
   }).catch(()=>{});

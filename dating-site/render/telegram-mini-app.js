@@ -6,6 +6,10 @@ const telegramPublicKey = createPublicKey({
   format: 'der', type: 'spki',
 });
 
+export function nativeTelegramUid(telegramId) {
+  return `mmtg_${createHash('sha256').update(String(telegramId)).digest('hex')}`;
+}
+
 export function readTelegramLaunch(data, botId, { key = telegramPublicKey, now = Date.now() } = {}) {
   if (typeof data !== 'string' || data.length > 12000 || !/^\d{1,16}$/.test(botId)) return null;
   const values = new Map();
@@ -26,7 +30,7 @@ export function readTelegramLaunch(data, botId, { key = telegramPublicKey, now =
   try {
     const user = JSON.parse(values.get('user'));
     if (!Number.isSafeInteger(user?.id) || user.id <= 0 || user.is_bot === true) return null;
-    return { telegramId: String(user.id), signatureHash: createHash('sha256').update(signature).digest('hex') };
+    return { telegramId: String(user.id), signatureHash: createHash('sha256').update(signature).digest('hex'), startParam: values.get('start_param') };
   } catch {
     return null;
   }

@@ -6,6 +6,7 @@ import { onlineCount, recentPhotos } from './catalog-extras.js';
 import { createHash } from 'node:crypto';
 import { getCookie, rateLimit } from './security.js';
 import { telegramLogin } from './telegram-login.js';
+import { nativeTelegramUid } from './telegram-mini-app.js';
 import { canReadPhoto } from './media-access.js';
 import multer from 'multer';
 import { jwtVerify, createRemoteJWKSet } from 'jose';
@@ -61,7 +62,21 @@ async function verify(token) {
       issuer: 'https://securetoken.google.com/' + config.projectId,
       algorithms: ['RS256']
     });
-    if (!payload.sub || !payload.email) return null;
+    if (!payload.sub) return null;
+    if (payload.firebase?.sign_in_provider === 'custom' && !payload.email &&
+        /^mmtg_[a-f0-9]{64}$/.test(payload.sub)) {
+      let telegramId = payload.mm_telegram_id;
+      if (!telegramId) {
+        const link = await db.query(`SELECT telegram_user_id FROM mm_telegram_accounts
+          WHERE user_id=$1 AND subject='mini:'||telegram_user_id`, [payload.sub]);
+        telegramId = link.rows[0]?.telegram_user_id;
+      }
+      if (typeof telegramId === 'string' && /^[1-9]\d{0,15}$/.test(telegramId) &&
+          payload.sub === nativeTelegramUid(telegramId)) {
+        return { id: payload.sub, email: '', verified: true, telegramId };
+      }
+    }
+    if (!payload.email) return null;
     const verified = payload.email_verified === true;
     if (!verified && payload.firebase?.sign_in_provider !== 'password') return null;
     return { id: String(payload.sub), email: String(payload.email), verified };
@@ -82,7 +97,7 @@ app.use(async (req, res, next) => {
 });
 const owner = u => !!u && u.verified && u.email.toLowerCase() === 'dshtriters@gmail.com';
 const session = (u, visible = false, adminAllowed = false) => u ? {
-  id: u.id, email: u.email, ownerPanel: adminAllowed === true, emailVerified: u.verified, canMessage: true, visible
+  id: u.id, email: u.email, ownerPanel: adminAllowed === true, emailVerified: u.verified && !u.telegramId, canMessage: true, visible
 } : null;
 async function ownerAllowed(user){if(!owner(user))return false;const r=await db.query('SELECT 1 FROM users u JOIN mm_admin_allowlist a ON LOWER(u.email)=a.email WHERE u.id=$1 AND u.email_verified_at IS NOT NULL LIMIT 1',[user.id]);return r.rows.length>0}
 const userOnly = (req, res, next) => req.user ? next() : res.status(401).json({ error: 'Требуется вход' });
@@ -114,8 +129,16 @@ app.post('/auth/session', async (req, res, next) => {
   const memberRecord = await db.transaction(async q=>{
     const ban=await q('SELECT 1 FROM mm_vip_bans WHERE user_id=$1',[user.id]);
     if(ban.rows.length)return null;
-    const inserted=await q("INSERT INTO users(id,email,email_verified_at) VALUES ($1,$2,CASE WHEN $3::boolean THEN NOW() END) ON CONFLICT(id) DO NOTHING RETURNING visible",[user.id,user.email,user.verified]);
-    const result=inserted.rows.length?inserted:await q("UPDATE users SET email=$2,email_verified_at=CASE WHEN users.email=$2 THEN COALESCE(users.email_verified_at,CASE WHEN $3::boolean THEN NOW() END) ELSE CASE WHEN $3::boolean THEN NOW() END END WHERE id=$1 RETURNING visible",[user.id,user.email,user.verified]);
+    const emailVerified = user.verified && !user.telegramId;
+    const inserted=await q("INSERT INTO users(id,email,email_verified_at) VALUES ($1,$2,CASE WHEN $3::boolean THEN NOW() END) ON CONFLICT(id) DO NOTHING RETURNING visible",[user.id,user.email,emailVerified]);
+    const result=inserted.rows.length?inserted:await q("UPDATE users SET email=$2,email_verified_at=CASE WHEN users.email=$2 THEN COALESCE(users.email_verified_at,CASE WHEN $3::boolean THEN NOW() END) ELSE CASE WHEN $3::boolean THEN NOW() END END WHERE id=$1 RETURNING visible",[user.id,user.email,emailVerified]);
+    if (user.telegramId) {
+      const link = await q(`INSERT INTO mm_telegram_accounts (subject, user_id, telegram_user_id) VALUES ($1,$2,$3)
+        ON CONFLICT (telegram_user_id) DO UPDATE SET telegram_user_id=EXCLUDED.telegram_user_id
+        WHERE mm_telegram_accounts.user_id=EXCLUDED.user_id AND mm_telegram_accounts.subject=EXCLUDED.subject
+        RETURNING user_id`, [`mini:${user.telegramId}`, user.id, user.telegramId]);
+      if (!link.rowCount) throw Object.assign(new Error('Telegram account changed during sign-in'), { status: 409 });
+    }
     await recordVipSession(q,user.id,getCookie(req,'mm_ref'),req.ip,inserted.rows.length>0);
     return result;
   });

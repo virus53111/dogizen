@@ -3,7 +3,8 @@ import { readFile } from 'node:fs/promises';
 import { Router } from 'express';
 import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT } from 'jose';
 import { getCookie, rateLimit } from './security.js';
-import { readTelegramLaunch } from './telegram-mini-app.js';
+import { nativeTelegramUid, readTelegramLaunch } from './telegram-mini-app.js';
+import { CODE } from './vip.js';
 
 const origin = 'https://murdilimax.com';
 const issuer = 'https://oauth.telegram.org';
@@ -31,7 +32,7 @@ export async function telegramLogin({ db, projectId }) {
 
   const attempts = rateLimit({ limit: 20, windowMs: 15 * 60 * 1000 });
   router.get('/availability', (_req, res) => res.json({ available: true }));
-  const mintToken = uid => new SignJWT({ uid })
+  const mintToken = (uid, telegramId) => new SignJWT(telegramId ? { uid, claims: { mm_telegram_id: telegramId } } : { uid })
     .setProtectedHeader({ alg: 'RS256', kid: signer.keyId })
     .setIssuer(signer.email).setSubject(signer.email).setAudience(firebaseAudience)
     .setIssuedAt().setExpirationTime('5m').sign(signer.key);
@@ -42,16 +43,24 @@ export async function telegramLogin({ db, projectId }) {
     if (!launch) return res.status(401).json({ error: 'invalid_launch' });
     try {
       const result = await db.transaction(async query => {
-        const linked = await query(`SELECT u.id FROM mm_telegram_accounts t JOIN users u ON u.id=t.user_id
-          WHERE t.telegram_user_id=$1 AND u.email_verified_at IS NOT NULL`, [launch.telegramId]);
-        if (!linked.rowCount) return { status: 404, error: 'link_required' };
+        const linked = await query(`SELECT u.id, t.subject FROM mm_telegram_accounts t JOIN users u ON u.id=t.user_id
+          WHERE t.telegram_user_id=$1`, [launch.telegramId]);
+        const account = linked.rows[0];
+        const uid = account?.id || nativeTelegramUid(launch.telegramId);
+        const native = !account || account.subject === `mini:${launch.telegramId}`;
+        const ban = await query('SELECT 1 FROM mm_vip_bans WHERE user_id=$1', [uid]);
+        if (ban.rowCount) return { status: 403, error: 'account_banned' };
         await query('DELETE FROM mm_telegram_launches WHERE expires_at < NOW()');
         const claimed = await query(`INSERT INTO mm_telegram_launches (signature_hash, expires_at)
           VALUES ($1, NOW()+INTERVAL '6 minutes') ON CONFLICT DO NOTHING RETURNING signature_hash`, [launch.signatureHash]);
         if (!claimed.rowCount) return { status: 409, error: 'launch_used' };
-        return { customToken: await mintToken(linked.rows[0].id) };
+        return { customToken: await mintToken(uid, native ? launch.telegramId : undefined) };
       });
       if (result.error) return res.status(result.status).json({ error: result.error });
+      const referral = String(launch.startParam || '').replace(/^ref_/, '');
+      if (launch.startParam?.startsWith('ref_') && CODE.test(referral) && !getCookie(req, 'mm_ref')) {
+        res.cookie('mm_ref', referral, { httpOnly: true, secure: true, sameSite: 'lax', maxAge: 30 * 86400000, path: '/' });
+      }
       return res.json(result);
     } catch (error) {
       return next(error);
