@@ -1,0 +1,41 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import pg from 'pg';
+import fs from 'node:fs/promises';
+import {processVip,recordVipSession,awardReferral,vipLock,gift} from '../render/vip.js';
+const url=process.env.VIP_TEST_DATABASE_URL;
+if(!url||new URL(url).hostname!=='127.0.0.1'||new URL(url).pathname!=='/vip_test')throw Error('Use isolated local vip_test database only');
+test('PostgreSQL migration, repeat awards, account eligibility and concurrent gifts',async()=>{
+ const pool=new pg.Pool({connectionString:url});
+ const db={query:(s,p)=>pool.query(s,p),transaction:async fn=>{const c=await pool.connect();try{await c.query('BEGIN');const result=await fn((s,p)=>c.query(s,p));await c.query('COMMIT');return result}catch(e){await c.query('ROLLBACK');throw e}finally{c.release()}}};
+ try{
+  await db.query("CREATE TABLE users(id TEXT PRIMARY KEY,email TEXT NOT NULL,email_verified_at TIMESTAMPTZ,visible BOOLEAN DEFAULT FALSE,last_seen TIMESTAMPTZ)");
+  for(const file of (await fs.readdir('migrations')).filter(x=>x.endsWith('.sql')).sort())await db.query(await fs.readFile('migrations/'+file,'utf8'));
+  await db.query('CREATE TABLE IF NOT EXISTS mm_media(id TEXT PRIMARY KEY,mime TEXT NOT NULL,body BYTEA NOT NULL,created_at TIMESTAMPTZ DEFAULT NOW())');
+  for(const id of ['a','b','c'])await db.query("INSERT INTO users(id,email,email_verified_at) VALUES($1,$2,NOW())",[id,id+'@example.test']);
+  const code=(await db.query("INSERT INTO mm_vip_accounts(user_id) VALUES('a') RETURNING code")).rows[0].code;
+  const to=(await db.query("INSERT INTO mm_vip_accounts(user_id) VALUES('c') RETURNING code")).rows[0].code;
+  await db.transaction(q=>recordVipSession(q,'b',code,'203.0.113.3',true));
+  await db.query("UPDATE mm_vip_referrals SET created_at=NOW()-INTERVAL '4 days' WHERE invitee='b'");
+  await db.query("INSERT INTO mm_vip_activity(user_id,day) VALUES('b',CURRENT_DATE-2)");
+  await processVip(db);
+  assert.equal((await db.query("SELECT state FROM mm_vip_referrals WHERE invitee='b'")).rows[0].state,'pending');
+  const id=(await db.query("INSERT INTO mm_listings(owner_id,display_name,age,country,city,description,status,created_at) VALUES('b','Test',30,'LV','Riga','An authentic description for a test profile.','approved','2026-11-26') RETURNING id")).rows[0].id;
+  await db.query("INSERT INTO mm_media(id,mime,body) VALUES('murdilimax/photos/test.webp','image/webp',decode('00','hex'))");
+  await db.query("INSERT INTO mm_listing_photos(listing_id,photo_url) VALUES($1,'/media/murdilimax/photos/test.webp')",[id]);
+  await processVip(db);await processVip(db);
+  assert.equal((await db.query("SELECT SUM(months)::integer n FROM mm_vip_events WHERE user_id='b'")).rows[0].n,6);
+  const award=()=>db.transaction(async q=>{await vipLock(q);return awardReferral(q,'b')});
+  assert.deepEqual((await Promise.all([award(),award()])).sort(),[false,true]);
+  assert.equal((await db.query("SELECT SUM(days)::integer n FROM mm_vip_events WHERE user_id='a'")).rows[0].n,5);
+  const g1='11111111-1111-4111-8111-111111111111',g2='22222222-2222-4222-8222-222222222222';
+  const transfer=id=>db.transaction(q=>gift(q,'a',to,5,id));
+  const result=await Promise.all([transfer(g1),transfer(g2)]);
+  assert.deepEqual(result.slice().sort(),['balance','ok']);
+  assert.equal(await transfer(result[0]==='ok'?g1:g2),'ok');
+  assert.equal((await db.query("SELECT SUM(days)::integer n FROM mm_vip_events WHERE user_id='c'")).rows[0].n,5);
+  await db.query("INSERT INTO mm_vip_bans(user_id,reason) VALUES('b','test fraud')");
+  await db.query("UPDATE mm_listings SET status='rejected' WHERE id=$1",[id]);
+  await assert.rejects(db.query("UPDATE mm_listings SET status='approved' WHERE id=$1",[id]),/Banned account/);
+ }finally{await pool.end()}
+});

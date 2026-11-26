@@ -12,6 +12,11 @@ export default async function(req,res){
  // Include only account data and text this person authored. Do not leak messages
  // written by OTHER members or moderation notes about someone else.
  const sources=[
+  ['vip_balance_history','SELECT kind,days,months,created_at FROM mm_vip_events WHERE user_id=$1 ORDER BY created_at DESC LIMIT 5001'],
+  ['vip_referral_code','SELECT code FROM mm_vip_accounts WHERE user_id=$1'],
+  ['vip_referral_status','SELECT state,created_at,reviewed_at FROM mm_vip_referrals WHERE invitee=$1 OR inviter=$1 ORDER BY created_at DESC LIMIT 5001'],
+  ['vip_telegram','SELECT telegram_id,linked_at FROM mm_vip_telegram WHERE user_id=$1'],
+  ['vip_activity','SELECT day,ip_hash FROM mm_vip_activity WHERE user_id=$1 ORDER BY day DESC LIMIT 5001'],
   ['account','SELECT id,email,email_verified_at,visible,last_seen,incognito FROM users WHERE id=$1 LIMIT 1'],
   ['profiles',`SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,status,created_at,updated_at,
  COALESCE((SELECT d.looking_for FROM mm_member_profile_details d WHERE d.listing_id=mm_listings.id),\'\') AS looking_for,
