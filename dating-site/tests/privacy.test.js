@@ -51,13 +51,15 @@ test('privacy deletion request needs explicit confirmation and never deletes dat
 test('data export selects only own authored content and never another members messages',async()=>{
  const {res,calls}=await call(privacyExport,{method:'GET',user:member},(sql,args)=>{
   assert.deepEqual(args,[member.id]);
-  assert.match(sql,/WHERE (?:id|l\.owner_id|owner_id|sender_id|writer_id|visitor_id|viewer_id|blocker_id|user_id|liker_id|reporter_id|claimed_by)=\$1/);
+  if(sql.includes('FROM mm_vip_referrals'))assert.match(sql,/WHERE invitee=\$1 OR inviter=\$1/);
+  else assert.match(sql,/WHERE (?:id|l\.owner_id|owner_id|sender_id|writer_id|visitor_id|viewer_id|blocker_id|user_id|liker_id|reporter_id|claimed_by)=\$1/);
   return {rows:[]};
  });
  assert.equal(res.statusCode,200);
  assert.equal(res.headers['Cache-Control'],'private, no-store, max-age=0');
  assert.match(res.headers['Content-Disposition'],/attachment/);
- assert.equal(calls.length,20);
+ assert.equal(calls.length,25);
+ for(const name of ['vip_balance_history','vip_referral_code','vip_referral_status','vip_telegram','vip_activity'])assert.ok(name in res.body.sections);
  assert.ok('my_guestbook_entries' in res.body.sections);
  assert.ok('my_visit_settings' in res.body.sections);
  assert.ok('my_profile_visits' in res.body.sections);
