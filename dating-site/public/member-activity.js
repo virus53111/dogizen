@@ -24,8 +24,10 @@ function dashboard(root,data){
  for(const key of ["unread","matches","guestbook"]){const box=make("div");box.append(make("strong",String(data[key]||0)),make("small",L(key)));counts.append(box)}root.append(counts);
  const links=make("div",null,"mm-activity-links");
  const open=id=>{const m=document.getElementById("myModal");if(m?.open)m.close();document.getElementById(id)?.click()};
- links.append(btn(L("inbox"),()=>open("inboxBtn")),btn(L("likes"),async()=>{try{await api({action:"matches_seen"});refresh()}catch{}open("matchesBtn")}),btn(L("create"),()=>open("postBtn")));
+ const publish=btn(L("create"),()=>open("postBtn"));publish.id="dashboardPost";
+ links.append(btn(L("inbox"),()=>open("inboxBtn")),btn(L("likes"),async()=>{try{await api({action:"matches_seen"});refresh()}catch{}open("matchesBtn")}),publish);
  const privacy=make("a",L("data"),"btn btn-outline");privacy.href="/account-data.html";links.append(privacy);root.append(links,make("p",L("guesthint")),make("p",L("claim")));
+ window.mmUpdatePublicationLabels?.();
  const label=make("label",null,"mm-community-check"),check=make("input");check.type="checkbox";check.checked=!!data.share_visits;label.append(check,document.createTextNode(" "+L("consent")));root.append(label);
  const status=make("p");status.setAttribute("role","status");
  root.append(btn(L("save"),async()=>{try{await api({action:"visits_setting",enabled:check.checked});current=await api();dashboard(root,current);refresh()}catch{status.textContent=L("error")}}),status);

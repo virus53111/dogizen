@@ -174,8 +174,11 @@ app.get('/api/session', async (req, res, next) => {
   res.set('Cache-Control', 'no-store');
   if (!req.user) return res.json({ user: null });
   try {
-    const state = await db.query('SELECT visible FROM users WHERE id=$1', [req.user.id]);
-    return res.json({ user: session(req.user, state.rows[0]?.visible === true, await ownerAllowed(req.user)) });
+    const state = await db.query(`SELECT visible,
+      EXISTS (SELECT 1 FROM mm_listings WHERE owner_id=$1) AS has_listing
+      FROM users WHERE id=$1`, [req.user.id]);
+    const user = session(req.user, state.rows[0]?.visible === true, await ownerAllowed(req.user));
+    return res.json({ user: { ...user, hasListing: state.rows[0]?.has_listing === true } });
   } catch (error) { next(error); }
 });
 app.get('/media/*', async (req, res, next) => {

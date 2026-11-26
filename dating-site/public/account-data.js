@@ -1,20 +1,27 @@
 "use strict";
 (async()=>{
- const $=id=>document.getElementById(id), status=$("privacyStatus");
+ const $=id=>document.getElementById(id), status=$("privacyStatus"), linkStatus=$("telegramConnectStatus");
+ function offerBrowserLogin(text){
+  const link=document.createElement("a");
+  link.href="/auth/login.html?next=%2Faccount-data.html%23telegram";
+  link.textContent="Войти в аккаунт сайта";
+  linkStatus.replaceChildren(text+" ",link);
+ }
  try{
   if(window.MM_authReady)await window.MM_authReady;
   const response=await fetch("/api/session",{cache:"no-store"});
   if(!response.ok)throw Error("Не удалось проверить авторизацию");
   const data=await response.json();
-  if(!data.user){$("privacyLogin").hidden=false;status.textContent="Войдите, чтобы получить доступ к своим данным.";return}
+  if(!data.user){offerBrowserLogin("Сначала войдите в свой аккаунт сайта.");$("privacyLogin").hidden=false;status.textContent="Войдите, чтобы получить доступ к своим данным.";return}
   $("privacyControls").hidden=false;
   $("accountIdentity").textContent=data.user.email ? "Вы вошли как "+data.user.email : "Вы вошли через Telegram";
-  $("telegramOnlyHelp").hidden=!!data.user.email;
   if(data.user.emailVerified){
    void fetch('/auth/telegram/availability').then(result=>{
-    if(result.ok)$("telegramLinkControl").hidden=false;
-   }).catch(()=>{});
-   const button=$("telegramConnect"), linkStatus=$("telegramConnectStatus");
+    if(!result.ok)throw Error();
+    $("telegramLinkControl").hidden=false;
+    linkStatus.textContent="";
+   }).catch(()=>{linkStatus.textContent="Не удалось загрузить подключение Telegram. Обновите страницу."});
+   const button=$("telegramConnect");
    button.onclick=async()=>{
     button.disabled=true;
     linkStatus.textContent="Открываем Telegram…";
@@ -28,7 +35,8 @@
      linkStatus.textContent="Не удалось открыть Telegram. Попробуйте ещё раз.";
     }finally{button.disabled=false}
    };
-  }
+  }else if(data.user.email){linkStatus.textContent="Для подключения Telegram сначала подтвердите почту своего аккаунта сайта."}
+  else{offerBrowserLogin("Сейчас вы вошли через Telegram. Откройте эту страницу в браузере и войдите в аккаунт сайта, где находятся ваша анкета и поинты.")}
   async function refresh(){
    const r=await fetch("/api/privacy",{cache:"no-store"});
    if(!r.ok)throw Error("Не удалось загрузить список запросов");
@@ -58,5 +66,5 @@
    }catch(err){status.textContent=err.message}
    finally{button.disabled=false}
   };
- }catch(err){status.textContent=err.message||"Ошибка при проверке данных"}
+ }catch(err){status.textContent=err.message||"Ошибка при проверке данных";if(linkStatus.textContent==="Проверяем вход…")linkStatus.textContent="Не удалось проверить вход. Обновите страницу."}
 })();

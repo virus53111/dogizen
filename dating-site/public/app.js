@@ -242,7 +242,19 @@ function consumeReturnKey(key) {
  url.searchParams.delete(key);
  history.replaceState(history.state, "", url);
 }
-function updateLogin(){const btn=$("#loginBtn");if(state.user){btn.textContent=state.user.email?.split("@")[0]||t("myAds");btn.onclick=e=>{e.preventDefault();showMy()}}else{btn.textContent=t("accountEntry");btn.href=loginPath();btn.onclick=null}}
+function updatePublicationLabels(){
+ const existing=state.user?.hasListing===true;
+ const listingLabel=({
+  ru:"Разместить объявление",en:"Post a listing",de:"Anzeige aufgeben",
+  lv:"Ievietot sludinājumu",lt:"Paskelbti skelbimą",et:"Lisa kuulutus"
+ })[state.lang];
+ const action=existing?listingLabel:t("postProfile");
+ $$("#emptyCreateProfile, #ctaPost [data-t], #dashboardPost").forEach(el=>{el.textContent=action});
+ $("#postModal h2").textContent=existing?listingLabel:t("createTitle");
+ $$("[data-publication-label]").forEach(el=>{el.textContent=existing?listingLabel:el.dataset.publicationLabel});
+}
+function updateLogin(){const btn=$("#loginBtn");if(state.user){btn.textContent=state.user.email?.split("@")[0]||t("myAds");btn.onclick=e=>{e.preventDefault();showMy()}}else{btn.textContent=t("accountEntry");btn.href=loginPath();btn.onclick=null}updatePublicationLabels()}
+window.mmUpdatePublicationLabels=updatePublicationLabels;
 async function openPost(){await refreshOwnerSession();if(!state.user){toast(t("loginRequired"));location.assign(loginPath({publish:"1"}));return}$("#postModal").showModal()}
 async function showMy(){await refreshOwnerSession();if(!state.user){location.assign(loginPath({panel:"mine"}));return}if(!$("#myModal").open)$("#myModal").showModal();$("#myContent").textContent=t("loading");try{const r=await fetch("/api/mine");if(!r.ok)throw Error();const data=await r.json();$("#myContent").innerHTML=data.listings.length?'<div class="my-list">'+data.listings.map(x=>'<div class="my-item"><div><strong>'+escapeHTML(x.display_name)+'</strong><br><small>'+escapeHTML(x.city)+'</small></div><span class="status '+escapeHTML(x.status)+'">'+t(x.status)+'</span></div>').join("")+'</div>':'<p>'+t("noMy")+'</p>';if(window.mmEnhanceMine)window.mmEnhanceMine(data.listings);if(window.mmMountDashboard)window.mmMountDashboard(data.listings);
 if(state.user.ownerPanel){
@@ -300,7 +312,7 @@ function bind(){
  ["postBtn","ctaPost","emptyCreateProfile"].forEach(x=>$("#"+x).onclick=openPost);$("#myAdsBtn").onclick=showMy;
  $$("[data-close]").forEach(el=>el.onclick=()=>el.closest("dialog").close());
  $$("dialog").forEach(el=>el.addEventListener("click",e=>{if(e.target===el)el.close()}));
- $("#postForm").onsubmit=async e=>{e.preventDefault();const form=e.target,btn=form.querySelector("[type=submit]");const files=[...(form.querySelector('input[name="photo"]')?.files||[])];const validTypes=["image/jpeg","image/png","image/webp"];const badFiles=files.length>6||files.some(f=>!validTypes.includes(f.type)||f.size===0||f.size>4*1024*1024);if(badFiles){$("#formMessage").textContent=({ru:"Можно загрузить до 6 фотографий JPG, PNG или WebP размером до 4 МБ каждая.",en:"Upload up to 6 JPG, PNG or WebP images, at most 4 MB each.",de:"Bis zu 6 Bilder (JPG, PNG oder WebP) mit höchstens 4 MB pro Bild.",lv:"Augšupielādējiet līdz 6 JPG, PNG vai WebP attēliem, katru līdz 4 MB.",lt:"Įkelkite iki 6 JPG, PNG arba WebP nuotraukų, kiekvieną iki 4 MB.",et:"Laadi üles kuni 6 JPG-, PNG- või WebP-fotot, igaüks kuni 4 MB."})[state.lang]||"Invalid photos";return}btn.disabled=true;$("#formMessage").textContent="";const data=new FormData(form);try{const r=await fetch("/api/create",{method:"POST",body:data});const j=await r.json();if(!r.ok)throw Error(j.code==="profile_policy"?t("profilePolicyError"):(j.error||t("error")));$("#postModal").close();form.reset();toast(j.published?t("submitPublished"):t("submitPending"));loadListings()}catch(err){$("#formMessage").textContent=err.message}finally{btn.disabled=false}};
+ $("#postForm").onsubmit=async e=>{e.preventDefault();const form=e.target,btn=form.querySelector("[type=submit]");const files=[...(form.querySelector('input[name="photo"]')?.files||[])];const validTypes=["image/jpeg","image/png","image/webp"];const badFiles=files.length>6||files.some(f=>!validTypes.includes(f.type)||f.size===0||f.size>4*1024*1024);if(badFiles){$("#formMessage").textContent=({ru:"Можно загрузить до 6 фотографий JPG, PNG или WebP размером до 4 МБ каждая.",en:"Upload up to 6 JPG, PNG or WebP images, at most 4 MB each.",de:"Bis zu 6 Bilder (JPG, PNG oder WebP) mit höchstens 4 MB pro Bild.",lv:"Augšupielādējiet līdz 6 JPG, PNG vai WebP attēliem, katru līdz 4 MB.",lt:"Įkelkite iki 6 JPG, PNG arba WebP nuotraukų, kiekvieną iki 4 MB.",et:"Laadi üles kuni 6 JPG-, PNG- või WebP-fotot, igaüks kuni 4 MB."})[state.lang]||"Invalid photos";return}btn.disabled=true;$("#formMessage").textContent="";const data=new FormData(form);try{const r=await fetch("/api/create",{method:"POST",body:data});const j=await r.json();if(!r.ok)throw Error(j.code==="profile_policy"?t("profilePolicyError"):(j.error||t("error")));$("#postModal").close();form.reset();toast(j.published?t("submitPublished"):t("submitPending"));void refreshOwnerSession();loadListings()}catch(err){$("#formMessage").textContent=err.message}finally{btn.disabled=false}};
  $("#reportForm").onsubmit=async e=>{e.preventDefault();const form=e.target;const data=Object.fromEntries(new FormData(form).entries());try{const r=await fetch("/api/report",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});if(!r.ok)throw Error();$("#reportModal").close();toast(t("reportSuccess"))}catch{toast(t("error"))}};
 }
 document.addEventListener("DOMContentLoaded",async()=>{bind();const hasSavedCity=typeof myCity!=="undefined" && myCity.init();

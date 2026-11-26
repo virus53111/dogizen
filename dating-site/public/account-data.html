@@ -18,22 +18,23 @@ small{display:block;line-height:1.5}
 </style>
 <script>window.MM_authReady=new Promise(resolve=>window.MM_finishAuth=resolve)</script>
 <script type="module" src="/auth/refresh.js"></script>
-<script defer src="/account-data.js?v=2"></script>
+<script defer src="/account-data.js?v=3"></script>
 </head><body><main>
 <a class="brand" href="/">MurdiliMax</a>
 <h1>Мои данные и приватность</h1>
 <p>Здесь можно скачать сведения, относящиеся к вашему аккаунту, и отправить запрос на его удаление.</p>
+<section id="telegram">
+<h2>Подключить Telegram</h2>
+<p>После подключения в Telegram будут доступны ваши анкеты, сообщения и поинты с сайта.</p>
+<div id="telegramLinkControl" hidden><button id="telegramConnect" type="button" class="primary">Подключить Telegram</button></div>
+<p id="telegramConnectStatus" role="status">Проверяем вход…</p>
+</section>
 <div id="privacyLogin" hidden>
 <p>Для защиты личных данных необходимо войти в подтверждённый аккаунт.</p>
 <a href="/login?next=%2Faccount-data.html">Войти в аккаунт</a>
 </div>
 <div id="privacyControls" hidden>
 <p id="accountIdentity"></p>
-<div id="telegramLinkControl" hidden>
-<button id="telegramConnect" type="button" class="primary">Подключить Telegram</button>
-<p id="telegramConnectStatus" role="status"></p>
-</div>
-<p id="telegramOnlyHelp" hidden>Уже есть аккаунт на сайте? Войдите в него в браузере, откройте «Мои данные» и нажмите «Подключить Telegram».</p>
 <section>
 <h2>Скачать данные</h2>
 <p>JSON-архив содержит ваш профиль аккаунта, созданные вами анкеты, собственные сообщения, избранное и свои жалобы. Изображения и данные Firebase Auth в этот файл не входят.</p>
