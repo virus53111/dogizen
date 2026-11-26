@@ -19,7 +19,7 @@ async function load(){
  try{d=await api({action:'refresh'})}catch{$('vipStatus').textContent=L[17]}
  const X=extra[lang];
  $('vipIncoming').textContent=d.incoming?(d.incoming.state==='confirmed'?X[4]:d.incoming.reason==='duplicate_ip'?X[2]:d.incoming.state==='rejected'?L[17]:X[3]):'';
- $('vipAccount').hidden=false;$('vipBalance').textContent=L[5]+': '+d.points+' MP;
+ $('vipAccount').hidden=false;$('vipBalance').textContent=L[5]+': '+d.points+' MP';
  const counts=Object.fromEntries(d.counts.map(x=>[x.state,x.count]));
  $('vipCounts').textContent=L[8]+': '+(counts.confirmed||0)+' / '+((counts.pending||0)+(counts.review||0))+' / '+(counts.rejected||0);
  $('vipCounts').textContent+=' · '+extra[lang][5]+': '+(d.duplicate_ip_count||0);
