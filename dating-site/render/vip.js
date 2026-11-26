@@ -30,7 +30,7 @@ const ready="r.state='pending' AND r.created_at<=NOW()-INTERVAL '72 hours' AND u
 export async function processVip(db){
  return db.transaction(async q=>{
   await vipLock(q);
-  await q("INSERT INTO mm_vip_events(user_id,event_key,kind,months) SELECT u.id,'newyear:'+u.id,'campaign',6 FROM users u WHERE u.email_verified_at IS NOT NULL AND NOT EXISTS(SELECT 1 FROM mm_vip_bans b WHERE b.user_id=u.id) AND EXISTS(SELECT 1 FROM mm_listings l JOIN mm_listing_photos p ON p.listing_id=l.id JOIN mm_media m ON '/media/'||m.id=p.photo_url WHERE l.owner_id=u.id AND l.status='approved' AND l.age>=18 AND length(trim(l.description))>=20 AND l.created_at<$1::timestamptz) ON CONFLICT(event_key) DO NOTHING",[CUTOFF]);
+  await q("INSERT INTO mm_vip_events(user_id,event_key,kind,months) SELECT u.id,'newyear:'||u.id,'campaign',6 FROM users u WHERE u.email_verified_at IS NOT NULL AND NOT EXISTS(SELECT 1 FROM mm_vip_bans b WHERE b.user_id=u.id) AND EXISTS(SELECT 1 FROM mm_listings l JOIN mm_listing_photos p ON p.listing_id=l.id JOIN mm_media m ON '/media/'||m.id=p.photo_url WHERE l.owner_id=u.id AND l.status='approved' AND l.age>=18 AND length(trim(l.description))>=20 AND l.created_at<$1::timestamptz) ON CONFLICT(event_key) DO NOTHING",[CUTOFF]);
   await q("UPDATE mm_vip_referrals r SET state='review' FROM users u WHERE r.invitee=u.id AND "+ready);
   await q("DELETE FROM mm_vip_activity WHERE day < CURRENT_DATE-90");
  });
