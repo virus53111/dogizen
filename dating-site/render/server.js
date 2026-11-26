@@ -53,6 +53,14 @@ app.use((req,res,next)=>{
  }
  next();
 });
+const publicFiles = express.static(path.join(root, 'public'), { maxAge: '1h', setHeaders(res, file) {
+  if (file.endsWith('.html') || file.endsWith('.js')) res.set('Cache-Control', 'no-cache');
+} });
+app.use((req, res, next) => {
+  const asset = /\.(?:css|js|png|jpe?g|webp|svg|woff2?)$/i.test(req.path);
+  const protectedPath = /^\/(?:api|media|__)(?:\/|$)/i.test(req.path);
+  return asset && !protectedPath ? publicFiles(req, res, next) : next();
+});
 app.use(express.json({ limit: '200kb' }), express.urlencoded({ extended: false }));
 async function verify(token, allowNewTelegram = false) {
   if (!token || token.length > 10000) return null;
@@ -271,9 +279,7 @@ app.get('/api/recent-photos', async (req,res,next)=> {
   try { res.json(await recentPhotos(db)); } catch(e) { next(e); }
 });
 app.get('/', (req, res) => res.sendFile(path.join(root, 'public/index.html')));
-app.use(express.static(path.join(root, 'public'), { maxAge: '1h', setHeaders(res, file) {
-  if (file.endsWith('.html') || file.endsWith('.js')) res.set('Cache-Control', 'no-cache');
-} }));
+app.use(publicFiles);
 app.use((req, res) => res.status(404).json({ error: 'Страница не найдена' }));
 app.use((err, req, res, next) => {
   console.error(err);
