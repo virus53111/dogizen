@@ -9,9 +9,26 @@
   if(!data.user){$("privacyLogin").hidden=false;status.textContent="Войдите, чтобы получить доступ к своим данным.";return}
   $("privacyControls").hidden=false;
   $("accountIdentity").textContent=data.user.email ? "Вы вошли как "+data.user.email : "Вы вошли через Telegram";
-  void fetch('/auth/telegram/availability').then(result=>{
-   if(result.ok)$("telegramLinkControl").hidden=false;
-  }).catch(()=>{});
+  $("telegramOnlyHelp").hidden=!!data.user.email;
+  if(data.user.emailVerified){
+   void fetch('/auth/telegram/availability').then(result=>{
+    if(result.ok)$("telegramLinkControl").hidden=false;
+   }).catch(()=>{});
+   const button=$("telegramConnect"), linkStatus=$("telegramConnectStatus");
+   button.onclick=async()=>{
+    button.disabled=true;
+    linkStatus.textContent="Открываем Telegram…";
+    try{
+     const response=await fetch('/auth/telegram/browser-link',{method:'POST'});
+     if(!response.ok)throw Error();
+     const {url}=await response.json();
+     linkStatus.textContent="В Telegram нажмите «Подключить мой аккаунт».";
+     location.href=url;
+    }catch{
+     linkStatus.textContent="Не удалось открыть Telegram. Попробуйте ещё раз.";
+    }finally{button.disabled=false}
+   };
+  }
   async function refresh(){
    const r=await fetch("/api/privacy",{cache:"no-store"});
    if(!r.ok)throw Error("Не удалось загрузить список запросов");

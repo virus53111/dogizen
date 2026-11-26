@@ -54,7 +54,7 @@ app.use((req,res,next)=>{
  next();
 });
 app.use(express.json({ limit: '200kb' }), express.urlencoded({ extended: false }));
-async function verify(token) {
+async function verify(token, allowNewTelegram = false) {
   if (!token || token.length > 10000) return null;
   try {
     const { payload } = await jwtVerify(token, keys, {
@@ -65,12 +65,10 @@ async function verify(token) {
     if (!payload.sub) return null;
     if (payload.firebase?.sign_in_provider === 'custom' && !payload.email &&
         /^mmtg_[a-f0-9]{64}$/.test(payload.sub)) {
-      let telegramId = payload.mm_telegram_id;
-      if (!telegramId) {
-        const link = await db.query(`SELECT telegram_user_id FROM mm_telegram_accounts
-          WHERE user_id=$1 AND subject='mini:'||telegram_user_id`, [payload.sub]);
-        telegramId = link.rows[0]?.telegram_user_id;
-      }
+      const link = await db.query(`SELECT telegram_user_id FROM mm_telegram_accounts
+        WHERE user_id=$1 AND subject LIKE 'mini:%'`, [payload.sub]);
+      const telegramId = link.rows[0]?.telegram_user_id ||
+        (allowNewTelegram && !link.rowCount ? payload.mm_telegram_id : null);
       if (typeof telegramId === 'string' && /^[1-9]\d{0,15}$/.test(telegramId) &&
           payload.sub === nativeTelegramUid(telegramId)) {
         return { id: payload.sub, email: '', verified: true, telegramId };
@@ -124,9 +122,16 @@ app.use('/auth/telegram', await telegramLogin({ db, projectId: config.projectId 
 app.post('/auth/session', async (req, res, next) => {
  try {
   const token = String(req.body?.idToken || '');
-  const user = await verify(token);
+  const user = await verify(token, true);
   if (!user) return res.status(401).json({ error: 'Войдите повторно' });
   const memberRecord = await db.transaction(async q=>{
+    if (user.telegramId) {
+      await q('SELECT pg_advisory_xact_lock(hashtext($1), 738292)', [user.telegramId]);
+      const previous = await q('SELECT telegram_user_id FROM mm_telegram_accounts WHERE user_id=$1', [user.id]);
+      if (previous.rowCount && !previous.rows[0].telegram_user_id) {
+        throw Object.assign(new Error('Telegram account changed during sign-in'), { status: 409 });
+      }
+    }
     const ban=await q('SELECT 1 FROM mm_vip_bans WHERE user_id=$1',[user.id]);
     if(ban.rows.length)return null;
     const emailVerified = user.verified && !user.telegramId;

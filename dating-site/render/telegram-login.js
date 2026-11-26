@@ -1,4 +1,4 @@
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { Router } from 'express';
 import { createRemoteJWKSet, importPKCS8, jwtVerify, SignJWT } from 'jose';
@@ -12,6 +12,8 @@ const keys = createRemoteJWKSet(new URL('/.well-known/jwks.json', issuer));
 const firebaseAudience = 'https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit';
 const nonceCookie = '__Host-mm_telegram_nonce';
 const cookieOptions = { secure: true, httpOnly: true, sameSite: 'strict', path: '/' };
+const linkHash = value => createHash('sha256').update(value).digest('hex');
+const browserLink = /^connect_([A-Za-z0-9_-]{43})$/;
 
 export async function telegramLogin({ db, projectId }) {
   const router = Router();
@@ -37,12 +39,66 @@ export async function telegramLogin({ db, projectId }) {
     .setIssuer(signer.email).setSubject(signer.email).setAudience(firebaseAudience)
     .setIssuedAt().setExpirationTime('5m').sign(signer.key);
 
+  router.post('/browser-link', attempts, async (req, res, next) => {
+    if (req.get('origin') !== origin || !req.user?.verified || !req.user.email) return res.status(403).end();
+    try {
+      const token = randomBytes(32).toString('base64url');
+      await db.transaction(async q => {
+        await q('DELETE FROM mm_telegram_browser_links WHERE expires_at < NOW()');
+        await q(`INSERT INTO mm_telegram_browser_links (token_hash, user_id, expires_at)
+          VALUES ($1, $2, NOW() + INTERVAL '5 minutes')`, [linkHash(token), req.user.id]);
+      });
+      return res.json({ url: `https://t.me/MurdiliMaxLoginBot?startapp=connect_${token}` });
+    } catch (error) {
+      return next(error);
+    }
+  });
+
   router.post('/mini-app', attempts, async (req, res, next) => {
     if (req.get('origin') !== origin) return res.status(403).end();
     const launch = readTelegramLaunch(req.body?.initData, clientId);
     if (!launch) return res.status(401).json({ error: 'invalid_launch' });
     try {
       const result = await db.transaction(async query => {
+        const link = browserLink.exec(launch.startParam || '');
+        if (link) {
+          await query('SELECT pg_advisory_xact_lock(hashtext($1), 738292)', [launch.telegramId]);
+          const pending = await query(`SELECT user_id FROM mm_telegram_browser_links
+            WHERE token_hash=$1 AND expires_at>NOW() FOR UPDATE`, [linkHash(link[1])]);
+          const target = pending.rows[0]?.user_id;
+          if (!target) return { status: 409, error: 'browser_link_expired' };
+          const locked = await query('SELECT id, email_verified_at FROM users WHERE id=$1 FOR UPDATE', [target]);
+          if (!locked.rows[0]?.email_verified_at) return { status: 403, error: 'verification_required' };
+          const links = await query(`SELECT subject, user_id, telegram_user_id FROM mm_telegram_accounts
+            WHERE user_id=$1 OR telegram_user_id=$2 FOR UPDATE`, [target, launch.telegramId]);
+          const current = links.rows.find(row => row.telegram_user_id === launch.telegramId);
+          const existing = links.rows.find(row => row.user_id === target);
+          const nativeId = nativeTelegramUid(launch.telegramId);
+          if ((current && current.user_id !== target && current.user_id !== nativeId) ||
+              (existing?.telegram_user_id && existing.telegram_user_id !== launch.telegramId)) {
+            return { status: 409, error: 'already_linked' };
+          }
+          const banned = await query('SELECT 1 FROM mm_vip_bans WHERE user_id IN ($1,$2)', [target, nativeId]);
+          if (banned.rowCount) return { status: 403, error: 'account_banned' };
+          if (current?.user_id === nativeId) {
+            const data = await query(`SELECT 1 FROM mm_listings WHERE owner_id=$1
+              UNION ALL SELECT 1 FROM mm_conversations WHERE requester_id=$1 OR publisher_id=$1
+              UNION ALL SELECT 1 FROM mm_vip_events WHERE user_id=$1 AND kind<>'campaign'
+              UNION ALL SELECT 1 FROM mm_vip_referrals WHERE invitee=$1 OR inviter=$1 LIMIT 1`, [nativeId]);
+            if (data.rowCount) return { status: 409, error: 'telegram_account_has_data' };
+          }
+          await query('DELETE FROM mm_telegram_browser_links WHERE token_hash=$1', [linkHash(link[1])]);
+          if (current?.user_id === nativeId) {
+            await query('UPDATE mm_telegram_accounts SET telegram_user_id=NULL WHERE user_id=$1', [nativeId]);
+          }
+          if (existing) {
+            await query('UPDATE mm_telegram_accounts SET telegram_user_id=$2 WHERE user_id=$1', [target, launch.telegramId]);
+          } else {
+            await query('INSERT INTO mm_telegram_accounts (subject, user_id, telegram_user_id) VALUES ($1,$2,$3)',
+              [`browser:${launch.telegramId}`, target, launch.telegramId]);
+          }
+          return { customToken: await mintToken(target) };
+        }
         const linked = await query(`SELECT u.id, t.subject FROM mm_telegram_accounts t JOIN users u ON u.id=t.user_id
           WHERE t.telegram_user_id=$1`, [launch.telegramId]);
         const account = linked.rows[0];
