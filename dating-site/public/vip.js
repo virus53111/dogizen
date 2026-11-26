@@ -20,6 +20,7 @@ async function load(){
  const X=extra[lang];
  $('vipIncoming').textContent=d.incoming?(d.incoming.state==='confirmed'?X[4]:d.incoming.reason==='duplicate_ip'?X[2]:d.incoming.state==='rejected'?L[17]:X[3]):'';
  $('vipAccount').hidden=false;$('vipBalance').textContent=L[5]+': '+d.points+' MP';
+ $('mpVisibility').checked=d.public_points===true;$('mpVisibility').disabled=false;
  const counts=Object.fromEntries(d.counts.map(x=>[x.state,x.count]));
  $('vipCounts').textContent=L[8]+': '+(counts.confirmed||0)+' / '+((counts.pending||0)+(counts.review||0))+' / '+(counts.rejected||0);
  $('vipCounts').textContent+=' · '+extra[lang][5]+': '+(d.duplicate_ip_count||0);
@@ -34,6 +35,10 @@ const X=extra[lang];
 $('vipRecipient').placeholder=X[0];
 let searchSeq=0;
 $('vipRecipient').oninput=async()=>{const seq=++searchSeq,term=$('vipRecipient').value.trim(),select=$('vipRecipientChoice');select.replaceChildren(new Option(X[1],''));if(term.length<2)return;try{const res=await fetch('/api/vip?recipient='+encodeURIComponent(term),{cache:'no-store'});if(!res.ok)throw Error();const d=await res.json();if(seq!==searchSeq)return;for(const p of d.recipients)select.append(new Option(p.display_name+' · '+p.age+' · '+p.city,p.id));}catch{}};
+const MP=window.MM_pointsLabels[lang];
+$('mpVisibilityLabel').textContent=MP.visibility;
+$('mpVisibilityHelp').textContent=MP.privacy;
+$('mpVisibility').onchange=async()=>{const el=$('mpVisibility'),desired=el.checked;el.disabled=true;try{await api({action:'visibility',public_points:desired});$('mpVisibilityStatus').textContent=MP.saved;}catch{el.checked=!desired;$('mpVisibilityStatus').textContent=L[17];}finally{el.disabled=false}};
 let pendingGift=null;
 $('vipGift').onsubmit=async e=>{e.preventDefault();$('vipSend').disabled=true;const code=$('vipRecipientChoice').value,days=Number($('vipDays').value);if(!pendingGift||pendingGift.code!==code||pendingGift.days!==days)pendingGift={action:'gift',id:crypto.randomUUID(),code,days};try{await api(pendingGift);pendingGift=null;$('vipStatus').textContent=L[19];$('vipGift').reset();await load()}catch{$('vipStatus').textContent=L[17];$('vipSend').disabled=false}};
 void load();

@@ -20,3 +20,13 @@ test('VIP page needs no email verification and offers recipient search',async()=
 });
 
 test('180 MP equals six fixed 30-day reward months; one ledger balance includes both legacy sources',()=>{assert.equal(CAMPAIGN_POINTS,6*POINTS_PER_MONTH);assert.match(POINTS_SUM,/days::bigint \+ 30 \* months::bigint/)});
+
+test('points profile, wallet and leaderboard share public opt-in',async()=>{
+ const fs=await import('node:fs/promises');
+ const ui=await fs.readFile('public/points-ui.js','utf8'),wallet=await fs.readFile('public/vip.html','utf8'),profile=await fs.readFile('public/catalog-v2.js','utf8'),home=await fs.readFile('public/index.html','utf8'),migration=await fs.readFile('migrations/035_public_points.sql','utf8');
+ assert.match(migration,/mp_public BOOLEAN NOT NULL DEFAULT FALSE/);
+ assert.match(wallet,/id="mpVisibility"/);
+ assert.match(profile,/mmMountPointsProfile/);
+ assert.match(ui,/gift_profile/);
+ assert.match(home,/id="mmPointsLeaderboard"/);
+});

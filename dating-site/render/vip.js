@@ -60,11 +60,11 @@ export async function awardReferral(q,invitee){
  await q("INSERT INTO mm_vip_events(user_id,event_key,kind,days) VALUES($1,$2,'referral',$3) ON CONFLICT(event_key) DO NOTHING",[row.inviter,'referral:'+invitee,DAYS]);
  await q("UPDATE mm_vip_referrals SET state='confirmed',reviewed_at=NOW() WHERE invitee=$1",[invitee]);return true;
 }
-export async function gift(q,sender,code,days,id){
+export async function gift(q,sender,code,days,id,profileOnly=false){
  if(!CODE.test(code||'')||!CODE.test(id||'')||!Number.isSafeInteger(days)||days<1||days>36500)return 'invalid';
  await vipLock(q);
  if((await q('SELECT 1 FROM mm_vip_bans WHERE user_id=$1',[sender])).rows.length)return 'invalid';
- const recipient=(await q("SELECT u.id AS user_id FROM users u WHERE (EXISTS(SELECT 1 FROM mm_vip_accounts a WHERE a.user_id=u.id AND a.code=$1) OR EXISTS(SELECT 1 FROM mm_listings l WHERE l.id=$1 AND l.owner_id=u.id AND l.status='approved')) AND NOT EXISTS(SELECT 1 FROM mm_vip_bans b WHERE b.user_id=u.id) LIMIT 1",[code])).rows[0]?.user_id;
+ const recipient=(await q("SELECT u.id AS user_id FROM users u WHERE ((NOT $2::boolean AND EXISTS(SELECT 1 FROM mm_vip_accounts a WHERE a.user_id=u.id AND a.code=$1)) OR EXISTS(SELECT 1 FROM mm_listings l JOIN mm_public_listings p ON p.id=l.id WHERE l.id=$1 AND l.owner_id=u.id AND l.status='approved' AND p.status='approved' AND p.messaging_enabled IS TRUE)) AND NOT EXISTS(SELECT 1 FROM mm_vip_bans b WHERE b.user_id=u.id) LIMIT 1",[code,profileOnly])).rows[0]?.user_id;
  if(!recipient||recipient===sender)return 'invalid';
  const old=(await q('SELECT sender,recipient,days FROM mm_vip_gifts WHERE id=$1',[id])).rows[0];
  if(old)return old.sender===sender&&old.recipient===recipient&&old.days===days?'ok':'invalid';
