@@ -34,9 +34,15 @@ export async function sendPending(db, recipient, send = deliver) {
 }
 
 export function startSupportMail(db) {
-  const recipient = process.env.SUPPORT_NOTIFY_TO;
-  if (!recipient) return;
-  const processNext = () => sendPending(db, recipient).catch(() => {
+  let recipient = process.env.SUPPORT_NOTIFY_TO;
+  async function flush() {
+    if (!recipient) {
+      const result = await db.query("SELECT current_setting('murdilimax.support_notify_to', true) AS recipient");
+      recipient = result.rows[0]?.recipient;
+    }
+    await sendPending(db, recipient);
+  }
+  const processNext = () => flush().catch(() => {
     console.warn('Support notification pending; will retry.');
   });
   void processNext();

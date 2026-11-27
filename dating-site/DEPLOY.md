@@ -57,8 +57,8 @@ Only **public** listing data was backed up. Private messages/users/photos may be
 
 ### Support notifications on QDE
 
-Set `SUPPORT_NOTIFY_TO` in the private application service environment and restart
-the application. Configure the VPS mail transport at `/usr/sbin/sendmail` for
+Set the private PostgreSQL database setting `murdilimax.support_notify_to` or
+the service environment override `SUPPORT_NOTIFY_TO`, then restart the application. Configure the VPS mail transport at `/usr/sbin/sendmail` for
 outbound delivery. Verify a new ticket in the admin inbox and confirm arrival
 in the recipient mailbox. Notification messages contain only the admin inbox
 link. Pending notifications retry after a transport failure.
