@@ -75,7 +75,36 @@ window.addEventListener('DOMContentLoaded',async()=>{
 `;
 const inviteHtml=await fs.readFile(path.join(root,'invite.html'),'utf8');
 const pointsFixture=inviteHtml.replace(/<script>window.MM_authReady=.*?<\/script>/,'<script>'+inviteBoot+'</script>').replace(/<script type="module" src="\/auth\/refresh.js"><\/script>/,'').replace('</main>','<pre id="result">PENDING</pre></main>');
-const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,'http://localhost');if(u.pathname==='/points-test'){res.setHeader('Content-Type','text/html');return res.end(pointsFixture)}if(u.pathname==='/'){res.setHeader('Content-Type','text/html');return res.end(fixture)}if(u.pathname.startsWith('/api/')){res.statusCode=404;return res.end()}const p=path.resolve(root,'.'+u.pathname);if(!p.startsWith(root+path.sep)){res.statusCode=403;return res.end()}res.setHeader('Content-Type',p.endsWith('.css')?'text/css':p.endsWith('.js')?'text/javascript':'application/octet-stream');res.end(await fs.readFile(p))}catch{res.statusCode=404;res.end()}});
+
+const storyBoot=String.raw`
+localStorage.setItem('mm-over18','yes');
+window.MM_authReady=Promise.resolve();
+window.fetch=async(url,opts={})=>{
+ if(url==='/api/story-submit'&&!opts.method)return Response.json({stories:[]});
+ if(url==='/api/story-submit'&&opts.method==='POST'&&opts.body instanceof FormData){window.submittedStory=opts.body.get('title');return Response.json({story:{id:'test'}},{status:201})}
+ return new Response('',{status:404});
+};
+window.addEventListener('DOMContentLoaded',async()=>{
+ const out=document.getElementById('result');
+ try{
+  for(let i=0;i<100&&document.getElementById('editor').hidden;i++)await new Promise(r=>setTimeout(r,20));
+  const form=document.getElementById('form');
+  if(document.getElementById('editor').hidden)throw Error('editor hidden');
+  if(document.documentElement.scrollWidth>innerWidth+2)throw Error('layout overflow');
+  form.elements.title.value='Test relationship story';form.elements.author_name.value='Test author';form.elements.body.value='A non-explicit story about meeting someone and talking about life.';form.elements.editorial_confirmed.checked=true;
+  const dt=new DataTransfer();dt.items.add(new File([new Uint8Array([137,80,78,71])],'test.png',{type:'image/png'}));form.elements.cover.files=dt.files;form.elements.cover.dispatchEvent(new Event('change'));
+  if(!document.querySelector('#photoPreview img'))throw Error('preview missing');
+  form.requestSubmit();
+  for(let i=0;i<100&&!window.submittedStory;i++)await new Promise(r=>setTimeout(r,20));
+  if(window.submittedStory!=='Test relationship story')throw Error('submission not sent');
+  out.textContent='PASS:'+innerWidth;
+ }catch(e){out.textContent='FAIL:'+e.message}
+});
+`;
+const storyHtml=await fs.readFile(path.join(root,'write-story.html'),'utf8');
+const storyFixture=storyHtml.replace(/<script>window.MM_authReady=.*?<\/script>/,'<script>'+storyBoot+'</script>').replace(/<script type="module" src="\/auth\/refresh.js"><\/script>/,'').replace('</main>','<pre id="result">PENDING</pre></main>');
+
+const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,'http://localhost');if(u.pathname==='/story-test'){res.setHeader('Content-Type','text/html');return res.end(storyFixture)}if(u.pathname==='/points-test'){res.setHeader('Content-Type','text/html');return res.end(pointsFixture)}if(u.pathname==='/'){res.setHeader('Content-Type','text/html');return res.end(fixture)}if(u.pathname.startsWith('/api/')){res.statusCode=404;return res.end()}const p=path.resolve(root,'.'+u.pathname);if(!p.startsWith(root+path.sep)){res.statusCode=403;return res.end()}res.setHeader('Content-Type',p.endsWith('.css')?'text/css':p.endsWith('.js')?'text/javascript':'application/octet-stream');res.end(await fs.readFile(p))}catch{res.statusCode=404;res.end()}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const port=server.address().port;
 try{for(const width of [320,390,1024]){
  const dir=await mkdtemp(path.join(os.tmpdir(),'mm-chat-'));try{
@@ -101,6 +130,10 @@ try{for(const width of [320,390,1024]){
   marker='PENDING';
   for(let i=0;i<150;i++){const result=await cdp('Runtime.evaluate',{expression:"location.pathname==='/points-test'?(document.getElementById('result')?.textContent||'PENDING'):'PENDING'",returnByValue:true});marker=result.result.value;if(marker!=='PENDING')break;await sleep(100)}
   console.log('Invitation viewport '+width+': '+marker);assert.equal(marker,'PASS:'+width);
+  await cdp('Page.navigate',{url:'http://127.0.0.1:'+port+'/story-test'});
+  marker='PENDING';
+  for(let i=0;i<150;i++){const result=await cdp('Runtime.evaluate',{expression:"location.pathname==='/story-test'?(document.getElementById('result')?.textContent||'PENDING'):'PENDING'",returnByValue:true});marker=result.result.value;if(marker!=='PENDING')break;await sleep(100)}
+  console.log('Story viewport '+width+': '+marker);assert.equal(marker,'PASS:'+width);
  }finally{ws?.close();chrome.kill('SIGTERM');await new Promise(r=>{if(chrome.exitCode!==null||chrome.signalCode!==null)r();else{chrome.once('close',r);setTimeout(r,2000)}})}
 
  }finally{await rm(dir,{recursive:true,force:true,maxRetries:10,retryDelay:200})}

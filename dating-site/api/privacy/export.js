@@ -12,6 +12,8 @@ export default async function(req,res){
  // Include only account data and text this person authored. Do not leak messages
  // written by OTHER members or moderation notes about someone else.
  const sources=[
+  ['my_stories','SELECT id,slug,title,author_name,language,category,body,status,submission_pending,created_at,updated_at FROM mm_stories WHERE submitted_by=$1 ORDER BY created_at DESC LIMIT 5001'],
+  ['my_story_photos','SELECT p.id,p.story_id,p.position FROM mm_story_photos p JOIN mm_stories s ON s.id=p.story_id WHERE s.submitted_by=$1 LIMIT 5001'],
   ['vip_balance_history','SELECT kind,days,months,created_at FROM mm_vip_events WHERE user_id=$1 ORDER BY created_at DESC LIMIT 5001'],
   ['vip_referral_code','SELECT code FROM mm_vip_accounts WHERE user_id=$1'],
   ['vip_referral_status','SELECT state,created_at,reviewed_at FROM mm_vip_referrals WHERE invitee=$1 OR inviter=$1 ORDER BY created_at DESC LIMIT 5001'],
