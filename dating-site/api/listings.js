@@ -1,7 +1,6 @@
 import { lastSeen, newMember } from "../render/member-activity.js";
 import { nearbyCities } from "../public/nearby-cities.js";
 import { db } from "hatchable";
-import {publicPoints} from "../render/points-public.js";
 import { cityNamesInRange } from "../render/latvia-cities.js";
 export const access="public";
 export const methods=["GET"];
@@ -50,6 +49,6 @@ export default async function(req,res){
  const where=filters.join(" AND ");
  const count=await db.query("SELECT COUNT(*)::integer AS total FROM mm_public_listings WHERE "+where,values);
  const offset=(page-1)*48;
- const result=await db.query("SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,featured,is_commercial,created_at,messaging_enabled, "+lastSeen+" AS last_seen, "+newMember+" AS is_new_member, "+publicPoints+" FROM mm_public_listings WHERE "+where+" ORDER BY "+order+" LIMIT 48 OFFSET "+offset,values);
+ const result=await db.query("SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,featured,is_commercial,created_at,messaging_enabled, "+lastSeen+" AS last_seen, "+newMember+" AS is_new_member FROM mm_public_listings WHERE "+where+" ORDER BY "+order+" LIMIT 48 OFFSET "+offset,values);
  res.json({listings:result.rows,total:count.rows[0]?.total||0,page,page_size:48});
 }

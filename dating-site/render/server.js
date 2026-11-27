@@ -1,6 +1,6 @@
 import { permitsPendingMember } from './pending-member.js';
 import express from 'express';
-import {CODE,recordVipSession,processVip} from './vip.js';
+import {CODE,recordInvitation} from './invitations.js';
 import { notifyMessage } from './push.js';
 import { onlineCount, recentPhotos } from './catalog-extras.js';
 import { createHash } from 'node:crypto';
@@ -152,7 +152,7 @@ app.post('/auth/session', async (req, res, next) => {
         RETURNING user_id`, [`mini:${user.telegramId}`, user.id, user.telegramId]);
       if (!link.rowCount) throw Object.assign(new Error('Telegram account changed during sign-in'), { status: 409 });
     }
-    await recordVipSession(q,user.id,getCookie(req,'mm_ref'),req.ip,inserted.rows.length>0);
+    await recordInvitation(q,user.id,getCookie(req,'mm_ref'),inserted.rows.length>0);
     return result;
   });
   if(!memberRecord)return res.status(403).json({error:'account_banned'});
@@ -160,7 +160,6 @@ app.post('/auth/session', async (req, res, next) => {
   res.cookie('mm_token', token, { httpOnly: true, sameSite: 'lax', secure: true, maxAge: 55 * 60 * 1000, path: '/' });
   res.set('Cache-Control', 'no-store');
   res.json({ user: session(user, memberRecord.rows[0]?.visible === true, await ownerAllowed(user)) });
-  void runVip();
  } catch(error){next(error)}
 });
 app.post('/auth/logout', async (req, res, next) => {
@@ -242,7 +241,7 @@ app.post('/api/room', userOnly, async (req, res, next) => {
 });
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 6, fields: 40, parts: 46 } });
 const adminUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1, fields: 40, parts: 41 } });
-const routes = ['locations', 'listings', 'listing', 'profile-community', 'member-activity', 'profile-stats', 'recommendations', 'traffic', 'push', 'engagement', 'points-leaderboard', 'vip', 'admin/vip', 'private-album', 'support', 'create', 'mine', 'favorites', 'likes', 'report', 'chat/list', 'chat/start',
+const routes = ['locations', 'listings', 'listing', 'profile-community', 'member-activity', 'profile-stats', 'recommendations', 'traffic', 'push', 'engagement', 'invitations', 'private-album', 'support', 'create', 'mine', 'favorites', 'likes', 'report', 'chat/list', 'chat/start',
   'chat/messages', 'chat/photos', 'chat/block', 'chat/report', 'legacy/claim', 'claim', 'privacy', 'privacy/export', 'admin/me', 'admin/overview', 'admin/traffic', 'admin/support', 'admin/listings', 'admin/manual', 'admin/manage', 'admin/reports', 'admin/claim-invite', 'admin/privacy-requests'];
 for (const slug of routes) {
   const mod = await import('../api/' + slug + '.js');
@@ -263,7 +262,6 @@ for (const slug of routes) {
     }));
     try {
       await mod.default(req, res);
-      if(req.method==='POST'&&res.statusCode===200&&['create','mine','admin/listings','admin/manage'].includes(slug))void runVip();
       if(req.method==='POST'&&res.statusCode===200&&req.user&&((slug==='chat/messages'&&(!req.body?.action||req.body.action==='send'))||(slug==='chat/photos'&&req.body?.action==='send'))) {
         await notifyMessage(db,req.body.conversation_id,req.user.id).catch(()=>console.warn('Web Push delivery unavailable'));
       }
@@ -279,6 +277,11 @@ app.get('/api/recent-photos', async (req,res,next)=> {
   try { res.json(await recentPhotos(db)); } catch(e) { next(e); }
 });
 app.get('/', (req, res) => res.sendFile(path.join(root, 'public/index.html')));
+app.get('/vip.html', (req,res)=>{const lang=['ru','en','de','lv','lt','et'].includes(req.query.lang)?req.query.lang:'ru';res.set('Cache-Control','no-store');res.redirect(302,'/invite.html?lang='+lang)});
+app.get('/admin-vip.html', (req,res)=>res.redirect(302,'/admin.html'));
+app.all(['/api/vip','/api/points-leaderboard','/api/admin/vip'], (req,res)=>res.set('Cache-Control','no-store').status(404).json({error:'not_available'}));
+app.get(['/vip.js','/points-ui.js','/admin-vip.js','/auth/vip-verify.js'],(req,res)=>res.set('Cache-Control','no-store').type('application/javascript').send('/* inactive */'));
+app.get(['/vip.css','/points-ui.css'],(req,res)=>res.set('Cache-Control','no-store').type('text/css').send('/* inactive */'));
 app.use(publicFiles);
 app.use((req, res) => res.status(404).json({ error: 'Страница не найдена' }));
 app.use((err, req, res, next) => {
@@ -291,8 +294,5 @@ app.use((err, req, res, next) => {
   });
 });
 await init();
-const runVip=()=>processVip(db).catch(()=>console.warn('VIP reward evaluation unavailable'));
-setInterval(runVip,60*1000).unref();
-void runVip();
 const port = Number(process.env.PORT || 10000);
 app.listen(port, '0.0.0.0', () => console.log('MurdiliMax listening on ' + port));
