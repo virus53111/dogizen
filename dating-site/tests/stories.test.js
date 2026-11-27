@@ -34,3 +34,27 @@ test('six catalogs and protected editorial page linked; no automatic import',asy
  assert.match(api,/mm_admin_allowlist/);assert.match(api,/u\?\.verified/);assert.match(api,/validateStory/);
  assert.match(admin,/noindex,nofollow/);assert.match(admin,/editorial_confirmed/);assert.match(server,/registerStories\(app,db/);
 });
+
+test('cover and gallery use safe image URLs, preserving article canonical',()=>{
+ const id='12345678-1234-4234-8234-123456789012',other='23456789-2345-4345-8345-234567890123';
+ const html=articlePage(s,[],[{id,position:0},{id:other,position:1},{id:'bad"><script>',position:2}]);
+ assert.ok(html.includes('/story-photo/'+id));assert.ok(html.includes('/story-photo/'+other));assert.doesNotMatch(html,/bad"><script>/);
+ assert.match(html,/class="story-gallery"/);assert.match(catalogPage([{...s,cover_id:id}]),/class="story-cover"/);
+ assert.match(catalogPage([]),/href="\/write-story.html"/);
+});
+test('photo files are decoded and re-encoded rather than trusting file labels',async()=>{
+ const {prepareStoryPhotos}=await import('../render/story-photos.js');
+ const {default:sharp}=await import('sharp');
+ const input=await sharp({create:{width:24,height:24,channels:3,background:'#6a485c'}}).png().toBuffer();
+ const cover={field:'cover',contentType:'image/png',buffer:input};
+ const photos=await prepareStoryPhotos([cover,{...cover,field:'photos'}]);assert.deepEqual(photos.map(p=>p.position),[0,1]);
+ assert.equal((await sharp(photos[0].body).metadata()).format,'webp');
+ await assert.rejects(prepareStoryPhotos([{...cover,contentType:'image/jpeg'}]));
+ await assert.rejects(prepareStoryPhotos([cover,cover]));
+ await assert.rejects(prepareStoryPhotos([{...cover,field:'other'}]));
+});
+test('user submissions always enter private moderation queue',async()=>{
+ const api=await fs.readFile('api/story-submit.js','utf8'),server=await fs.readFile('render/server.js','utf8'),editor=await fs.readFile('public/admin-stories.html','utf8');
+ assert.match(api,/status:'draft'/);assert.match(api,/submitted_by,submission_pending/);assert.match(api,/count>=3/);
+ assert.match(server,/storyUpload = \['story-submit','admin\/stories'\]/);assert.match(editor,/name="cover"/);assert.match(editor,/name="photos"/);
+});

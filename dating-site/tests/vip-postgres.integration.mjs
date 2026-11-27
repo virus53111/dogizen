@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import pg from 'pg';
 import express from 'express';
 import {registerStories} from '../render/stories.js';
+import {registerStoryPhotos,prepareStoryPhotos,replaceStoryPhotos} from '../render/story-photos.js';
+import sharp from 'sharp';
 import fs from 'node:fs/promises';
 import {processVip,recordVipSession,awardReferral,vipLock,gift,POINTS_SUM} from '../render/vip.js';
 import {leaderboard,publicPoints,giftableProfile} from '../render/points-public.js';
@@ -83,19 +85,30 @@ test('PostgreSQL migration, repeat awards, account eligibility and concurrent gi
   // Story fixture exists exclusively in the isolated local database.
   const slug='test-walk-1234567890';
   const story=(await db.query("INSERT INTO mm_stories(slug,title,author_name,language,category,body) VALUES($1,'A walk in Riga','Test author','en','romance','They walked through the city and talked about their plans.') RETURNING id",[slug])).rows[0];
-  const app=express();registerStories(app,db,'<urlset></urlset>');
+  const png=await sharp({create:{width:32,height:24,channels:3,background:'#5f465b'}}).png().toBuffer();
+  const prepared=await prepareStoryPhotos([{field:'cover',contentType:'image/png',buffer:png},{field:'photos',contentType:'image/png',buffer:png}]);
+  await db.transaction(q=>replaceStoryPhotos(q,story.id,prepared));
+  const images=(await db.query('SELECT id,position FROM mm_story_photos WHERE story_id=$1 ORDER BY position',[story.id])).rows;
+  assert.equal(images.length,2);
+  const app=express();app.use((req,res,next)=>{req.user=req.get('x-test-owner')==='yes'?{id:'owner'}:null;next()});
+  registerStoryPhotos(app,db,async u=>u?.id==='owner');registerStories(app,db,'<urlset></urlset>');
   const server=await new Promise(r=>{const x=app.listen(0,'127.0.0.1',()=>r(x))});
   const base='http://127.0.0.1:'+server.address().port;
   try{
    assert.equal((await fetch(base+'/stories/'+slug+'/')).status,404);
+   assert.equal((await fetch(base+'/story-photo/'+images[0].id)).status,404);
+   assert.equal((await fetch(base+'/api/admin/story-photo/'+images[0].id)).status,403);
+   assert.equal((await fetch(base+'/api/admin/story-photo/'+images[0].id,{headers:{'x-test-owner':'yes'}})).status,200);
    assert.doesNotMatch(await (await fetch(base+'/sitemap.xml')).text(),new RegExp(slug));
    await db.query("UPDATE mm_stories SET status='published',published_at=NOW() WHERE id=$1",[story.id]);
-   const article=await fetch(base+'/stories/'+slug+'/');assert.equal(article.status,200);assert.match(await article.text(),/A walk in Riga/);
+   const article=await fetch(base+'/stories/'+slug+'/');assert.equal(article.status,200);const html=await article.text();assert.match(html,/A walk in Riga/);assert.ok(html.includes('/story-photo/'+images[0].id));assert.ok(html.includes('/story-photo/'+images[1].id));
+   const photo=await fetch(base+'/story-photo/'+images[0].id);assert.equal(photo.status,200);assert.equal(photo.headers.get('content-type'),'image/webp');
    assert.match(await (await fetch(base+'/stories/romance/')).text(),new RegExp(slug));
    assert.match(await (await fetch(base+'/sitemap.xml')).text(),new RegExp(slug));
    await db.query("UPDATE mm_stories SET title='New title' WHERE id=$1",[story.id]);
    assert.match(await (await fetch(base+'/stories/'+slug+'/')).text(),/New title/);
    await db.query("UPDATE mm_stories SET status='draft' WHERE id=$1",[story.id]);
+   assert.equal((await fetch(base+'/story-photo/'+images[0].id)).status,404);
    assert.equal((await fetch(base+'/stories/'+slug+'/')).status,404);
    assert.doesNotMatch(await (await fetch(base+'/sitemap.xml')).text(),new RegExp(slug));
   }finally{await new Promise(r=>server.close(r))}
