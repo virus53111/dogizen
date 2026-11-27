@@ -22,22 +22,28 @@ const date=s=>new Date(s).toISOString();
 const label=s=>categories[s.category]||'';
 function page({title,description,url,body,language='ru',index=true,schema,og='website'}){
  const canonical=origin+url;
- return '<!doctype html><html lang="'+esc(language)+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="rating" content="adult"><meta name="robots" content="'+(index?'index,follow':'noindex,follow')+'"><title>'+esc(title)+'</title><meta name="description" content="'+esc(description)+'"><link rel="canonical" href="'+esc(canonical)+'"><meta property="og:site_name" content="MurdiliMax"><meta property="og:type" content="'+og+'"><meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(description)+'"><meta property="og:url" content="'+esc(canonical)+'"><link rel="stylesheet" href="/stories.css?v=1"><script defer src="/stories-age.js?v=1"></script>'+(schema?'<script type="application/ld+json">'+json(schema)+'</script>':'')+'</head><body><header class="story-nav"><a class="brand" href="/">MurdiliMax</a><nav><a href="/stories/">Истории 18+</a><a href="/#catalog">Знакомства</a></nav></header><main class="story-wrap">'+body+'</main><footer class="story-wrap"><a href="/rules.html">Правила</a> · <a href="/privacy.html">Приватность</a> · Только 18+</footer></body></html>';
+ return '<!doctype html><html lang="'+esc(language)+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="rating" content="adult"><meta name="robots" content="'+(index?'index,follow':'noindex,follow')+'"><title>'+esc(title)+'</title><meta name="description" content="'+esc(description)+'"><link rel="canonical" href="'+esc(canonical)+'"><meta property="og:site_name" content="MurdiliMax"><meta property="og:type" content="'+og+'"><meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(description)+'"><meta property="og:url" content="'+esc(canonical)+'"><link rel="stylesheet" href="/stories.css?v=2"><script defer src="/stories-age.js?v=1"></script>'+(schema?'<script type="application/ld+json">'+json(schema)+'</script>':'')+'</head><body><header class="story-nav"><a class="brand" href="/">MurdiliMax</a><nav><a href="/stories/">Истории 18+</a><a href="/#catalog">Знакомства</a></nav></header><main class="story-wrap">'+body+'</main><footer class="story-wrap"><a href="/rules.html">Правила</a> · <a href="/privacy.html">Приватность</a> · Только 18+</footer></body></html>';
 }
-function links(rows){return '<div class="story-grid">'+rows.map(s=>'<article class="story-card"><small>'+esc(label(s))+' · '+esc(s.language.toUpperCase())+'</small><h2><a href="'+esc(storyPath(s))+'">'+esc(s.title)+'</a></h2><p>'+esc(s.seo_description||excerpt(s))+'</p><small>Автор: '+esc(s.author_name)+'</small></article>').join('')+'</div>'}
+const photoPath=id=>'/story-photo/'+id;
+const imageId=id=>typeof id==='string'&&/^[a-f0-9-]{36}$/i.test(id);
+const readMinutes=body=>Math.max(1,Math.ceil(String(body??'').trim().split(/\s+/).length/180));
+function links(rows){return '<div class="story-grid">'+rows.map(s=>'<article class="story-card"><a class="story-cover" href="'+esc(storyPath(s))+'" aria-label="'+esc(s.title)+'">'+(imageId(s.cover_id)?'<img loading="lazy" decoding="async" src="'+photoPath(s.cover_id)+'" alt="'+esc(s.title)+'">':'<span class="story-cover-mark" aria-hidden="true">✦</span>')+'<span class="story-tag">'+esc(label(s))+'</span></a><div class="story-card-copy"><small>'+esc(s.language.toUpperCase())+' · '+esc(s.author_name)+'</small><h2><a href="'+esc(storyPath(s))+'">'+esc(s.title)+'</a></h2><p>'+esc(s.seo_description||excerpt(s))+'</p><a class="story-read" href="'+esc(storyPath(s))+'">Читать историю <span aria-hidden="true">→</span></a></div></article>').join('')+'</div>'}
 export function catalogPage(rows,{category=null,pageNumber=1,hasMore=false}={}){
  const base=category?'/stories/'+category+'/':'/stories/',url=base+(pageNumber>1?'?page='+pageNumber:'');
  const heading=category?categories[category]:'Истории 18+';
  const title=heading+(pageNumber>1?' — страница '+pageNumber:'')+' | MurdiliMax';
  const description='Истории о знакомствах, любви и отношениях взрослых. Бесплатная библиотека MurdiliMax.';
- const nav='<nav class="story-categories"><a href="/stories/">Все</a>'+Object.entries(categories).map(([k,v])=>'<a href="/stories/'+k+'/">'+esc(v)+'</a>').join('')+'</nav>';
+ const nav='<nav class="story-categories" aria-label="Категории"><a '+(!category?'aria-current="page"':'')+' href="/stories/">Все</a>'+Object.entries(categories).map(([k,v])=>'<a '+(k===category?'aria-current="page"':'')+' href="/stories/'+k+'/">'+esc(v)+'</a>').join('')+'</nav>';
  const pagination='<nav class="story-categories">'+(pageNumber>1?'<a rel="prev" href="'+base+(pageNumber>2?'?page='+(pageNumber-1):'')+'">← Назад</a>':'')+(hasMore?'<a rel="next" href="'+base+'?page='+(pageNumber+1)+'">Далее →</a>':'')+'</nav>';
- return page({title,description,url,index:rows.length>0,body:'<p class="story-kicker">БИБЛИОТЕКА · 18+</p><h1>'+esc(heading)+'</h1><p>'+esc(description)+'</p>'+nav+(rows.length?links(rows):'<p class="story-empty">Пока нет опубликованных историй.</p>')+pagination,schema:{'@context':'https://schema.org','@type':'CollectionPage',name:heading,url:origin+url,isFamilyFriendly:false}});
+ return page({title,description,url,index:rows.length>0,body:'<section class="story-hero"><div class="story-hero-copy"><p class="story-kicker">MURDILIMAX · ЖУРНАЛ 18+</p><h1>'+esc(heading)+'</h1><p>Знакомства, любовь и отношения. Истории, которыми хочется поделиться.</p><a class="story-cta" href="/write-story.html">＋ Написать историю</a></div><div class="story-hero-art" aria-hidden="true"><span>✦</span><strong>Истории<br>людей</strong><small>READ · WRITE · CONNECT</small></div></section>'+nav+(rows.length?links(rows):'<section class="story-empty"><span aria-hidden="true">✎</span><h2>Пока нет опубликованных историй.</h2><p>Станьте первым автором. Поделитесь своей историей с читателями.</p><a class="story-cta" href="/write-story.html">Написать историю</a></section>')+pagination,schema:{'@context':'https://schema.org','@type':'CollectionPage',name:heading,url:origin+url,isFamilyFriendly:false}});
 }
-export function articlePage(s,related=[]){
+export function articlePage(s,related=[],photos=[]){
  const url=storyPath(s),title=(s.seo_title||s.title)+' | MurdiliMax',description=s.seo_description||excerpt(s);
  const schema={'@context':'https://schema.org','@type':'Article',headline:s.title,description,author:{'@type':'Person',name:s.author_name},datePublished:date(s.published_at),dateModified:date(s.updated_at),inLanguage:s.language,mainEntityOfPage:origin+url,isFamilyFriendly:false,publisher:{'@type':'Organization',name:'MurdiliMax',url:origin}};
- return page({title,description,url,language:s.language,schema,og:'article',body:'<a href="/stories/">← Все истории</a><p class="story-kicker">'+esc(label(s))+' · 18+</p><article class="story-reading"><h1>'+esc(s.title)+'</h1><p class="story-byline">Автор: '+esc(s.author_name)+' · <time datetime="'+date(s.published_at)+'">'+date(s.published_at).slice(0,10)+'</time></p><div class="story-text">'+s.body.split(/\n\s*\n/).map(x=>'<p>'+esc(x)+'</p>').join('')+'</div></article>'+(related.length?'<section><h2>Похожие истории</h2>'+links(related)+'</section>':'')+'<p><a href="/account-data.html">Связаться с администрацией по поводу публикации</a></p>'});
+ const cover=photos.find(p=>p.position===0&&imageId(p.id)),gallery=photos.filter(p=>p.position!==0&&imageId(p.id));
+ if(cover)schema.image=origin+photoPath(cover.id);
+ const figure=p=>'<figure class="story-figure"><img src="'+photoPath(p.id)+'" alt="'+esc(s.title)+'" decoding="async" loading="lazy"></figure>';
+ return page({title,description,url,language:s.language,schema,og:'article',body:'<a href="/stories/">← Все истории</a><p class="story-kicker">'+esc(label(s))+' · 18+</p><article class="story-reading"><h1>'+esc(s.title)+'</h1><p class="story-byline">Автор: '+esc(s.author_name)+' · <time datetime="'+date(s.published_at)+'">'+date(s.published_at).slice(0,10)+'</time> · '+readMinutes(s.body)+' мин. чтения</p>'+(cover?figure(cover):'')+'<div class="story-text">'+s.body.split(/\n\s*\n/).map(x=>'<p>'+esc(x)+'</p>').join('')+'</div>'+(gallery.length?'<div class="story-gallery">'+gallery.map(figure).join('')+'</div>':'')+'</article>'+(related.length?'<section><h2>Похожие истории</h2>'+links(related)+'</section>':'')+'<p><a href="/account-data.html">Связаться с администрацией по поводу публикации</a></p>'});
 }
 export function appendStoriesSitemap(xml,rows){
  if(!rows.length)return xml;
@@ -48,7 +54,7 @@ export function appendStoriesSitemap(xml,rows){
 }
 export function registerStories(app,db,staticSitemap){
  const published="status='published' AND published_at IS NOT NULL";
- const listFields="slug,title,author_name,language,category,seo_description,LEFT(body,200) AS body";
+ const listFields="slug,title,author_name,language,category,seo_description,LEFT(body,200) AS body,(SELECT p.id FROM mm_story_photos p WHERE p.story_id=mm_stories.id ORDER BY p.position LIMIT 1) AS cover_id";
  const handler=async(req,res,next)=>{
   try{
    const key=req.params.slug||'',category=Object.hasOwn(categories,key)?key:null;
@@ -64,7 +70,8 @@ export function registerStories(app,db,staticSitemap){
    const s=(await db.query('SELECT * FROM mm_stories WHERE slug=$1 AND '+published,[key])).rows[0];
    if(!s)return res.status(404).send('История не найдена');
    const related=(await db.query('SELECT '+listFields+' FROM mm_stories WHERE '+published+' AND category=$1 AND slug<>$2 ORDER BY (language=$3) DESC,published_at DESC LIMIT 4',[s.category,s.slug,s.language])).rows;
-   return res.type('html').send(articlePage(s,related));
+   const photos=(await db.query('SELECT id,position FROM mm_story_photos WHERE story_id=$1 ORDER BY position',[s.id])).rows;
+   return res.type('html').send(articlePage(s,related,photos));
   }catch(e){next(e)}
  };
  app.get('/stories', (req,res,next)=>req.path.endsWith('/')?handler(req,res,next):res.redirect(301,'/stories/'));
