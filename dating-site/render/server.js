@@ -53,6 +53,11 @@ app.use((req,res,next)=>{
  }
  next();
 });
+app.get('/vip.html', (req,res)=>{const lang=['ru','en','de','lv','lt','et'].includes(req.query.lang)?req.query.lang:'ru';res.set('Cache-Control','no-store');res.redirect(302,'/invite.html?lang='+lang)});
+app.get('/admin-vip.html', (req,res)=>res.redirect(302,'/admin.html'));
+app.all(['/api/vip','/api/points-leaderboard','/api/admin/vip'], (req,res)=>res.set('Cache-Control','no-store').status(404).json({error:'not_available'}));
+app.get(['/vip.js','/points-ui.js','/admin-vip.js','/auth/vip-verify.js'],(req,res)=>res.set('Cache-Control','no-store').type('application/javascript').send('/* inactive */'));
+app.get(['/vip.css','/points-ui.css'],(req,res)=>res.set('Cache-Control','no-store').type('text/css').send('/* inactive */'));
 const publicFiles = express.static(path.join(root, 'public'), { maxAge: '1h', setHeaders(res, file) {
   if (file.endsWith('.html') || file.endsWith('.js')) res.set('Cache-Control', 'no-cache');
 } });
@@ -277,11 +282,6 @@ app.get('/api/recent-photos', async (req,res,next)=> {
   try { res.json(await recentPhotos(db)); } catch(e) { next(e); }
 });
 app.get('/', (req, res) => res.sendFile(path.join(root, 'public/index.html')));
-app.get('/vip.html', (req,res)=>{const lang=['ru','en','de','lv','lt','et'].includes(req.query.lang)?req.query.lang:'ru';res.set('Cache-Control','no-store');res.redirect(302,'/invite.html?lang='+lang)});
-app.get('/admin-vip.html', (req,res)=>res.redirect(302,'/admin.html'));
-app.all(['/api/vip','/api/points-leaderboard','/api/admin/vip'], (req,res)=>res.set('Cache-Control','no-store').status(404).json({error:'not_available'}));
-app.get(['/vip.js','/points-ui.js','/admin-vip.js','/auth/vip-verify.js'],(req,res)=>res.set('Cache-Control','no-store').type('application/javascript').send('/* inactive */'));
-app.get(['/vip.css','/points-ui.css'],(req,res)=>res.set('Cache-Control','no-store').type('text/css').send('/* inactive */'));
 app.use(publicFiles);
 app.use((req, res) => res.status(404).json({ error: 'Страница не найдена' }));
 app.use((err, req, res, next) => {

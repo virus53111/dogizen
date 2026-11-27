@@ -54,41 +54,27 @@ window.addEventListener('DOMContentLoaded',async()=>{
 const body='<button id="inboxBtn">Inbox</button><button id="footerInbox"></button><button id="favoritesBtn"></button><button id="footerFavorites"></button><select id="language"></select>'+dialogs+'<pre id="result">PENDING</pre>';
 const fixture='<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'+['style.css','catalog-v2.css','social-v4.css','directory.css','evening.css','luxury.css'].map(s=>'<link rel="stylesheet" href="/'+s+'">').join('')+'</head><body>'+body+'<script>'+boot+'</script><script src="/social-v4.js"></script></body></html>';
 
-const pointsBoot=String.raw`
+
+const inviteBoot=String.raw`
+window.MM_authReady=Promise.resolve();
 const ID='33333333-3333-4333-8333-333333333333';
-const state={lang:'ru'};
-window.MM_authReady=Promise.resolve();window.confirm=()=>true;
-let balance=180,received=0,calls=0,sent=null;
 window.fetch=async(url,opts={})=>{
- const u=String(url);
- if(u==='/api/points-leaderboard')return Response.json({leaders:[{rank:1,id:ID,display_name:'Test <member>',avatar_url:null,points:180}]});
- if(u==='/api/vip'&&!opts.method)return Response.json({points:balance});
- if(u.startsWith('/api/vip?target='))return Response.json({can_gift:true,points:balance});
- if(u.startsWith('/api/listing?'))return Response.json({listing:{mp_points:null}});
- if(u==='/api/vip'&&opts.method==='POST'){calls++;sent=JSON.parse(opts.body);balance-=sent.days;received+=sent.days;return Response.json({ok:true})}
+ if(url==='/api/invitations'&&opts.method==='POST')return Response.json({code:ID});
  return new Response('',{status:404});
 };
 window.addEventListener('DOMContentLoaded',async()=>{
- const out=document.getElementById('result'),q=s=>document.querySelector(s),check=(v,msg)=>{if(!v)throw Error(msg)};
- const wait=async(fn)=>{for(let i=0;i<100;i++){if(fn())return;await new Promise(r=>setTimeout(r,20))}throw Error('timeout')};
+ const out=document.getElementById('result');
  try{
-  await wait(()=>q('.mp-leader-name')&&q('#mmOwnPoints').textContent.includes('180'));
-  check(q('.mp-leader-name').textContent==='Test <member>','safe public name');
-  check(window.mmPointsBadge(null)===''&&window.mmPointsBadge(0).includes('0 MP'),'private and zero badges');
-  window.mmMountPointsProfile({id:ID,display_name:'Test member',mp_points:null,mp_giftable:true},q('#profileContent'));
-  check(q('.mp-profile-balance').hidden,'hidden recipient balance');
-  q('.mp-gift-button').click();await wait(()=>!q('.mp-profile-gift [type=submit]').disabled);
-  q('.mp-amount').value='50';q('.mp-profile-gift [type=submit]').click();
-  await wait(()=>q('.mp-gift-status').textContent==='Подарок отправлен'&&q('#mmOwnPoints').textContent.includes('130'));
-  check(calls===1&&sent.action==='gift_profile'&&sent.code===ID&&sent.days===50&&received===50,'direct 50 MP gift');
-  check(q('.mp-profile-balance').hidden,'gift does not expose private balance');
-  const box=q('.mp-profile-gift').getBoundingClientRect();check(box.width<=innerWidth,'gift fits viewport');
+  for(let i=0;i<100&&document.getElementById('inviteBox').hidden;i++)await new Promise(r=>setTimeout(r,20));
+  const box=document.getElementById('inviteBox'),link=document.getElementById('inviteLink');
+  if(box.hidden||new URL(link.value).searchParams.get('ref')!==ID)throw Error('invitation link unavailable');
+  if(box.getBoundingClientRect().width>innerWidth)throw Error('layout overflow');
   out.textContent='PASS:'+innerWidth;
  }catch(e){out.textContent='FAIL:'+e.message}
 });
 `;
-const pointsFixture='<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="/points-ui.css"></head><body><a id="mmOwnPoints" hidden>MP</a><section id="mmPointsLeaderboard" class="mp-leaderboard"><h2>TOP 20</h2><p class="mp-leader-sub"></p><div class="mp-leader-first"></div><details hidden><summary></summary><div class="mp-leader-rest"></div></details></section><div id="profileContent"><h2>Test member</h2><div class="profile-actions"></div></div><pre id="result">PENDING</pre><script>'+pointsBoot+'</script><script src="/points-ui.js"></script></body></html>';
-
+const inviteHtml=await fs.readFile(path.join(root,'invite.html'),'utf8');
+const pointsFixture=inviteHtml.replace(/<script>window.MM_authReady=.*?<\/script>/,'<script>'+inviteBoot+'</script>').replace(/<script type="module" src="\/auth\/refresh.js"><\/script>/,'').replace('</main>','<pre id="result">PENDING</pre></main>');
 const server=http.createServer(async(req,res)=>{try{const u=new URL(req.url,'http://localhost');if(u.pathname==='/points-test'){res.setHeader('Content-Type','text/html');return res.end(pointsFixture)}if(u.pathname==='/'){res.setHeader('Content-Type','text/html');return res.end(fixture)}if(u.pathname.startsWith('/api/')){res.statusCode=404;return res.end()}const p=path.resolve(root,'.'+u.pathname);if(!p.startsWith(root+path.sep)){res.statusCode=403;return res.end()}res.setHeader('Content-Type',p.endsWith('.css')?'text/css':p.endsWith('.js')?'text/javascript':'application/octet-stream');res.end(await fs.readFile(p))}catch{res.statusCode=404;res.end()}});
 await new Promise(r=>server.listen(0,'127.0.0.1',r));const port=server.address().port;
 try{for(const width of [320,390,1024]){
@@ -114,7 +100,7 @@ try{for(const width of [320,390,1024]){
   await cdp('Page.navigate',{url:'http://127.0.0.1:'+port+'/points-test'});
   marker='PENDING';
   for(let i=0;i<150;i++){const result=await cdp('Runtime.evaluate',{expression:"location.pathname==='/points-test'?(document.getElementById('result')?.textContent||'PENDING'):'PENDING'",returnByValue:true});marker=result.result.value;if(marker!=='PENDING')break;await sleep(100)}
-  console.log('Points viewport '+width+': '+marker);assert.equal(marker,'PASS:'+width);
+  console.log('Invitation viewport '+width+': '+marker);assert.equal(marker,'PASS:'+width);
  }finally{ws?.close();chrome.kill('SIGTERM');await new Promise(r=>{if(chrome.exitCode!==null||chrome.signalCode!==null)r();else{chrome.once('close',r);setTimeout(r,2000)}})}
 
  }finally{await rm(dir,{recursive:true,force:true,maxRetries:10,retryDelay:200})}
