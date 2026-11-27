@@ -4,5 +4,6 @@ Allow: /
 Disallow: /api/
 Disallow: /auth/
 Disallow: /admin.html
+Disallow: /admin-stories.html
 Disallow: /login
 Sitemap: https://murdilimax.com/sitemap.xml
