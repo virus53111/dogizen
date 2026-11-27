@@ -12,6 +12,23 @@ export async function replaceStoryPhotos(q,id,photos,remove=false){
  if(remove||photos.length)await q('DELETE FROM mm_story_photos WHERE story_id=$1',[id]);
  for(const p of photos)await q('INSERT INTO mm_story_photos(story_id,position,body) VALUES($1,$2,$3)',[id,p.position,p.body]);
 }
+// Called inside the same transaction as the owner-only story update.
+export async function editStoryPhotos(q,id,photos,{removeIds=[],removeAll=false}={}){
+ const existing=(await q('SELECT id,position FROM mm_story_photos WHERE story_id=$1 ORDER BY position',[id])).rows;
+ const remove=new Set(removeIds);
+ if(removeAll)for(const p of existing)remove.add(p.id);
+ if(photos.some(p=>p.position===0))for(const p of existing)if(p.position===0)remove.add(p.id);
+ const kept=existing.filter(p=>!remove.has(p.id));
+ const occupied=new Set(kept.map(p=>p.position));
+ const added=[];
+ for(const p of photos){
+  const pos=p.position===0?0:[1,2,3,4,5].find(n=>!occupied.has(n));
+  if(pos===undefined||occupied.has(pos))throw Object.assign(Error('В галерее уже пять фотографий. Отметьте ненужные фото для удаления.'),{status:400});
+  occupied.add(pos);added.push({...p,position:pos});
+ }
+ if(remove.size)await q('DELETE FROM mm_story_photos WHERE story_id=$1 AND id=ANY($2::uuid[])',[id,[...remove]]);
+ for(const p of added)await q('INSERT INTO mm_story_photos(story_id,position,body) VALUES($1,$2,$3)',[id,p.position,p.body]);
+}
 export function registerStoryPhotos(app,db,ownerAllowed){
  const serve=admin=>async(req,res,next)=>{
   try{

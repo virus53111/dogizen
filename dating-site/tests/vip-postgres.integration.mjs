@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import pg from 'pg';
 import express from 'express';
 import {registerStories} from '../render/stories.js';
-import {registerStoryPhotos,prepareStoryPhotos,replaceStoryPhotos} from '../render/story-photos.js';
+import {registerStoryPhotos,prepareStoryPhotos,replaceStoryPhotos,editStoryPhotos} from '../render/story-photos.js';
 import sharp from 'sharp';
 import fs from 'node:fs/promises';
 import {processVip,recordVipSession,awardReferral,vipLock,gift,POINTS_SUM} from '../render/vip.js';
@@ -90,6 +90,14 @@ test('PostgreSQL migration, repeat awards, account eligibility and concurrent gi
   await db.transaction(q=>replaceStoryPhotos(q,story.id,prepared));
   const images=(await db.query('SELECT id,position FROM mm_story_photos WHERE story_id=$1 ORDER BY position',[story.id])).rows;
   assert.equal(images.length,2);
+  await db.transaction(q=>editStoryPhotos(q,story.id,[prepared[1]]));
+  let after=(await db.query('SELECT id,position FROM mm_story_photos WHERE story_id=$1 ORDER BY position',[story.id])).rows;
+  assert.equal(after.length,3);assert.equal(after[0].id,images[0].id);assert.equal(after[1].id,images[1].id);
+  await db.transaction(q=>editStoryPhotos(q,story.id,[],{removeIds:[after[2].id]}));
+  after=(await db.query('SELECT id,position FROM mm_story_photos WHERE story_id=$1 ORDER BY position',[story.id])).rows;
+  assert.deepEqual(after,images);
+  await assert.rejects(db.transaction(q=>editStoryPhotos(q,story.id,Array.from({length:5},()=>prepared[1]))),/пять фотографий/);
+  assert.equal((await db.query('SELECT count(*)::int n FROM mm_story_photos WHERE story_id=$1',[story.id])).rows[0].n,2);
   const app=express();app.use((req,res,next)=>{req.user=req.get('x-test-owner')==='yes'?{id:'owner'}:null;next()});
   registerStoryPhotos(app,db,async u=>u?.id==='owner');registerStories(app,db,'<urlset></urlset>');
   const server=await new Promise(r=>{const x=app.listen(0,'127.0.0.1',()=>r(x))});
@@ -111,6 +119,8 @@ test('PostgreSQL migration, repeat awards, account eligibility and concurrent gi
    assert.equal((await fetch(base+'/story-photo/'+images[0].id)).status,404);
    assert.equal((await fetch(base+'/stories/'+slug+'/')).status,404);
    assert.doesNotMatch(await (await fetch(base+'/sitemap.xml')).text(),new RegExp(slug));
+  await db.query('DELETE FROM mm_stories WHERE id=$1',[story.id]);
+   assert.equal((await db.query('SELECT count(*)::int n FROM mm_story_photos WHERE story_id=$1',[story.id])).rows[0].n,0);
   }finally{await new Promise(r=>server.close(r))}
  }finally{await pool.end()}
 });
