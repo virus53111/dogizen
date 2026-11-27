@@ -1,0 +1,40 @@
+import { readFile } from 'node:fs/promises';
+import path from 'node:path';
+import { cityNamesInRange } from './latvia-cities.js';
+
+const labels = {
+  ru: 'Опубликованные анкеты в Риге',
+  en: 'Published profiles in Riga',
+  de: 'Veröffentlichte Profile in Riga',
+  lv: 'Publicētie profili Rīgā',
+  lt: 'Paskelbtos anketos Rygoje',
+  et: 'Avaldatud profiilid Riias',
+};
+
+export async function registerRigaPages(app, db, directory) {
+  let expires = 0;
+  let total = null;
+  let pending;
+  function count() {
+    if (Date.now() < expires) return total;
+    pending ??= db.query(`SELECT COUNT(*)::integer AS total FROM mm_public_listings
+      WHERE status='approved' AND country='LV' AND city=ANY($1::text[])`, [cityNamesInRange('Рига')])
+      .then(result => { total = result.rows[0].total; expires = Date.now() + 60000; })
+      .catch(() => { total = null; expires = Date.now() + 10000; })
+      .finally(() => { pending = undefined; });
+    return pending.then(() => total);
+  }
+
+  for (const [lang, label] of Object.entries(labels)) {
+    const prefix = lang === 'ru' ? '' : '/' + lang;
+    const url = prefix + '/riga/';
+    const page = await readFile(path.join(directory, prefix.slice(1), 'riga/index.html'), 'utf8');
+    app.get(new RegExp('^' + url + '$'), async (req, res, next) => {
+      try {
+        const n = await count();
+        const summary = Number.isSafeInteger(n) ? '<p><strong>' + label + ': ' + n + '</strong></p>' : '';
+        res.set('Cache-Control', 'no-cache').send(page.replace('<!--riga-count-->', summary));
+      } catch (error) { next(error); }
+    });
+  }
+}
