@@ -32,7 +32,12 @@ window.mmMountSupport=async(root, onSignInRequired)=>{
   const d=await api('support');if(!box.isConnected)return;box.replaceChildren(el('h3',W(14)));const notice=msg(box);
   const subject=el('input');subject.placeholder=W(15);subject.maxLength=100;subject.setAttribute('aria-label',W(15));
   const body=el('textarea');body.placeholder=W(16);body.maxLength=2000;body.setAttribute('aria-label',W(16));
-  const send=btn(W(17),()=>busy(send,notice,async()=>{await api('support',{subject:subject.value,body:body.value});await refresh()}));box.append(subject,body,send);
+  const send=btn(W(17),()=>busy(send,notice,async()=>{await api('support',{subject:subject.value,body:body.value});await refresh()}));if(root.id==='support'){
+    const subjectLabel=el('label',W(15)),bodyLabel=el('label',W(16));
+    subject.placeholder='';body.placeholder='';
+    subjectLabel.append(subject);bodyLabel.append(body);
+    box.append(subjectLabel,bodyLabel,send);
+  }else{box.append(subject,body,send)}
   for(const t of d.tickets){const row=el('article');row.append(el('strong',t.subject),el('p',t.body),el('p',t.reply?W(18)+': '+t.reply:W(19)));box.append(row)}
  };try{await refresh()}catch(e){if(e.status===401 && onSignInRequired){onSignInRequired();return}box.append(el('p',e.message))}
 };
@@ -51,7 +56,7 @@ async function openSupportFromLink() {
   dialog.setAttribute('aria-label', window.mmEngagementText(14));
   const close = document.createElement('button');
   close.type = 'button';
-  close.className = 'btn btn-outline';
+  close.className = 'support-close';
   close.textContent = '×';
   const labels = {ru:'Закрыть', en:'Close', de:'Schließen', lv:'Aizvērt', lt:'Uždaryti', et:'Sulge'};
   close.setAttribute('aria-label', labels[document.documentElement.lang] || labels.en);
