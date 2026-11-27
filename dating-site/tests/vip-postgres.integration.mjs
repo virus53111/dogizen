@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import pg from 'pg';
+import express from 'express';
+import {registerStories} from '../render/stories.js';
 import fs from 'node:fs/promises';
 import {processVip,recordVipSession,awardReferral,vipLock,gift,POINTS_SUM} from '../render/vip.js';
 import {leaderboard,publicPoints,giftableProfile} from '../render/points-public.js';
@@ -78,5 +80,24 @@ test('PostgreSQL migration, repeat awards, account eligibility and concurrent gi
   await db.transaction(q=>recordInvitation(q,'e',code,true));
   assert.equal((await db.query("SELECT count(*)::integer n FROM mm_vip_referrals WHERE invitee='e' AND inviter='a'")).rows[0].n,1);
   assert.equal((await db.query('SELECT count(*)::integer n FROM mm_vip_events')).rows[0].n,before);
+  // Story fixture exists exclusively in the isolated local database.
+  const slug='test-walk-1234567890';
+  const story=(await db.query("INSERT INTO mm_stories(slug,title,author_name,language,category,body) VALUES($1,'A walk in Riga','Test author','en','romance','They walked through the city and talked about their plans.') RETURNING id",[slug])).rows[0];
+  const app=express();registerStories(app,db,'<urlset></urlset>');
+  const server=await new Promise(r=>{const x=app.listen(0,'127.0.0.1',()=>r(x))});
+  const base='http://127.0.0.1:'+server.address().port;
+  try{
+   assert.equal((await fetch(base+'/stories/'+slug+'/')).status,404);
+   assert.doesNotMatch(await (await fetch(base+'/sitemap.xml')).text(),new RegExp(slug));
+   await db.query("UPDATE mm_stories SET status='published',published_at=NOW() WHERE id=$1",[story.id]);
+   const article=await fetch(base+'/stories/'+slug+'/');assert.equal(article.status,200);assert.match(await article.text(),/A walk in Riga/);
+   assert.match(await (await fetch(base+'/stories/romance/')).text(),new RegExp(slug));
+   assert.match(await (await fetch(base+'/sitemap.xml')).text(),new RegExp(slug));
+   await db.query("UPDATE mm_stories SET title='New title' WHERE id=$1",[story.id]);
+   assert.match(await (await fetch(base+'/stories/'+slug+'/')).text(),/New title/);
+   await db.query("UPDATE mm_stories SET status='draft' WHERE id=$1",[story.id]);
+   assert.equal((await fetch(base+'/stories/'+slug+'/')).status,404);
+   assert.doesNotMatch(await (await fetch(base+'/sitemap.xml')).text(),new RegExp(slug));
+  }finally{await new Promise(r=>server.close(r))}
  }finally{await pool.end()}
 });

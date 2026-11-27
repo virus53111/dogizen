@@ -1,6 +1,7 @@
 import { permitsPendingMember } from './pending-member.js';
 import express from 'express';
 import {CODE,recordInvitation} from './invitations.js';
+import {registerStories} from './stories.js';
 import { notifyMessage } from './push.js';
 import { onlineCount, recentPhotos } from './catalog-extras.js';
 import { createHash } from 'node:crypto';
@@ -247,7 +248,7 @@ app.post('/api/room', userOnly, async (req, res, next) => {
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 6, fields: 40, parts: 46 } });
 const adminUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 4 * 1024 * 1024, files: 1, fields: 40, parts: 41 } });
 const routes = ['locations', 'listings', 'listing', 'profile-community', 'member-activity', 'profile-stats', 'recommendations', 'traffic', 'push', 'engagement', 'invitations', 'private-album', 'support', 'create', 'mine', 'favorites', 'likes', 'report', 'chat/list', 'chat/start',
-  'chat/messages', 'chat/photos', 'chat/block', 'chat/report', 'legacy/claim', 'claim', 'privacy', 'privacy/export', 'admin/me', 'admin/overview', 'admin/traffic', 'admin/support', 'admin/listings', 'admin/manual', 'admin/manage', 'admin/reports', 'admin/claim-invite', 'admin/privacy-requests'];
+  'chat/messages', 'chat/photos', 'chat/block', 'chat/report', 'legacy/claim', 'claim', 'privacy', 'privacy/export', 'admin/stories', 'admin/me', 'admin/overview', 'admin/traffic', 'admin/support', 'admin/listings', 'admin/manual', 'admin/manage', 'admin/reports', 'admin/claim-invite', 'admin/privacy-requests'];
 for (const slug of routes) {
   const mod = await import('../api/' + slug + '.js');
   const acceptsUpload = ['create','admin/manual','admin/manage','chat/photos','private-album'].includes(slug);
@@ -281,6 +282,7 @@ app.get('/api/recent-photos', async (req,res,next)=> {
   res.set('Cache-Control','no-store');
   try { res.json(await recentPhotos(db)); } catch(e) { next(e); }
 });
+registerStories(app,db,await fs.readFile(path.join(root,'public/sitemap.xml'),'utf8'));
 app.get('/', (req, res) => res.sendFile(path.join(root, 'public/index.html')));
 app.use(publicFiles);
 app.use((req, res) => res.status(404).json({ error: 'Страница не найдена' }));

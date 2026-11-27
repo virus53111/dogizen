@@ -1,0 +1,5 @@
+# Stories 18+ — editorial library
+- Public /stories/ and category pages, stable transliterated slug with collision-resistant suffix, server-rendered text.
+- Owner editor /admin-stories.html, verified owner + database allowlist, draft/publish/unpublish, author name, six content languages, optional SEO overrides. Editorial confirmation required for publication. Only non-explicit, consensual adult relationship stories, with rights secured; fiction must be marked correctly. No scraping or automatic import. 
+- Published articles have canonical, description, Open Graph and Article JSON-LD. Existing sitemap is augmented from published rows, empty categories are noindex. No promises of Google ranking.
+- Content is plain text escaped at render; no user HTML. New database table is additive. Current interface Russian; links translated on six main catalog pages. Initial library intentionally empty. Member submissions/comments/likes are not enabled in this owner-only release.

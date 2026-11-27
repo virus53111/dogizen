@@ -1,0 +1,31 @@
+import {db} from 'hatchable';
+import {validateStory,makeSlug} from '../../render/stories.js';
+export const access='user';
+export const methods=['GET','POST'];
+export default async function(req,res){
+ res.setHeader('Cache-Control','no-store');
+ const u=req.user;
+ if(!u?.verified||u.email?.toLowerCase()!=='dshtriters@gmail.com')return res.status(403).json({error:'Доступ только администратору'});
+ const allowed=await db.query('SELECT 1 FROM users u JOIN mm_admin_allowlist a ON LOWER(u.email)=a.email WHERE u.id=$1 AND u.email_verified_at IS NOT NULL',[u.id]);
+ if(!allowed.rows.length)return res.status(403).json({error:'Доступ запрещён'});
+ const id=req.method==='GET'?req.query.id:req.body?.id;
+ if(id&&!/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(id))return res.status(400).json({error:'Некорректный ID'});
+ if(req.method==='GET'){
+  if(id){const s=(await db.query('SELECT * FROM mm_stories WHERE id=$1',[id])).rows[0];return s?res.json({story:s}):res.status(404).json({error:'Не найдено'});}
+  const page=Math.max(1,Math.min(1000,Math.floor(Number(req.query.page)||1)));
+  const stories=(await db.query('SELECT id,slug,title,author_name,language,category,status,updated_at FROM mm_stories ORDER BY updated_at DESC,id LIMIT 51 OFFSET $1',[(page-1)*50])).rows;
+  return res.json({stories:stories.slice(0,50),has_more:stories.length>50});
+ }
+ if(req.body?.action==='unpublish'){
+  if(!id)return res.status(400).json({error:'Не указан ID'});
+  const s=(await db.query("UPDATE mm_stories SET status='draft',updated_at=NOW() WHERE id=$1 RETURNING id,slug,status",[id])).rows[0];
+  return s?res.json({story:s}):res.status(404).json({error:'Не найдено'});
+ }
+ if(req.body?.action!=='save')return res.status(400).json({error:'Недопустимое действие'});
+ const s=validateStory(req.body);
+ if(!s)return res.status(400).json({error:'Проверьте поля и подтвердите редакционные правила перед публикацией'});
+ const params=[s.title,s.author_name,s.language,s.category,s.body,s.seo_title,s.seo_description,s.status];
+ const sql=id?"UPDATE mm_stories SET title=$1,author_name=$2,language=$3,category=$4,body=$5,seo_title=$6,seo_description=$7,status=$8,updated_at=NOW(),published_at=CASE WHEN $8='published' THEN COALESCE(published_at,NOW()) ELSE published_at END WHERE id=$9 RETURNING id,slug,status":"INSERT INTO mm_stories(title,author_name,language,category,body,seo_title,seo_description,status,slug,published_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,CASE WHEN $8='published' THEN NOW() ELSE NULL END) RETURNING id,slug,status";
+ const result=(await db.query(sql,[...params,id||makeSlug(s.title)])).rows[0];
+ return result?res.json({story:result}):res.status(404).json({error:'Не найдено'});
+}
