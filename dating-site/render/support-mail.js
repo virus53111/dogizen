@@ -37,7 +37,7 @@ export function startSupportMail(db) {
   let recipient = process.env.SUPPORT_NOTIFY_TO;
   async function flush() {
     if (!recipient) {
-      const result = await db.query("SELECT current_setting('murdilimax.support_notify_to', true) AS recipient");
+      const result = await db.query("SELECT recipient FROM mm_support_mail_settings WHERE singleton");
       recipient = result.rows[0]?.recipient;
     }
     await sendPending(db, recipient);
