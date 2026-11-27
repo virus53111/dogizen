@@ -58,3 +58,9 @@ test('user submissions always enter private moderation queue',async()=>{
  assert.match(api,/status:'draft'/);assert.match(api,/submitted_by,submission_pending/);assert.match(api,/count>=3/);
  assert.match(server,/storyUpload = \['story-submit','admin\/stories'\]/);assert.match(editor,/name="cover"/);assert.match(editor,/name="photos"/);
 });
+
+test('administrator can delete a story and select individual photos without replacing gallery',async()=>{
+ const api=await fs.readFile('api/admin/stories.js','utf8'),ui=await fs.readFile('public/admin-stories.js','utf8'),html=await fs.readFile('public/admin-stories.html','utf8');
+ assert.match(api,/confirm_delete!==true/);assert.match(api,/DELETE FROM mm_stories WHERE id=\$1/);
+ assert.match(api,/editStoryPhotos/);assert.match(ui,/remove_photo_ids/);assert.match(ui,/Редактировать \/ фото/);assert.match(html,/id="form" hidden/);
+});
