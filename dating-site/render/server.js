@@ -1,3 +1,4 @@
+import { startSupportMail } from './support-mail.js';
 import { permitsPendingMember } from './pending-member.js';
 import express from 'express';
 import {CODE,recordInvitation} from './invitations.js';
@@ -299,5 +300,6 @@ app.use((err, req, res, next) => {
   });
 });
 await init();
+startSupportMail(db);
 const port = Number(process.env.PORT || 10000);
 app.listen(port, '0.0.0.0', () => console.log('MurdiliMax listening on ' + port));

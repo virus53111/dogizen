@@ -3,7 +3,7 @@ const words={"ru":["Поднять анкету бесплатно","Следу�
 window.mmEngagementText=W;
 const el=(tag,txt)=>{const n=document.createElement(tag);if(txt)n.textContent=txt;return n};
 const btn=(txt,fn)=>{const b=el('button',txt);b.type='button';b.className='btn btn-outline';b.onclick=fn;return b};
-async function api(path,data){const r=await fetch('/api/'+path,data instanceof FormData?{method:'POST',body:data,cache:'no-store'}:data?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),cache:'no-store'}:{cache:'no-store'});if(!r.ok)throw Error(W(20));return r.json()}
+async function api(path,data){const r=await fetch('/api/'+path,data instanceof FormData?{method:'POST',body:data,cache:'no-store'}:data?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),cache:'no-store'}:{cache:'no-store'});if(!r.ok)throw Object.assign(Error(W(20)),{status:r.status});return r.json()}
 function section(title){const b=el('section');b.className='mm-community mm-engagement';b.append(el('h3',title));return b}
 function msg(box){const m=el('p');m.setAttribute('role','status');box.append(m);return m}
 async function busy(button,notice,fn){button.disabled=true;try{await fn()}catch(e){notice.textContent=e.message}finally{if(button.isConnected)button.disabled=false}}
@@ -27,13 +27,46 @@ window.mmMountAlbum=async(id,root,owner=false)=>{
  };
  try{if(!owner&&!await getSession()){box.remove();return}await refresh()}catch{box.remove()}
 };
-window.mmMountSupport=async(root)=>{
+window.mmMountSupport=async(root, onSignInRequired)=>{
  const box=section(W(14));root.append(box);const refresh=async()=>{
   const d=await api('support');if(!box.isConnected)return;box.replaceChildren(el('h3',W(14)));const notice=msg(box);
   const subject=el('input');subject.placeholder=W(15);subject.maxLength=100;subject.setAttribute('aria-label',W(15));
   const body=el('textarea');body.placeholder=W(16);body.maxLength=2000;body.setAttribute('aria-label',W(16));
   const send=btn(W(17),()=>busy(send,notice,async()=>{await api('support',{subject:subject.value,body:body.value});await refresh()}));box.append(subject,body,send);
   for(const t of d.tickets){const row=el('article');row.append(el('strong',t.subject),el('p',t.body),el('p',t.reply?W(18)+': '+t.reply:W(19)));box.append(row)}
- };try{await refresh()}catch(e){box.append(el('p',e.message))}
+ };try{await refresh()}catch(e){if(e.status===401 && onSignInRequired){onSignInRequired();return}box.append(el('p',e.message))}
 };
 })();
+
+async function openSupportFromLink() {
+  if (new URLSearchParams(location.search).get('support') !== '1') return;
+  const gate = document.getElementById('ageGate');
+  if (gate && !gate.classList.contains('dismissed')) {
+    document.getElementById('enterAge').addEventListener('click', openSupportFromLink, {once:true});
+    return;
+  }
+  await window.MM_authReady;
+  const dialog = document.createElement('dialog');
+  dialog.id = 'support';
+  dialog.setAttribute('aria-label', window.mmEngagementText(14));
+  const close = document.createElement('button');
+  close.type = 'button';
+  close.className = 'btn btn-outline';
+  close.textContent = '×';
+  const labels = {ru:'Закрыть', en:'Close', de:'Schließen', lv:'Aizvērt', lt:'Uždaryti', et:'Sulge'};
+  close.setAttribute('aria-label', labels[document.documentElement.lang] || labels.en);
+  close.onclick = () => dialog.close();
+  dialog.append(close);
+  document.body.append(dialog);
+  dialog.addEventListener('close', () => {
+    const url = new URL(location.href);
+    url.searchParams.delete('support');
+    url.hash = '';
+    history.replaceState(history.state, '', url);
+    dialog.remove();
+    document.querySelector('a[href="?support=1#support"]')?.focus();
+  }, {once:true});
+  dialog.showModal();
+  await window.mmMountSupport(dialog, () => location.assign(loginPath()));
+}
+window.addEventListener('DOMContentLoaded', openSupportFromLink);

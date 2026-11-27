@@ -54,3 +54,11 @@ Only **public** listing data was backed up. Private messages/users/photos may be
 - The existing 50 geographic presets in `public/admin-manual.js` now prefill 50 distinct, editable ad copy drafts (25 women-oriented and 25 men-oriented). They are client-side form templates, **not** accounts or visible listings, and no database write occurs on selection.
 - Each publication still requires the operator to verify age/location/description, upload the actual consenting adult's photo, and affirm consent. `api/admin/manual.js` rejects creation without an image or the two required attestations. Pseudonyms and ages in starter copy must be corrected where they do not match the actual person.
 - Published and hidden profiles remain manageable in the same admin interface. Public catalogue remains unaffected until the owner submits an individual listing.
+
+### Support notifications on QDE
+
+Set `SUPPORT_NOTIFY_TO` in the private application service environment and restart
+the application. Configure the VPS mail transport at `/usr/sbin/sendmail` for
+outbound delivery. Verify a new ticket in the admin inbox and confirm arrival
+in the recipient mailbox. Notification messages contain only the admin inbox
+link. Pending notifications retry after a transport failure.
