@@ -1,6 +1,5 @@
 import { lastSeen, newMember } from "../render/member-activity.js";
 import { db } from "hatchable";
-import {publicPoints,giftableProfile} from "../render/points-public.js";
 export const access="public";
 export const methods=["GET"];
 export default async function(req,res){
@@ -8,7 +7,7 @@ export default async function(req,res){
  const id=String(req.query?.id||"");
  if(!/^[0-9a-f-]{36}$/i.test(id))return res.status(400).json({error:"Некорректный ID"});
  const r=await db.query(`SELECT id,display_name,headline,age,country,city,district,category,languages,description,avatar_url,featured,is_commercial,created_at,messaging_enabled,
- ${lastSeen} AS last_seen, ${newMember} AS is_new_member, ${publicPoints}, ${giftableProfile},
+ ${lastSeen} AS last_seen, ${newMember} AS is_new_member,
  COALESCE((SELECT d.looking_for FROM mm_member_profile_details d WHERE d.listing_id=mm_public_listings.id),'') AS looking_for,
  COALESCE((SELECT d.interests FROM mm_member_profile_details d WHERE d.listing_id=mm_public_listings.id),'') AS interests
  FROM mm_public_listings WHERE id=$1 AND status='approved'`,[id]);

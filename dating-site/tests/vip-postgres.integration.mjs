@@ -4,6 +4,7 @@ import pg from 'pg';
 import fs from 'node:fs/promises';
 import {processVip,recordVipSession,awardReferral,vipLock,gift,POINTS_SUM} from '../render/vip.js';
 import {leaderboard,publicPoints,giftableProfile} from '../render/points-public.js';
+import {recordInvitation,invitationCode} from '../render/invitations.js';
 const url=process.env.VIP_TEST_DATABASE_URL;
 if(!url||new URL(url).hostname!=='127.0.0.1'||new URL(url).pathname!=='/vip_test')throw Error('Use isolated local vip_test database only');
 test('PostgreSQL migration, repeat awards, account eligibility and concurrent gifts',async()=>{
@@ -71,5 +72,11 @@ test('PostgreSQL migration, repeat awards, account eligibility and concurrent gi
     await db.query("INSERT INTO mm_vip_bans(user_id,reason) VALUES('b','test fraud')");
   await db.query("UPDATE mm_listings SET status='rejected' WHERE id=$1",[id]);
   await assert.rejects(db.query("UPDATE mm_listings SET status='approved' WHERE id=$1",[id]),/Banned account/);
+  const before=(await db.query('SELECT count(*)::integer n FROM mm_vip_events')).rows[0].n;
+  assert.equal(await invitationCode(db,'a'),code);
+  await db.transaction(q=>recordInvitation(q,'e',code,true));
+  await db.transaction(q=>recordInvitation(q,'e',code,true));
+  assert.equal((await db.query("SELECT count(*)::integer n FROM mm_vip_referrals WHERE invitee='e' AND inviter='a'")).rows[0].n,1);
+  assert.equal((await db.query('SELECT count(*)::integer n FROM mm_vip_events')).rows[0].n,before);
  }finally{await pool.end()}
 });

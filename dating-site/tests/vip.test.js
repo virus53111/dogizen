@@ -9,24 +9,35 @@ test('invalid or insufficient gifts do not write balances',async()=>{const code=
 test('referral cannot be rewarded without eligibility and uses stable event key',async()=>{assert.equal(await awardReferral(async()=>({rows:[]}),'new'),false);const calls=[];const q=async(sql,args)=>{calls.push({sql,args});return {rows:sql.includes('SELECT r.inviter')?[{inviter:'original',invitee:'new'}]:[]}};assert.equal(await awardReferral(q,'new'),true);assert.deepEqual(calls[1].args,['original','referral:new',5]);assert.match(calls[1].sql,/ON CONFLICT/);});
 test('existing account cannot be attributed as a new referral',async()=>{const calls=[];await recordVipSession(async(sql)=>{calls.push(sql);return {rows:[{ip_key:'test'}]}},'old','11111111-1111-4111-8111-111111111111','203.0.113.4',false);assert.ok(!calls.some(s=>s.includes('INSERT INTO mm_vip_referrals')))});
 
-test('VIP page needs no email verification and offers recipient search',async()=>{
- const fs=await import('node:fs/promises');
- const html=await fs.readFile('public/vip.html','utf8'),js=await fs.readFile('public/vip.js','utf8'),api=await fs.readFile('api/vip.js','utf8');
- assert.doesNotMatch(html,/vipVerify|vip-verify\.js/);
- assert.doesNotMatch(js,/d\.verified|vipVerify/);
- assert.match(html,/id="vipRecipientChoice"/);
- assert.match(js,/\/api\/vip\?recipient=/);
- assert.match(api,/await processVip\(db\)/);
-});
 
 test('180 MP equals six fixed 30-day reward months; one ledger balance includes both legacy sources',()=>{assert.equal(CAMPAIGN_POINTS,6*POINTS_PER_MONTH);assert.match(POINTS_SUM,/days::bigint \+ 30 \* months::bigint/)});
 
-test('points profile, wallet and leaderboard share public opt-in',async()=>{
+
+test('live mode exposes only neutral invitations, no reward processing or public balance',async()=>{
  const fs=await import('node:fs/promises');
- const ui=await fs.readFile('public/points-ui.js','utf8'),wallet=await fs.readFile('public/vip.html','utf8'),profile=await fs.readFile('public/catalog-v2.js','utf8'),home=await fs.readFile('public/index.html','utf8'),migration=await fs.readFile('migrations/035_public_points.sql','utf8');
- assert.match(migration,/mp_public BOOLEAN NOT NULL DEFAULT FALSE/);
- assert.match(wallet,/id="mpVisibility"/);
- assert.match(profile,/mmMountPointsProfile/);
- assert.match(ui,/gift_profile/);
- assert.match(home,/id="mmPointsLeaderboard"/);
+ const server=await fs.readFile('render/server.js','utf8'),route=await fs.readFile('api/invitations.js','utf8'),ui=await fs.readFile('public/invite.js','utf8');
+ assert.doesNotMatch(server,/runVip|processVip|recordVipSession/);
+ assert.match(server,/recordInvitation\(q,user.id,getCookie\(req,'mm_ref'\),inserted.rows.length>0\)/);
+ assert.match(server,/'invitations', 'private-album'/);
+ assert.match(server,/app.all\(\['\/api\/vip','\/api\/points-leaderboard','\/api\/admin\/vip'\]/);
+ assert.match(route,/invitationCode/);
+ assert.match(ui,/searchParams.set\('ref',d.code\)/);
+ for(const l of ['ru','en','de','lv','lt','et']){
+  const html=await fs.readFile('public/'+(l==='ru'?'':l+'/')+'index.html','utf8');
+  assert.match(html,/\/invite.html\?lang=/);
+  assert.doesNotMatch(html,/mmVipBanner|mmPointsLeaderboard|points-ui|\/vip\.html|180 MurdiliMax Points/);
+ }
+ for(const name of ['app.js','catalog-v2.js'])assert.doesNotMatch(await fs.readFile('public/'+name,'utf8'),/mmPointsBadge|mmMountPointsProfile/);
+ for(const name of ['listing.js','listings.js'])assert.doesNotMatch(await fs.readFile('api/'+name,'utf8'),/publicPoints|giftableProfile/);
+});
+test('existing invitation attribution is idempotent and does not collect IP or issue rewards',async()=>{
+ const {recordInvitation,invitationCode}=await import('../render/invitations.js');
+ const calls=[],code='11111111-1111-4111-8111-111111111111';
+ const q=async(sql,args)=>{calls.push({sql,args});return {rows:[{code}]}};
+ await recordInvitation(q,'new',code,true);
+ await recordInvitation(q,'existing',code,false);
+ await recordInvitation(q,'new','invalid',true);
+ assert.equal(calls.length,1);assert.match(calls[0].sql,/ON CONFLICT\(invitee\) DO NOTHING/);
+ assert.doesNotMatch(calls[0].sql,/mm_vip_events|mm_vip_activity|ip_hash/);
+ assert.equal(await invitationCode({query:q},'existing'),code);
 });
