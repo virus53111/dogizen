@@ -58,3 +58,25 @@ test('both forms show specific errors while keeping contact consent and publicat
   assert.match(page,/name="publicContactsConfirmed"/);
  }
 });
+
+test('contact labels, separators and multiline ordinary descriptions allow opted-in own contacts',()=>{
+ const base='Looking for company for a walk and a friendly conversation.';
+ for(const details of [
+  'Telegram --@example_contact',
+  'Telegram: @example_contact',
+  'Telegram — @example_contact',
+  'Email: hello@example.invalid',
+  'Phone: +47 400 00 000',
+  'Telegram --@example_contact\nEmail: hello@example.invalid\nPhone: +47 400 00 000'
+ ]){
+  assert.equal(selfPublication({...consent,description:base+'\n'+details}).allowed,true,details);
+ }
+ const description=base+'\nTelegram --@example_contact';
+ assert.equal(selfPublication({...consent,description,publicContactsConfirmed:false}).allowed,false);
+ assert.equal(selfPublication({...consent,description:description+'\nhttps://example.invalid'}).allowed,false);
+ for(const offer of ['paid sexual video calls','sex video call and it is affordable','erotic video calls for money']){
+  const decision=selfPublication({...consent,description:description+'\n'+offer});
+  assert.equal(decision.allowed,false);
+  assert.ok(decision.signals.includes('possible_paid_service'));
+ }
+});
