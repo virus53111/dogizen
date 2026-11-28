@@ -3,7 +3,7 @@ import path from 'node:path';
 import { cityNamesInRange } from './latvia-cities.js';
 import { esc, origin } from './stories.js';
 import { shareLinks } from './public-share.js';
-import { newCities, directoryWords, directoryPath, directoryLanguages, indexedDirectoryLanguages } from './growth-geography.js';
+import { newCities, directoryWords, adultCityWords, directoryPath, directoryLanguages, indexedDirectoryLanguages } from './growth-geography.js';
 
 // Keep existing URLs and extend only to curated, supported catalogue cities.
 export const establishedCities = [
@@ -52,6 +52,15 @@ export function cityLinks(rows,city){
  return '<section class="seo-section"><h2>'+esc(words[city[2]][4])+'</h2><ul>'+links.map(g=>'<li><a href="'+goalUrl(city,g)+'">'+esc(heading(city,g))+'</a> · '+totalFor(rows,city,g)+'</li>').join('')+'</ul></section>';
 }
 export function growthSitemap(xml,rows){
+ // Keep established pages available to people, but do not index sparse city catalogues.
+ const byUrl=new Map(establishedCities.map(c=>[origin+c[3],c]));
+ xml=xml.replace(/<url(?:\s[^>]*)?>[\s\S]*?<\/url>/g,block=>{
+  const city=byUrl.get(/<loc>([^<]+)<\/loc>/.exec(block)?.[1]);
+  if(!city)return block;
+  if(totalFor(rows,city,'all')<minimum)return '';
+  if(city[1]==='Рига')return block;
+  return withGeographyDate(block);
+ });
  const entries=cities.flatMap(c=>goals.filter(g=>eligible(rows,c,g)).map(g=>'<url><loc>'+origin+goalUrl(c,g)+'</loc>'+variants(rows,c,g).map(v=>'<xhtml:link rel="alternate" hreflang="'+v[2]+'" href="'+origin+goalUrl(v,g)+'" />').join('')+'</url>'));
  entries.push(...directorySitemapEntries(rows));
  return entries.length?xml.replace('</urlset>',entries.join('\n')+'\n</urlset>'):xml;
@@ -102,8 +111,8 @@ export async function registerGrowthPages(app,db,directory){
   }else if(city[1]!=='Рига'){
    const page=await readFile(path.join(directory,city[3].slice(1),'index.html'),'utf8');
    route(city[3],async(req,res)=>{
-    const rows=await counts().catch(()=>new Map());
-    res.set('Cache-Control','no-cache').type('html').send(page.replace('</main>',cityLinks(rows,city)+'</main>'));
+    let rows;try{rows=await counts()}catch{return unavailable(res)}
+    res.set('Cache-Control','no-cache').type('html').send(establishedCityPage(page,rows,city));
    });
   }
   for(const goal of goals){
@@ -117,11 +126,33 @@ export async function registerGrowthPages(app,db,directory){
  }
  return {
   async links(url){const city=cities.find(c=>c[3]===url);return city?cityLinks(await counts().catch(()=>new Map()),city):''},
-  async sitemap(xml){return growthSitemap(xml,await counts().catch(()=>new Map()))}
+  async sitemap(xml){return growthSitemap(xml,await counts())},
+  async indexable(url){const city=cities.find(c=>c[3]===url);return !!city&&totalFor(await counts(),city,'all')>=minimum}
  };
 }
 function prefix(lang){return lang==='ru'?'/':'/'+lang+'/'}
-function cityTitle(city){return directoryWords[city[2]][4]+' '+city[4]}
+function cityTitle(city){return adultCityWords[city[2]].title(city[4])}
+const geographyDate='<lastmod>2026-11-28</lastmod>';
+function withGeographyDate(block){return block.includes('<lastmod>')?block.replace(/<lastmod>[^<]+<\/lastmod>/,geographyDate):block.replace('</loc>','</loc>'+geographyDate)}
+export function cityIndexMeta(html,index){
+ if(!index){
+  if(/<meta name="robots"[^>]*>/.test(html))return html.replace(/<meta name="robots"[^>]*>/,'<meta name="robots" content="noindex,follow">');
+  return html.replace('</head>','<meta name="robots" content="noindex,follow"></head>');
+ }
+ return html;
+}
+export function noncommercialCityLinks(html){return html.replace(/(href="[^"<>]*\?country=[A-Z]{2}&amp;city=[^"<>]*?)(#catalog")/g,(all,start,end)=>start.includes('commercial=')?all:start+'&amp;commercial=0'+end)}
+export function establishedCityPage(html,rows,city){
+ const count=totalFor(rows,city,'all'),lang=city[2],title=cityTitle(city),description=adultCityWords[lang].description(city[4]);
+ const safeTitle=esc(title+' · 18+ | MurdiliMax'),safeDescription=esc(description);
+ const page=html.replace(/<title>[^<]*<\/title>/,()=>'<title>'+safeTitle+'</title>')
+  .replace(/<meta name="description" content="[^"]*">/,()=>'<meta name="description" content="'+safeDescription+'">')
+  .replace(/(<meta property="og:title" content=")[^"]*(">)/g,(_,a,b)=>a+safeTitle+b)
+  .replace(/(<meta property="og:description" content=")[^"]*(">)/g,(_,a,b)=>a+safeDescription+b)
+  .replace(/<h1>[^<]*<\/h1>/,()=>'<h1>'+esc(title)+'</h1><p>'+safeDescription+'</p><p><strong>'+esc(directoryWords[lang][1])+': '+count+'</strong></p>')
+  .replace('</main>',cityLinks(rows,city)+'</main>');
+ return cityIndexMeta(noncommercialCityLinks(page),count>=minimum);
+}
 export function activeCities(rows,lang){
  const byCity=new Map();
  for(const c of cities){
@@ -136,9 +167,9 @@ function directoryAlternates(rows){
  return indexedDirectoryLanguages.filter(lang=>directoryIndexable(rows,lang)).map(lang=>[lang,directoryPath(lang)]);
 }
 export function directorySitemapEntries(rows){
- const entries=newCities.filter(c=>totalFor(rows,c,'all')>=minimum).map(c=>'<url><loc>'+origin+c[3]+'</loc></url>');
+ const entries=newCities.filter(c=>totalFor(rows,c,'all')>=minimum).map(c=>'<url><loc>'+origin+c[3]+'</loc>'+geographyDate+'</url>');
  for(const [lang,p] of directoryAlternates(rows)){
-  entries.push('<url><loc>'+origin+p+'</loc>'+directoryAlternates(rows).map(([l,u])=>'<xhtml:link rel="alternate" hreflang="'+l+'" href="'+origin+u+'" />').join('')+'</url>');
+  entries.push('<url><loc>'+origin+p+'</loc>'+geographyDate+directoryAlternates(rows).map(([l,u])=>'<xhtml:link rel="alternate" hreflang="'+l+'" href="'+origin+u+'" />').join('')+'</url>');
  }
  return entries;
 }
@@ -148,16 +179,16 @@ function geographyPage({lang,title,url,description,body,index,alternates=[]}){
  return '<!doctype html><html lang="'+lang+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="rating" content="adult"><meta name="robots" content="'+(index?'index,follow':'noindex,follow')+'"><title>'+esc(title)+' · 18+ | MurdiliMax</title><meta name="description" content="'+esc(description)+'"><link rel="canonical" href="'+canonical+'">'+alternates.map(([l,p])=>'<link rel="alternate" hreflang="'+l+'" href="'+origin+p+'">').join('')+'<meta property="og:type" content="website"><meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(description)+'"><meta property="og:url" content="'+canonical+'"><meta property="og:site_name" content="MurdiliMax"><meta property="og:image" content="'+origin+'/lux-couple.jpg"><script type="application/ld+json">'+schema+'</script><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/luxury.css"><link rel="stylesheet" href="/traffic.css"><script type="module" src="/traffic.js?v=20261124"></script><style>main{max-width:880px;margin:auto;padding:24px;line-height:1.7}h1{font-size:clamp(28px,5vw,46px);margin:30px 0}main a{color:var(--gold)}main section{border:1px solid #785577;border-radius:16px;padding:20px;margin:20px 0}main ul{padding-left:22px}main nav{display:flex;flex-wrap:wrap;gap:14px}</style></head><body><main><header><a href="'+prefix(lang)+'">MurdiliMax ♡</a> · 18+</header><h1>'+esc(title)+'</h1>'+body+shareLinks(lang,url,title)+'<footer><a href="/rules.html">Rules</a> · <a href="/privacy.html">Privacy</a> · 18+</footer></main></body></html>';
 }
 export function directoryPage(rows,lang){
- const w=directoryWords[lang],active=activeCities(rows,lang);
+ const w=directoryWords[lang],adult=adultCityWords[lang],active=activeCities(rows,lang);
  const regions=new Intl.DisplayNames([lang],{type:'region'});
  const groups=new Map();
  for(const c of active){if(!groups.has(c[0]))groups.set(c[0],[]);groups.get(c[0]).push(c)}
  const list=[...groups].map(([country,items])=>'<section><h2>'+esc(regions.of(country))+'</h2><ul>'+items.map(c=>'<li><a lang="'+c[2]+'" href="'+c[3]+'">'+esc(cityTitle(c))+'</a> · '+totalFor(rows,c,'all')+'</li>').join('')+'</ul></section>').join('');
  const nav='<nav aria-label="Languages">'+directoryLanguages.map(l=>'<a lang="'+l+'" href="'+directoryPath(l)+'">'+l.toUpperCase()+'</a>').join('')+'</nav>';
- return geographyPage({lang,title:w[0],url:directoryPath(lang),description:w[2],index:directoryIndexable(rows,lang),alternates:directoryIndexable(rows,lang)?directoryAlternates(rows):[],body:'<p>'+esc(w[2])+'</p><p>'+esc(w[1])+'</p>'+(list||'<p>'+esc(w[3])+'</p>')+'<p><a href="'+prefix(lang)+'#catalog">'+esc(w[5])+'</a></p>'+nav});
+ return geographyPage({lang,title:adult.directory,url:directoryPath(lang),description:adult.directoryDescription,index:directoryIndexable(rows,lang),alternates:directoryIndexable(rows,lang)?directoryAlternates(rows):[],body:'<p>'+esc(adult.directoryDescription)+'</p><p>'+esc(w[1])+'</p>'+(list||'<p>'+esc(w[3])+'</p>')+'<p><a href="'+prefix(lang)+'#catalog">'+esc(w[5])+'</a></p>'+nav});
 }
 export function newCityPage(rows,city){
  const lang=city[2],w=directoryWords[lang],title=cityTitle(city),query=new URLSearchParams({country:city[0],city:city[1],commercial:'0'});
  const related=activeCities(rows,lang).filter(c=>c[0]===city[0]&&c[1]!==city[1]).slice(0,8);
- return geographyPage({lang,title,url:city[3],description:title+'. '+w[7],index:totalFor(rows,city,'all')>=minimum,body:'<p><strong>'+esc(w[1])+': '+totalFor(rows,city,'all')+'</strong></p><p>'+esc(w[7])+'</p><p><a class="btn btn-primary" href="'+esc(prefix(lang)+'?'+query.toString()+'#catalog')+'">'+esc(w[5])+'</a></p>'+cityLinks(rows,city)+(related.length?'<section><h2>'+esc(w[6])+'</h2><ul>'+related.map(c=>'<li><a lang="'+c[2]+'" href="'+c[3]+'">'+esc(cityTitle(c))+'</a> · '+totalFor(rows,c,'all')+'</li>').join('')+'</ul></section>':'')+'<nav><a href="'+directoryPath(lang)+'">'+esc(w[6])+'</a><a href="'+prefix(lang)+'safety/">'+esc(safetyLabels[lang])+'</a></nav>'});
+ return geographyPage({lang,title,url:city[3],description:adultCityWords[lang].description(city[4]),index:totalFor(rows,city,'all')>=minimum,body:'<p><strong>'+esc(w[1])+': '+totalFor(rows,city,'all')+'</strong></p><p>'+esc(adultCityWords[lang].description(city[4]))+'</p><p><a class="btn btn-primary" href="'+esc(prefix(lang)+'?'+query.toString()+'#catalog')+'">'+esc(w[5])+'</a></p>'+cityLinks(rows,city)+(related.length?'<section><h2>'+esc(w[6])+'</h2><ul>'+related.map(c=>'<li><a lang="'+c[2]+'" href="'+c[3]+'">'+esc(cityTitle(c))+'</a> · '+totalFor(rows,c,'all')+'</li>').join('')+'</ul></section>':'')+'<nav><a href="'+directoryPath(lang)+'">'+esc(w[6])+'</a><a href="'+prefix(lang)+'safety/">'+esc(safetyLabels[lang])+'</a></nav>'});
 }
