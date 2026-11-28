@@ -4,6 +4,7 @@ import express from 'express';
 import {CODE,recordInvitation} from './invitations.js';
 import {registerRigaPages} from './riga.js';
 import {registerGamePages,gameSitemap} from './game-seo.js';
+import {registerGuidePages,guideSitemap} from './guides.js';
 import {registerGrowthPages} from './growth.js';
 import {registerStories} from './stories.js';
 import {registerStoryPhotos} from './story-photos.js';
@@ -291,8 +292,9 @@ app.get('/api/recent-photos', async (req,res,next)=> {
 const growth=await registerGrowthPages(app,db,path.join(root,'public'));
 await registerRigaPages(app,db,path.join(root,'public'),growth.links);
 registerGamePages(app,await fs.readFile(path.join(root,'public/date-game/index.html'),'utf8'));
+registerGuidePages(app);
 registerStoryPhotos(app,db,ownerAllowed);
-registerStories(app,db,gameSitemap(await fs.readFile(path.join(root,'public/sitemap.xml'),'utf8')),growth.sitemap);
+registerStories(app,db,guideSitemap(gameSitemap(await fs.readFile(path.join(root,'public/sitemap.xml'),'utf8'))),growth.sitemap);
 app.get('/', (req, res) => res.sendFile(path.join(root, 'public/index.html')));
 app.use(publicFiles);
 app.use((req, res) => res.status(404).json({ error: 'Страница не найдена' }));
