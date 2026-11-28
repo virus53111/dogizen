@@ -35,3 +35,26 @@ test('create and edit require explicit own contact consent and keep existing own
  const edit=await readFile(new URL('../public/catalog-v2.js',import.meta.url),'utf8');
  assert.match(edit,/publicContactsConfirmed:form\.elements\.publicContactsConfirmed\.checked/);
 });
+
+test('ordinary punctuation around voluntarily shared contacts does not block publication',()=>{
+ for(const contact of ['Telegram: https://t.me/example_contact.','Email: hello@example.invalid.','Telegram: (https://t.me/example_contact).','Телефон: +371 2000 0000.','Telegram: @example_contact.']){
+  assert.equal(selfPublication({...consent,description:'Ищу компанию для общения. '+contact}).allowed,true,contact);
+ }
+ for(const contact of ['https://t.me/example_contact?start=spam','https://t.me/example_contact/other','https://example.invalid','https://t.me/example_contact.invalid']){
+  assert.equal(selfPublication({...consent,description:'Ищу компанию для общения. '+contact}).allowed,false,contact);
+ }
+});
+test('both forms show specific errors while keeping contact consent and publication rules',async()=>{
+ const app=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
+ const edit=await readFile(new URL('../public/catalog-v2.js',import.meta.url),'utf8');
+ assert.match(app,/function profilePolicyMessage\(response\)/);
+ assert.match(app,/possible_paid_service:"profilePolicyPaid"/);
+ assert.match(app,/profilePolicyMessage\(j\)/);
+ assert.match(edit,/profilePolicyMessage\(j\)/);
+ for(const lang of ['ru','en','de','lv','lt','et']){
+  const page=await readFile(new URL('../public/'+(lang==='ru'?'':lang+'/')+'index.html',import.meta.url),'utf8');
+  assert.match(page,/id="commercialNote" data-t="photoPolicy"/);
+  assert.doesNotMatch(page,/class="compliance-note" id="commercialNote"/);
+  assert.match(page,/name="publicContactsConfirmed"/);
+ }
+});

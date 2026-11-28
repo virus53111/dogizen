@@ -107,7 +107,7 @@ window.mmEnhanceMine=function(listings){
    form.elements.interests.value=listing.interests||"";
    form.elements.description.value=listing.description||"";
    form.onsubmit=async e=>{e.preventDefault();const btn=form.querySelector("button[type=submit]");btn.disabled=true;
-     try{const r=await fetch("/api/mine",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"edit",id:listing.id,headline:form.elements.headline.value,description:form.elements.description.value,publicContactsConfirmed:form.elements.publicContactsConfirmed.checked,looking_for:form.elements.looking_for.value,interests:form.elements.interests.value})});const j=await r.json();if(!r.ok||!j.ok)throw Error(j.code==="profile_policy"?t("profilePolicyError"):(j.error||t("error")));modal.close();showMy();loadListings()}catch(err){modal.querySelector("#editError").textContent=err.message}finally{btn.disabled=false}};
+     try{const r=await fetch("/api/mine",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"edit",id:listing.id,headline:form.elements.headline.value,description:form.elements.description.value,publicContactsConfirmed:form.elements.publicContactsConfirmed.checked,looking_for:form.elements.looking_for.value,interests:form.elements.interests.value})});const j=await r.json();if(!r.ok||!j.ok)throw Error(j.code==="profile_policy"?profilePolicyMessage(j):(j.error||t("error")));modal.close();showMy();loadListings()}catch(err){modal.querySelector("#editError").textContent=err.message}finally{btn.disabled=false}};
    modal.showModal();
   };
  });
