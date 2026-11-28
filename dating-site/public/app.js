@@ -324,7 +324,10 @@ function bind(){
 document.addEventListener("DOMContentLoaded",async()=>{bind();const hasSavedCity=typeof myCity!=="undefined" && myCity.init();
  const landing=new URLSearchParams(location.search), landingCountry=landing.get("country"), landingCity=landing.get("city");
  const explicitCity=!!landingCountry&&Object.hasOwn(GEOS,landingCountry)&&!!landingCity&&Object.hasOwn(GEOS[landingCountry].cities,landingCity);
- if(explicitCity){state.country=landingCountry;state.city=landingCity;state.district="";}
+ if(explicitCity){state.country=landingCountry;state.city=landingCity;state.district="";
+  const goal=landing.get("goal");
+  if(["friendship","dating","relationship","activities","open"].includes(goal)&&window.mmExtra){window.mmExtra.goal=goal;if(landing.get("commercial")==="0")window.mmExtra.commercial="0";}
+ }
  translate();
  if(hasSavedCity&&!explicitCity)myCity.restore();
  else loadListings();
