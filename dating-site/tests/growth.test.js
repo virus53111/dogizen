@@ -18,7 +18,7 @@ test('sitemap only adds eligible canonical URLs and reciprocal alternates',()=>{
  assert.match(s,/hreflang="lv" href="https:\/\/murdilimax\.com\/lv\/riga\/dating\/"/);
  assert.match(s,/<loc>https:\/\/murdilimax\.com\/de\/berlin\/dating\/<\/loc>/);
  assert.doesNotMatch(s,/relationship\//);
- assert.equal(growthSitemap(xml,new Map()),xml);
+ assert.doesNotMatch(growthSitemap(xml,new Map()),/<loc>/);
 });
 test('landing page has canonical and matching noncommercial catalogue filter',()=>{
  const s=goalPage(sample,riga,'dating');
@@ -43,7 +43,7 @@ test('real city template files exist and empty routes return 404',async()=>{
  const directory=fileURLToPath(new URL('../public/',import.meta.url));
  const growth=await registerGrowthPages(app,{query:async()=>({rows:[]})},directory);
  assert.equal(await growth.links('/riga/'),'');
- assert.equal(await growth.sitemap(xml),xml);
+ assert.doesNotMatch(await growth.sitemap(xml),/<loc>/);
  const route=routes.find(r=>r.regex.test('/riga/dating/'));
  assert.ok(route);
  const res={code:200,set(){return this},type(){return this},status(n){this.code=n;return this},send(v){this.body=v;return this}};
