@@ -1,4 +1,5 @@
 import { startSupportMail } from './support-mail.js';
+import { startTelegramContent, telegramContentStatus } from './telegram-content.js';
 import { permitsPendingMember } from './pending-member.js';
 import express from 'express';
 import {CODE,recordInvitation} from './invitations.js';
@@ -289,6 +290,11 @@ app.get('/api/recent-photos', async (req,res,next)=> {
   res.set('Cache-Control','no-store');
   try { res.json(await recentPhotos(db)); } catch(e) { next(e); }
 });
+app.get('/api/admin/telegram-content',async(req,res,next)=>{
+ res.set('Cache-Control','no-store');
+ try{if(!await ownerAllowed(req.user))return res.status(403).json({error:'Доступ только владельцу сайта'});
+ return res.json(await telegramContentStatus(db));}catch(e){next(e)}
+});
 const growth=await registerGrowthPages(app,db,path.join(root,'public'));
 await registerRigaPages(app,db,path.join(root,'public'),growth.links);
 registerGamePages(app,await fs.readFile(path.join(root,'public/date-game/index.html'),'utf8'));
@@ -309,5 +315,6 @@ app.use((err, req, res, next) => {
 });
 await init();
 startSupportMail(db);
+startTelegramContent(db);
 const port = Number(process.env.PORT || 10000);
 app.listen(port, '0.0.0.0', () => console.log('MurdiliMax listening on ' + port));
