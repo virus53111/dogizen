@@ -323,7 +323,10 @@ function bind(){
 }
 document.addEventListener("DOMContentLoaded",async()=>{bind();const hasSavedCity=typeof myCity!=="undefined" && myCity.init();
  const landing=new URLSearchParams(location.search), landingCountry=landing.get("country"), landingCity=landing.get("city");
- const explicitCity=!!landingCountry&&Object.hasOwn(GEOS,landingCountry)&&!!landingCity&&Object.hasOwn(GEOS[landingCountry].cities,landingCity);
+ const validLanding=typeof landingCountry==="string"&&/^[A-Z]{2}$/.test(landingCountry)&&typeof landingCity==="string"&&landingCity.length>0&&landingCity.length<=120;
+ const knownLanding=validLanding&&Object.hasOwn(GEOS[landingCountry]?.cities||{},landingCity);
+ if(validLanding&&!knownLanding)await loadPublicCities();
+ const explicitCity=validLanding&&(knownLanding||publicCities.get(landingCountry)?.has(landingCity));
  if(explicitCity){state.country=landingCountry;state.city=landingCity;state.district="";
   const goal=landing.get("goal");
   if(window.mmExtra){if(["friendship","dating","relationship","activities","open"].includes(goal))window.mmExtra.goal=goal;if(landing.get("commercial")==="0")window.mmExtra.commercial="0";}
@@ -331,7 +334,7 @@ document.addEventListener("DOMContentLoaded",async()=>{bind();const hasSavedCity
  translate();
  if(hasSavedCity&&!explicitCity)myCity.restore();
  else loadListings();
- loadPublicCities();
+ if(!countsReady)loadPublicCities();
  function refreshActivity(){
   if(!document.hidden && !state.loading && !document.querySelector("dialog[open]") && !$("#cards").contains(document.activeElement))loadListings(true);
  }
