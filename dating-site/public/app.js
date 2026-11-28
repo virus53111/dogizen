@@ -326,7 +326,7 @@ document.addEventListener("DOMContentLoaded",async()=>{bind();const hasSavedCity
  const explicitCity=!!landingCountry&&Object.hasOwn(GEOS,landingCountry)&&!!landingCity&&Object.hasOwn(GEOS[landingCountry].cities,landingCity);
  if(explicitCity){state.country=landingCountry;state.city=landingCity;state.district="";
   const goal=landing.get("goal");
-  if(["friendship","dating","relationship","activities","open"].includes(goal)&&window.mmExtra){window.mmExtra.goal=goal;if(landing.get("commercial")==="0")window.mmExtra.commercial="0";}
+  if(window.mmExtra){if(["friendship","dating","relationship","activities","open"].includes(goal))window.mmExtra.goal=goal;if(landing.get("commercial")==="0")window.mmExtra.commercial="0";}
  }
  translate();
  if(hasSavedCity&&!explicitCity)myCity.restore();
