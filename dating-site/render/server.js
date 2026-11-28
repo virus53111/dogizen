@@ -1,5 +1,6 @@
 import { startSupportMail } from './support-mail.js';
 import { startTelegramContent, telegramContentStatus } from './telegram-content.js';
+import { configureContent } from './telegram-content-settings.js';
 import { permitsPendingMember } from './pending-member.js';
 import express from 'express';
 import {CODE,recordInvitation} from './invitations.js';
@@ -294,6 +295,14 @@ app.get('/api/admin/telegram-content',async(req,res,next)=>{
  res.set('Cache-Control','no-store');
  try{if(!await ownerAllowed(req.user))return res.status(403).json({error:'Доступ только владельцу сайта'});
  return res.json(await telegramContentStatus(db));}catch(e){next(e)}
+});
+app.post('/api/admin/telegram-content',async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ try{
+  if(req.get('origin')!=='https://murdilimax.com'||!req.is('application/json')||!await ownerAllowed(req.user))return res.status(403).json({error:'forbidden'});
+  const result=await configureContent(db,req.body);
+  return res.status(['ready','disabled'].includes(result)?200:400).json({result});
+ }catch{return res.status(500).json({result:'configuration_failed'})}
 });
 const growth=await registerGrowthPages(app,db,path.join(root,'public'));
 await registerRigaPages(app,db,path.join(root,'public'),growth.links);
