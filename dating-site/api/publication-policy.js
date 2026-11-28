@@ -31,7 +31,7 @@ function allowedDescriptionContacts(input){
  const description=String(input.description||'').normalize('NFKC')
   .replace(/(?<![\w./@-])(?:https?:\/\/)?(?:t\.me|telegram\.me)\/[a-z][a-z0-9_]{4,31}(?=$|[\s,;!…)\]}>"]|\.(?=$|[\s,;!…)\]}>"]))/gi,' ')
   .replace(/(?<![\w./@-])[\w.+-]+@[\w.-]+\.[a-z]{2,}(?=$|[\s,;!…)\]}>"]|\.(?=$|[\s,;!…)\]}>"]))/gi,' ')
-  .replace(/(?<![\w./@-])@[a-z][a-z0-9_]{4,31}(?![\w./@-])/gi,' ');
+  .replace(/(?<![\w./@-])@[a-z][a-z0-9_]{4,31}(?=$|[\s,;!…)\]}>"]|\.(?=$|[\s,;!…)\]}>"]))/gi,' ');
  return !external.test(description);
 }
 
