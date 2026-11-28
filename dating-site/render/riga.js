@@ -11,7 +11,7 @@ const labels = {
   et: 'Avaldatud profiilid Riias',
 };
 
-export async function registerRigaPages(app, db, directory) {
+export async function registerRigaPages(app, db, directory, growthLinks = async () => '') {
   let expires = 0;
   let total = null;
   let pending;
@@ -33,7 +33,8 @@ export async function registerRigaPages(app, db, directory) {
       try {
         const n = await count();
         const summary = Number.isSafeInteger(n) ? '<p><strong>' + label + ': ' + n + '</strong></p>' : '';
-        res.set('Cache-Control', 'no-cache').send(page.replace('<!--riga-count-->', summary));
+        const links = await growthLinks(url);
+        res.set('Cache-Control', 'no-cache').send(page.replace('<!--riga-count-->', summary + links));
       } catch (error) { next(error); }
     });
   }
