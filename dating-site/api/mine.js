@@ -33,11 +33,12 @@ export default async function(req,res){
     const r=await db.transaction(async query=>{
       // Safe edits to already approved profiles remain public; profiles previously
       // held/rejected by moderation NEVER bypass human review through editing.
-      const previous=await query("SELECT category,display_name,languages,status FROM mm_listings WHERE id=$1 AND owner_id=$2 FOR UPDATE",[id,owner]);
+      const previous=await query("SELECT category,display_name,languages,status,is_commercial FROM mm_listings WHERE id=$1 AND owner_id=$2 FOR UPDATE",[id,owner]);
       if(!previous.rows.length)return {rows:[]};
       const profile=previous.rows[0];
       const decision=selfPublication({
-        category:profile.category,display_name:profile.display_name,headline,description,interests,languages:profile.languages
+        category:profile.category,display_name:profile.display_name,headline,description,interests,languages:profile.languages,
+        publicContactsConfirmed:body.publicContactsConfirmed===true,isCommercial:profile.is_commercial===true
       });
       if(!decision.allowed)return {blocked:true,signals:decision.signals};
       const nextStatus=profile.status;
@@ -46,7 +47,7 @@ export default async function(req,res){
         await query("INSERT INTO mm_member_profile_details(listing_id,looking_for,interests) VALUES($1,$2,$3) ON CONFLICT(listing_id) DO UPDATE SET looking_for=EXCLUDED.looking_for,interests=EXCLUDED.interests,updated_at=NOW()",[id,lookingFor,interests]);
       return update;
     });
-    if(r.blocked)return res.status(400).json({error:"Исправьте описание: не допускаются ссылки, контактные данные, спам и запрещённый контент.",code:"profile_policy",signals:r.signals});
+    if(r.blocked)return res.status(400).json({error:"Исправьте описание: подтвердите добровольную публикацию собственных контактов; другие ссылки, спам, дубли и запрещённый контент не допускаются.",code:"profile_policy",signals:r.signals});
     return res.json({ok:!!r.rows.length,listing:r.rows[0]||null});
   }
   return res.status(400).json({error:"Неизвестная операция"});
