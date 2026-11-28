@@ -3,7 +3,8 @@ import { locales } from './locales.js';
 const main = document.getElementById('game');
 const selector = document.getElementById('language');
 const params = new URLSearchParams(location.search);
-const candidates = [params.get('lang'), ...(navigator.languages || [navigator.language])];
+const pathLanguage = /^\/([a-z]{2})\/date-game\/$/.exec(location.pathname)?.[1];
+const candidates = [params.get('lang'), pathLanguage, document.documentElement.lang, ...(navigator.languages || [navigator.language])];
 let lang = candidates.map(value => value?.toLowerCase().split('-')[0])
   .find(value => Object.hasOwn(locales, value)) || 'en';
 let challenge = readChallenge();
@@ -38,8 +39,9 @@ function draw(focusHeading = false) {
   document.querySelector('.language span').textContent = t.language;
   const catalog = document.getElementById('catalog');
   catalog.textContent = t.catalog;
-  catalog.href = lang === 'ru' ? '/' : '/' + lang + '/';
-  document.querySelector('.brand').href = catalog.href;
+  const home = lang === 'ru' ? '/' : '/' + lang + '/';
+  catalog.href = home + '?utm_source=date_game#catalog';
+  document.querySelector('.brand').href = home + '?utm_source=date_game';
 
   const title = !adult ? t.ageTitle : screen === 'ready' ? t.readyTitle : screen === 'result' ? t.resultTitle : t.title;
   const heading = element('h1', 'game-title', title);
@@ -102,7 +104,7 @@ function drawForm(t) {
 }
 
 function makeShareUrl() {
-  const url = new URL('/date-game/', location.origin);
+  const url = new URL(lang === 'en' ? '/date-game/' : '/' + lang + '/date-game/', location.origin);
   url.searchParams.set('lang', lang);
   url.searchParams.set('utm_source', 'date_game');
   url.hash = 'v1-' + selections.join('');
@@ -154,7 +156,12 @@ function drawShare(t) {
     try { await navigator.clipboard.writeText(url); status.textContent = t.copied; }
     catch { selectLink(); }
   });
-  actions.append(copy, telegram, button(t.again, 'secondary', restart));
+  const whatsapp = element('a', 'secondary whatsapp', 'WhatsApp');
+  const whatsappUrl = new URL('https://wa.me/');
+  whatsappUrl.searchParams.set('text', t.shareText + ' ' + url);
+  whatsapp.href = whatsappUrl.href;
+  whatsapp.target = '_blank'; whatsapp.rel = 'noopener noreferrer';
+  actions.append(copy, telegram, whatsapp, button(t.again, 'secondary', restart));
   main.append(actions, field, status);
 }
 
@@ -168,8 +175,11 @@ function drawResult(t) {
     item.append(element('strong', '', question.title), element('p', '', (correct ? '✓ ' : '× ') + t.answer + ' ' + question.choices[Number(challenge[index])]));
     list.append(item);
   });
-  main.append(element('p', 'score', t.score.replace('{n}', String(score))), list,
-    button(t.again, 'primary', restart));
+  const actions = element('div', 'actions');
+  const browse = element('a', 'secondary', t.catalog);
+  browse.href = (lang === 'ru' ? '/' : '/' + lang + '/') + '?utm_source=date_game#catalog';
+  actions.append(button(t.again, 'primary', restart), browse);
+  main.append(element('p', 'score', t.score.replace('{n}', String(score))), list, actions);
 }
 
 selector.addEventListener('change', () => {
