@@ -1,3 +1,4 @@
+import { loadContentSettings } from './telegram-content-settings.js';
 // Scheduled, public editorial posts only. No account data or direct messages.
 const channel='@SinfulLiness';
 const timeZone='Europe/Riga';
@@ -45,13 +46,16 @@ export async function publishTelegram(db,config,now=new Date(),send=fetch){
  return status;
 }
 export function startTelegramContent(db){
- const config=telegramConfig();
- if(!config.enabled)return;
- const tick=()=>publishTelegram(db,config).catch(()=>console.warn('Telegram content worker unavailable.'));
+ let busy=false;
+ const tick=async()=>{
+  if(busy||!scheduledPost(new Date()))return;
+  busy=true;
+  try{const config=await loadContentSettings(db);await publishTelegram(db,config)}catch{console.warn('Telegram content worker unavailable.')}finally{busy=false}
+ };
  void tick();setInterval(tick,60000).unref();
 }
 export async function telegramContentStatus(db){
- const {enabled,requested,channel}=telegramConfig();
+ const {enabled,requested,channel,token,canSaveToken}=await loadContentSettings(db);
  const {rows}=await db.query("SELECT day::text,content_key,status,finished_at FROM mm_telegram_content_log ORDER BY day DESC LIMIT 7");
- return {enabled,requested,channel,schedule:'18:00 Europe/Riga',history:rows};
+ return {enabled,requested,channel,credentialAvailable:!!token,canSaveToken,schedule:'18:00 Europe/Riga',history:rows};
 }
