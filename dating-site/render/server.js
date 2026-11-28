@@ -3,6 +3,7 @@ import { permitsPendingMember } from './pending-member.js';
 import express from 'express';
 import {CODE,recordInvitation} from './invitations.js';
 import {registerRigaPages} from './riga.js';
+import {registerGrowthPages} from './growth.js';
 import {registerStories} from './stories.js';
 import {registerStoryPhotos} from './story-photos.js';
 import { notifyMessage } from './push.js';
@@ -286,9 +287,10 @@ app.get('/api/recent-photos', async (req,res,next)=> {
   res.set('Cache-Control','no-store');
   try { res.json(await recentPhotos(db)); } catch(e) { next(e); }
 });
-await registerRigaPages(app,db,path.join(root,'public'));
+const growth=await registerGrowthPages(app,db,path.join(root,'public'));
+await registerRigaPages(app,db,path.join(root,'public'),growth.links);
 registerStoryPhotos(app,db,ownerAllowed);
-registerStories(app,db,await fs.readFile(path.join(root,'public/sitemap.xml'),'utf8'));
+registerStories(app,db,await fs.readFile(path.join(root,'public/sitemap.xml'),'utf8'),growth.sitemap);
 app.get('/', (req, res) => res.sendFile(path.join(root, 'public/index.html')));
 app.use(publicFiles);
 app.use((req, res) => res.status(404).json({ error: 'Страница не найдена' }));
