@@ -11,7 +11,7 @@ const paris=newCities.find(c=>c[1]==='Париж');
 const data=aggregate([
  {country:'LV',city:'Рига',goal:'all',total:3},{country:'LV',city:'Rīga',goal:'all',total:3},
  {country:'DE',city:'Гамбург',goal:'all',total:8},{country:'DE',city:'Гамбург',goal:'friendship',total:5},
- {country:'FR',city:'Париж',goal:'all',total:4}
+ {country:'FR',city:'Париж',goal:'all',total:0}
 ]);
 test('all generated cities match catalogue-supported filters without duplicate addresses',async()=>{
  const source=await readFile(new URL('../public/app.js',import.meta.url),'utf8');
