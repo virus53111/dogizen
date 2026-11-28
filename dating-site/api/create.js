@@ -30,9 +30,11 @@ export default async function(req,res){
  );
  const safety=selfPublication({
   category,display_name:name,headline,description,interests,languages,
-  isDuplicate:duplicate.rows[0]?.repeated===true
+  isDuplicate:duplicate.rows[0]?.repeated===true,
+  publicContactsConfirmed:b.publicContactsConfirmed===true||b.publicContactsConfirmed==="on"||b.publicContactsConfirmed==="true",
+  isCommercial:commercial
  });
- if(!safety.allowed)return res.status(400).json({error:"Исправьте описание: не допускаются ссылки, контактные данные, спам, дубли и запрещённый контент.",code:"profile_policy",signals:safety.signals});
+ if(!safety.allowed)return res.status(400).json({error:"Исправьте описание: подтвердите добровольную публикацию собственных контактов; другие ссылки, спам, дубли и запрещённый контент не допускаются.",code:"profile_policy",signals:safety.signals});
  const status='approved';
  function hasImageSignature(bytes,type){
  if(!bytes||bytes.length<12)return false;
