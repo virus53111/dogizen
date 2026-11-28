@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { cityNamesInRange } from './latvia-cities.js';
@@ -17,7 +18,8 @@ export const establishedCities = [
 ];
 export const cities = [...establishedCities,...newCities];
 export const goals=['friendship','dating','relationship','activities'];
-export const minimum=5;
+export const minimum=1;
+const goalMinimum=5;
 const safetyLabels={ru:'Советы по безопасности',en:'Safety tips',de:'Sicherheitstipps',lv:'Drošības padomi',lt:'Saugumo patarimai',et:'Ohutusnõuanded'};
 const words={
  ru:['Дружба','Свидания','Серьёзные отношения','Компания для досуга','Знакомства по интересам и целям','Подходящие опубликованные анкеты','Открыть анкеты','Все знакомства в городе','Выберите анкету взрослого участника, который указал эту цель. Общение бесплатно после входа, если владелец подключил сообщения.','Для первой встречи выбирайте общественное место. Не отправляйте деньги незнакомым людям.'],
@@ -42,11 +44,12 @@ export function aggregate(rows){
 }
 const goalUrl=(city,goal)=>city[3]+goal+'/';
 const heading=(city,goal)=>words[city[2]][goals.indexOf(goal)]+' '+city[4];
-const eligible=(rows,city,goal)=>totalFor(rows,city,goal)>=minimum && (!newCities.includes(city)||totalFor(rows,city,'all')>=minimum);
+const eligible=(rows,city,goal)=>totalFor(rows,city,goal)>=goalMinimum && (!newCities.includes(city)||totalFor(rows,city,'all')>=minimum);
 function variants(rows,city,goal){
  return cities.filter(c=>c[0]===city[0]&&c[1]===city[1]&&eligible(rows,c,goal));
 }
 export function cityLinks(rows,city){
+ if(!cities.includes(city))return '';
  const links=goals.filter(g=>eligible(rows,city,g));
  if(!links.length)return '';
  return '<section class="seo-section"><h2>'+esc(words[city[2]][4])+'</h2><ul>'+links.map(g=>'<li><a href="'+goalUrl(city,g)+'">'+esc(heading(city,g))+'</a> · '+totalFor(rows,city,g)+'</li>').join('')+'</ul></section>';
@@ -80,9 +83,9 @@ export function makeGrowthCache(db){
   if(Date.now()<expires&&value)return value;
   if(Date.now()<retryAfter)throw new Error('Growth counts temporarily unavailable');
   if(!pending)pending=Promise.resolve().then(()=>db.query(`SELECT l.country,l.city,CASE WHEN GROUPING(d.looking_for)=1 THEN 'all' ELSE d.looking_for END AS goal,COUNT(DISTINCT l.id)::integer AS total
-   FROM mm_public_listings l LEFT JOIN mm_member_profile_details d ON d.listing_id=l.id AND d.looking_for=ANY($2::text[])
-   WHERE l.status='approved' AND l.is_commercial IS FALSE AND l.country=ANY($1::text[]) \n   GROUP BY GROUPING SETS ((l.country,l.city),(l.country,l.city,d.looking_for))
-   HAVING GROUPING(d.looking_for)=1 OR d.looking_for IS NOT NULL`,[[...new Set(cities.map(c=>c[0]))],goals]))
+   FROM mm_public_listings l LEFT JOIN mm_member_profile_details d ON d.listing_id=l.id AND d.looking_for=ANY($1::text[])
+   WHERE l.status='approved' AND l.is_commercial IS FALSE \n   GROUP BY GROUPING SETS ((l.country,l.city),(l.country,l.city,d.looking_for))
+   HAVING GROUPING(d.looking_for)=1 OR d.looking_for IS NOT NULL`,[goals]))
    .then(r=>{value=aggregate(r.rows);expires=Date.now()+60000;return value})
    .catch(error=>{retryAfter=Date.now()+10000;throw error})
    .finally(()=>{pending=undefined});
@@ -125,11 +128,33 @@ export async function registerGrowthPages(app,db,directory){
    });
   }
  }
+ route('/cities/[a-z]{2}/city-[a-f0-9]{24}/',async(req,res)=>{
+  res.set('Cache-Control','no-cache');
+  let rows;try{rows=await counts()}catch{return unavailable(res)}
+  const city=extraCities(rows).find(c=>c[3]===req.path);
+  if(!city)return res.status(404).type('text').send('Not found');
+  return res.type('html').send(newCityPage(rows,city));
+ });
  return {
   async links(url){const city=cities.find(c=>c[3]===url);return city?cityLinks(await counts().catch(()=>new Map()),city):''},
   async sitemap(xml){return growthSitemap(xml,await counts())},
   async indexable(url){const city=cities.find(c=>c[3]===url);return !!city&&totalFor(await counts(),city,'all')>=minimum}
  };
+}
+// Approved public locations outside the curated list acquire a stable URL
+// without publishing raw user input in the route or creating speculative pages.
+export function extraCities(rows){
+ const known=new Set(cities.flatMap(c=>(c[0]==='LV'?cityNamesInRange(c[1]):[c[1]]).map(n=>JSON.stringify([c[0],n]))));
+ const extras=[];
+ for(const [k,n] of rows){
+  if(n<minimum)continue;
+  const [country,city,goal]=JSON.parse(k);
+  if(goal!=='all'||typeof country!=='string'||!/^[A-Z]{2}$/.test(country)||typeof city!=='string'||!city.trim()||city.length>120||/[\u0000-\u001f\u007f]/.test(city)||known.has(JSON.stringify([country,city])))continue;
+  const hash=createHash('sha256').update(JSON.stringify([country,city])).digest('hex').slice(0,24);
+  // Raw location labels are escaped by the page renderer; query parameters are encoded.
+  extras.push([country,city,'ru','/cities/'+country.toLowerCase()+'/city-'+hash+'/', '— '+city]);
+ }
+ return extras;
 }
 function prefix(lang){return lang==='ru'?'/':'/'+lang+'/'}
 function cityTitle(city){return adultCityWords[city[2]].title(city[4])}
@@ -156,19 +181,19 @@ export function establishedCityPage(html,rows,city){
 }
 export function activeCities(rows,lang){
  const byCity=new Map();
- for(const c of cities){
+ for(const c of [...cities,...extraCities(rows)]){
   if(totalFor(rows,c,'all')<minimum)continue;
   const k=JSON.stringify(c.slice(0,2)),old=byCity.get(k);
   if(!old||c[2]===lang)byCity.set(k,c);
  }
  return [...byCity.values()].sort((a,b)=>totalFor(rows,b,'all')-totalFor(rows,a,'all')||a[3].localeCompare(b[3]));
 }
-const directoryIndexable=(rows,lang)=>indexedDirectoryLanguages.includes(lang)&&activeCities(rows,lang).length>=2;
+const directoryIndexable=(rows,lang)=>indexedDirectoryLanguages.includes(lang)&&activeCities(rows,lang).length>=minimum;
 function directoryAlternates(rows){
  return indexedDirectoryLanguages.filter(lang=>directoryIndexable(rows,lang)).map(lang=>[lang,directoryPath(lang)]);
 }
 export function directorySitemapEntries(rows){
- const entries=newCities.filter(c=>totalFor(rows,c,'all')>=minimum).map(c=>'<url><loc>'+origin+c[3]+'</loc>'+geographyDate+'</url>');
+ const entries=[...newCities,...extraCities(rows)].filter(c=>totalFor(rows,c,'all')>=minimum).map(c=>'<url><loc>'+origin+c[3]+'</loc>'+geographyDate+'</url>');
  for(const [lang,p] of directoryAlternates(rows)){
   entries.push('<url><loc>'+origin+p+'</loc>'+geographyDate+directoryAlternates(rows).map(([l,u])=>'<xhtml:link rel="alternate" hreflang="'+l+'" href="'+origin+u+'" />').join('')+'</url>');
  }
