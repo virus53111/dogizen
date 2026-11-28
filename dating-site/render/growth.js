@@ -110,6 +110,7 @@ export async function registerGrowthPages(app,db,directory){
    });
   }else if(city[1]!=='Рига'){
    const page=await readFile(path.join(directory,city[3].slice(1),'index.html'),'utf8');
+   route(city[3]+'index[.]html',(req,res)=>res.redirect(301,city[3]));
    route(city[3],async(req,res)=>{
     let rows;try{rows=await counts()}catch{return unavailable(res)}
     res.set('Cache-Control','no-cache').type('html').send(establishedCityPage(page,rows,city));
