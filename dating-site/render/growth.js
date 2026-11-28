@@ -2,9 +2,10 @@ import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { cityNamesInRange } from './latvia-cities.js';
 import { esc, origin } from './stories.js';
+import { newCities, directoryWords, directoryPath, directoryLanguages, indexedDirectoryLanguages } from './growth-geography.js';
 
-// Only established city URLs; no duplicate city landing pages or arbitrary URL combinations.
-export const cities = [
+// Keep existing URLs and extend only to curated, supported catalogue cities.
+export const establishedCities = [
  ['LV','Рига','ru','/riga/','в Риге'], ['LV','Рига','en','/en/riga/','in Riga'],
  ['LV','Рига','de','/de/riga/','in Riga'], ['LV','Рига','lv','/lv/riga/','Rīgā'],
  ['LV','Елгава','lv','/lv/jelgava/','Jelgavā'], ['LV','Лиепая','lv','/lv/liepaja/','Liepājā'],
@@ -13,6 +14,7 @@ export const cities = [
  ['EE','Тарту','et','/et/tartu/','Tartus'], ['EE','Нарва','et','/et/narva/','Narvas'],
  ['DE','Берлин','de','/de/berlin/','in Berlin'], ['PL','Варшава','en','/en/warsaw/','in Warsaw']
 ];
+export const cities = [...establishedCities,...newCities];
 export const goals=['friendship','dating','relationship','activities'];
 export const minimum=5;
 const safetyLabels={ru:'Советы по безопасности',en:'Safety tips',de:'Sicherheitstipps',lv:'Drošības padomi',lt:'Saugumo patarimai',et:'Ohutusnõuanded'};
@@ -33,13 +35,13 @@ export function aggregate(rows){
  const map=new Map();
  for(const r of rows){
   const n=Number(r.total);
-  if(Number.isSafeInteger(n)&&n>=0&&goals.includes(r.goal))map.set(key(r.country,r.city,r.goal),n);
+  if(Number.isSafeInteger(n)&&n>=0&&(r.goal==='all'||goals.includes(r.goal)))map.set(key(r.country,r.city,r.goal),n);
  }
  return map;
 }
 const goalUrl=(city,goal)=>city[3]+goal+'/';
 const heading=(city,goal)=>words[city[2]][goals.indexOf(goal)]+' '+city[4];
-const eligible=(rows,city,goal)=>totalFor(rows,city,goal)>=minimum;
+const eligible=(rows,city,goal)=>totalFor(rows,city,goal)>=minimum && (!newCities.includes(city)||totalFor(rows,city,'all')>=minimum);
 function variants(rows,city,goal){
  return cities.filter(c=>c[0]===city[0]&&c[1]===city[1]&&eligible(rows,c,goal));
 }
@@ -50,6 +52,7 @@ export function cityLinks(rows,city){
 }
 export function growthSitemap(xml,rows){
  const entries=cities.flatMap(c=>goals.filter(g=>eligible(rows,c,g)).map(g=>'<url><loc>'+origin+goalUrl(c,g)+'</loc>'+variants(rows,c,g).map(v=>'<xhtml:link rel="alternate" hreflang="'+v[2]+'" href="'+origin+goalUrl(v,g)+'" />').join('')+'</url>'));
+ entries.push(...directorySitemapEntries(rows));
  return entries.length?xml.replace('</urlset>',entries.join('\n')+'\n</urlset>'):xml;
 }
 export function goalPage(rows,city,goal){
@@ -66,10 +69,10 @@ export function makeGrowthCache(db){
  return async function counts(){
   if(Date.now()<expires&&value)return value;
   if(Date.now()<retryAfter)throw new Error('Growth counts temporarily unavailable');
-  if(!pending)pending=Promise.resolve().then(()=>db.query(`SELECT l.country,l.city,d.looking_for AS goal,COUNT(DISTINCT l.id)::integer AS total
-   FROM mm_public_listings l JOIN mm_member_profile_details d ON d.listing_id=l.id
-   WHERE l.status='approved' AND l.is_commercial IS FALSE AND l.country=ANY($1::text[]) AND d.looking_for=ANY($2::text[])
-   GROUP BY l.country,l.city,d.looking_for`,[[...new Set(cities.map(c=>c[0]))],goals]))
+  if(!pending)pending=Promise.resolve().then(()=>db.query(`SELECT l.country,l.city,CASE WHEN GROUPING(d.looking_for)=1 THEN 'all' ELSE d.looking_for END AS goal,COUNT(DISTINCT l.id)::integer AS total
+   FROM mm_public_listings l LEFT JOIN mm_member_profile_details d ON d.listing_id=l.id AND d.looking_for=ANY($2::text[])
+   WHERE l.status='approved' AND l.is_commercial IS FALSE AND l.country=ANY($1::text[]) \n   GROUP BY GROUPING SETS ((l.country,l.city),(l.country,l.city,d.looking_for))
+   HAVING GROUPING(d.looking_for)=1 OR d.looking_for IS NOT NULL`,[[...new Set(cities.map(c=>c[0]))],goals]))
    .then(r=>{value=aggregate(r.rows);expires=Date.now()+60000;return value})
    .catch(error=>{retryAfter=Date.now()+10000;throw error})
    .finally(()=>{pending=undefined});
@@ -78,8 +81,11 @@ export function makeGrowthCache(db){
 }
 export async function registerGrowthPages(app,db,directory){
  const counts=makeGrowthCache(db);
+ for(const lang of directoryLanguages){
+  app.get(new RegExp('^'+directoryPath(lang)+'
  for(const city of cities){
-  if(city[1]!=='Рига'){
+  if(newCities.includes(city)){
+   app.get(new RegExp('^'+city[3]+'
    const page=await readFile(path.join(directory,city[3].slice(1),'index.html'),'utf8');
    app.get(new RegExp('^'+city[3]+'$'),async(req,res)=>{
     const rows=await counts().catch(()=>new Map());
@@ -99,4 +105,129 @@ export async function registerGrowthPages(app,db,directory){
   async links(url){const city=cities.find(c=>c[3]===url);return city?cityLinks(await counts().catch(()=>new Map()),city):''},
   async sitemap(xml){return growthSitemap(xml,await counts().catch(()=>new Map()))}
  };
+}
+),async(req,res)=>{
+    res.set('Cache-Control','no-cache');
+    let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
+    if(totalFor(rows,city,'all')<minimum)return res.status(404).type('text').send('Not found');
+    return res.type('html').send(newCityPage(rows,city));
+   });
+  }else if(city[1]!=='Рига'){
+   const page=await readFile(path.join(directory,city[3].slice(1),'index.html'),'utf8');
+   app.get(new RegExp('^'+city[3]+'$'),async(req,res)=>{
+    const rows=await counts().catch(()=>new Map());
+    res.set('Cache-Control','no-cache').type('html').send(page.replace('</main>',cityLinks(rows,city)+'</main>'));
+   });
+  }
+  for(const goal of goals){
+   app.get(new RegExp('^'+goalUrl(city,goal)+'$'),async(req,res)=>{
+    res.set('Cache-Control','no-cache');
+    let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
+    if(!eligible(rows,city,goal))return res.status(404).type('text').send('Not found');
+    return res.type('html').send(goalPage(rows,city,goal));
+   });
+  }
+ }
+ return {
+  async links(url){const city=cities.find(c=>c[3]===url);return city?cityLinks(await counts().catch(()=>new Map()),city):''},
+  async sitemap(xml){return growthSitemap(xml,await counts().catch(()=>new Map()))}
+ };
+}
+),async(req,res)=>{
+   res.set('Cache-Control','no-cache');
+   let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
+   return res.type('html').send(directoryPage(rows,lang));
+  });
+ }
+ for(const city of cities){
+  if(newCities.includes(city)){
+   app.get(new RegExp('^'+city[3]+'
+   const page=await readFile(path.join(directory,city[3].slice(1),'index.html'),'utf8');
+   app.get(new RegExp('^'+city[3]+'$'),async(req,res)=>{
+    const rows=await counts().catch(()=>new Map());
+    res.set('Cache-Control','no-cache').type('html').send(page.replace('</main>',cityLinks(rows,city)+'</main>'));
+   });
+  }
+  for(const goal of goals){
+   app.get(new RegExp('^'+goalUrl(city,goal)+'$'),async(req,res)=>{
+    res.set('Cache-Control','no-cache');
+    let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
+    if(!eligible(rows,city,goal))return res.status(404).type('text').send('Not found');
+    return res.type('html').send(goalPage(rows,city,goal));
+   });
+  }
+ }
+ return {
+  async links(url){const city=cities.find(c=>c[3]===url);return city?cityLinks(await counts().catch(()=>new Map()),city):''},
+  async sitemap(xml){return growthSitemap(xml,await counts().catch(()=>new Map()))}
+ };
+}
+),async(req,res)=>{
+    res.set('Cache-Control','no-cache');
+    let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
+    if(totalFor(rows,city,'all')<minimum)return res.status(404).type('text').send('Not found');
+    return res.type('html').send(newCityPage(rows,city));
+   });
+  }else if(city[1]!=='Рига'){
+   const page=await readFile(path.join(directory,city[3].slice(1),'index.html'),'utf8');
+   app.get(new RegExp('^'+city[3]+'$'),async(req,res)=>{
+    const rows=await counts().catch(()=>new Map());
+    res.set('Cache-Control','no-cache').type('html').send(page.replace('</main>',cityLinks(rows,city)+'</main>'));
+   });
+  }
+  for(const goal of goals){
+   app.get(new RegExp('^'+goalUrl(city,goal)+'$'),async(req,res)=>{
+    res.set('Cache-Control','no-cache');
+    let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
+    if(!eligible(rows,city,goal))return res.status(404).type('text').send('Not found');
+    return res.type('html').send(goalPage(rows,city,goal));
+   });
+  }
+ }
+ return {
+  async links(url){const city=cities.find(c=>c[3]===url);return city?cityLinks(await counts().catch(()=>new Map()),city):''},
+  async sitemap(xml){return growthSitemap(xml,await counts().catch(()=>new Map()))}
+ };
+}
+
+function prefix(lang){return lang==='ru'?'/':'/'+lang+'/'}
+function cityTitle(city){return directoryWords[city[2]][4]+' '+city[4]}
+export function activeCities(rows,lang){
+ const byCity=new Map();
+ for(const c of cities){
+  if(totalFor(rows,c,'all')<minimum)continue;
+  const k=JSON.stringify(c.slice(0,2)),old=byCity.get(k);
+  if(!old||c[2]===lang)byCity.set(k,c);
+ }
+ return [...byCity.values()].sort((a,b)=>totalFor(rows,b,'all')-totalFor(rows,a,'all')||a[3].localeCompare(b[3]));
+}
+const directoryIndexable=(rows,lang)=>indexedDirectoryLanguages.includes(lang)&&activeCities(rows,lang).length>=2;
+function directoryAlternates(rows){
+ return indexedDirectoryLanguages.filter(lang=>directoryIndexable(rows,lang)).map(lang=>[lang,directoryPath(lang)]);
+}
+export function directorySitemapEntries(rows){
+ const entries=newCities.filter(c=>totalFor(rows,c,'all')>=minimum).map(c=>'<url><loc>'+origin+c[3]+'</loc></url>');
+ for(const [lang,p] of directoryAlternates(rows)){
+  entries.push('<url><loc>'+origin+p+'</loc>'+directoryAlternates(rows).map(([l,u])=>'<xhtml:link rel="alternate" hreflang="'+l+'" href="'+origin+u+'" />').join('')+'</url>');
+ }
+ return entries;
+}
+function geographyPage({lang,title,url,description,body,index,alternates=[]}){
+ const canonical=origin+url;
+ const schema=JSON.stringify({'@context':'https://schema.org','@type':'CollectionPage',name:title,url:canonical,inLanguage:lang,isFamilyFriendly:false}).replace(/</g,'\\u003c');
+ return '<!doctype html><html lang="'+lang+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="rating" content="adult"><meta name="robots" content="'+(index?'index,follow':'noindex,follow')+'"><title>'+esc(title)+' · 18+ | MurdiliMax</title><meta name="description" content="'+esc(description)+'"><link rel="canonical" href="'+canonical+'">'+alternates.map(([l,p])=>'<link rel="alternate" hreflang="'+l+'" href="'+origin+p+'">').join('')+'<meta property="og:type" content="website"><meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(description)+'"><meta property="og:url" content="'+canonical+'"><meta property="og:site_name" content="MurdiliMax"><meta property="og:image" content="'+origin+'/lux-couple.jpg"><script type="application/ld+json">'+schema+'</script><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/luxury.css"><link rel="stylesheet" href="/traffic.css"><script type="module" src="/traffic.js?v=20261124"></script><style>main{max-width:880px;margin:auto;padding:24px;line-height:1.7}h1{font-size:clamp(28px,5vw,46px);margin:30px 0}main a{color:var(--gold)}main section{border:1px solid #785577;border-radius:16px;padding:20px;margin:20px 0}main ul{padding-left:22px}main nav{display:flex;flex-wrap:wrap;gap:14px}</style></head><body><main><header><a href="'+prefix(lang)+'">MurdiliMax ♡</a> · 18+</header><h1>'+esc(title)+'</h1>'+body+'<footer><a href="/rules.html">Rules</a> · <a href="/privacy.html">Privacy</a> · 18+</footer></main></body></html>';
+}
+export function directoryPage(rows,lang){
+ const w=directoryWords[lang],active=activeCities(rows,lang);
+ const regions=new Intl.DisplayNames([lang],{type:'region'});
+ const groups=new Map();
+ for(const c of active){if(!groups.has(c[0]))groups.set(c[0],[]);groups.get(c[0]).push(c)}
+ const list=[...groups].map(([country,items])=>'<section><h2>'+esc(regions.of(country))+'</h2><ul>'+items.map(c=>'<li><a lang="'+c[2]+'" href="'+c[3]+'">'+esc(cityTitle(c))+'</a> · '+totalFor(rows,c,'all')+'</li>').join('')+'</ul></section>').join('');
+ const nav='<nav aria-label="Languages">'+directoryLanguages.map(l=>'<a lang="'+l+'" href="'+directoryPath(l)+'">'+l.toUpperCase()+'</a>').join('')+'</nav>';
+ return geographyPage({lang,title:w[0],url:directoryPath(lang),description:w[2],index:directoryIndexable(rows,lang),alternates:directoryIndexable(rows,lang)?directoryAlternates(rows):[],body:'<p>'+esc(w[2])+'</p><p>'+esc(w[1])+'</p>'+(list||'<p>'+esc(w[3])+'</p>')+'<p><a href="'+prefix(lang)+'#catalog">'+esc(w[5])+'</a></p>'+nav});
+}
+export function newCityPage(rows,city){
+ const lang=city[2],w=directoryWords[lang],title=cityTitle(city),query=new URLSearchParams({country:city[0],city:city[1],commercial:'0'});
+ const related=activeCities(rows,lang).filter(c=>c[0]===city[0]&&c[1]!==city[1]).slice(0,8);
+ return geographyPage({lang,title,url:city[3],description:title+'. '+w[7],index:totalFor(rows,city,'all')>=minimum,body:'<p><strong>'+esc(w[1])+': '+totalFor(rows,city,'all')+'</strong></p><p>'+esc(w[7])+'</p><p><a class="btn btn-primary" href="'+esc(prefix(lang)+'?'+query.toString()+'#catalog')+'">'+esc(w[5])+'</a></p>'+cityLinks(rows,city)+(related.length?'<section><h2>'+esc(w[6])+'</h2><ul>'+related.map(c=>'<li><a lang="'+c[2]+'" href="'+c[3]+'">'+esc(cityTitle(c))+'</a> · '+totalFor(rows,c,'all')+'</li>').join('')+'</ul></section>':'')+'<nav><a href="'+directoryPath(lang)+'">'+esc(w[6])+'</a><a href="'+prefix(lang)+'safety/">'+esc(safetyLabels[lang])+'</a></nav>'});
 }
