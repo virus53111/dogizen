@@ -302,6 +302,7 @@ registerGamePages(app,await fs.readFile(path.join(root,'public/date-game/index.h
 registerGuidePages(app);
 registerStoryPhotos(app,db,ownerAllowed);
 registerStories(app,db,guideSitemap(gameSitemap(await fs.readFile(path.join(root,'public/sitemap.xml'),'utf8'))),growth.sitemap);
+app.get(/^\/ru\/?$/, (req,res)=>res.redirect(301,'/'));
 app.get('/', (req, res) => res.sendFile(path.join(root, 'public/index.html')));
 app.use(publicFiles);
 app.use((req, res) => res.status(404).json({ error: 'Страница не найдена' }));
