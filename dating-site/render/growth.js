@@ -81,104 +81,34 @@ export function makeGrowthCache(db){
 }
 export async function registerGrowthPages(app,db,directory){
  const counts=makeGrowthCache(db);
+ const unavailable=res=>res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable');
+ const route=(url,handler)=>app.get(new RegExp('^'+url+'$'),handler);
  for(const lang of directoryLanguages){
-  app.get(new RegExp('^'+directoryPath(lang)+'
- for(const city of cities){
-  if(newCities.includes(city)){
-   app.get(new RegExp('^'+city[3]+'
-   const page=await readFile(path.join(directory,city[3].slice(1),'index.html'),'utf8');
-   app.get(new RegExp('^'+city[3]+'$'),async(req,res)=>{
-    const rows=await counts().catch(()=>new Map());
-    res.set('Cache-Control','no-cache').type('html').send(page.replace('</main>',cityLinks(rows,city)+'</main>'));
-   });
-  }
-  for(const goal of goals){
-   app.get(new RegExp('^'+goalUrl(city,goal)+'$'),async(req,res)=>{
-    res.set('Cache-Control','no-cache');
-    let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
-    if(!eligible(rows,city,goal))return res.status(404).type('text').send('Not found');
-    return res.type('html').send(goalPage(rows,city,goal));
-   });
-  }
- }
- return {
-  async links(url){const city=cities.find(c=>c[3]===url);return city?cityLinks(await counts().catch(()=>new Map()),city):''},
-  async sitemap(xml){return growthSitemap(xml,await counts().catch(()=>new Map()))}
- };
-}
-),async(req,res)=>{
-    res.set('Cache-Control','no-cache');
-    let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
-    if(totalFor(rows,city,'all')<minimum)return res.status(404).type('text').send('Not found');
-    return res.type('html').send(newCityPage(rows,city));
-   });
-  }else if(city[1]!=='Рига'){
-   const page=await readFile(path.join(directory,city[3].slice(1),'index.html'),'utf8');
-   app.get(new RegExp('^'+city[3]+'$'),async(req,res)=>{
-    const rows=await counts().catch(()=>new Map());
-    res.set('Cache-Control','no-cache').type('html').send(page.replace('</main>',cityLinks(rows,city)+'</main>'));
-   });
-  }
-  for(const goal of goals){
-   app.get(new RegExp('^'+goalUrl(city,goal)+'$'),async(req,res)=>{
-    res.set('Cache-Control','no-cache');
-    let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
-    if(!eligible(rows,city,goal))return res.status(404).type('text').send('Not found');
-    return res.type('html').send(goalPage(rows,city,goal));
-   });
-  }
- }
- return {
-  async links(url){const city=cities.find(c=>c[3]===url);return city?cityLinks(await counts().catch(()=>new Map()),city):''},
-  async sitemap(xml){return growthSitemap(xml,await counts().catch(()=>new Map()))}
- };
-}
-),async(req,res)=>{
+  route(directoryPath(lang),async(req,res)=>{
    res.set('Cache-Control','no-cache');
-   let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
+   let rows;try{rows=await counts()}catch{return unavailable(res)}
    return res.type('html').send(directoryPage(rows,lang));
   });
  }
  for(const city of cities){
   if(newCities.includes(city)){
-   app.get(new RegExp('^'+city[3]+'
-   const page=await readFile(path.join(directory,city[3].slice(1),'index.html'),'utf8');
-   app.get(new RegExp('^'+city[3]+'$'),async(req,res)=>{
-    const rows=await counts().catch(()=>new Map());
-    res.set('Cache-Control','no-cache').type('html').send(page.replace('</main>',cityLinks(rows,city)+'</main>'));
-   });
-  }
-  for(const goal of goals){
-   app.get(new RegExp('^'+goalUrl(city,goal)+'$'),async(req,res)=>{
+   route(city[3],async(req,res)=>{
     res.set('Cache-Control','no-cache');
-    let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
-    if(!eligible(rows,city,goal))return res.status(404).type('text').send('Not found');
-    return res.type('html').send(goalPage(rows,city,goal));
-   });
-  }
- }
- return {
-  async links(url){const city=cities.find(c=>c[3]===url);return city?cityLinks(await counts().catch(()=>new Map()),city):''},
-  async sitemap(xml){return growthSitemap(xml,await counts().catch(()=>new Map()))}
- };
-}
-),async(req,res)=>{
-    res.set('Cache-Control','no-cache');
-    let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
+    let rows;try{rows=await counts()}catch{return unavailable(res)}
     if(totalFor(rows,city,'all')<minimum)return res.status(404).type('text').send('Not found');
     return res.type('html').send(newCityPage(rows,city));
    });
   }else if(city[1]!=='Рига'){
    const page=await readFile(path.join(directory,city[3].slice(1),'index.html'),'utf8');
-   app.get(new RegExp('^'+city[3]+'$'),async(req,res)=>{
+   route(city[3],async(req,res)=>{
     const rows=await counts().catch(()=>new Map());
     res.set('Cache-Control','no-cache').type('html').send(page.replace('</main>',cityLinks(rows,city)+'</main>'));
    });
   }
   for(const goal of goals){
-   app.get(new RegExp('^'+goalUrl(city,goal)+'$'),async(req,res)=>{
+   route(goalUrl(city,goal),async(req,res)=>{
     res.set('Cache-Control','no-cache');
-    let rows;try{rows=await counts()}catch{return res.set('Retry-After','60').status(503).type('text').send('Temporarily unavailable')}
+    let rows;try{rows=await counts()}catch{return unavailable(res)}
     if(!eligible(rows,city,goal))return res.status(404).type('text').send('Not found');
     return res.type('html').send(goalPage(rows,city,goal));
    });
@@ -189,7 +119,6 @@ export async function registerGrowthPages(app,db,directory){
   async sitemap(xml){return growthSitemap(xml,await counts().catch(()=>new Map()))}
  };
 }
-
 function prefix(lang){return lang==='ru'?'/':'/'+lang+'/'}
 function cityTitle(city){return directoryWords[city[2]][4]+' '+city[4]}
 export function activeCities(rows,lang){
