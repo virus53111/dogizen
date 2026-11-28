@@ -15,6 +15,7 @@ export const cities = [
 ];
 export const goals=['friendship','dating','relationship','activities'];
 export const minimum=5;
+const safetyLabels={ru:'Советы по безопасности',en:'Safety tips',de:'Sicherheitstipps',lv:'Drošības padomi',lt:'Saugumo patarimai',et:'Ohutusnõuanded'};
 const words={
  ru:['Дружба','Свидания','Серьёзные отношения','Компания для досуга','Знакомства по интересам и целям','Подходящие опубликованные анкеты','Открыть анкеты','Все знакомства в городе','Выберите анкету взрослого участника, который указал эту цель. Общение бесплатно после входа, если владелец подключил сообщения.','Для первой встречи выбирайте общественное место. Не отправляйте деньги незнакомым людям.'],
  en:['Friendship','Dates','Serious relationships','Activity partners','Find people by relationship goal','Matching published profiles','Browse profiles','All local dating profiles','Browse adults who selected this goal. Messaging is free after sign-in when the profile owner has enabled it.','Choose a public place for a first meeting. Never send money to strangers.'],
@@ -58,17 +59,19 @@ export function goalPage(rows,city,goal){
  const catalog=prefix+'?'+query.toString()+'#catalog';
  const alternates=variants(rows,city,goal);
  const schema=JSON.stringify({'@context':'https://schema.org','@type':'CollectionPage',name:title,url,inLanguage:city[2],isFamilyFriendly:false}).replace(/</g,'\\u003c');
- return '<!doctype html><html lang="'+city[2]+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="rating" content="adult"><title>'+esc(title)+' · 18+ | MurdiliMax</title><meta name="description" content="'+esc(title+'. '+w[8])+'"><link rel="canonical" href="'+url+'">'+alternates.map(v=>'<link rel="alternate" hreflang="'+v[2]+'" href="'+origin+goalUrl(v,goal)+'">').join('')+'<meta property="og:type" content="website"><meta property="og:site_name" content="MurdiliMax"><meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(w[8])+'"><meta property="og:url" content="'+url+'"><meta property="og:image" content="'+origin+'/lux-couple.jpg"><script type="application/ld+json">'+schema+'</script><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/luxury.css"><link rel="stylesheet" href="/traffic.css"><script type="module" src="/traffic.js?v=20261124"></script><style>main{max-width:780px;margin:auto;padding:24px;line-height:1.7}h1{font-size:clamp(28px,5vw,46px);margin:30px 0}main a{color:var(--gold)}main section{border:1px solid #785577;border-radius:16px;padding:20px;margin:20px 0}nav{display:flex;flex-wrap:wrap;gap:12px}</style></head><body><main><header><a href="'+prefix+'">MurdiliMax ♡</a> · 18+</header><h1>'+esc(title)+'</h1><p><strong>'+esc(w[5])+': '+totalFor(rows,city,goal)+'</strong></p><p>'+esc(w[8])+'</p><p><a class="btn btn-primary" href="'+esc(catalog)+'">'+esc(w[6])+'</a></p><section><p>'+esc(w[9])+'</p><a href="'+prefix+'safety/">'+esc(w[7])+' · 18+</a></section><p><a href="'+city[3]+'">'+esc(w[7])+'</a></p>'+cityLinks(rows,city)+'<nav aria-label="Languages">'+alternates.map(v=>'<a lang="'+v[2]+'" hreflang="'+v[2]+'" href="'+goalUrl(v,goal)+'">'+v[2].toUpperCase()+'</a>').join('')+'</nav><footer><a href="/rules.html">Rules</a> · <a href="/privacy.html">Privacy</a> · 18+</footer></main></body></html>';
+ return '<!doctype html><html lang="'+city[2]+'"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="rating" content="adult"><title>'+esc(title)+' · 18+ | MurdiliMax</title><meta name="description" content="'+esc(title+'. '+w[8])+'"><link rel="canonical" href="'+url+'">'+alternates.map(v=>'<link rel="alternate" hreflang="'+v[2]+'" href="'+origin+goalUrl(v,goal)+'">').join('')+'<meta property="og:type" content="website"><meta property="og:site_name" content="MurdiliMax"><meta property="og:title" content="'+esc(title)+'"><meta property="og:description" content="'+esc(w[8])+'"><meta property="og:url" content="'+url+'"><meta property="og:image" content="'+origin+'/lux-couple.jpg"><script type="application/ld+json">'+schema+'</script><link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/luxury.css"><link rel="stylesheet" href="/traffic.css"><script type="module" src="/traffic.js?v=20261124"></script><style>main{max-width:780px;margin:auto;padding:24px;line-height:1.7}h1{font-size:clamp(28px,5vw,46px);margin:30px 0}main a{color:var(--gold)}main section{border:1px solid #785577;border-radius:16px;padding:20px;margin:20px 0}nav{display:flex;flex-wrap:wrap;gap:12px}</style></head><body><main><header><a href="'+prefix+'">MurdiliMax ♡</a> · 18+</header><h1>'+esc(title)+'</h1><p><strong>'+esc(w[5])+': '+totalFor(rows,city,goal)+'</strong></p><p>'+esc(w[8])+'</p><p><a class="btn btn-primary" href="'+esc(catalog)+'">'+esc(w[6])+'</a></p><section><p>'+esc(w[9])+'</p><a href="'+prefix+'safety/">'+esc(safetyLabels[city[2]])+'</a></section><p><a href="'+city[3]+'">'+esc(w[7])+'</a></p>'+cityLinks(rows,city)+'<nav aria-label="Languages">'+alternates.map(v=>'<a lang="'+v[2]+'" hreflang="'+v[2]+'" href="'+goalUrl(v,goal)+'">'+v[2].toUpperCase()+'</a>').join('')+'</nav><footer><a href="/rules.html">Rules</a> · <a href="/privacy.html">Privacy</a> · 18+</footer></main></body></html>';
 }
 export function makeGrowthCache(db){
- let value,expires=0,pending;
+ let value,expires=0,pending,retryAfter=0;
  return async function counts(){
   if(Date.now()<expires&&value)return value;
+  if(Date.now()<retryAfter)throw new Error('Growth counts temporarily unavailable');
   if(!pending)pending=Promise.resolve().then(()=>db.query(`SELECT l.country,l.city,d.looking_for AS goal,COUNT(DISTINCT l.id)::integer AS total
    FROM mm_public_listings l JOIN mm_member_profile_details d ON d.listing_id=l.id
    WHERE l.status='approved' AND l.is_commercial IS FALSE AND l.country=ANY($1::text[]) AND d.looking_for=ANY($2::text[])
    GROUP BY l.country,l.city,d.looking_for`,[[...new Set(cities.map(c=>c[0]))],goals]))
    .then(r=>{value=aggregate(r.rows);expires=Date.now()+60000;return value})
+   .catch(error=>{retryAfter=Date.now()+10000;throw error})
    .finally(()=>{pending=undefined});
   return pending;
  };
@@ -94,6 +97,6 @@ export async function registerGrowthPages(app,db,directory){
  }
  return {
   async links(url){const city=cities.find(c=>c[3]===url);return city?cityLinks(await counts().catch(()=>new Map()),city):''},
-  async sitemap(xml){return growthSitemap(xml,await counts())}
+  async sitemap(xml){return growthSitemap(xml,await counts().catch(()=>new Map()))}
  };
 }
