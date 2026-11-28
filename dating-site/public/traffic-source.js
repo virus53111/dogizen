@@ -1,4 +1,4 @@
-const known=['facebook','tiktok','youtube','instagram','telegram','google','bing'];
+const known=['facebook','tiktok','youtube','instagram','telegram','google','bing','date_game'];
 const aliases={fb:'facebook',tt:'tiktok',yt:'youtube',ig:'instagram',tg:'telegram'};
 export function sourceFor(search,referrer,hostname){
  let utm=(new URLSearchParams(search||'').get('utm_source')||'').trim().toLowerCase();utm=aliases[utm]||utm;

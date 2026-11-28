@@ -30,6 +30,16 @@ test('campaign classification ignores arbitrary identifiers and lookalike domain
  assert.equal(sourceFor('','https://www.murdilimax.com/en/','murdilimax.com'),'direct');
  assert.equal(sourceFor('','','murdilimax.com'),'direct');
 });
+test('shared date game links record only the campaign label after consent', async()=>{
+ const source=sourceFor('?lang=de&utm_source=date_game','https://t.me/','murdilimax.com');
+ assert.equal(source,'date_game');
+ const calls=[],db={query:async(sql,args)=>{calls.push(args);return {rows:[]}}};
+ const data={visit:true,source};
+ assert.equal(await recordTraffic(db,request({body:{...data,consent:false}})),false);
+ assert.equal(calls.length,0);
+ assert.equal(await recordTraffic(db,request({body:{...data,consent:true}})),true);
+ assert.deepEqual(calls[0],[countryFor('8.8.8.8'),'date_game',1]);
+});
 test('admin traffic requires verified authorized admin and fixed time windows',async()=>{
  assert.deepEqual(periods,{hour:60,day:1440,month:43200});
  assert.match(summarySQL,/email_verified_at IS NOT NULL/);

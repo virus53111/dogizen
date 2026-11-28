@@ -1,7 +1,7 @@
 import {isIP} from 'node:net';
 import geoip from 'geoip-country';
 export const periods={hour:60,day:1440,month:43200};
-export const sources=['direct','facebook','tiktok','youtube','instagram','telegram','google','bing','other'];
+export const sources=['direct','facebook','tiktok','youtube','instagram','telegram','google','bing','date_game','other'];
 const hosts=new Set(['murdilimax.com','www.murdilimax.com']);
 export function countryFor(ip,lookup=geoip.lookup){
  try{const clean=String(ip||'').replace(/^::ffff:/i,'');if(!isIP(clean))return 'ZZ';const country=lookup(clean)?.country;return /^[A-Z]{2}$/.test(country||'')?country:'ZZ'}catch{return 'ZZ'}
