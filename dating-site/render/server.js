@@ -1,5 +1,6 @@
 import { startSupportMail } from './support-mail.js';
 import { startTelegramContent, telegramContentStatus } from './telegram-content.js';
+import { startIndexNow } from './indexnow.js';
 import { permitsPendingMember } from './pending-member.js';
 import express from 'express';
 import {CODE,recordInvitation} from './invitations.js';
@@ -316,5 +317,6 @@ app.use((err, req, res, next) => {
 await init();
 startSupportMail(db);
 startTelegramContent(db);
+startIndexNow(db);
 const port = Number(process.env.PORT || 10000);
 app.listen(port, '0.0.0.0', () => console.log('MurdiliMax listening on ' + port));
