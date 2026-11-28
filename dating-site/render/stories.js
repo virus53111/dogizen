@@ -52,7 +52,7 @@ export function appendStoriesSitemap(xml,rows){
  const entries=paths.map(p=>'<url><loc>'+esc(origin+p)+'</loc></url>').concat(rows.map(s=>'<url><loc>'+esc(origin+storyPath(s))+'</loc><lastmod>'+date(s.updated_at)+'</lastmod></url>')).join('\n');
  return xml.replace('</urlset>',entries+'\n</urlset>');
 }
-export function registerStories(app,db,staticSitemap){
+export function registerStories(app,db,staticSitemap,growthSitemap=async xml=>xml){
  const published="status='published' AND published_at IS NOT NULL";
  const listFields="slug,title,author_name,language,category,seo_description,LEFT(body,200) AS body,(SELECT p.id FROM mm_story_photos p WHERE p.story_id=mm_stories.id ORDER BY p.position LIMIT 1) AS cover_id";
  const handler=async(req,res,next)=>{
@@ -78,6 +78,6 @@ export function registerStories(app,db,staticSitemap){
  app.get('/stories/:slug', (req,res,next)=>req.path.endsWith('/')?handler(req,res,next):res.redirect(301,'/stories/'+encodeURIComponent(req.params.slug)+'/'));
  app.get('/sitemap.xml',async(req,res,next)=>{try{
   const rows=(await db.query('SELECT slug,category,updated_at FROM mm_stories WHERE '+published+' ORDER BY published_at DESC LIMIT 49000')).rows;
-  res.set('Cache-Control','public,max-age=0,must-revalidate').type('application/xml').send(appendStoriesSitemap(staticSitemap,rows));
+  res.set('Cache-Control','public,max-age=0,must-revalidate').type('application/xml').send(await growthSitemap(appendStoriesSitemap(staticSitemap,rows)));
  }catch(e){next(e)}});
 }
