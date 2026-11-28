@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded",()=>{
  const grid=document.querySelector("#advancedFilters .advanced-grid");
  if(grid){
  const label=el("label");label.append(el("span",t("interests")));const interest=el("input");interest.type="search";interest.id="mmInterestFilter";interest.maxLength=100;interest.placeholder=t("interestsHint");label.append(interest);
- const goalLabel=el("label");goalLabel.append(el("span",t("lookingFor")));const goal=el("select");goal.id="mmGoalFilter";for(const [v,k] of [["","all"],["friendship","goalFriendship"],["dating","goalDating"],["relationship","goalRelationship"],["activities","goalActivities"],["open","goalOpen"]]){const o=el("option",t(k));o.value=v;goal.append(o)}goalLabel.append(goal);
+ const goalLabel=el("label");goalLabel.append(el("span",t("lookingFor")));const goal=el("select");goal.id="mmGoalFilter";for(const [v,k] of [["","all"],["friendship","goalFriendship"],["dating","goalDating"],["relationship","goalRelationship"],["activities","goalActivities"],["open","goalOpen"]]){const o=el("option",t(k));o.value=v;goal.append(o)}goal.value=window.mmExtra?.goal||"";goalLabel.append(goal);
  grid.prepend(label,goalLabel);const reload=()=>{window.mmExtra.interest=interest.value.trim();window.mmExtra.goal=goal.value;window.mmExtra.page=1;loadListings()};interest.addEventListener("change",reload);goal.addEventListener("change",reload);
  const recommend=button(W(0),async()=>{if(!await getSession()){location.assign(loginPath({panel:"mine"}));return}
  const result=document.getElementById("mmRecommendations")||el("section");result.id="mmRecommendations";result.className="mm-community";grid.after(result);result.replaceChildren(el("h3",W(0)));
