@@ -29,8 +29,8 @@ function allowedDescriptionContacts(input){
  const other=[input.display_name,input.headline,input.interests,input.languages].join(' ').normalize('NFKC');
  if(external.test(other)||contactDigits.test(other))return false;
  const description=String(input.description||'').normalize('NFKC')
-  .replace(/(?<![\w./@-])(?:https:\/\/)?(?:t\.me|telegram\.me)\/[a-z][a-z0-9_]{4,31}(?![a-z0-9_/?#&=%.-])/gi,' ')
-  .replace(/(?<![\w./@-])[\w.+-]+@[\w.-]+\.[a-z]{2,}(?![\w./@-])/gi,' ')
+  .replace(/(?<![\w./@-])(?:https?:\/\/)?(?:t\.me|telegram\.me)\/[a-z][a-z0-9_]{4,31}(?=$|[\s,;!…)\]}>"]|\.(?=$|[\s,;!…)\]}>"]))/gi,' ')
+  .replace(/(?<![\w./@-])[\w.+-]+@[\w.-]+\.[a-z]{2,}(?=$|[\s,;!…)\]}>"]|\.(?=$|[\s,;!…)\]}>"]))/gi,' ')
   .replace(/(?<![\w./@-])@[a-z][a-z0-9_]{4,31}(?![\w./@-])/gi,' ');
  return !external.test(description);
 }
