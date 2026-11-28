@@ -21,7 +21,21 @@ export function choosePublication({category='',display_name='',headline='',descr
 
  // Self-service profiles are either published automatically or returned to the author for correction.
  // A neutral event category alone does not require a human decision.
+// Only deliberate publication of the author's own contacts in a listing description
+// is exempt. Other URLs, contacts in other fields, and all other moderation signals
+// retain their previous rules; guestbooks still use choosePublication unchanged.
+function allowedDescriptionContacts(input){
+ if(input.publicContactsConfirmed!==true||input.isCommercial===true)return false;
+ const other=[input.display_name,input.headline,input.interests,input.languages].join(' ').normalize('NFKC');
+ if(external.test(other)||contactDigits.test(other))return false;
+ const description=String(input.description||'').normalize('NFKC')
+  .replace(/(?<![\w./@-])(?:https:\/\/)?(?:t\.me|telegram\.me)\/[a-z][a-z0-9_]{4,31}(?![a-z0-9_/?#&=%.-])/gi,' ')
+  .replace(/(?<![\w./@-])[\w.+-]+@[\w.-]+\.[a-z]{2,}(?![\w./@-])/gi,' ')
+  .replace(/(?<![\w./@-])@[a-z][a-z0-9_]{4,31}(?![\w./@-])/gi,' ');
+ return !external.test(description);
+}
+
 export function selfPublication(input={}){
- const signals=choosePublication(input).signals.filter(s=>s!=='sensitive_category');
+ const signals=choosePublication(input).signals.filter(s=>s!=='sensitive_category'&&!(s==='external_contact'&&allowedDescriptionContacts(input)));
  return {allowed:signals.length===0,signals};
 }
