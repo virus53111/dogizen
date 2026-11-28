@@ -31,7 +31,7 @@ test('landing page has canonical and matching noncommercial catalogue filter',()
 test('aggregate cache coalesces calls and uses only public approved noncommercial data',async()=>{
  let calls=0;
  const counts=makeGrowthCache({query:async(sql,params)=>{
-  calls++;assert.match(sql,/mm_public_listings/);assert.match(sql,/status='approved'/);assert.match(sql,/is_commercial IS FALSE/);assert.ok(params[1].includes('dating'));
+  calls++;assert.match(sql,/mm_public_listings/);assert.match(sql,/status='approved'/);assert.match(sql,/is_commercial IS FALSE/);assert.ok(params[0].includes('dating'));
   return {rows:[{country:'LV',city:'Рига',goal:'dating',total:5}]};
  }});
  const [a,b]=await Promise.all([counts(),counts()]);
