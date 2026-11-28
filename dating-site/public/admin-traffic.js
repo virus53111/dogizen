@@ -4,7 +4,7 @@ const el=(tag,txt,cls)=>{const x=document.createElement(tag);if(txt!==undefined)
 const fmt=n=>Number(n||0).toLocaleString('ru-RU');
 const names=new Intl.DisplayNames(['ru'],{type:'region'});
 const periods={hour:'Последний час',day:'Последние 24 часа',month:'Последние 30 дней'};
-const sources={direct:'Прямой / внутренний',facebook:'Facebook',tiktok:'TikTok',youtube:'YouTube',instagram:'Instagram',telegram:'Telegram',google:'Google',bing:'Bing',other:'Другие'};
+const sources={direct:'Прямой / внутренний',facebook:'Facebook',tiktok:'TikTok',youtube:'YouTube',instagram:'Instagram',telegram:'Telegram',google:'Google',bing:'Bing',date_game:'Приглашение в игру о свидании',other:'Другие'};
 let period='day',request=0;
 const cards=root.querySelector('#trafficCards'),countries=root.querySelector('#trafficCountries'),channels=root.querySelector('#trafficSources'),notice=root.querySelector('#trafficStatus'),time=root.querySelector('#trafficTime');
 function table(container,rows,key,label){
